@@ -1,0 +1,6 @@
+armnn
+boost_1_64_0
+clframework
+prebuilt
+.vscode/settings.json
+.gitignore
