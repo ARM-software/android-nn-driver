@@ -26,14 +26,14 @@ fi
 if [ ! -d armnn ]; then
   echo "++ Downloading armnn"
 
-  git clone git@github.com:ARM-software/armnn.git armnn
+  git clone git@github.com:ARM-software/armnn armnn
   AssertZeroExitCode "Cloning armnn failed"
 fi
 
 if [ ! -d clframework ]; then
   echo "++ Downloading clframework"
 
-  git clone git@github.com:ARM-software/ComputeLibrary.git clframework
+  git clone git@github.com:ARM-software/ComputeLibrary clframework
   AssertZeroExitCode "Cloning clframework failed"
 fi
 

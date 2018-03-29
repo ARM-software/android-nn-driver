@@ -48,4 +48,7 @@ void DumpTensor(const std::string& dumpDir,
     const std::string& tensorName,
     const armnn::ConstTensor& tensor);
 
+void ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimizedNetwork,
+                                 const std::string& dumpDir,
+                                 const Model& model);
 }

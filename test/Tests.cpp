@@ -194,8 +194,6 @@ private:
     sp<IPreparedModel> m_PreparedModel;
 };
 
-
-
 // lifted from common/Utils.cpp
 hidl_memory allocateSharedMemory(int64_t size)
 {

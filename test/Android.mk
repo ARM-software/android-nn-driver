@@ -27,7 +27,8 @@ LOCAL_CFLAGS := \
 	-UNDEBUG
 
 LOCAL_SRC_FILES :=	\
-	Tests.cpp
+	Tests.cpp \
+	UtilsTests.cpp
 
 LOCAL_STATIC_LIBRARIES := \
 	libarmnn-driver \

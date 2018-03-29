@@ -372,6 +372,19 @@ Return<ErrorStatus> ArmnnDriver::prepareModel(const Model& model,
         return FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
     }
 
+    // Check that the optimized network is valid.
+    if (!optNet)
+    {
+        return FailPrepareModel(ErrorStatus::GENERAL_FAILURE,
+            "ArmnnDriver::prepareModel: Invalid optimized network", cb);
+    }
+
+    // Export the optimized network graph to a dot file if an output dump directory
+    // has been specified in the drivers' arguments.
+    ExportNetworkGraphToDotFile(*optNet,
+                                m_Options.GetRequestInputsAndOutputsDumpDir(),
+                                model);
+
     // load it into the runtime
     armnn::NetworkId netId = 0;
     try
