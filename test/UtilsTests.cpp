@@ -3,12 +3,10 @@
 // See LICENSE file in the project root for full license information.
 //
 
-#define LOG_TAG "ArmnnDriverUtilsTests"
-//#define BOOST_TEST_MODULE armnn_driver_utils_tests
+#include "DriverTestHelpers.hpp"
 #include <boost/test/unit_test.hpp>
 #include <log/log.h>
 
-#include "../ArmnnDriver.hpp"
 #include "../Utils.hpp"
 
 #include <fstream>
@@ -59,7 +57,7 @@ public:
         m_FileStream.close();
 
         // Ignore any error (such as file not found).
-        remove(m_FileName.c_str());
+        (void)remove(m_FileName.c_str());
     }
 
     bool FileExists()

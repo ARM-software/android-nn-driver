@@ -19,6 +19,41 @@
 #include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/cast.hpp>
 
+namespace armnn_driver
+{
+class LayerInputHandle
+{
+public:
+    LayerInputHandle()
+        : m_OutputSlot(nullptr)
+        , m_Valid(false)
+    {}
+
+    LayerInputHandle(bool valid, armnn::IOutputSlot* outputSlot, armnn::TensorInfo tensorInfo)
+        : m_OutputSlot(outputSlot)
+        , m_Valid(valid)
+        , m_TensorInfo(tensorInfo)
+    {}
+
+    bool IsValid() const { return m_Valid; }
+    void Connect(armnn::IInputSlot& inputSlot)
+    {
+        assert(IsValid());
+
+        if (m_OutputSlot)
+        {
+            m_OutputSlot->Connect(inputSlot);
+        }
+    }
+    const armnn::TensorInfo& GetTensorInfo() const { return m_TensorInfo; }
+
+private:
+    armnn::IOutputSlot* m_OutputSlot;
+    bool m_Valid;
+    armnn::TensorInfo m_TensorInfo;
+};
+} // armnn_driver
+
 namespace
 {
 using namespace armnn_driver;
@@ -140,7 +175,10 @@ void SanitizeBiasQuantizationScale(armnn::TensorInfo& biasInfo,
     }
 }
 
+const armnn::PermutationVector IdentityPermutation({ 0U, 1U, 2U, 3U });
 const armnn::PermutationVector NHWCToArmNN({ 0U, 2U, 3U, 1U });
+const armnn::PermutationVector ArmNNToNHWC({ 0U, 3U, 1U, 2U });
+const armnn::PermutationVector SwapDim1And2({ 0U, 2U, 1U, 3U });
 
 template <typename OSlot>
 armnn::IConnectableLayer& AddPermuteLayer(armnn::INetwork& network, OSlot& input,
@@ -165,8 +203,6 @@ armnn::IConnectableLayer& SwizzleInDeswizzleOut(armnn::INetwork& network, LayerI
                                                 armnn::IConnectableLayer& firstLayer,
                                                 armnn::IConnectableLayer& lastLayer)
 {
-    static const armnn::PermutationVector ArmNNToNHWC({ 0U, 3U, 1U, 2U });
-
     // Add swizzle layer
     armnn::IConnectableLayer& swizzleLayer = AddPermuteLayer(network, input, NHWCToArmNN);
 
@@ -184,6 +220,71 @@ armnn::IConnectableLayer& SwizzleInDeswizzleOut(armnn::INetwork& network, LayerI
 {
     return SwizzleInDeswizzleOut(network, input, layer, layer);
 }
+
+bool ValidateConcatOutputShape(const std::vector<armnn::TensorShape> & inputShapes,
+                               const armnn::TensorShape & outputShape,
+                               uint32_t concatDim)
+{
+    // Validate the output shape is correct given the input shapes (which have just been validated)
+    unsigned int numDimensions = inputShapes[0].GetNumDimensions();
+    if (outputShape.GetNumDimensions() != numDimensions)
+    {
+        return Fail("%s: Output shape has wrong number of dimensions", __func__);
+    }
+
+    unsigned int outputSizeAlongConcatenatedDimension = 0;
+    for (unsigned int i = 0; i < inputShapes.size(); i++)
+    {
+        outputSizeAlongConcatenatedDimension += inputShapes[i][concatDim];
+    }
+
+    for (unsigned int i = 0; i < numDimensions; ++i)
+    {
+        if (i == concatDim)
+        {
+            if (outputShape[i] != outputSizeAlongConcatenatedDimension)
+            {
+                return Fail(
+                    "%s: Invalid output shape for dimension %d (%d != %d)",
+                    __func__,
+                    i,
+                    outputShape[i],
+                    outputSizeAlongConcatenatedDimension);
+            }
+        }
+        else
+        {
+            if (outputShape[i] != inputShapes[0][i])
+            {
+                return Fail("%s: Invalid output shape", __func__);
+            }
+        }
+    }
+
+    return true;
+}
+
+void SwizzleInputs(armnn::INetwork& network,
+                   std::vector<LayerInputHandle>& inputs,
+                   std::vector<armnn::TensorShape>& inputShapes,
+                   const armnn::PermutationVector& mapping)
+{
+    if (!mapping.IsEqual(IdentityPermutation))
+    {
+        size_t nInputs = inputs.size();
+        for (size_t i=0; i<nInputs; ++i)
+        {
+            // add swizzle layer
+            armnn::IConnectableLayer& swizzleLayer = AddPermuteLayer(network, inputs[i], mapping);
+            auto& outputSlot = swizzleLayer.GetOutputSlot(0);
+            auto& outputInfo = outputSlot.GetTensorInfo();
+            // replace inputs with the swizzled ones
+            inputs[i] = LayerInputHandle(true, &outputSlot, outputInfo);
+            inputShapes[i] = inputs[i].GetTensorInfo().GetShape();
+        }
+    }
+}
+
 } // namespace
 
 namespace armnn_driver
@@ -399,37 +500,6 @@ bool ModelToINetworkConverter::ConvertOperation(const Operation& operation)
     }
 }
 
-class LayerInputHandle
-{
-public:
-    LayerInputHandle()
-        : m_OutputSlot(nullptr)
-        , m_Valid(false)
-    {}
-
-    LayerInputHandle(bool valid, armnn::IOutputSlot* outputSlot, armnn::TensorInfo tensorInfo)
-        : m_OutputSlot(outputSlot)
-        , m_Valid(valid)
-        , m_TensorInfo(tensorInfo)
-    {}
-
-    bool IsValid() const { return m_Valid; }
-    void Connect(armnn::IInputSlot& inputSlot)
-    {
-        assert(IsValid());
-
-        if (m_OutputSlot)
-        {
-            m_OutputSlot->Connect(inputSlot);
-        }
-    }
-    const armnn::TensorInfo& GetTensorInfo() const { return m_TensorInfo; }
-
-private:
-    armnn::IOutputSlot* m_OutputSlot;
-    bool m_Valid;
-    armnn::TensorInfo m_TensorInfo;
-};
 
 bool ModelToINetworkConverter::ConvertAdd(const Operation& operation)
 {
@@ -540,6 +610,65 @@ bool ModelToINetworkConverter::ConvertConcatenation(const Operation& operation)
     // Get inputs and outputs
     const std::size_t numInputTensors = operation.inputs.size() - 1;
 
+    int32_t concatDim;
+    if (!GetInputScalar(operation, numInputTensors, OperandType::INT32, concatDim))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* const outputOperand = GetOutputOperand(operation, 0);
+    if (!outputOperand)
+    {
+        return Fail("%s: Operation has no outputs", __func__);
+    }
+
+    armnn::TensorInfo  outputInfo  = GetTensorInfoForOperand(*outputOperand);
+    armnn::TensorShape outputShape = outputInfo.GetShape();
+
+    //
+    // handle negative concat dims along the lines of tensorflow as described here:
+    //    https://www.tensorflow.org/api_docs/python/tf/concat
+    // "negative axis refers to axis + rank(values)-th dimension"
+    //
+    if (concatDim < 0)
+    {
+        concatDim += outputShape.GetNumDimensions();
+    }
+
+    if (concatDim >= static_cast<int32_t>(outputShape.GetNumDimensions()) || concatDim < 0)
+    {
+        return Fail("%s: Operation has invalid concat axis: %d", __func__, concatDim);
+    }
+
+    // ArmNN uses Compute Library subtensors to perform concatenation
+    // This only works when concatenating along dimension 0 or 1 for a 4-D tensor,
+    // or along dimension 0 for a 3-D tensor.
+    const armnn::PermutationVector* permuteVectorIn = &IdentityPermutation;
+    const armnn::PermutationVector* permuteVectorOut = &IdentityPermutation;
+
+    assert(permuteVectorOut != nullptr);
+
+    if (outputShape.GetNumDimensions() == 4) {
+        if (concatDim == 3) {
+            concatDim = 1;
+            permuteVectorIn = &NHWCToArmNN;
+            permuteVectorOut = &ArmNNToNHWC;
+            outputShape = armnnUtils::Permuted(outputShape, *permuteVectorIn);
+            outputInfo.SetShape(outputShape);
+        } else if (concatDim == 2) {
+            concatDim = 1;
+            permuteVectorIn = &SwapDim1And2;
+            permuteVectorOut = &SwapDim1And2;
+            outputShape = armnnUtils::Permuted(outputShape, *permuteVectorIn);
+            outputInfo.SetShape(outputShape);
+        }
+    }
+    else if (!(outputShape.GetNumDimensions() == 3 && concatDim == 0))
+    {
+        // Operation unsupported
+        return false;
+    }
+
     std::vector<LayerInputHandle> inputHandles;
     std::vector<armnn::TensorShape> inputShapes;
 
@@ -556,6 +685,8 @@ bool ModelToINetworkConverter::ConvertConcatenation(const Operation& operation)
 
         inputShapes.emplace_back(GetTensorShapeForOperand(*operand));
         inputHandles.emplace_back(ConvertToLayerInputHandle(operation, i));
+
+
         if (!inputHandles.back().IsValid())
         {
             return Fail("%s: Operation has invalid inputs", __func__);
@@ -564,60 +695,30 @@ bool ModelToINetworkConverter::ConvertConcatenation(const Operation& operation)
 
     assert(inputShapes.size() == inputHandles.size());
 
-    uint32_t concatDim;
-    if (!GetInputScalar(operation, numInputTensors, OperandType::INT32, concatDim))
-    {
-        return Fail("%s: Operation has invalid inputs", __func__);
-    }
-
-    const Operand* const outputOperand = GetOutputOperand(operation, 0);
-    if (!outputOperand)
-    {
-        return Fail("%s: Operation has no outputs", __func__);
-    }
-    const armnn::TensorShape outputShape = GetTensorShapeForOperand(*outputOperand);
+    // this is no-op for identity swizzles, otherwise it replaces both
+    // the handles and shapes with the swizzled layer output handles and shapes
+    SwizzleInputs(*m_Network, inputHandles, inputShapes, *permuteVectorIn);
 
     // Create an armnn merger layer descriptor - this will also perform validation on the input shapes
     armnn::OriginsDescriptor mergerDescriptor;
     try
     {
-        mergerDescriptor = armnn::CreateMergerDescriptorForConcatenation(inputShapes.begin(), inputShapes.end(),
-            concatDim);
+        // The merger descriptor is always created across the only supported concat
+        // dimension, which is 0 or 1
+        mergerDescriptor =
+            armnn::CreateMergerDescriptorForConcatenation(
+                inputShapes.begin(), inputShapes.end(), concatDim);
     }
     catch (const armnn::Exception& error)
     {
         return Fail("%s: Error preparing merger descriptor. %s", __func__, error.what());
     }
 
-    // Validate the output shape is correct given the input shapes (which have just been validated)
-    unsigned int numDimensions = inputShapes[0].GetNumDimensions();
-    if (outputShape.GetNumDimensions() != numDimensions)
+    // Validate the output shape is correct given the input shapes based on the
+    // only valid concat dimension which is 0 or 1
+    if (!ValidateConcatOutputShape(inputShapes, outputShape, concatDim))
     {
-        return Fail("%s: Output shape has wrong number of dimensions", __func__);
-    }
-
-    unsigned int outputSizeAlongConcatenatedDimension = 0;
-    for (unsigned int i = 0; i < inputShapes.size(); i++)
-    {
-        outputSizeAlongConcatenatedDimension += inputShapes[i][concatDim];
-    }
-
-    for (unsigned int i = 0; i < numDimensions; ++i)
-    {
-        if (i == concatDim)
-        {
-            if (outputShape[i] != outputSizeAlongConcatenatedDimension)
-            {
-                return Fail("%s: Invalid output shape", __func__);
-            }
-        }
-        else
-        {
-            if (outputShape[i] != inputShapes[0][i])
-            {
-                return Fail("%s: Invalid output shape", __func__);
-            }
-        }
+        return Fail("%s: Error validating the output shape for concat", __func__);
     }
 
     std::vector<const armnn::TensorInfo*> inputTensorInfos;
@@ -634,13 +735,24 @@ bool ModelToINetworkConverter::ConvertConcatenation(const Operation& operation)
 
     armnn::IConnectableLayer* layer = m_Network->AddMergerLayer(mergerDescriptor);
     assert(layer != nullptr);
+    layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
 
     // Connect inputs to the layer
     const int numInputSlots = layer->GetNumInputSlots();
     assert(static_cast<std::size_t>(numInputSlots) == inputHandles.size());
     for (int i = 0; i < numInputSlots; ++i)
     {
+        // connect the input directly to the merge (concat) layer
         inputHandles[static_cast<unsigned int>(i)].Connect(layer->GetInputSlot(i));
+    }
+
+    if (permuteVectorOut != &IdentityPermutation)
+    {
+        // Add permutation layer and connect the output to it, the permutation becomes the output layer
+        armnn::IConnectableLayer& deswizzleLayer = AddPermuteLayer(*m_Network,
+                                                                   layer->GetOutputSlot(0),
+                                                                   *permuteVectorOut);
+        layer = &deswizzleLayer;
     }
 
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer);
@@ -726,8 +838,10 @@ bool ModelToINetworkConverter::ConvertConv2d(const Operation& operation)
                           armnn::IsConvolution2dSupported,
                           m_Compute,
                           swizzledInputInfo,
+                          swizzledOutputInfo,
                           desc,
-                          weights.GetInfo()))
+                          weights.GetInfo(),
+                          bias.GetInfo()))
     {
         return false;
     }
@@ -1047,7 +1161,7 @@ bool ModelToINetworkConverter::ConvertLocalResponseNormalization(const Operation
 bool ModelToINetworkConverter::ConvertLogistic(const Operation& operation)
 {
     armnn::ActivationDescriptor desc;
-    desc.m_Function == armnn::ActivationFunction::Sigmoid;
+    desc.m_Function = armnn::ActivationFunction::Sigmoid;
 
     return ConvertToActivation(operation, __func__, desc);
 }

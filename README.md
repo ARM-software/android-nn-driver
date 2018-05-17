@@ -2,6 +2,8 @@
 
 This directory contains the ArmNN driver for the Android Neural Networks API, implementing the android.hardware.neuralnetworks@1.0 HAL.
 
+For more information about supported operations and configurations, see NnapiSupport.txt
+
 ## Integration guide
 
 ### Prerequisites

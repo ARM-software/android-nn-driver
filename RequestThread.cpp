@@ -26,12 +26,26 @@ RequestThread::RequestThread()
 RequestThread::~RequestThread()
 {
     ALOGV("RequestThread::~RequestThread()");
-    // post an EXIT message to the thread
-    std::shared_ptr<AsyncExecuteData> nulldata(nullptr);
-    auto pMsg = std::make_shared<ThreadMsg>(ThreadMsgType::EXIT, nulldata);
-    PostMsg(pMsg);
-    // Wait for the thread to terminate, it is deleted automatically
-    m_Thread->join();
+
+    try
+    {
+        // Coverity fix: The following code may throw an exception of type std::length_error.
+
+        // This code is meant to to terminate the inner thread gracefully by posting an EXIT message
+        // to the thread's message queue. However, according to Coverity, this code could throw an exception and fail.
+        // Since only one static instance of RequestThread is used in the driver (in ArmnnPreparedModel),
+        // this destructor is called only when the application has been closed, which means that
+        // the inner thread will be terminated anyway, although abruptly, in the event that the destructor code throws.
+        // Wrapping the destructor's code with a try-catch block simply fixes the Coverity bug.
+
+        // Post an EXIT message to the thread
+        std::shared_ptr<AsyncExecuteData> nulldata(nullptr);
+        auto pMsg = std::make_shared<ThreadMsg>(ThreadMsgType::EXIT, nulldata);
+        PostMsg(pMsg);
+        // Wait for the thread to terminate, it is deleted automatically
+        m_Thread->join();
+    }
+    catch (const std::exception&) { } // Swallow any exception.
 }
 
 void RequestThread::PostMsg(ArmnnPreparedModel* model,

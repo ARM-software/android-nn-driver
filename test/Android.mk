@@ -28,7 +28,15 @@ LOCAL_CFLAGS := \
 
 LOCAL_SRC_FILES :=	\
 	Tests.cpp \
-	UtilsTests.cpp
+	UtilsTests.cpp \
+	Concurrent.cpp  \
+	Convolution2D.cpp  \
+	FullyConnected.cpp  \
+	GenericLayerTests.cpp \
+	DriverTestHelpers.cpp \
+	SystemProperties.cpp \
+	Merger.cpp \
+	TestTensor.cpp
 
 LOCAL_STATIC_LIBRARIES := \
 	libarmnn-driver \
@@ -45,9 +53,8 @@ LOCAL_SHARED_LIBRARIES :=  \
 	libhidlbase \
 	libhidltransport \
 	libhidlmemory \
-	libtextclassifier \
-	libtextclassifier_hash \
 	liblog \
+	libtextclassifier_hash \
 	libutils \
 	android.hardware.neuralnetworks@1.0 \
 	android.hidl.allocator@1.0 \
@@ -62,6 +69,8 @@ LOCAL_ARM_MODE := arm
 
 # Mark source files as dependent on Android.mk
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+
+LOCAL_PROPRIETARY_MODULE := true
 
 include $(BUILD_EXECUTABLE)
 

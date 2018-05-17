@@ -18,15 +18,35 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-    android::sp<ArmnnDriver> driver = new ArmnnDriver(DriverOptions(argc, argv));
+    android::sp<ArmnnDriver> driver;
+    try
+    {
+        driver = new ArmnnDriver(DriverOptions(argc, argv));
+    }
+    catch (const std::exception& e)
+    {
+        ALOGE("Could not create driver: %s", e.what());
+        return EXIT_FAILURE;
+    }
 
     android::hardware::configureRpcThreadpool(1, true);
-    if (driver->registerAsService("armnn") != android::OK)
+    android::status_t status = android::UNKNOWN_ERROR;
+    try
+    {
+        status = driver->registerAsService("armnn");
+    }
+    catch (const std::exception& e)
+    {
+        ALOGE("Could not register service: %s", e.what());
+        return EXIT_FAILURE;
+    }
+    if (status != android::OK)
     {
         ALOGE("Could not register service");
-        return 1;
+        return EXIT_FAILURE;
     }
+
     android::hardware::joinRpcThreadpool();
     ALOGE("Service exited!");
-    return 1;
+    return EXIT_FAILURE;
 }

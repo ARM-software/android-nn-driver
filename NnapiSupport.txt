@@ -1,4 +1,4 @@
------- ArmNN for Android 18.02 Release Notes ------
+------ ArmNN for Android NNAPI supported operations ------
 
 This release of ArmNN for Android supports use as a driver for the Android Neural Networks API. It implements the android.hardware.neuralnetworks@1.0 interface.
 
@@ -14,8 +14,8 @@ AndroidNN operator           Tensor type supported
 ADD                          (FLOAT32)
 AVERAGE_POOL_2D              (FLOAT32,QUANT8_ASYMM)
 CONCATENATION                (FLOAT32)
-CONV_2D                      (FLOAT32,QUANT8_ASYMM**)
-DEPTHWISE_CONV_2D***         (FLOAT32,QUANT8_ASYMM)
+CONV_2D                      (FLOAT32,QUANT8_ASYMM)
+DEPTHWISE_CONV_2D*           (FLOAT32,QUANT8_ASYMM)
 FLOOR                        (FLOAT32)
 FULLY_CONNECTED              (FLOAT32)
 L2_NORMALIZATION             (FLOAT32)
@@ -23,7 +23,7 @@ L2_POOL_2D                   (FLOAT32)
 LOCAL_RESPONSE_NORMALIZATION (FLOAT32)
 LOGISTIC                     (FLOAT32,QUANT8_ASYMM)
 MAX_POOL_2D                  (FLOAT32,QUANT8_ASYMM)
-MUL*                         (FLOAT32)
+MUL                          (FLOAT32)
 RELU                         (FLOAT32,QUANT8_ASYMM)
 RELU1                        (FLOAT32,QUANT8_ASYMM)
 RELU6                        (FLOAT32,QUANT8_ASYMM)
@@ -32,15 +32,7 @@ RESIZE_BILINEAR              (FLOAT32)
 SOFTMAX                      (FLOAT32,QUANT8_ASYMM)
 TANH                         (FLOAT32)
 
-* MUL currently does not support mixing of different tensor sizes.
-
-** QUANT8_ASYMM version does not support asymmetric padding. In addition, only the following configurations are supported:
-    1) 1x1 convolution with strides of 1 or 2 or 3
-    2) 3x3 convolution with strides of 1 or 2
-    3) 5x5 convolution with strides of 1 or 2
-
-*** Depthwise convolution only supports a value of 1 for the depth multiplier. In addition, the QUANT8_ASYMM version only supports 3x3 kernels.
-
+* Depthwise convolution only supports a value of 1 for the depth multiplier. In addition, the QUANT8_ASYMM version only supports 3x3 kernels.
 
 --- Unsupported operators ---
 

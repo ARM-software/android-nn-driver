@@ -43,6 +43,7 @@ DriverOptions::DriverOptions(armnn::Compute computeDevice)
 : m_ComputeDevice(computeDevice)
 , m_VerboseLogging(false)
 , m_UseAndroidNnCpuExecutor(false)
+, m_ClTunedParametersMode(armnn::IClTunedParameters::Mode::UseTunedParameters)
 {
 }
 

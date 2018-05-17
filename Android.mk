@@ -7,7 +7,7 @@ ANDROID_NN_DRIVER_LOCAL_PATH := $(call my-dir)
 LOCAL_PATH := $(ANDROID_NN_DRIVER_LOCAL_PATH)
 
 # Configure these paths if you move the source or Khronos headers
-OPENCL_HEADER_PATH := $(LOCAL_PATH)/../mali/product/khronos/original
+OPENCL_HEADER_PATH := $(LOCAL_PATH)/clframework/include
 NN_HEADER_PATH := $(LOCAL_PATH)/../../../frameworks/ml/nn/runtime/include
 
 ###################
@@ -18,6 +18,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := libarmnn-driver
 LOCAL_MODULE_TAGS := eng optional
 LOCAL_ARM_MODE := arm
+LOCAL_PROPRIETARY_MODULE := true
 # Mark source files as dependent on Android.mk
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
@@ -108,9 +109,8 @@ LOCAL_SHARED_LIBRARIES :=  \
 	libhidlmemory \
 	libdl \
 	libhardware \
-	libtextclassifier \
-	libtextclassifier_hash \
 	liblog \
+	libtextclassifier_hash \
 	libutils \
 	android.hardware.neuralnetworks@1.0 \
 	android.hidl.allocator@1.0 \
