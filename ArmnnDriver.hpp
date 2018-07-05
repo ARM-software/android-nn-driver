@@ -13,6 +13,10 @@
 #include <set>
 #include <string>
 
+// For Android O, explicitly declare the V1_0 HAL namespace to shorten type declarations,
+// as the namespace is not defined in HalInterfaces.h.
+namespace V1_0 = ::android::hardware::neuralnetworks::V1_0;
+
 namespace armnn_driver
 {
 
@@ -41,14 +45,14 @@ private:
     armnn::IClTunedParameters::Mode m_ClTunedParametersMode;
 };
 
-class ArmnnDriver : public IDevice {
+class ArmnnDriver : public V1_0::IDevice {
 public:
     ArmnnDriver(DriverOptions options);
     virtual ~ArmnnDriver() {}
-    virtual Return<void> getCapabilities(getCapabilities_cb _hidl_cb) override;
-    virtual Return<void> getSupportedOperations(const Model &model,
-                                                getSupportedOperations_cb _hidl_cb) override;
-    virtual Return<ErrorStatus> prepareModel(const Model &model,
+    virtual Return<void> getCapabilities(V1_0::IDevice::getCapabilities_cb _hidl_cb) override;
+    virtual Return<void> getSupportedOperations(const V1_0::Model &model,
+                                                V1_0::IDevice::getSupportedOperations_cb _hidl_cb) override;
+    virtual Return<ErrorStatus> prepareModel(const V1_0::Model &model,
                                       const android::sp<IPreparedModelCallback>& callback);
     virtual Return<DeviceStatus> getStatus() override;
 

@@ -19,7 +19,7 @@ BOOST_AUTO_TEST_CASE(FullyConnected)
     // but that uses slightly weird dimensions which I don't think we need to support for now
 
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
-    Model model = {};
+    V1_0::Model model = {};
 
     // add operands
     int32_t actValue      = 0;
@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(FullyConnected)
 
     // make the fully connected operation
     model.operations.resize(1);
-    model.operations[0].type = OperationType::FULLY_CONNECTED;
+    model.operations[0].type = V1_0::OperationType::FULLY_CONNECTED;
     model.operations[0].inputs  = hidl_vec<uint32_t>{0, 1, 2, 3};
     model.operations[0].outputs = hidl_vec<uint32_t>{4};
 
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInput)
             sup = supported;
         };
 
-    Model model = {};
+    V1_0::Model model = {};
 
     // operands
     int32_t actValue      = 0;
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInput)
 
     model.operations.resize(1);
 
-    model.operations[0].type = OperationType::FULLY_CONNECTED;
+    model.operations[0].type = V1_0::OperationType::FULLY_CONNECTED;
     model.operations[0].inputs  = hidl_vec<uint32_t>{0,1,2,3};
     model.operations[0].outputs = hidl_vec<uint32_t>{4};
 
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInputReshape)
             sup = supported;
         };
 
-    Model model = {};
+    V1_0::Model model = {};
 
     // operands
     int32_t actValue      = 0;
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInputReshape)
 
     model.operations.resize(1);
 
-    model.operations[0].type = OperationType::FULLY_CONNECTED;
+    model.operations[0].type = V1_0::OperationType::FULLY_CONNECTED;
     model.operations[0].inputs  = hidl_vec<uint32_t>{0,1,2,3};
     model.operations[0].outputs = hidl_vec<uint32_t>{4};
 

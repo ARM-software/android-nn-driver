@@ -15,6 +15,12 @@
 
 #include "OperationsUtils.h"
 
+#if defined(ARMNN_ANDROID_P)
+// The headers of the ML framework have changed between Android O and Android P.
+// The validation functions have been moved into their own header, ValidateHal.h.
+#include <ValidateHal.h>
+#endif
+
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/program_options.hpp>
 
@@ -207,11 +213,11 @@ ArmnnDriver::ArmnnDriver(DriverOptions options)
     }
 }
 
-Return<void> ArmnnDriver::getCapabilities(getCapabilities_cb cb)
+Return<void> ArmnnDriver::getCapabilities(V1_0::IDevice::getCapabilities_cb cb)
 {
     ALOGV("ArmnnDriver::getCapabilities()");
 
-    Capabilities capabilities;
+    V1_0::Capabilities capabilities;
     if (m_Runtime)
     {
         capabilities.float32Performance.execTime =
@@ -241,7 +247,7 @@ Return<void> ArmnnDriver::getCapabilities(getCapabilities_cb cb)
     return Void();
 }
 
-Return<void> ArmnnDriver::getSupportedOperations(const Model& model, getSupportedOperations_cb cb)
+Return<void> ArmnnDriver::getSupportedOperations(const V1_0::Model& model, V1_0::IDevice::getSupportedOperations_cb cb)
 {
     ALOGV("ArmnnDriver::getSupportedOperations()");
 
@@ -310,7 +316,7 @@ Return<ErrorStatus> FailPrepareModel(ErrorStatus error,
 
 }
 
-Return<ErrorStatus> ArmnnDriver::prepareModel(const Model& model,
+Return<ErrorStatus> ArmnnDriver::prepareModel(const V1_0::Model& model,
     const sp<IPreparedModelCallback>& cb)
 {
     ALOGV("ArmnnDriver::prepareModel()");
@@ -357,7 +363,8 @@ Return<ErrorStatus> ArmnnDriver::prepareModel(const Model& model,
 
     if (modelConverter.GetConversionResult() != ConversionResult::Success)
     {
-        return FailPrepareModel(ErrorStatus::GENERAL_FAILURE, "ModelToINetworkConverter failed", cb);
+        FailPrepareModel(ErrorStatus::GENERAL_FAILURE, "ModelToINetworkConverter failed", cb);
+        return ErrorStatus::NONE;
     }
 
     // optimize the network
@@ -370,14 +377,16 @@ Return<ErrorStatus> ArmnnDriver::prepareModel(const Model& model,
     {
         std::stringstream message;
         message << "armnn::Exception ("<<e.what()<<") caught from optimize.";
-        return FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
+        FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
+        return ErrorStatus::NONE;
     }
 
     // Check that the optimized network is valid.
     if (!optNet)
     {
-        return FailPrepareModel(ErrorStatus::GENERAL_FAILURE,
+        FailPrepareModel(ErrorStatus::GENERAL_FAILURE,
             "ArmnnDriver::prepareModel: Invalid optimized network", cb);
+        return ErrorStatus::NONE;
     }
 
     // Export the optimized network graph to a dot file if an output dump directory
@@ -400,7 +409,8 @@ Return<ErrorStatus> ArmnnDriver::prepareModel(const Model& model,
     {
         std::stringstream message;
         message << "armnn::Exception (" << e.what()<< ") caught from LoadNetwork.";
-        return FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
+        FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
+        return ErrorStatus::NONE;
     }
 
     std::unique_ptr<ArmnnPreparedModel> preparedModel(new ArmnnPreparedModel(

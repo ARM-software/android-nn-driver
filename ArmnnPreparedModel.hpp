@@ -11,6 +11,8 @@
 #include "NeuralNetworks.h"
 #include <armnn/ArmNN.hpp>
 
+#include "ArmnnDriver.hpp"
+
 #include <string>
 #include <vector>
 
@@ -22,7 +24,7 @@ class ArmnnPreparedModel : public IPreparedModel
 public:
     ArmnnPreparedModel(armnn::NetworkId networkId,
                        armnn::IRuntime* runtime,
-                       const Model& model,
+                       const V1_0::Model& model,
                        const std::string& requestInputsAndOutputsDumpDir);
 
     virtual ~ArmnnPreparedModel();
@@ -46,7 +48,7 @@ private:
 
     armnn::NetworkId     m_NetworkId;
     armnn::IRuntime*     m_Runtime;
-    Model                m_Model;
+    V1_0::Model          m_Model;
     // There must be a single RequestThread for all ArmnnPreparedModel objects to ensure serial execution of workloads
     // It is specific to this class, so it is declared as static here
     static RequestThread m_RequestThread;
@@ -58,7 +60,7 @@ class AndroidNnCpuExecutorPreparedModel : public IPreparedModel
 {
 public:
 
-    AndroidNnCpuExecutorPreparedModel(const Model& model, const std::string& requestInputsAndOutputsDumpDir);
+    AndroidNnCpuExecutorPreparedModel(const V1_0::Model& model, const std::string& requestInputsAndOutputsDumpDir);
     virtual ~AndroidNnCpuExecutorPreparedModel() { }
 
     bool Initialize();
@@ -74,7 +76,7 @@ private:
         const hidl_vec<RequestArgument>& requestArgs,
         const std::vector<android::nn::RunTimePoolInfo>& requestPoolInfos);
 
-    Model m_Model;
+    V1_0::Model m_Model;
     std::vector<android::nn::RunTimePoolInfo> m_ModelPoolInfos;
     const std::string& m_RequestInputsAndOutputsDumpDir;
     uint32_t m_RequestCount;

@@ -61,6 +61,13 @@ LOCAL_SHARED_LIBRARIES :=  \
 	android.hidl.memory@1.0 \
 	libOpenCL
 
+ifeq ($(PLATFORM_VERSION),9)
+# Required to build the 1.0 version of the NN Driver on Android P and later versions,
+# as the 1.0 version of the NN API needs the 1.1 HAL headers to be included regardless.
+LOCAL_SHARED_LIBRARIES+= \
+        android.hardware.neuralnetworks@1.1
+endif
+
 LOCAL_MODULE := armnn-driver-tests
 
 LOCAL_MODULE_TAGS := eng optional

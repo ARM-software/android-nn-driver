@@ -115,7 +115,7 @@ void CalcPadding(uint32_t input, uint32_t kernel, uint32_t stride, uint32_t& out
     outPadTail = boost::numeric_cast<uint32_t>(padTail);
 }
 
-bool ValidateBroadcast(const Model& model, const Operation& operation, uint32_t numInputs)
+bool ValidateBroadcast(const V1_0::Model& model, const V1_0::Operation& operation, uint32_t numInputs)
 {
     assert(operation.inputs.size() > 0); // This should have been validated by the caller
     // validateModel() has been called already so we know the operation.inputs indexes are valid within model.operands.
@@ -334,7 +334,7 @@ private:
     std::vector<uint8_t> m_SwizzledTensorData;
 };
 
-ModelToINetworkConverter::ModelToINetworkConverter(armnn::Compute compute, const Model& model,
+ModelToINetworkConverter::ModelToINetworkConverter(armnn::Compute compute, const V1_0::Model& model,
     const std::set<unsigned int>& forcedUnsupportedOperations)
     : m_Compute(compute)
     , m_Model(model)
@@ -471,37 +471,37 @@ void ModelToINetworkConverter::Convert()
     }
 }
 
-bool ModelToINetworkConverter::ConvertOperation(const Operation& operation)
+bool ModelToINetworkConverter::ConvertOperation(const V1_0::Operation& operation)
 {
     switch (operation.type)
     {
-        case OperationType::ADD: return ConvertAdd(operation);
-        case OperationType::AVERAGE_POOL_2D: return ConvertAveragePool2d(operation);
-        case OperationType::CONCATENATION: return ConvertConcatenation(operation);
-        case OperationType::CONV_2D: return ConvertConv2d(operation);
-        case OperationType::DEPTHWISE_CONV_2D: return ConvertDepthwiseConv2d(operation);
-        case OperationType::FLOOR: return ConvertFloor(operation);
-        case OperationType::FULLY_CONNECTED: return ConvertFullyConnected(operation);
-        case OperationType::LOCAL_RESPONSE_NORMALIZATION: return ConvertLocalResponseNormalization(operation);
-        case OperationType::LOGISTIC: return ConvertLogistic(operation);
-        case OperationType::L2_NORMALIZATION: return ConvertL2Normalization(operation);
-        case OperationType::L2_POOL_2D: return ConvertL2Pool2d(operation);
-        case OperationType::MAX_POOL_2D: return ConvertMaxPool2d(operation);
-        case OperationType::MUL: return ConvertMul(operation);
-        case OperationType::RELU: return ConvertReLu(operation);
-        case OperationType::RELU1: return ConvertReLu1(operation);
-        case OperationType::RELU6: return ConvertReLu6(operation);
-        case OperationType::SOFTMAX: return ConvertSoftmax(operation);
-        case OperationType::TANH: return ConvertTanH(operation);
-        case OperationType::RESHAPE: return ConvertReshape(operation);
-        case OperationType::RESIZE_BILINEAR: return ConvertResizeBilinear(operation);
+        case V1_0::OperationType::ADD: return ConvertAdd(operation);
+        case V1_0::OperationType::AVERAGE_POOL_2D: return ConvertAveragePool2d(operation);
+        case V1_0::OperationType::CONCATENATION: return ConvertConcatenation(operation);
+        case V1_0::OperationType::CONV_2D: return ConvertConv2d(operation);
+        case V1_0::OperationType::DEPTHWISE_CONV_2D: return ConvertDepthwiseConv2d(operation);
+        case V1_0::OperationType::FLOOR: return ConvertFloor(operation);
+        case V1_0::OperationType::FULLY_CONNECTED: return ConvertFullyConnected(operation);
+        case V1_0::OperationType::LOCAL_RESPONSE_NORMALIZATION: return ConvertLocalResponseNormalization(operation);
+        case V1_0::OperationType::LOGISTIC: return ConvertLogistic(operation);
+        case V1_0::OperationType::L2_NORMALIZATION: return ConvertL2Normalization(operation);
+        case V1_0::OperationType::L2_POOL_2D: return ConvertL2Pool2d(operation);
+        case V1_0::OperationType::MAX_POOL_2D: return ConvertMaxPool2d(operation);
+        case V1_0::OperationType::MUL: return ConvertMul(operation);
+        case V1_0::OperationType::RELU: return ConvertReLu(operation);
+        case V1_0::OperationType::RELU1: return ConvertReLu1(operation);
+        case V1_0::OperationType::RELU6: return ConvertReLu6(operation);
+        case V1_0::OperationType::SOFTMAX: return ConvertSoftmax(operation);
+        case V1_0::OperationType::TANH: return ConvertTanH(operation);
+        case V1_0::OperationType::RESHAPE: return ConvertReshape(operation);
+        case V1_0::OperationType::RESIZE_BILINEAR: return ConvertResizeBilinear(operation);
         default: return Fail("%s: Operation type %s not supported in ArmnnDriver",
             __func__, toString(operation.type).c_str());
     }
 }
 
 
-bool ModelToINetworkConverter::ConvertAdd(const Operation& operation)
+bool ModelToINetworkConverter::ConvertAdd(const V1_0::Operation& operation)
 {
     LayerInputHandle input0 = ConvertToLayerInputHandle(operation, 0);
     LayerInputHandle input1 = ConvertToLayerInputHandle(operation, 1);
@@ -594,12 +594,12 @@ bool ModelToINetworkConverter::ConvertAdd(const Operation& operation)
     }
 }
 
-bool ModelToINetworkConverter::ConvertAveragePool2d(const Operation& operation)
+bool ModelToINetworkConverter::ConvertAveragePool2d(const V1_0::Operation& operation)
 {
     return ConvertPooling2d(operation, __func__, armnn::PoolingAlgorithm::Average);
 }
 
-bool ModelToINetworkConverter::ConvertConcatenation(const Operation& operation)
+bool ModelToINetworkConverter::ConvertConcatenation(const V1_0::Operation& operation)
 {
     // The first N (0..N-1) inputs are tensors. The Nth input is the concatenation axis.
     if (operation.inputs.size() <= 1)
@@ -758,7 +758,7 @@ bool ModelToINetworkConverter::ConvertConcatenation(const Operation& operation)
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer);
 }
 
-bool ModelToINetworkConverter::ConvertConv2d(const Operation& operation)
+bool ModelToINetworkConverter::ConvertConv2d(const V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
@@ -860,7 +860,7 @@ bool ModelToINetworkConverter::ConvertConv2d(const Operation& operation)
     }
 }
 
-bool ModelToINetworkConverter::ConvertDepthwiseConv2d(const Operation& operation)
+bool ModelToINetworkConverter::ConvertDepthwiseConv2d(const V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
@@ -979,7 +979,7 @@ bool ModelToINetworkConverter::ConvertDepthwiseConv2d(const Operation& operation
     }
 }
 
-bool ModelToINetworkConverter::ConvertFloor(const Operation& operation)
+bool ModelToINetworkConverter::ConvertFloor(const V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
@@ -1009,7 +1009,7 @@ bool ModelToINetworkConverter::ConvertFloor(const Operation& operation)
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer);
 }
 
-bool ModelToINetworkConverter::ConvertFullyConnected(const Operation& operation)
+bool ModelToINetworkConverter::ConvertFullyConnected(const V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
@@ -1100,7 +1100,7 @@ bool ModelToINetworkConverter::ConvertFullyConnected(const Operation& operation)
     }
 }
 
-bool ModelToINetworkConverter::ConvertLocalResponseNormalization(const Operation& operation)
+bool ModelToINetworkConverter::ConvertLocalResponseNormalization(const V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
@@ -1158,7 +1158,7 @@ bool ModelToINetworkConverter::ConvertLocalResponseNormalization(const Operation
     return SetupAndTrackLayerOutputSlot(operation, 0, outSwizzleLayer);
 }
 
-bool ModelToINetworkConverter::ConvertLogistic(const Operation& operation)
+bool ModelToINetworkConverter::ConvertLogistic(const V1_0::Operation& operation)
 {
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::Sigmoid;
@@ -1166,7 +1166,7 @@ bool ModelToINetworkConverter::ConvertLogistic(const Operation& operation)
     return ConvertToActivation(operation, __func__, desc);
 }
 
-bool ModelToINetworkConverter::ConvertL2Normalization(const Operation& operation)
+bool ModelToINetworkConverter::ConvertL2Normalization(const V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
@@ -1203,17 +1203,17 @@ bool ModelToINetworkConverter::ConvertL2Normalization(const Operation& operation
     return SetupAndTrackLayerOutputSlot(operation, 0, outSwizzleLayer);
 }
 
-bool ModelToINetworkConverter::ConvertL2Pool2d(const Operation& operation)
+bool ModelToINetworkConverter::ConvertL2Pool2d(const V1_0::Operation& operation)
 {
     return ConvertPooling2d(operation, __func__, armnn::PoolingAlgorithm::L2);
 }
 
-bool ModelToINetworkConverter::ConvertMaxPool2d(const Operation& operation)
+bool ModelToINetworkConverter::ConvertMaxPool2d(const V1_0::Operation& operation)
 {
     return ConvertPooling2d(operation, __func__, armnn::PoolingAlgorithm::Max);
 }
 
-bool ModelToINetworkConverter::ConvertMul(const Operation& operation)
+bool ModelToINetworkConverter::ConvertMul(const V1_0::Operation& operation)
 {
     LayerInputHandle input0 = ConvertToLayerInputHandle(operation, 0);
     LayerInputHandle input1 = ConvertToLayerInputHandle(operation, 1);
@@ -1268,7 +1268,7 @@ bool ModelToINetworkConverter::ConvertMul(const Operation& operation)
     }
 }
 
-bool ModelToINetworkConverter::ConvertReLu(const Operation& operation)
+bool ModelToINetworkConverter::ConvertReLu(const V1_0::Operation& operation)
 {
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::ReLu;
@@ -1276,7 +1276,7 @@ bool ModelToINetworkConverter::ConvertReLu(const Operation& operation)
     return ConvertToActivation(operation, __func__, desc);
 }
 
-bool ModelToINetworkConverter::ConvertReLu1(const Operation& operation)
+bool ModelToINetworkConverter::ConvertReLu1(const V1_0::Operation& operation)
 {
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::BoundedReLu;
@@ -1286,7 +1286,7 @@ bool ModelToINetworkConverter::ConvertReLu1(const Operation& operation)
     return ConvertToActivation(operation, __func__, desc);
 }
 
-bool ModelToINetworkConverter::ConvertReLu6(const Operation& operation)
+bool ModelToINetworkConverter::ConvertReLu6(const V1_0::Operation& operation)
 {
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::BoundedReLu;
@@ -1295,7 +1295,7 @@ bool ModelToINetworkConverter::ConvertReLu6(const Operation& operation)
     return ConvertToActivation(operation, __func__, desc);
 }
 
-bool ModelToINetworkConverter::ConvertSoftmax(const Operation& operation)
+bool ModelToINetworkConverter::ConvertSoftmax(const V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
@@ -1325,7 +1325,7 @@ bool ModelToINetworkConverter::ConvertSoftmax(const Operation& operation)
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer);
 }
 
-bool ModelToINetworkConverter::ConvertTanH(const Operation& operation)
+bool ModelToINetworkConverter::ConvertTanH(const V1_0::Operation& operation)
 {
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::TanH;
@@ -1335,7 +1335,7 @@ bool ModelToINetworkConverter::ConvertTanH(const Operation& operation)
     return ConvertToActivation(operation, __func__, desc);
 }
 
-bool ModelToINetworkConverter::ConvertReshape(const Operation& operation)
+bool ModelToINetworkConverter::ConvertReshape(const V1_0::Operation& operation)
 {
     const Operand* inputOperand = GetInputOperand(operation, 0);
     const Operand* requestedShapeOperand = GetInputOperand(operation, 1);
@@ -1403,7 +1403,7 @@ bool ModelToINetworkConverter::ConvertReshape(const Operation& operation)
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer);
 }
 
-bool ModelToINetworkConverter::ConvertResizeBilinear(const Operation& operation)
+bool ModelToINetworkConverter::ConvertResizeBilinear(const V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
@@ -1449,7 +1449,7 @@ bool ModelToINetworkConverter::ConvertResizeBilinear(const Operation& operation)
 
 }
 
-bool ModelToINetworkConverter::ConvertToActivation(const Operation& operation,
+bool ModelToINetworkConverter::ConvertToActivation(const V1_0::Operation& operation,
     const char* operationName,
     const armnn::ActivationDescriptor& activationDesc)
 {
@@ -1475,7 +1475,7 @@ bool ModelToINetworkConverter::ConvertToActivation(const Operation& operation,
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer);
 }
 
-bool ModelToINetworkConverter::ConvertPooling2d(const Operation& operation,
+bool ModelToINetworkConverter::ConvertPooling2d(const V1_0::Operation& operation,
     const char* operationName,
     armnn::PoolingAlgorithm poolType)
 {
@@ -1625,7 +1625,7 @@ const void* ModelToINetworkConverter::GetOperandValueReadOnlyAddress(const Opera
     return valueStart;
 }
 
-const Operand* ModelToINetworkConverter::GetInputOperand(const Operation& operation, uint32_t inputIndex) const
+const Operand* ModelToINetworkConverter::GetInputOperand(const V1_0::Operation& operation, uint32_t inputIndex) const
 {
     if (inputIndex >= operation.inputs.size())
     {
@@ -1637,7 +1637,7 @@ const Operand* ModelToINetworkConverter::GetInputOperand(const Operation& operat
     return &m_Model.operands[operation.inputs[inputIndex]];
 }
 
-const Operand* ModelToINetworkConverter::GetOutputOperand(const Operation& operation, uint32_t outputIndex) const
+const Operand* ModelToINetworkConverter::GetOutputOperand(const V1_0::Operation& operation, uint32_t outputIndex) const
 {
     if (outputIndex >= operation.outputs.size())
     {
@@ -1650,7 +1650,7 @@ const Operand* ModelToINetworkConverter::GetOutputOperand(const Operation& opera
 }
 
 template<typename T>
-bool ModelToINetworkConverter::GetInputScalar(const Operation& operation, uint32_t inputIndex,
+bool ModelToINetworkConverter::GetInputScalar(const V1_0::Operation& operation, uint32_t inputIndex,
     OperandType type, T& outValue) const
 {
     const Operand* operand = GetInputOperand(operation, inputIndex);
@@ -1681,17 +1681,19 @@ bool ModelToINetworkConverter::GetInputScalar(const Operation& operation, uint32
     return true;
 }
 
-bool ModelToINetworkConverter::GetInputInt32(const Operation& operation, uint32_t inputIndex, int32_t& outValue) const
+bool ModelToINetworkConverter::GetInputInt32(const V1_0::Operation& operation,
+                                             uint32_t inputIndex, int32_t& outValue) const
 {
     return GetInputScalar(operation, inputIndex, OperandType::INT32, outValue);
 }
 
-bool ModelToINetworkConverter::GetInputFloat32(const Operation& operation, uint32_t inputIndex, float& outValue) const
+bool ModelToINetworkConverter::GetInputFloat32(const V1_0::Operation& operation,
+                                               uint32_t inputIndex, float& outValue) const
 {
     return GetInputScalar(operation, inputIndex, OperandType::FLOAT32, outValue);
 }
 
-bool ModelToINetworkConverter::GetInputActivationFunction(const Operation& operation,
+bool ModelToINetworkConverter::GetInputActivationFunction(const V1_0::Operation& operation,
     uint32_t inputIndex,
     ActivationFn& outActivationFunction) const
 {
@@ -1705,7 +1707,7 @@ bool ModelToINetworkConverter::GetInputActivationFunction(const Operation& opera
     return true;
 }
 
-bool ModelToINetworkConverter::GetInputPaddingScheme(const Operation& operation,
+bool ModelToINetworkConverter::GetInputPaddingScheme(const V1_0::Operation& operation,
     uint32_t inputIndex,
     android::nn::PaddingScheme& outPaddingScheme) const
 {
@@ -1720,7 +1722,7 @@ bool ModelToINetworkConverter::GetInputPaddingScheme(const Operation& operation,
 }
 
 LayerInputHandle ModelToINetworkConverter::ConvertToLayerInputHandle(
-    const Operation& operation,
+    const V1_0::Operation& operation,
     uint32_t inputIndex)
 {
     const Operand* operand = GetInputOperand(operation, inputIndex);
@@ -1789,7 +1791,7 @@ LayerInputHandle ModelToINetworkConverter::ConvertToLayerInputHandle(
     }
 }
 
-ConstTensorPin ModelToINetworkConverter::ConvertOperationInputToConstTensorPin(const Operation& operation,
+ConstTensorPin ModelToINetworkConverter::ConvertOperationInputToConstTensorPin(const V1_0::Operation& operation,
     uint32_t inputIndex, const armnn::PermutationVector& dimensionMappings,
     const armnn::TensorShape* overrideTensorShape)
 {
@@ -1931,7 +1933,7 @@ armnn::IConnectableLayer* ModelToINetworkConverter::ProcessActivation(const armn
     return activationLayer;
 }
 
-bool ModelToINetworkConverter::SetupAndTrackLayerOutputSlot(const Operation& operation, uint32_t outputIndex,
+bool ModelToINetworkConverter::SetupAndTrackLayerOutputSlot(const V1_0::Operation& operation, uint32_t outputIndex,
                                                             armnn::IConnectableLayer& layer)
 {
     const Operand* outputOperand = GetOutputOperand(operation, outputIndex);

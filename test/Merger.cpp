@@ -25,7 +25,7 @@ MergerTestImpl(const std::vector<const TestTensor*> & inputs,
                 ErrorStatus expectedExecStatus=ErrorStatus::NONE)
 {
     std::unique_ptr<ArmnnDriver> driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
-    Model model{};
+    V1_0::Model model{};
 
     hidl_vec<uint32_t> modelInputIds;
     modelInputIds.resize(inputs.size()+1);
@@ -40,7 +40,7 @@ MergerTestImpl(const std::vector<const TestTensor*> & inputs,
 
     // make the concat operation
     model.operations.resize(1);
-    model.operations[0].type = OperationType::CONCATENATION;
+    model.operations[0].type = V1_0::OperationType::CONCATENATION;
     model.operations[0].inputs  = modelInputIds;
     model.operations[0].outputs = hidl_vec<uint32_t>{static_cast<uint32_t>(inputs.size()+1)};
 

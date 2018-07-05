@@ -72,9 +72,9 @@ android::sp<IMemory> AddPoolAndGetData(uint32_t size, Request& request);
 
 void AddPoolAndSetData(uint32_t size, Request& request, const float* data);
 
-void AddOperand(Model& model, const Operand& op);
+void AddOperand(V1_0::Model& model, const Operand& op);
 
-void AddIntOperand(Model& model, int32_t value);
+void AddIntOperand(V1_0::Model& model, int32_t value);
 
 template<typename T>
 OperandType TypeToOperandType();
@@ -86,7 +86,7 @@ template<>
 OperandType TypeToOperandType<int32_t>();
 
 template<typename T>
-void AddTensorOperand(Model& model, hidl_vec<uint32_t> dimensions, T* values)
+void AddTensorOperand(V1_0::Model& model, hidl_vec<uint32_t> dimensions, T* values)
 {
     uint32_t totalElements = 1;
     for (uint32_t dim : dimensions)
@@ -113,14 +113,14 @@ void AddTensorOperand(Model& model, hidl_vec<uint32_t> dimensions, T* values)
     AddOperand(model, op);
 }
 
-void AddInputOperand(Model& model, hidl_vec<uint32_t> dimensions);
+void AddInputOperand(V1_0::Model& model, hidl_vec<uint32_t> dimensions);
 
-void AddOutputOperand(Model& model, hidl_vec<uint32_t> dimensions);
+void AddOutputOperand(V1_0::Model& model, hidl_vec<uint32_t> dimensions);
 
-android::sp<IPreparedModel> PrepareModel(const Model& model,
+android::sp<IPreparedModel> PrepareModel(const V1_0::Model& model,
                                          armnn_driver::ArmnnDriver& driver);
 
-android::sp<IPreparedModel> PrepareModelWithStatus(const Model& model,
+android::sp<IPreparedModel> PrepareModelWithStatus(const V1_0::Model& model,
                                                    armnn_driver::ArmnnDriver& driver,
                                                    ErrorStatus & prepareStatus,
                                                    ErrorStatus expectedStatus=ErrorStatus::NONE);

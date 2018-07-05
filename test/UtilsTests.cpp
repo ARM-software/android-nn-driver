@@ -95,7 +95,7 @@ public:
     }
 
     std::string m_RequestInputsAndOutputsDumpDir;
-    Model m_Model;
+    V1_0::Model m_Model;
 
 private:
     std::string m_FileName;

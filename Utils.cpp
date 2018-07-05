@@ -63,8 +63,17 @@ void* GetMemoryFromPool(DataLocation location, const std::vector<android::nn::Ru
     // find the location within the pool
     assert(location.poolIndex < memPools.size());
 
-    uint8_t* memory =
-        static_cast<uint8_t*>(static_cast<void*>(memPools[location.poolIndex].buffer)) + location.offset;
+    const android::nn::RunTimePoolInfo& memPool = memPools[location.poolIndex];
+
+    // Type android::nn::RunTimePoolInfo has changed between Android O and Android P, where
+    // "buffer" has been made private and must be accessed via the accessor method "getBuffer".
+#if defined(ARMNN_ANDROID_P) // Use the new Android P implementation.
+    uint8_t* memPoolBuffer = memPool.getBuffer();
+#else // Fallback to the old Android O implementation.
+    uint8_t* memPoolBuffer = memPool.buffer;
+#endif
+
+    uint8_t* memory = memPoolBuffer + location.offset;
 
     return memory;
 }
@@ -102,7 +111,7 @@ std::string GetOperandSummary(const Operand& operand)
         toString(operand.type);
 }
 
-std::string GetModelSummary(const Model& model)
+std::string GetModelSummary(const V1_0::Model& model)
 {
     std::stringstream result;
 
@@ -273,7 +282,7 @@ void DumpTensor(const std::string& dumpDir,
 
 void ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimizedNetwork,
                                  const std::string& dumpDir,
-                                 const Model& model)
+                                 const V1_0::Model& model)
 {
     // The dump directory must exist in advance.
     if (dumpDir.empty())

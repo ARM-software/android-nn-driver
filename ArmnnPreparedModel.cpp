@@ -12,6 +12,12 @@
 #include <log/log.h>
 #include <OperationsUtils.h>
 
+#if defined(ARMNN_ANDROID_P)
+// The headers of the ML framework have changed between Android O and Android P.
+// The validation functions have been moved into their own header, ValidateHal.h.
+#include <ValidateHal.h>
+#endif
+
 #include <cassert>
 #include <cinttypes>
 
@@ -101,7 +107,7 @@ void ArmnnPreparedModel::DumpTensorsIfRequired(char const* tensorNamePrefix,
 
 ArmnnPreparedModel::ArmnnPreparedModel(armnn::NetworkId networkId,
     armnn::IRuntime* runtime,
-    const Model& model,
+    const V1_0::Model& model,
     const std::string& requestInputsAndOutputsDumpDir)
 : m_NetworkId(networkId)
 , m_Runtime(runtime)
@@ -269,7 +275,7 @@ void ArmnnPreparedModel::ExecuteWithDummyInputs()
     }
 }
 
-AndroidNnCpuExecutorPreparedModel::AndroidNnCpuExecutorPreparedModel(const Model& model,
+AndroidNnCpuExecutorPreparedModel::AndroidNnCpuExecutorPreparedModel(const V1_0::Model& model,
     const std::string& requestInputsAndOutputsDumpDir)
 : m_Model(model)
 , m_RequestInputsAndOutputsDumpDir(requestInputsAndOutputsDumpDir)

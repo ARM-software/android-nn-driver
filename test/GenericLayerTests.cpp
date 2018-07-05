@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
         sup = supported;
     };
 
-    Model model1 = {};
+    V1_0::Model model1 = {};
 
     // add operands
     int32_t actValue      = 0;
@@ -40,14 +40,14 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
 
     // make a correct fully connected operation
     model1.operations.resize(2);
-    model1.operations[0].type = OperationType::FULLY_CONNECTED;
+    model1.operations[0].type = V1_0::OperationType::FULLY_CONNECTED;
     model1.operations[0].inputs  = hidl_vec<uint32_t>{0, 1, 2, 3};
     model1.operations[0].outputs = hidl_vec<uint32_t>{4};
 
     // make an incorrect fully connected operation
     AddIntOperand(model1, actValue);
     AddOutputOperand(model1, hidl_vec<uint32_t>{1, 1});
-    model1.operations[1].type = OperationType::FULLY_CONNECTED;
+    model1.operations[1].type = V1_0::OperationType::FULLY_CONNECTED;
     model1.operations[1].inputs = hidl_vec<uint32_t>{4};
     model1.operations[1].outputs = hidl_vec<uint32_t>{5};
 
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
     BOOST_TEST(sup[1] == false);
 
     // Broadcast add/mul are not supported
-    Model model2 = {};
+    V1_0::Model model2 = {};
 
     AddInputOperand(model2, hidl_vec<uint32_t>{1, 1, 3, 4});
     AddInputOperand(model2, hidl_vec<uint32_t>{4});
@@ -66,11 +66,11 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
 
     model2.operations.resize(2);
 
-    model2.operations[0].type = OperationType::ADD;
+    model2.operations[0].type = V1_0::OperationType::ADD;
     model2.operations[0].inputs = hidl_vec<uint32_t>{0,1};
     model2.operations[0].outputs = hidl_vec<uint32_t>{2};
 
-    model2.operations[1].type = OperationType::MUL;
+    model2.operations[1].type = V1_0::OperationType::MUL;
     model2.operations[1].inputs = hidl_vec<uint32_t>{0,1};
     model2.operations[1].outputs = hidl_vec<uint32_t>{3};
 
@@ -79,14 +79,14 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
     BOOST_TEST(sup[0] == false);
     BOOST_TEST(sup[1] == false);
 
-    Model model3 = {};
+    V1_0::Model model3 = {};
 
     // Add unsupported operation, should return no error but we don't support it
     AddInputOperand(model3, hidl_vec<uint32_t>{1, 1, 1, 8});
     AddIntOperand(model3, 2);
     AddOutputOperand(model3, hidl_vec<uint32_t>{1, 2, 2, 2});
     model3.operations.resize(1);
-    model3.operations[0].type = OperationType::DEPTH_TO_SPACE;
+    model3.operations[0].type = V1_0::OperationType::DEPTH_TO_SPACE;
     model1.operations[0].inputs = hidl_vec<uint32_t>{0, 1};
     model3.operations[0].outputs = hidl_vec<uint32_t>{2};
 
@@ -95,10 +95,10 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
     BOOST_TEST(sup[0] == false);
 
     // Add invalid operation
-    Model model4 = {};
+    V1_0::Model model4 = {};
     AddIntOperand(model4, 0);
     model4.operations.resize(1);
-    model4.operations[0].type = static_cast<OperationType>(100);
+    model4.operations[0].type = static_cast<V1_0::OperationType>(100);
     model4.operations[0].outputs = hidl_vec<uint32_t>{0};
 
     driver->getSupportedOperations(model4, cb);
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedLayerContinueOnFailure)
         sup = supported;
     };
 
-    Model model = {};
+    V1_0::Model model = {};
 
     // operands
     int32_t actValue      = 0;
@@ -146,17 +146,17 @@ BOOST_AUTO_TEST_CASE(UnsupportedLayerContinueOnFailure)
     model.operations.resize(3);
 
     // unsupported
-    model.operations[0].type = OperationType::ADD;
+    model.operations[0].type = V1_0::OperationType::ADD;
     model.operations[0].inputs = hidl_vec<uint32_t>{0,1};
     model.operations[0].outputs = hidl_vec<uint32_t>{2};
 
     // supported
-    model.operations[1].type = OperationType::FULLY_CONNECTED;
+    model.operations[1].type = V1_0::OperationType::FULLY_CONNECTED;
     model.operations[1].inputs  = hidl_vec<uint32_t>{3, 4, 5, 6};
     model.operations[1].outputs = hidl_vec<uint32_t>{7};
 
     // unsupported
-    model.operations[2].type = OperationType::MUL;
+    model.operations[2].type = V1_0::OperationType::MUL;
     model.operations[2].inputs = hidl_vec<uint32_t>{0,1};
     model.operations[2].outputs = hidl_vec<uint32_t>{8};
 
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(ModelToINetworkConverterMemPoolFail)
         sup = supported;
     };
 
-    Model model = {};
+    V1_0::Model model = {};
 
     model.pools = hidl_vec<hidl_memory>{hidl_memory("Unsuported hidl memory type", nullptr, 0)};
 

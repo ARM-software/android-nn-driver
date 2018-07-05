@@ -107,13 +107,13 @@ void AddPoolAndSetData(uint32_t size, Request& request, const float* data)
     memcpy(dst, data, size * sizeof(float));
 }
 
-void AddOperand(Model& model, const Operand& op)
+void AddOperand(V1_0::Model& model, const Operand& op)
 {
     model.operands.resize(model.operands.size() + 1);
     model.operands[model.operands.size() - 1] = op;
 }
 
-void AddIntOperand(Model& model, int32_t value)
+void AddIntOperand(V1_0::Model& model, int32_t value)
 {
     DataLocation location = {};
     location.offset = model.operandValues.size();
@@ -131,7 +131,7 @@ void AddIntOperand(Model& model, int32_t value)
     AddOperand(model, op);
 }
 
-void AddInputOperand(Model& model, hidl_vec<uint32_t> dimensions)
+void AddInputOperand(V1_0::Model& model, hidl_vec<uint32_t> dimensions)
 {
     Operand op    = {};
     op.type       = OperandType::TENSOR_FLOAT32;
@@ -144,7 +144,7 @@ void AddInputOperand(Model& model, hidl_vec<uint32_t> dimensions)
     model.inputIndexes[model.inputIndexes.size() - 1] = model.operands.size() - 1;
 }
 
-void AddOutputOperand(Model& model, hidl_vec<uint32_t> dimensions)
+void AddOutputOperand(V1_0::Model& model, hidl_vec<uint32_t> dimensions)
 {
     Operand op = {};
     op.type       = OperandType::TENSOR_FLOAT32;
@@ -158,7 +158,7 @@ void AddOutputOperand(Model& model, hidl_vec<uint32_t> dimensions)
 }
 
 
-android::sp<IPreparedModel> PrepareModelWithStatus(const Model& model,
+android::sp<IPreparedModel> PrepareModelWithStatus(const V1_0::Model& model,
                                                    armnn_driver::ArmnnDriver& driver,
                                                    ErrorStatus & prepareStatus,
                                                    ErrorStatus expectedStatus)
@@ -176,7 +176,7 @@ android::sp<IPreparedModel> PrepareModelWithStatus(const Model& model,
     return cb->GetPreparedModel();
 }
 
-android::sp<IPreparedModel> PrepareModel(const Model& model,
+android::sp<IPreparedModel> PrepareModel(const V1_0::Model& model,
                                          armnn_driver::ArmnnDriver& driver)
 {
     ErrorStatus prepareStatus = ErrorStatus::NONE;

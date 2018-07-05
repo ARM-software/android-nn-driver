@@ -10,6 +10,8 @@
 #include <armnn/ArmNN.hpp>
 #include <CpuExecutor.h>
 
+#include "ArmnnDriver.hpp"
+
 #include <vector>
 #include <string>
 
@@ -41,7 +43,7 @@ void* GetMemoryFromPool(DataLocation location,
 armnn::TensorInfo GetTensorInfoForOperand(const Operand& operand);
 
 std::string GetOperandSummary(const Operand& operand);
-std::string GetModelSummary(const Model& model);
+std::string GetModelSummary(const V1_0::Model& model);
 
 void DumpTensor(const std::string& dumpDir,
     const std::string& requestName,
@@ -50,5 +52,5 @@ void DumpTensor(const std::string& dumpDir,
 
 void ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimizedNetwork,
                                  const std::string& dumpDir,
-                                 const Model& model);
+                                 const V1_0::Model& model);
 }
