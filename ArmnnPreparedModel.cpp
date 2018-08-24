@@ -227,11 +227,6 @@ void ArmnnPreparedModel::ExecuteGraph(std::shared_ptr<std::vector<::android::nn:
 {
     ALOGV("ArmnnPreparedModel::ExecuteGraph(...)");
 
-    if (m_GpuProfilingEnabled)
-    {
-        m_Runtime->GetProfiler(m_NetworkId)->EnableProfiling(true);
-    }
-
     DumpTensorsIfRequired("Input", *pInputTensors);
 
     // run it
@@ -247,11 +242,6 @@ void ArmnnPreparedModel::ExecuteGraph(std::shared_ptr<std::vector<::android::nn:
     }
 
     DumpTensorsIfRequired("Output", *pOutputTensors);
-
-    if (m_GpuProfilingEnabled && !m_RequestInputsAndOutputsDumpDir.empty())
-    {
-        DumpJsonProfiling(m_RequestInputsAndOutputsDumpDir, m_Runtime, m_NetworkId);
-    }
 
     // Commit output buffers.
     // Note that we update *all* pools, even if they aren't actually used as outputs -
