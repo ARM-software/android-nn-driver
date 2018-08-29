@@ -18,6 +18,7 @@
 #include <boost/core/ignore_unused.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/cast.hpp>
+#include <boost/optional.hpp>
 
 using namespace android::hardware;
 
@@ -992,7 +993,8 @@ bool ModelToINetworkConverter::ConvertConv2d(const neuralnetworks::V1_0::Operati
         return Fail("%s: Unsupported number of operation inputs", __func__);
     }
 
-    desc.m_BiasEnabled    = true;
+    desc.m_BiasEnabled = true;
+    auto biases = boost::make_optional(bias.GetInfo());
 
     if (!IsLayerSupported(__func__,
                           armnn::IsConvolution2dSupported,
@@ -1001,7 +1003,7 @@ bool ModelToINetworkConverter::ConvertConv2d(const neuralnetworks::V1_0::Operati
                           swizzledOutputInfo,
                           desc,
                           weights.GetInfo(),
-                          bias.GetInfo()))
+                          biases))
     {
         return false;
     }
@@ -1114,6 +1116,7 @@ bool ModelToINetworkConverter::ConvertDepthwiseConv2d(const neuralnetworks::V1_0
     }
 
     desc.m_BiasEnabled = true;
+    auto biases = boost::make_optional(bias.GetInfo());
 
     if (!IsLayerSupported(__func__,
                           armnn::IsDepthwiseConvolutionSupported,
@@ -1122,7 +1125,7 @@ bool ModelToINetworkConverter::ConvertDepthwiseConv2d(const neuralnetworks::V1_0
                           swizzledOutputInfo,
                           desc,
                           weights.GetInfo(),
-                          bias.GetInfo()))
+                          biases))
     {
         return false;
     }
