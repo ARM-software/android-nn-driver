@@ -43,7 +43,38 @@ void* GetMemoryFromPool(DataLocation location,
 armnn::TensorInfo GetTensorInfoForOperand(const Operand& operand);
 
 std::string GetOperandSummary(const Operand& operand);
-std::string GetModelSummary(const ::android::hardware::neuralnetworks::V1_0::Model& model);
+
+template <typename Model>
+std::string GetModelSummary(const Model& model)
+{
+    std::stringstream result;
+
+    result << model.inputIndexes.size() << " input(s), " << model.operations.size() << " operation(s), " <<
+        model.outputIndexes.size() << " output(s), " << model.operands.size() << " operand(s)" << std::endl;
+
+    result << "Inputs: ";
+    for (uint32_t i = 0; i < model.inputIndexes.size(); i++)
+    {
+        result << GetOperandSummary(model.operands[model.inputIndexes[i]]) << ", ";
+    }
+    result << std::endl;
+
+    result << "Operations: ";
+    for (uint32_t i = 0; i < model.operations.size(); i++)
+    {
+        result << toString(model.operations[i].type).c_str() << ", ";
+    }
+    result << std::endl;
+
+    result << "Outputs: ";
+    for (uint32_t i = 0; i < model.outputIndexes.size(); i++)
+    {
+        result << GetOperandSummary(model.operands[model.outputIndexes[i]]) << ", ";
+    }
+    result << std::endl;
+
+    return result.str();
+}
 
 void DumpTensor(const std::string& dumpDir,
                 const std::string& requestName,

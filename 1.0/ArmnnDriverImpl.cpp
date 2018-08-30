@@ -118,8 +118,8 @@ Return<void> ArmnnDriverImpl::getSupportedOperations(
     }
 
     // Attempt to convert the model to an ArmNN input network (INetwork).
-    ModelToINetworkConverter modelConverter(options.GetComputeDevice(), model,
-        options.GetForcedUnsupportedOperations());
+    armnn_driver::ModelToINetworkConverter<HalVersion_1_0> modelConverter(options.GetComputeDevice(),
+        model, options.GetForcedUnsupportedOperations());
 
     if (modelConverter.GetConversionResult() != ConversionResult::Success
         && modelConverter.GetConversionResult() != ConversionResult::UnsupportedFeature)
@@ -173,7 +173,7 @@ Return<ErrorStatus> ArmnnDriverImpl::prepareModel(
     // at this point we're being asked to prepare a model that we've already declared support for
     // and the operation indices may be different to those in getSupportedOperations anyway.
     set<unsigned int> unsupportedOperations;
-    ModelToINetworkConverter modelConverter(options.GetComputeDevice(), model,
+    armnn_driver::ModelToINetworkConverter<HalVersion_1_0> modelConverter(options.GetComputeDevice(), model,
         unsupportedOperations);
 
     if (modelConverter.GetConversionResult() != ConversionResult::Success)
