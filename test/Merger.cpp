@@ -4,28 +4,33 @@
 //
 #include "DriverTestHelpers.hpp"
 #include "TestTensor.hpp"
+#include <boost/array.hpp>
 #include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
 #include <log/log.h>
 
 
 BOOST_AUTO_TEST_SUITE(MergerTests)
 
-using ArmnnDriver = armnn_driver::ArmnnDriver;
-using DriverOptions = armnn_driver::DriverOptions;
+using namespace android::hardware;
 using namespace driverTestHelpers;
+using namespace armnn_driver;
 
 namespace
 {
+
+static const boost::array<armnn::Compute, 2> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef, armnn::Compute::GpuAcc }};
 
 void
 MergerTestImpl(const std::vector<const TestTensor*> & inputs,
                 int32_t concatAxis,
                 const TestTensor & expectedOutputTensor,
+                armnn::Compute computeDevice,
                 ErrorStatus expectedPrepareStatus=ErrorStatus::NONE,
                 ErrorStatus expectedExecStatus=ErrorStatus::NONE)
 {
-    std::unique_ptr<ArmnnDriver> driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
-    V1_0::Model model{};
+    std::unique_ptr<ArmnnDriver> driver = std::make_unique<ArmnnDriver>(DriverOptions(computeDevice));
+    neuralnetworks::V1_0::Model model{};
 
     hidl_vec<uint32_t> modelInputIds;
     modelInputIds.resize(inputs.size()+1);
@@ -40,7 +45,7 @@ MergerTestImpl(const std::vector<const TestTensor*> & inputs,
 
     // make the concat operation
     model.operations.resize(1);
-    model.operations[0].type = V1_0::OperationType::CONCATENATION;
+    model.operations[0].type = neuralnetworks::V1_0::OperationType::CONCATENATION;
     model.operations[0].inputs  = modelInputIds;
     model.operations[0].outputs = hidl_vec<uint32_t>{static_cast<uint32_t>(inputs.size()+1)};
 
@@ -130,7 +135,8 @@ MergerTestImpl(const std::vector<const TestTensor*> & inputs,
 
 } // namespace <anonymous>
 
-BOOST_AUTO_TEST_CASE(SimpleConcatAxis0)
+
+BOOST_DATA_TEST_CASE(SimpleConcatAxis0, COMPUTE_DEVICES)
 {
     int32_t axis = 0;
     TestTensor aIn{armnn::TensorShape{1,1,1,1},{0}};
@@ -139,10 +145,10 @@ BOOST_AUTO_TEST_CASE(SimpleConcatAxis0)
 
     TestTensor expected{armnn::TensorShape{3,1,1,1},{0,1,2}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected);
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
-BOOST_AUTO_TEST_CASE(ConcatAxis0_NoInterleave)
+BOOST_DATA_TEST_CASE(ConcatAxis0_NoInterleave, COMPUTE_DEVICES)
 {
     int32_t axis = 0;
     TestTensor aIn{armnn::TensorShape{2,1,2,1},{0,  1,
@@ -159,10 +165,10 @@ BOOST_AUTO_TEST_CASE(ConcatAxis0_NoInterleave)
                                                      8,  9,
                                                      10, 11}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected);
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
-BOOST_AUTO_TEST_CASE(SimpleConcatAxis1)
+BOOST_DATA_TEST_CASE(SimpleConcatAxis1, COMPUTE_DEVICES)
 {
     int32_t axis = 1;
     TestTensor aIn{armnn::TensorShape{1,1,1,1},{0}};
@@ -171,10 +177,10 @@ BOOST_AUTO_TEST_CASE(SimpleConcatAxis1)
 
     TestTensor expected{armnn::TensorShape{1,3,1,1},{0,1,2}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected);
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
-BOOST_AUTO_TEST_CASE(ConcatAxis1_NoInterleave)
+BOOST_DATA_TEST_CASE(ConcatAxis1_NoInterleave, COMPUTE_DEVICES)
 {
     int32_t axis = 1;
     TestTensor aIn{armnn::TensorShape{1,2,2,1},{0,  1,
@@ -191,10 +197,10 @@ BOOST_AUTO_TEST_CASE(ConcatAxis1_NoInterleave)
                                                      8,  9,
                                                      10, 11}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected);
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
-BOOST_AUTO_TEST_CASE(SimpleConcatAxis1_DoInterleave)
+BOOST_DATA_TEST_CASE(SimpleConcatAxis1_DoInterleave, COMPUTE_DEVICES)
 {
     int32_t axis = 1;
     TestTensor aIn{armnn::TensorShape{2,2,1,1},{0,  1,
@@ -207,10 +213,10 @@ BOOST_AUTO_TEST_CASE(SimpleConcatAxis1_DoInterleave)
     TestTensor expected{armnn::TensorShape{2,6,1,1},{0, 1, 4, 5, 6, 10,
                                                      2, 3, 7, 8, 9, 11}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected);
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
-BOOST_AUTO_TEST_CASE(SimpleConcatAxis2)
+BOOST_DATA_TEST_CASE(SimpleConcatAxis2, COMPUTE_DEVICES)
 {
     int32_t axis = 2;
     TestTensor aIn{armnn::TensorShape{1,1,1,1},{0}};
@@ -219,10 +225,10 @@ BOOST_AUTO_TEST_CASE(SimpleConcatAxis2)
 
     TestTensor expected{armnn::TensorShape{1,1,3,1},{0,1,2}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected);
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
-BOOST_AUTO_TEST_CASE(ConcatAxis2_NoInterleave)
+BOOST_DATA_TEST_CASE(ConcatAxis2_NoInterleave, COMPUTE_DEVICES)
 {
     int32_t axis = 2;
     TestTensor aIn{armnn::TensorShape{1,1,2,2},{0,  1,
@@ -239,10 +245,10 @@ BOOST_AUTO_TEST_CASE(ConcatAxis2_NoInterleave)
                                                      8,  9,
                                                      10, 11}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected);
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
-BOOST_AUTO_TEST_CASE(SimpleConcatAxis2_DoInterleave)
+BOOST_DATA_TEST_CASE(SimpleConcatAxis2_DoInterleave, COMPUTE_DEVICES)
 {
     int32_t axis = 2;
     TestTensor aIn{armnn::TensorShape{1,2,2,1},{0,  1,
@@ -255,10 +261,10 @@ BOOST_AUTO_TEST_CASE(SimpleConcatAxis2_DoInterleave)
     TestTensor expected{armnn::TensorShape{1,2,6,1},{0, 1, 4, 5, 6, 10,
                                                      2, 3, 7, 8, 9, 11}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected);
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
-BOOST_AUTO_TEST_CASE(SimpleConcatAxis3)
+BOOST_DATA_TEST_CASE(SimpleConcatAxis3, COMPUTE_DEVICES)
 {
     int32_t axis = 3;
     TestTensor aIn{armnn::TensorShape{1,1,1,1},{0}};
@@ -267,10 +273,10 @@ BOOST_AUTO_TEST_CASE(SimpleConcatAxis3)
 
     TestTensor expected{armnn::TensorShape{1,1,1,3},{0,1,2}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected);
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
-BOOST_AUTO_TEST_CASE(SimpleConcatAxis3_DoInterleave)
+BOOST_DATA_TEST_CASE(SimpleConcatAxis3_DoInterleave, COMPUTE_DEVICES)
 {
     int32_t axis = 3;
     TestTensor aIn{armnn::TensorShape{1,1,2,2},{0,  1,
@@ -283,10 +289,10 @@ BOOST_AUTO_TEST_CASE(SimpleConcatAxis3_DoInterleave)
     TestTensor expected{armnn::TensorShape{1,1,2,6},{0, 1, 4, 5, 6, 10,
                                                      2, 3, 7, 8, 9, 11}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected);
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
-BOOST_AUTO_TEST_CASE(AxisTooBig)
+BOOST_DATA_TEST_CASE(AxisTooBig, COMPUTE_DEVICES)
 {
     int32_t axis = 4;
     TestTensor aIn{armnn::TensorShape{1,1,1,1},{0}};
@@ -296,10 +302,10 @@ BOOST_AUTO_TEST_CASE(AxisTooBig)
     // see: https://www.tensorflow.org/api_docs/python/tf/concat
     TestTensor uncheckedOutput{armnn::TensorShape{1,1,1,1},{0}};
     ErrorStatus expectedParserStatus = ErrorStatus::GENERAL_FAILURE;
-    MergerTestImpl({&aIn, &bIn}, axis, uncheckedOutput, expectedParserStatus);
+    MergerTestImpl({&aIn, &bIn}, axis, uncheckedOutput, sample, expectedParserStatus);
 }
 
-BOOST_AUTO_TEST_CASE(AxisTooSmall)
+BOOST_DATA_TEST_CASE(AxisTooSmall, COMPUTE_DEVICES)
 {
     int32_t axis = -5;
     TestTensor aIn{armnn::TensorShape{1,1,1,1},{0}};
@@ -309,20 +315,20 @@ BOOST_AUTO_TEST_CASE(AxisTooSmall)
     // see: https://www.tensorflow.org/api_docs/python/tf/concat
     TestTensor uncheckedOutput{armnn::TensorShape{1,1,1,1},{0}};
     ErrorStatus expectedParserStatus = ErrorStatus::GENERAL_FAILURE;
-    MergerTestImpl({&aIn, &bIn}, axis, uncheckedOutput, expectedParserStatus);
+    MergerTestImpl({&aIn, &bIn}, axis, uncheckedOutput, sample, expectedParserStatus);
 }
 
-BOOST_AUTO_TEST_CASE(TooFewInputs)
+BOOST_DATA_TEST_CASE(TooFewInputs, COMPUTE_DEVICES)
 {
     int32_t axis = 0;
     TestTensor aIn{armnn::TensorShape{1,1,1,1},{0}};
 
     // We need at least two tensors to concatenate
     ErrorStatus expectedParserStatus = ErrorStatus::GENERAL_FAILURE;
-    MergerTestImpl({&aIn}, axis, aIn, expectedParserStatus);
+    MergerTestImpl({&aIn}, axis, aIn, sample, expectedParserStatus);
 }
 
-BOOST_AUTO_TEST_CASE(MismatchedInputDimensions)
+BOOST_DATA_TEST_CASE(MismatchedInputDimensions, COMPUTE_DEVICES)
 {
     int32_t axis = 3;
     TestTensor aIn{armnn::TensorShape{1,1,2,2},{0,  1,
@@ -336,10 +342,10 @@ BOOST_AUTO_TEST_CASE(MismatchedInputDimensions)
 
     // The input dimensions must be compatible
     ErrorStatus expectedParserStatus = ErrorStatus::GENERAL_FAILURE;
-    MergerTestImpl({&aIn, &bIn, &mismatched}, axis, expected, expectedParserStatus);
+    MergerTestImpl({&aIn, &bIn, &mismatched}, axis, expected, sample, expectedParserStatus);
 }
 
-BOOST_AUTO_TEST_CASE(MismatchedInputRanks)
+BOOST_DATA_TEST_CASE(MismatchedInputRanks, COMPUTE_DEVICES)
 {
     int32_t axis = 2;
     TestTensor aIn{armnn::TensorShape{1,1,2},{0,1}};
@@ -348,10 +354,10 @@ BOOST_AUTO_TEST_CASE(MismatchedInputRanks)
 
     // The input dimensions must be compatible
     ErrorStatus expectedParserStatus = ErrorStatus::GENERAL_FAILURE;
-    MergerTestImpl({&aIn, &bIn}, axis, expected, expectedParserStatus);
+    MergerTestImpl({&aIn, &bIn}, axis, expected, sample, expectedParserStatus);
 }
 
-BOOST_AUTO_TEST_CASE(MismatchedOutputDimensions)
+BOOST_DATA_TEST_CASE(MismatchedOutputDimensions, COMPUTE_DEVICES)
 {
     int32_t axis = 3;
     TestTensor aIn{armnn::TensorShape{1,1,2,2},{0,  1,
@@ -366,10 +372,10 @@ BOOST_AUTO_TEST_CASE(MismatchedOutputDimensions)
 
     // The input and output dimensions must be compatible
     ErrorStatus expectedParserStatus = ErrorStatus::GENERAL_FAILURE;
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, mismatched, expectedParserStatus);
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, mismatched, sample, expectedParserStatus);
 }
 
-BOOST_AUTO_TEST_CASE(MismatchedOutputRank)
+BOOST_DATA_TEST_CASE(MismatchedOutputRank, COMPUTE_DEVICES)
 {
     int32_t axis = 3;
     TestTensor aIn{armnn::TensorShape{1,1,2,2},{0,  1,
@@ -384,10 +390,10 @@ BOOST_AUTO_TEST_CASE(MismatchedOutputRank)
 
     // The input and output ranks must match
     ErrorStatus expectedParserStatus = ErrorStatus::GENERAL_FAILURE;
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, mismatched, expectedParserStatus);
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, mismatched, sample, expectedParserStatus);
 }
 
-BOOST_AUTO_TEST_CASE(ValidNegativeAxis)
+BOOST_DATA_TEST_CASE(ValidNegativeAxis, COMPUTE_DEVICES)
 {
     // this is the same as 3
     // see: https://www.tensorflow.org/api_docs/python/tf/concat
@@ -402,7 +408,79 @@ BOOST_AUTO_TEST_CASE(ValidNegativeAxis)
     TestTensor expected{armnn::TensorShape{1,1,2,6},{0, 1, 4, 5, 6, 10,
                                                      2, 3, 7, 8, 9, 11}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected);
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+}
+
+BOOST_DATA_TEST_CASE(SimpleConcatAxisZero3D, COMPUTE_DEVICES)
+{
+    int32_t axis = 0;
+    TestTensor aIn{armnn::TensorShape{1,1,1},{0}};
+    TestTensor bIn{armnn::TensorShape{1,1,1},{1}};
+    TestTensor cIn{armnn::TensorShape{1,1,1},{2}};
+
+    TestTensor expected{armnn::TensorShape{3,1,1},{0,1,2}};
+
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+}
+
+BOOST_DATA_TEST_CASE(SimpleConcatAxisOne3D, COMPUTE_DEVICES)
+{
+    int32_t axis = 1;
+    TestTensor aIn{armnn::TensorShape{1,1,1},{0}};
+    TestTensor bIn{armnn::TensorShape{1,1,1},{1}};
+    TestTensor cIn{armnn::TensorShape{1,1,1},{2}};
+
+    TestTensor expected{armnn::TensorShape{1,3,1},{0,1,2}};
+
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+}
+
+BOOST_DATA_TEST_CASE(SimpleConcatAxisTwo3D, COMPUTE_DEVICES)
+{
+    int32_t axis = 2;
+    TestTensor aIn{armnn::TensorShape{1,1,1},{0}};
+    TestTensor bIn{armnn::TensorShape{1,1,1},{1}};
+    TestTensor cIn{armnn::TensorShape{1,1,1},{2}};
+
+    TestTensor expected{armnn::TensorShape{1,1,3},{0,1,2}};
+
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+}
+
+BOOST_DATA_TEST_CASE(SimpleConcatAxisZero2D, COMPUTE_DEVICES)
+{
+    int32_t axis = 0;
+    TestTensor aIn{armnn::TensorShape{1,1},{0}};
+    TestTensor bIn{armnn::TensorShape{1,1},{1}};
+    TestTensor cIn{armnn::TensorShape{1,1},{2}};
+
+    TestTensor expected{armnn::TensorShape{3,1},{0,1,2}};
+
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+}
+
+BOOST_DATA_TEST_CASE(SimpleConcatAxisOne2D, COMPUTE_DEVICES)
+{
+    int32_t axis = 1;
+    TestTensor aIn{armnn::TensorShape{1,1},{0}};
+    TestTensor bIn{armnn::TensorShape{1,1},{1}};
+    TestTensor cIn{armnn::TensorShape{1,1},{2}};
+
+    TestTensor expected{armnn::TensorShape{1,3},{0,1,2}};
+
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+}
+
+BOOST_DATA_TEST_CASE(SimpleConcatAxisZero1D, COMPUTE_DEVICES)
+{
+    int32_t axis = 0;
+    TestTensor aIn{armnn::TensorShape{1},{0}};
+    TestTensor bIn{armnn::TensorShape{1},{1}};
+    TestTensor cIn{armnn::TensorShape{1},{2}};
+
+    TestTensor expected{armnn::TensorShape{3},{0,1,2}};
+
+    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

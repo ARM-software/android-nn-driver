@@ -18,6 +18,7 @@
 #include <iomanip>
 
 using namespace android;
+using namespace android::hardware;
 using namespace android::hidl::memory::V1_0;
 
 namespace armnn_driver
@@ -111,7 +112,7 @@ std::string GetOperandSummary(const Operand& operand)
         toString(operand.type);
 }
 
-std::string GetModelSummary(const V1_0::Model& model)
+std::string GetModelSummary(const neuralnetworks::V1_0::Model& model)
 {
     std::stringstream result;
 
@@ -280,9 +281,48 @@ void DumpTensor(const std::string& dumpDir,
     }
 }
 
+void DumpJsonProfilingIfRequired(bool gpuProfilingEnabled,
+                                 const std::string& dumpDir,
+                                 armnn::NetworkId networkId,
+                                 const armnn::IProfiler* profiler)
+{
+    // Check if profiling is required.
+    if (!gpuProfilingEnabled)
+    {
+        return;
+    }
+
+    // The dump directory must exist in advance.
+    if (dumpDir.empty())
+    {
+        return;
+    }
+
+    BOOST_ASSERT(profiler);
+
+    // Set the name of the output profiling file.
+    const std::string fileName = boost::str(boost::format("%1%/%2%_%3%.json")
+                                            % dumpDir
+                                            % std::to_string(networkId)
+                                            % "profiling");
+
+    // Open the ouput file for writing.
+    std::ofstream fileStream;
+    fileStream.open(fileName, std::ofstream::out | std::ofstream::trunc);
+
+    if (!fileStream.good())
+    {
+        ALOGW("Could not open file %s for writing", fileName.c_str());
+        return;
+    }
+
+    // Write the profiling info to a JSON file.
+    profiler->Print(fileStream);
+}
+
 void ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimizedNetwork,
                                  const std::string& dumpDir,
-                                 const V1_0::Model& model)
+                                 const neuralnetworks::V1_0::Model& model)
 {
     // The dump directory must exist in advance.
     if (dumpDir.empty())
@@ -318,4 +358,5 @@ void ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimizedNetwor
         ALOGW("An error occurred when writing to file %s", fileName.c_str());
     }
 }
+
 } // namespace armnn_driver

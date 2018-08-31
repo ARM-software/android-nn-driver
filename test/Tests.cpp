@@ -11,9 +11,9 @@
 
 BOOST_AUTO_TEST_SUITE(DriverTests)
 
-using ArmnnDriver = armnn_driver::ArmnnDriver;
-using DriverOptions = armnn_driver::DriverOptions;
+using namespace android::hardware;
 using namespace driverTestHelpers;
+using namespace armnn_driver;
 
 BOOST_AUTO_TEST_CASE(Init)
 {
@@ -31,9 +31,9 @@ BOOST_AUTO_TEST_CASE(TestCapabilities)
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
     ErrorStatus error;
-    V1_0::Capabilities cap;
+    neuralnetworks::V1_0::Capabilities cap;
 
-    ArmnnDriver::getCapabilities_cb cb = [&](ErrorStatus status, const V1_0::Capabilities& capabilities)
+    auto cb = [&](ErrorStatus status, const neuralnetworks::V1_0::Capabilities& capabilities)
     {
         error = status;
         cap = capabilities;

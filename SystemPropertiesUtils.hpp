@@ -9,6 +9,7 @@
 #include <string>
 #include <iostream>
 #include <sys/system_properties.h>
+#include <log/log.h>
 
 namespace {
 template<typename T>

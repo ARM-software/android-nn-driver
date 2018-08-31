@@ -5,12 +5,12 @@
 
 #pragma once
 
-#include "HalInterfaces.h"
-#include "NeuralNetworks.h"
+#include "ArmnnDriver.hpp"
+
+#include <NeuralNetworks.h>
+
 #include <armnn/ArmNN.hpp>
 #include <CpuExecutor.h>
-
-#include "ArmnnDriver.hpp"
 
 #include <vector>
 #include <string>
@@ -43,14 +43,20 @@ void* GetMemoryFromPool(DataLocation location,
 armnn::TensorInfo GetTensorInfoForOperand(const Operand& operand);
 
 std::string GetOperandSummary(const Operand& operand);
-std::string GetModelSummary(const V1_0::Model& model);
+std::string GetModelSummary(const ::android::hardware::neuralnetworks::V1_0::Model& model);
 
 void DumpTensor(const std::string& dumpDir,
-    const std::string& requestName,
-    const std::string& tensorName,
-    const armnn::ConstTensor& tensor);
+                const std::string& requestName,
+                const std::string& tensorName,
+                const armnn::ConstTensor& tensor);
+
+void DumpJsonProfilingIfRequired(bool gpuProfilingEnabled,
+                                 const std::string& dumpDir,
+                                 armnn::NetworkId networkId,
+                                 const armnn::IProfiler* profiler);
 
 void ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimizedNetwork,
                                  const std::string& dumpDir,
-                                 const V1_0::Model& model);
+                                 const ::android::hardware::neuralnetworks::V1_0::Model& model);
+
 }

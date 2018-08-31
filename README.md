@@ -1,6 +1,6 @@
 # ArmNN Android Neural Networks driver
 
-This directory contains the ArmNN driver for the Android Neural Networks API, implementing the android.hardware.neuralnetworks@1.0 HAL.
+This directory contains the ArmNN driver for the Android Neural Networks API, implementing the android.hardware.neuralnetworks@1.0 HAL and android.hardware.neuralnetworks@1.1 HAL.
 
 For more information about supported operations and configurations, see NnapiSupport.txt
 
@@ -20,34 +20,50 @@ is built and copied to the `system/vendor/bin/hw` directory in the Android image
 To update the build environment, add to the contents of the variable `PRODUCT_PACKAGES`
 within the device-specific makefile that is located in the `<ANDROID_ROOT>/device/<manufacturer>/<product>`
 directory. This file is normally called `device.mk`:
+
+For Android O or Android P, using NN API version (1.0), the following should be added to `device.mk`:
 <pre>
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.0-service-armnn
 </pre>
+For Android P, a new version of the NN API is available (1.1),
+thus the following should be added to `device.mk` instead:
+<pre>
+PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.1-service-armnn
+</pre>
+`Android.mk` contains the module definition of both versions of the ArmNN driver.
 4. Build Android as normal, i.e. run `make` in `<ANDROID_ROOT>`
 5. To confirm that the ArmNN driver has been built, check for driver service executable at
 <pre>
-<ANDROID_ROOT>/out/target/product/<product>/system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armnn
+<ANDROID_ROOT>/out/target/product/<product>system/vendor/bin/hw
 </pre>
+For example, if the ArmNN driver has been built with the NN API 1.0, check for the following file:
+<pre>
+<ANDROID_ROOT>/out/target/product/<product>system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armnn
+</pre>
+
+Please Note: Android O is only compatible with NN API version 1.0.
 
 ### Testing
 
-1. Run the ArmNN driver service executable in the background
+1. Run the ArmNN driver service executable in the background.
+The following examples assume that the 1.0 version of the driver is being used:
 <pre>
 adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armnn &
 </pre>
 2. Run some code that exercises the Android Neural Networks API, for example Android's
 `NeuralNetworksTest` unit tests (note this is an optional component that must be built).
 <pre>
-adb shell /data/nativetest/NeuralNetworksTest/NeuralNetworksTest > NeuralNetworkTest.log
+adb shell /data/nativetest/NeuralNetworksTest_static/NeuralNetworksTest_static > NeuralNetworkTest.log
 </pre>
 3. To confirm that the ArmNN driver is being used to service the Android Neural Networks API requests,
 check for messages in logcat with the `ArmnnDriver` tag.
 
-### Using ClTuner
+### Using the GPU tuner
 
-ClTuner is a feature of the Compute Library that finds optimum values for OpenCL tuning parameters. The recommended way of using it with ArmNN is to generate the tuning data during development of the Android image for a device, and use it in read-only mode during normal operation:
+The GPU tuner is a feature of the Compute Library that finds optimum values for GPU acceleration tuning parameters. The recommended way of using it with ArmNN is to generate the tuning data during development of the Android image for a device, and use it in read-only mode during normal operation:
 
-1. Run the ArmNN driver service executable in tuning mode. The path to the tuning data must be writable by the service:
+1. Run the ArmNN driver service executable in tuning mode. The path to the tuning data must be writable by the service.
+The following examples assume that the 1.0 version of the driver is being used:
 <pre>
 adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armnn --cl-tuned-parameters-file &lt;PATH_TO_TUNING_DATA&gt; --cl-tuned-parameters-mode UpdateTunedParameters &
 </pre>

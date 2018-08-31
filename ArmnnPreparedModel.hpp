@@ -7,11 +7,10 @@
 
 #include "RequestThread.hpp"
 
-#include "HalInterfaces.h"
-#include "NeuralNetworks.h"
-#include <armnn/ArmNN.hpp>
-
 #include "ArmnnDriver.hpp"
+
+#include <NeuralNetworks.h>
+#include <armnn/ArmNN.hpp>
 
 #include <string>
 #include <vector>
@@ -24,8 +23,9 @@ class ArmnnPreparedModel : public IPreparedModel
 public:
     ArmnnPreparedModel(armnn::NetworkId networkId,
                        armnn::IRuntime* runtime,
-                       const V1_0::Model& model,
-                       const std::string& requestInputsAndOutputsDumpDir);
+                       const ::android::hardware::neuralnetworks::V1_0::Model& model,
+                       const std::string& requestInputsAndOutputsDumpDir,
+                       const bool gpuProfilingEnabled);
 
     virtual ~ArmnnPreparedModel();
 
@@ -46,40 +46,15 @@ private:
     template <typename TensorBindingCollection>
     void DumpTensorsIfRequired(char const* tensorNamePrefix, const TensorBindingCollection& tensorBindings);
 
-    armnn::NetworkId     m_NetworkId;
-    armnn::IRuntime*     m_Runtime;
-    V1_0::Model          m_Model;
+    armnn::NetworkId                                 m_NetworkId;
+    armnn::IRuntime*                                 m_Runtime;
+    ::android::hardware::neuralnetworks::V1_0::Model m_Model;
     // There must be a single RequestThread for all ArmnnPreparedModel objects to ensure serial execution of workloads
     // It is specific to this class, so it is declared as static here
-    static RequestThread m_RequestThread;
-    uint32_t             m_RequestCount;
-    const std::string&   m_RequestInputsAndOutputsDumpDir;
-};
-
-class AndroidNnCpuExecutorPreparedModel : public IPreparedModel
-{
-public:
-
-    AndroidNnCpuExecutorPreparedModel(const V1_0::Model& model, const std::string& requestInputsAndOutputsDumpDir);
-    virtual ~AndroidNnCpuExecutorPreparedModel() { }
-
-    bool Initialize();
-
-    virtual Return<ErrorStatus> execute(const Request& request,
-                                        const ::android::sp<IExecutionCallback>& callback) override;
-
-private:
-
-    void DumpTensorsIfRequired(
-        char const* tensorNamePrefix,
-        const hidl_vec<uint32_t>& operandIndices,
-        const hidl_vec<RequestArgument>& requestArgs,
-        const std::vector<android::nn::RunTimePoolInfo>& requestPoolInfos);
-
-    V1_0::Model m_Model;
-    std::vector<android::nn::RunTimePoolInfo> m_ModelPoolInfos;
-    const std::string& m_RequestInputsAndOutputsDumpDir;
-    uint32_t m_RequestCount;
+    static RequestThread                             m_RequestThread;
+    uint32_t                                         m_RequestCount;
+    const std::string&                               m_RequestInputsAndOutputsDumpDir;
+    const bool                                       m_GpuProfilingEnabled;
 };
 
 }

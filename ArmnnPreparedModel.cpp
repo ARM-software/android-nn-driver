@@ -83,6 +83,8 @@ inline std::string BuildTensorName(const char* tensorNamePrefix, std::size_t ind
 
 }
 
+using namespace android::hardware;
+
 namespace armnn_driver
 {
 
@@ -106,21 +108,31 @@ void ArmnnPreparedModel::DumpTensorsIfRequired(char const* tensorNamePrefix,
 }
 
 ArmnnPreparedModel::ArmnnPreparedModel(armnn::NetworkId networkId,
-    armnn::IRuntime* runtime,
-    const V1_0::Model& model,
-    const std::string& requestInputsAndOutputsDumpDir)
-: m_NetworkId(networkId)
-, m_Runtime(runtime)
-, m_Model(model)
-, m_RequestCount(0)
-, m_RequestInputsAndOutputsDumpDir(requestInputsAndOutputsDumpDir)
+                                       armnn::IRuntime* runtime,
+                                       const neuralnetworks::V1_0::Model& model,
+                                       const std::string& requestInputsAndOutputsDumpDir,
+                                       const bool gpuProfilingEnabled)
+    : m_NetworkId(networkId)
+    , m_Runtime(runtime)
+    , m_Model(model)
+    , m_RequestCount(0)
+    , m_RequestInputsAndOutputsDumpDir(requestInputsAndOutputsDumpDir)
+    , m_GpuProfilingEnabled(gpuProfilingEnabled)
 {
+    // Enable profiling if required.
+    m_Runtime->GetProfiler(m_NetworkId)->EnableProfiling(m_GpuProfilingEnabled);
 }
 
 ArmnnPreparedModel::~ArmnnPreparedModel()
 {
-    //unload the network associated with this model
+    // Get a hold of the profiler used by this model.
+    std::shared_ptr<armnn::IProfiler> profiler = m_Runtime->GetProfiler(m_NetworkId);
+
+    // Unload the network associated with this model.
     m_Runtime->UnloadNetwork(m_NetworkId);
+
+    // Dump the profiling info to a file if required.
+    DumpJsonProfilingIfRequired(m_GpuProfilingEnabled, m_RequestInputsAndOutputsDumpDir, m_NetworkId, profiler.get());
 }
 
 Return<ErrorStatus> ArmnnPreparedModel::execute(const Request& request,
@@ -275,85 +287,4 @@ void ArmnnPreparedModel::ExecuteWithDummyInputs()
     }
 }
 
-AndroidNnCpuExecutorPreparedModel::AndroidNnCpuExecutorPreparedModel(const V1_0::Model& model,
-    const std::string& requestInputsAndOutputsDumpDir)
-: m_Model(model)
-, m_RequestInputsAndOutputsDumpDir(requestInputsAndOutputsDumpDir)
-, m_RequestCount(0)
-{
-}
-
-bool AndroidNnCpuExecutorPreparedModel::Initialize()
-{
-    return setRunTimePoolInfosFromHidlMemories(&m_ModelPoolInfos, m_Model.pools);
-}
-
-Return<ErrorStatus> AndroidNnCpuExecutorPreparedModel::execute(const Request& request,
-    const ::android::sp<IExecutionCallback>& callback)
-{
-    m_RequestCount++;
-    std::vector<android::nn::RunTimePoolInfo> requestPoolInfos;
-
-    if (!setRunTimePoolInfosFromHidlMemories(&requestPoolInfos, request.pools))
-    {
-        NotifyCallbackAndCheck(callback, ErrorStatus::GENERAL_FAILURE, "AndroidNnCpuExecutorPreparedModel::execute");
-        return ErrorStatus::GENERAL_FAILURE;
-    }
-
-    if (!m_RequestInputsAndOutputsDumpDir.empty())
-    {
-        ALOGD("Dumping inputs and outputs for request %" PRIuPTR, reinterpret_cast<std::uintptr_t>(callback.get()));
-    }
-
-    DumpTensorsIfRequired(
-        "Input",
-        m_Model.inputIndexes,
-        request.inputs,
-        requestPoolInfos);
-
-    android::nn::CpuExecutor executor;
-    const int n = executor.run(m_Model, request, m_ModelPoolInfos, requestPoolInfos);
-    ErrorStatus executionStatus =
-            n == ANEURALNETWORKS_NO_ERROR ? ErrorStatus::NONE : ErrorStatus::GENERAL_FAILURE;
-
-    DumpTensorsIfRequired(
-        "Output",
-        m_Model.outputIndexes,
-        request.outputs,
-        requestPoolInfos);
-
-    NotifyCallbackAndCheck(callback, ErrorStatus::GENERAL_FAILURE, "AndroidNnCpuExecutorPreparedModel::execute");
-    return executionStatus;
-}
-
-void AndroidNnCpuExecutorPreparedModel::DumpTensorsIfRequired(
-    char const* tensorNamePrefix,
-    const hidl_vec<uint32_t>& operandIndices,
-    const hidl_vec<RequestArgument>& requestArgs,
-    const std::vector<android::nn::RunTimePoolInfo>& requestPoolInfos)
-{
-    if (m_RequestInputsAndOutputsDumpDir.empty())
-    {
-        return;
-    }
-
-    for (std::size_t i = 0; i < requestArgs.size(); ++i)
-    {
-        const Operand& operand = m_Model.operands[operandIndices[i]];
-        const armnn::TensorInfo tensorInfo = GetTensorInfoForOperand(operand);
-        const armnn::Tensor tensor = GetTensorForRequestArgument(requestArgs[i], tensorInfo, requestPoolInfos);
-        const std::string tensorName = BuildTensorName(tensorNamePrefix, i);
-        if (tensor.GetMemoryArea() != nullptr)
-        {
-            std::string requestName = boost::str(boost::format("%1%_%2%.dump") % this % m_RequestCount);
-            DumpTensor(m_RequestInputsAndOutputsDumpDir, requestName, tensorName, tensor);
-        }
-        else
-        {
-            ALOGE("Cannot dump tensor %s. An error occurred converting the associated request argument to a tensor.",
-                tensorName.c_str());
-        }
-    }
-}
-
-}
+} // namespace armnn_driver

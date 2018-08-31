@@ -5,61 +5,48 @@
 
 #pragma once
 
-#include "HalInterfaces.h"
-#include "NeuralNetworks.h"
-#include <armnn/ArmNN.hpp>
+#include <HalInterfaces.h>
 
-#include <memory>
-#include <set>
-#include <string>
+#include <log/log.h>
 
-// For Android O, explicitly declare the V1_0 HAL namespace to shorten type declarations,
-// as the namespace is not defined in HalInterfaces.h.
-namespace V1_0 = ::android::hardware::neuralnetworks::V1_0;
+#if defined(ARMNN_ANDROID_NN_V1_1) // Using ::android::hardware::neuralnetworks::V1_1.
+
+#include "1.1/ArmnnDriver.hpp"
 
 namespace armnn_driver
 {
 
-class DriverOptions
+class ArmnnDriver : public V1_1::ArmnnDriver
 {
 public:
-    DriverOptions(armnn::Compute computeDevice);
-    DriverOptions(int argc, char** argv);
-    DriverOptions(DriverOptions&& other) = default;
-
-    armnn::Compute GetComputeDevice() const { return m_ComputeDevice; }
-    bool IsVerboseLoggingEnabled() const { return m_VerboseLogging; }
-    const std::string& GetRequestInputsAndOutputsDumpDir() const { return m_RequestInputsAndOutputsDumpDir; }
-    bool UseAndroidNnCpuExecutor() const { return m_UseAndroidNnCpuExecutor; }
-    const std::set<unsigned int>& GetForcedUnsupportedOperations() const { return m_ForcedUnsupportedOperations; }
-    const std::string& GetClTunedParametersFile() const { return m_ClTunedParametersFile; }
-    armnn::IClTunedParameters::Mode GetClTunedParametersMode() const { return m_ClTunedParametersMode; }
-
-private:
-    armnn::Compute m_ComputeDevice;
-    bool m_VerboseLogging;
-    bool m_UseAndroidNnCpuExecutor;
-    std::string m_RequestInputsAndOutputsDumpDir;
-    std::set<unsigned int> m_ForcedUnsupportedOperations;
-    std::string m_ClTunedParametersFile;
-    armnn::IClTunedParameters::Mode m_ClTunedParametersMode;
+    ArmnnDriver(DriverOptions options)
+        : V1_1::ArmnnDriver(std::move(options))
+    {
+        ALOGV("ArmnnDriver::ArmnnDriver()");
+    }
+    ~ArmnnDriver() {}
 };
 
-class ArmnnDriver : public V1_0::IDevice {
+} // namespace armnn_driver
+
+#else // Fallback to ::android::hardware::neuralnetworks::V1_0.
+
+#include "1.0/ArmnnDriver.hpp"
+
+namespace armnn_driver
+{
+
+class ArmnnDriver : public V1_0::ArmnnDriver
+{
 public:
-    ArmnnDriver(DriverOptions options);
-    virtual ~ArmnnDriver() {}
-    virtual Return<void> getCapabilities(V1_0::IDevice::getCapabilities_cb _hidl_cb) override;
-    virtual Return<void> getSupportedOperations(const V1_0::Model &model,
-                                                V1_0::IDevice::getSupportedOperations_cb _hidl_cb) override;
-    virtual Return<ErrorStatus> prepareModel(const V1_0::Model &model,
-                                      const android::sp<IPreparedModelCallback>& callback);
-    virtual Return<DeviceStatus> getStatus() override;
-
-private:
-    armnn::IRuntimePtr m_Runtime;
-    armnn::IClTunedParametersPtr m_ClTunedParameters;
-    DriverOptions m_Options;
+    ArmnnDriver(DriverOptions options)
+        : V1_0::ArmnnDriver(std::move(options))
+    {
+        ALOGV("ArmnnDriver::ArmnnDriver()");
+    }
+    ~ArmnnDriver() {}
 };
 
-}
+} // namespace armnn_driver
+
+#endif

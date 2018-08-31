@@ -25,9 +25,11 @@ std::ostream& operator<<(std::ostream& os, ErrorStatus stat)
 } // namespace android::hardware
 } // namespace android
 
-
 namespace driverTestHelpers
 {
+
+using namespace android::hardware;
+using namespace armnn_driver;
 
 Return<void> ExecutionCallback::notify(ErrorStatus status)
 {
@@ -107,13 +109,13 @@ void AddPoolAndSetData(uint32_t size, Request& request, const float* data)
     memcpy(dst, data, size * sizeof(float));
 }
 
-void AddOperand(V1_0::Model& model, const Operand& op)
+void AddOperand(neuralnetworks::V1_0::Model& model, const Operand& op)
 {
     model.operands.resize(model.operands.size() + 1);
     model.operands[model.operands.size() - 1] = op;
 }
 
-void AddIntOperand(V1_0::Model& model, int32_t value)
+void AddIntOperand(neuralnetworks::V1_0::Model& model, int32_t value)
 {
     DataLocation location = {};
     location.offset = model.operandValues.size();
@@ -131,10 +133,12 @@ void AddIntOperand(V1_0::Model& model, int32_t value)
     AddOperand(model, op);
 }
 
-void AddInputOperand(V1_0::Model& model, hidl_vec<uint32_t> dimensions)
+void AddInputOperand(neuralnetworks::V1_0::Model& model,
+                     hidl_vec<uint32_t> dimensions,
+                     neuralnetworks::V1_0::OperandType operandType)
 {
     Operand op    = {};
-    op.type       = OperandType::TENSOR_FLOAT32;
+    op.type       = operandType;
     op.dimensions = dimensions;
     op.lifetime   = OperandLifeTime::MODEL_INPUT;
 
@@ -144,10 +148,13 @@ void AddInputOperand(V1_0::Model& model, hidl_vec<uint32_t> dimensions)
     model.inputIndexes[model.inputIndexes.size() - 1] = model.operands.size() - 1;
 }
 
-void AddOutputOperand(V1_0::Model& model, hidl_vec<uint32_t> dimensions)
+void AddOutputOperand(neuralnetworks::V1_0::Model& model,
+                      hidl_vec<uint32_t> dimensions,
+                      neuralnetworks::V1_0::OperandType operandType)
 {
     Operand op = {};
-    op.type       = OperandType::TENSOR_FLOAT32;
+    op.type       = operandType;
+    op.scale      = operandType == neuralnetworks::V1_0::OperandType::TENSOR_QUANT8_ASYMM ? 1.f / 255.f : 0.f;
     op.dimensions = dimensions;
     op.lifetime   = OperandLifeTime::MODEL_OUTPUT;
 
@@ -158,7 +165,7 @@ void AddOutputOperand(V1_0::Model& model, hidl_vec<uint32_t> dimensions)
 }
 
 
-android::sp<IPreparedModel> PrepareModelWithStatus(const V1_0::Model& model,
+android::sp<IPreparedModel> PrepareModelWithStatus(const neuralnetworks::V1_0::Model& model,
                                                    armnn_driver::ArmnnDriver& driver,
                                                    ErrorStatus & prepareStatus,
                                                    ErrorStatus expectedStatus)
@@ -176,7 +183,7 @@ android::sp<IPreparedModel> PrepareModelWithStatus(const V1_0::Model& model,
     return cb->GetPreparedModel();
 }
 
-android::sp<IPreparedModel> PrepareModel(const V1_0::Model& model,
+android::sp<IPreparedModel> PrepareModel(const neuralnetworks::V1_0::Model& model,
                                          armnn_driver::ArmnnDriver& driver)
 {
     ErrorStatus prepareStatus = ErrorStatus::NONE;
@@ -187,6 +194,7 @@ ErrorStatus Execute(android::sp<IPreparedModel> preparedModel,
                     const Request& request,
                     ErrorStatus expectedStatus)
 {
+    BOOST_TEST(preparedModel.get() != nullptr);
     android::sp<ExecutionCallback> cb(new ExecutionCallback());
     ErrorStatus execStatus = preparedModel->execute(request, cb);
     BOOST_TEST(execStatus == expectedStatus);

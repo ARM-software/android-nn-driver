@@ -16,9 +16,10 @@
 
 BOOST_AUTO_TEST_SUITE(UtilsTests)
 
-using namespace armnn_driver;
-using namespace android::nn;
 using namespace android;
+using namespace android::nn;
+using namespace android::hardware;
+using namespace armnn_driver;
 
 // The following are helpers for writing unit tests for the driver.
 namespace
@@ -28,9 +29,9 @@ struct ExportNetworkGraphFixture
 {
 public:
     // Setup: set the output dump directory and an empty dummy model (as only its memory address is used).
-    // Defaulting the output dump directory to "/sdcard" because it should exist and be writable in all deployments.
+    // Defaulting the output dump directory to "/data" because it should exist and be writable in all deployments.
     ExportNetworkGraphFixture()
-        : ExportNetworkGraphFixture("/sdcard")
+        : ExportNetworkGraphFixture("/data")
     {}
     ExportNetworkGraphFixture(const std::string& requestInputsAndOutputsDumpDir)
         : m_RequestInputsAndOutputsDumpDir(requestInputsAndOutputsDumpDir)
@@ -95,7 +96,7 @@ public:
     }
 
     std::string m_RequestInputsAndOutputsDumpDir;
-    V1_0::Model m_Model;
+    neuralnetworks::V1_0::Model m_Model;
 
 private:
     std::string m_FileName;

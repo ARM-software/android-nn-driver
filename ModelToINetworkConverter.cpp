@@ -6,7 +6,7 @@
 #define LOG_TAG "ArmnnDriver"
 
 #include "ModelToINetworkConverter.hpp"
-#include "OperationsUtils.h"
+#include <OperationsUtils.h>
 
 #include <armnn/LayerSupport.hpp>
 #include <Permute.hpp>
@@ -18,6 +18,8 @@
 #include <boost/core/ignore_unused.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/cast.hpp>
+
+using namespace android::hardware;
 
 namespace armnn_driver
 {
@@ -105,6 +107,58 @@ inline bool IsOperandTypeSupportedForTensors(OperandType type)
            type == OperandType::TENSOR_INT32;
 }
 
+void BroadcastTensor(LayerInputHandle& input0, LayerInputHandle& input1, armnn::IConnectableLayer* startLayer,
+                     armnn::INetwork& network)
+{
+    BOOST_ASSERT(startLayer != nullptr);
+    const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
+    const armnn::TensorInfo& inputTensorInfo1 = input1.GetTensorInfo();
+
+    if (inputTensorInfo0.GetNumDimensions() != inputTensorInfo1.GetNumDimensions())
+    {
+        // If the number of dimensions do not match then we need to add degenerate dimensions
+        // to the "smaller" tensor using a reshape:
+        //   Small  Big
+        //     |     |
+        //  Reshape  |
+        //      \   /
+        //       Add
+        bool input0IsBigger = inputTensorInfo0.GetNumDimensions() > inputTensorInfo1.GetNumDimensions();
+
+        LayerInputHandle& smallTensorHandle = input0IsBigger ? input1 : input0;
+        const armnn::TensorInfo& smallTensorDims = smallTensorHandle.GetTensorInfo();
+
+        LayerInputHandle& bigTensorHandle =  input0IsBigger ? input0 : input1;
+        const armnn::TensorInfo& bigTensorDims = bigTensorHandle.GetTensorInfo();
+
+        const unsigned int bigTensorDimsNumber = bigTensorDims.GetNumDimensions();
+        std::vector<unsigned int> reshapedDims(bigTensorDimsNumber, 1);
+        unsigned int sizeDifference = bigTensorDimsNumber - smallTensorDims.GetNumDimensions();
+        for (unsigned i = sizeDifference; i < bigTensorDimsNumber; ++i)
+        {
+            reshapedDims[i] = smallTensorDims.GetShape()[i-sizeDifference];
+        }
+        armnn::TensorInfo reshapedInfo = smallTensorDims;
+        reshapedInfo.SetShape(armnn::TensorShape{ static_cast<unsigned int>(reshapedDims.size()),
+                                                  reshapedDims.data() });
+
+        armnn::ReshapeDescriptor reshapeDesc;
+        reshapeDesc.m_TargetShape = reshapedInfo.GetShape();
+        armnn::IConnectableLayer* const reshapeLayer = network.AddReshapeLayer(reshapeDesc);
+        smallTensorHandle.Connect(reshapeLayer->GetInputSlot(0));
+        reshapeLayer->GetOutputSlot(0).SetTensorInfo(reshapedInfo);
+
+        // Connect the outputs from new reshape and original input layer
+        reshapeLayer->GetOutputSlot(0).Connect(startLayer->GetInputSlot(0));
+        bigTensorHandle.Connect(startLayer->GetInputSlot(1));
+    }
+    else
+    {
+        input0.Connect(startLayer->GetInputSlot(0));
+        input1.Connect(startLayer->GetInputSlot(1));
+    }
+}
+
 void CalcPadding(uint32_t input, uint32_t kernel, uint32_t stride, uint32_t& outPadHead, uint32_t& outPadTail,
                  android::nn::PaddingScheme scheme)
 {
@@ -113,37 +167,6 @@ void CalcPadding(uint32_t input, uint32_t kernel, uint32_t stride, uint32_t& out
     calculateExplicitPadding(input, stride, kernel, scheme, &padHead, &padTail);
     outPadHead = boost::numeric_cast<uint32_t>(padHead);
     outPadTail = boost::numeric_cast<uint32_t>(padTail);
-}
-
-bool ValidateBroadcast(const V1_0::Model& model, const V1_0::Operation& operation, uint32_t numInputs)
-{
-    assert(operation.inputs.size() > 0); // This should have been validated by the caller
-    // validateModel() has been called already so we know the operation.inputs indexes are valid within model.operands.
-    const Operand& firstInput = model.operands[operation.inputs[0]];
-
-    // We don't support broadcasting yet - we require all input operands to have the same shape
-    for (uint32_t i = 1; i < numInputs; ++i)
-    {
-        const Operand& otherInput = model.operands[operation.inputs[i]];
-
-        if (firstInput.dimensions.size() != otherInput.dimensions.size())
-        {
-            return Fail("%s: Broadcasting not supported (Input 0 dims: %i Input %i dims: %i)",
-                __func__, firstInput.dimensions.size(), i, otherInput.dimensions.size());
-        }
-
-        for (unsigned int d = 0; d < firstInput.dimensions.size(); ++d)
-        {
-            if (firstInput.dimensions[d] != otherInput.dimensions[d])
-            {
-                return Fail("%s: Broadcasting not supported (Dimension %i size mismatch. "
-                    "Input 0: %i Input %i: %i)",
-                    __func__, d, firstInput.dimensions[d], i, otherInput.dimensions[d]);
-            }
-        }
-    }
-
-    return true;
 }
 
 Shape GetOperandShape(const Operand& operand)
@@ -175,10 +198,16 @@ void SanitizeBiasQuantizationScale(armnn::TensorInfo& biasInfo,
     }
 }
 
-const armnn::PermutationVector IdentityPermutation({ 0U, 1U, 2U, 3U });
+// 4D Tensor Permutations
+const armnn::PermutationVector IdentityPermutation4D({ 0U, 1U, 2U, 3U });
 const armnn::PermutationVector NHWCToArmNN({ 0U, 2U, 3U, 1U });
 const armnn::PermutationVector ArmNNToNHWC({ 0U, 3U, 1U, 2U });
 const armnn::PermutationVector SwapDim1And2({ 0U, 2U, 1U, 3U });
+
+// 3D Permutation Vectors
+const armnn::PermutationVector IdentityPermutation3D({ 0U, 1U, 2U });
+const armnn::PermutationVector RotateTensorLeft({ 2U, 0U, 1U });
+const armnn::PermutationVector RotateTensorRight({ 1U, 2U, 0U });
 
 template <typename OSlot>
 armnn::IConnectableLayer& AddPermuteLayer(armnn::INetwork& network, OSlot& input,
@@ -189,7 +218,7 @@ armnn::IConnectableLayer& AddPermuteLayer(armnn::INetwork& network, OSlot& input
 
     assert(layer != nullptr);
 
-    // Connect intput to swizzle layer
+    // Connect input to swizzle layer
     input.Connect(layer->GetInputSlot(0));
 
     // Setup swizzled output
@@ -199,22 +228,32 @@ armnn::IConnectableLayer& AddPermuteLayer(armnn::INetwork& network, OSlot& input
     return *layer;
 }
 
-armnn::IConnectableLayer& SwizzleInDeswizzleOut(armnn::INetwork& network, LayerInputHandle& input,
-                                                armnn::IConnectableLayer& firstLayer,
-                                                armnn::IConnectableLayer& lastLayer)
+void SwizzleIn(armnn::INetwork& network, LayerInputHandle& input, armnn::IConnectableLayer& layer, unsigned int index)
 {
     // Add swizzle layer
     armnn::IConnectableLayer& swizzleLayer = AddPermuteLayer(network, input, NHWCToArmNN);
-
     // Connect swizzled input to layer
-    swizzleLayer.GetOutputSlot(0).Connect(firstLayer.GetInputSlot(0));
+    swizzleLayer.GetOutputSlot(0).Connect(layer.GetInputSlot(index));
+}
 
+armnn::IConnectableLayer& DeswizzleOut(armnn::INetwork& network, armnn::IConnectableLayer& layer, unsigned int index)
+{
     // Add deswizzle layer
-    armnn::IConnectableLayer& deswizzleLayer = AddPermuteLayer(network, lastLayer.GetOutputSlot(0), ArmNNToNHWC);
-
+    armnn::IConnectableLayer& deswizzleLayer = AddPermuteLayer(network, layer.GetOutputSlot(index), ArmNNToNHWC);
     return deswizzleLayer;
 }
 
+// only suitable for input/output slot index 0, for other slots, use SwizzleIn and DeswizzleOut directly
+armnn::IConnectableLayer& SwizzleInDeswizzleOut(armnn::INetwork& network,
+                                                LayerInputHandle& input,
+                                                armnn::IConnectableLayer& firstLayer,
+                                                armnn::IConnectableLayer& lastLayer)
+{
+    SwizzleIn(network, input, firstLayer, 0);
+    return DeswizzleOut(network, lastLayer, 0);
+}
+
+// only suitable for input/output slot index 0, for other slots, use SwizzleIn and DeswizzleOut directly
 armnn::IConnectableLayer& SwizzleInDeswizzleOut(armnn::INetwork& network, LayerInputHandle& input,
                                                 armnn::IConnectableLayer& layer)
 {
@@ -264,12 +303,34 @@ bool ValidateConcatOutputShape(const std::vector<armnn::TensorShape> & inputShap
     return true;
 }
 
+bool RequiresReshape(armnn::TensorShape & inputShape)
+{
+    return inputShape.GetNumDimensions() < 3;
+}
+
+template <typename OSlot>
+armnn::IConnectableLayer& AddReshapeLayer(armnn::INetwork& network, OSlot& inputLayer,
+                                          armnn::TensorInfo reshapeInfo)
+{
+    armnn::ReshapeDescriptor reshapeDescriptor;
+    reshapeDescriptor.m_TargetShape = reshapeInfo.GetShape();
+
+    armnn::IConnectableLayer* reshapeLayer = network.AddReshapeLayer(reshapeDescriptor);
+    assert(reshapeLayer != nullptr);
+
+    // Attach the input layer to the reshape layer
+    inputLayer.Connect(reshapeLayer->GetInputSlot(0));
+    reshapeLayer->GetOutputSlot(0).SetTensorInfo(reshapeInfo);
+
+    return *reshapeLayer;
+}
+
 void SwizzleInputs(armnn::INetwork& network,
                    std::vector<LayerInputHandle>& inputs,
                    std::vector<armnn::TensorShape>& inputShapes,
                    const armnn::PermutationVector& mapping)
 {
-    if (!mapping.IsEqual(IdentityPermutation))
+    if (!mapping.IsEqual(IdentityPermutation4D))
     {
         size_t nInputs = inputs.size();
         for (size_t i=0; i<nInputs; ++i)
@@ -285,6 +346,53 @@ void SwizzleInputs(armnn::INetwork& network,
     }
 }
 
+void CreatePermutationParameters(const unsigned int numberOfDimensions,
+                       int32_t & concatDimension,
+                       std::pair<armnn::PermutationVector, armnn::PermutationVector> & permutationPair)
+{
+    assert(numberOfDimensions >= 3);
+
+    // ArmNN uses Compute Library subtensors to perform concatenation
+    // This only works when concatenating along dimension 0 or 1 for a 4-D tensor,
+    // or along dimension 0 for a 3-D tensor.
+    if (numberOfDimensions == 4)
+    {
+        if (concatDimension == 3)
+        {
+            concatDimension = 1;
+            permutationPair = std::make_pair(NHWCToArmNN, ArmNNToNHWC);
+        }
+        else if (concatDimension == 2)
+        {
+            concatDimension = 1;
+            permutationPair = std::make_pair(SwapDim1And2, SwapDim1And2);
+        }
+        else
+        {
+            permutationPair = std::make_pair(IdentityPermutation4D, IdentityPermutation4D);
+        }
+
+    }
+    else if (numberOfDimensions == 3)
+    {
+        if (concatDimension == 2)
+        {
+            concatDimension = 0;
+            permutationPair = std::make_pair(RotateTensorRight, RotateTensorLeft);
+        }
+        else if (concatDimension == 1)
+        {
+            concatDimension = 0;
+            permutationPair = std::make_pair(RotateTensorLeft, RotateTensorRight);
+        }
+        else
+        {
+            permutationPair = std::make_pair(IdentityPermutation3D, IdentityPermutation3D);
+        }
+    }
+}
+
+
 } // namespace
 
 namespace armnn_driver
@@ -294,7 +402,8 @@ class ConstTensorPin
 {
 public:
     // Creates an invalid tensor pin (can be used to signal errors)
-    ConstTensorPin() {}
+    // The optional flag can be set to indicate the tensor values were missing, but it was otherwise valid
+    ConstTensorPin(bool optional = false) : m_Optional(optional) {}
 
     // @param tensorInfo TensorInfo associated with the tensor.
     // @param valueStart Start address of tensor data. Belongs to one of the memory pools associated with
@@ -324,7 +433,17 @@ public:
     ConstTensorPin(ConstTensorPin&& other) = default;
 
     bool IsValid() const { return m_ConstTensor.GetMemoryArea() != nullptr; }
+    bool IsOptional() const { return m_Optional; }
     const armnn::ConstTensor& GetConstTensor() const { return m_ConstTensor; }
+    const armnn::ConstTensor* GetConstTensorPtr() const
+    {
+        if (IsValid() && m_ConstTensor.GetNumElements() > 0)
+        {
+            return &m_ConstTensor;
+        }
+        // tensor is either invalid, or has no elements (indicating an optional tensor that was not provided)
+        return nullptr;
+    }
 
 private:
     armnn::ConstTensor m_ConstTensor;
@@ -332,9 +451,12 @@ private:
     // swizzling. Otherwise, @ref m_ConstTensor will reference memory from one of
     // the pools associated with the model being converted.
     std::vector<uint8_t> m_SwizzledTensorData;
+    // optional flag to indicate that an invalid tensor pin is not an error, but the optional values were not given
+    bool m_Optional;
 };
 
-ModelToINetworkConverter::ModelToINetworkConverter(armnn::Compute compute, const V1_0::Model& model,
+ModelToINetworkConverter::ModelToINetworkConverter(armnn::Compute compute,
+    const neuralnetworks::V1_0::Model& model,
     const std::set<unsigned int>& forcedUnsupportedOperations)
     : m_Compute(compute)
     , m_Model(model)
@@ -471,37 +593,59 @@ void ModelToINetworkConverter::Convert()
     }
 }
 
-bool ModelToINetworkConverter::ConvertOperation(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertOperation(const neuralnetworks::V1_0::Operation& operation)
 {
     switch (operation.type)
     {
-        case V1_0::OperationType::ADD: return ConvertAdd(operation);
-        case V1_0::OperationType::AVERAGE_POOL_2D: return ConvertAveragePool2d(operation);
-        case V1_0::OperationType::CONCATENATION: return ConvertConcatenation(operation);
-        case V1_0::OperationType::CONV_2D: return ConvertConv2d(operation);
-        case V1_0::OperationType::DEPTHWISE_CONV_2D: return ConvertDepthwiseConv2d(operation);
-        case V1_0::OperationType::FLOOR: return ConvertFloor(operation);
-        case V1_0::OperationType::FULLY_CONNECTED: return ConvertFullyConnected(operation);
-        case V1_0::OperationType::LOCAL_RESPONSE_NORMALIZATION: return ConvertLocalResponseNormalization(operation);
-        case V1_0::OperationType::LOGISTIC: return ConvertLogistic(operation);
-        case V1_0::OperationType::L2_NORMALIZATION: return ConvertL2Normalization(operation);
-        case V1_0::OperationType::L2_POOL_2D: return ConvertL2Pool2d(operation);
-        case V1_0::OperationType::MAX_POOL_2D: return ConvertMaxPool2d(operation);
-        case V1_0::OperationType::MUL: return ConvertMul(operation);
-        case V1_0::OperationType::RELU: return ConvertReLu(operation);
-        case V1_0::OperationType::RELU1: return ConvertReLu1(operation);
-        case V1_0::OperationType::RELU6: return ConvertReLu6(operation);
-        case V1_0::OperationType::SOFTMAX: return ConvertSoftmax(operation);
-        case V1_0::OperationType::TANH: return ConvertTanH(operation);
-        case V1_0::OperationType::RESHAPE: return ConvertReshape(operation);
-        case V1_0::OperationType::RESIZE_BILINEAR: return ConvertResizeBilinear(operation);
-        default: return Fail("%s: Operation type %s not supported in ArmnnDriver",
-            __func__, toString(operation.type).c_str());
+        case neuralnetworks::V1_0::OperationType::ADD:
+            return ConvertAdd(operation);
+        case neuralnetworks::V1_0::OperationType::AVERAGE_POOL_2D:
+            return ConvertAveragePool2d(operation);
+        case neuralnetworks::V1_0::OperationType::CONCATENATION:
+            return ConvertConcatenation(operation);
+        case neuralnetworks::V1_0::OperationType::CONV_2D:
+            return ConvertConv2d(operation);
+        case neuralnetworks::V1_0::OperationType::DEPTHWISE_CONV_2D:
+            return ConvertDepthwiseConv2d(operation);
+        case neuralnetworks::V1_0::OperationType::FLOOR:
+            return ConvertFloor(operation);
+        case neuralnetworks::V1_0::OperationType::FULLY_CONNECTED:
+            return ConvertFullyConnected(operation);
+        case neuralnetworks::V1_0::OperationType::LOCAL_RESPONSE_NORMALIZATION:
+            return ConvertLocalResponseNormalization(operation);
+        case neuralnetworks::V1_0::OperationType::LOGISTIC:
+            return ConvertLogistic(operation);
+        case neuralnetworks::V1_0::OperationType::LSTM:
+            return ConvertLstm(operation);
+        case neuralnetworks::V1_0::OperationType::L2_NORMALIZATION:
+            return ConvertL2Normalization(operation);
+        case neuralnetworks::V1_0::OperationType::L2_POOL_2D:
+            return ConvertL2Pool2d(operation);
+        case neuralnetworks::V1_0::OperationType::MAX_POOL_2D:
+            return ConvertMaxPool2d(operation);
+        case neuralnetworks::V1_0::OperationType::MUL:
+            return ConvertMul(operation);
+        case neuralnetworks::V1_0::OperationType::RELU:
+            return ConvertReLu(operation);
+        case neuralnetworks::V1_0::OperationType::RELU1:
+            return ConvertReLu1(operation);
+        case neuralnetworks::V1_0::OperationType::RELU6:
+            return ConvertReLu6(operation);
+        case neuralnetworks::V1_0::OperationType::SOFTMAX:
+            return ConvertSoftmax(operation);
+        case neuralnetworks::V1_0::OperationType::TANH:
+            return ConvertTanH(operation);
+        case neuralnetworks::V1_0::OperationType::RESHAPE:
+            return ConvertReshape(operation);
+        case neuralnetworks::V1_0::OperationType::RESIZE_BILINEAR:
+            return ConvertResizeBilinear(operation);
+        default:
+            return Fail("%s: Operation type %s not supported in ArmnnDriver",
+                        __func__, toString(operation.type).c_str());
     }
 }
 
-
-bool ModelToINetworkConverter::ConvertAdd(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertAdd(const neuralnetworks::V1_0::Operation& operation)
 {
     LayerInputHandle input0 = ConvertToLayerInputHandle(operation, 0);
     LayerInputHandle input1 = ConvertToLayerInputHandle(operation, 1);
@@ -511,8 +655,10 @@ bool ModelToINetworkConverter::ConvertAdd(const V1_0::Operation& operation)
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
+    // The FuseActivation parameter is always the input index 2
+    // and it should be optional
     ActivationFn activationFunction;
-    if (!GetInputActivationFunction(operation, 2, activationFunction))
+    if (!GetOptionalInputActivation(operation, 2, activationFunction))
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
@@ -543,49 +689,7 @@ bool ModelToINetworkConverter::ConvertAdd(const V1_0::Operation& operation)
 
     if (endLayer != nullptr)
     {
-        // If the number of dimensions do not match then we need to add degenerate dimensions
-        // to the "smaller" tensor using a reshape:
-        //   Small  Big
-        //     |     |
-        //  Reshape  |
-        //      \   /
-        //       Add
-        if (inputTensorInfo0.GetNumDimensions() != inputTensorInfo1.GetNumDimensions())
-        {
-            bool input0IsBigger = inputTensorInfo0.GetNumDimensions() > inputTensorInfo1.GetNumDimensions();
-
-            LayerInputHandle& smallTensorHandle = input0IsBigger ? input1 : input0;
-            const armnn::TensorInfo& smallTensorDims = smallTensorHandle.GetTensorInfo();
-
-            LayerInputHandle& bigTensorHandle =  input0IsBigger ? input0 : input1;
-            const armnn::TensorInfo& bigTensorDims = bigTensorHandle.GetTensorInfo();
-
-            std::vector<unsigned int> reshapedDims(bigTensorDims.GetNumDimensions(), 1);
-            unsigned int sizeDifference = bigTensorDims.GetNumDimensions() - smallTensorDims.GetNumDimensions();
-            for (unsigned i = sizeDifference; i < bigTensorDims.GetNumDimensions(); ++i)
-            {
-                reshapedDims[i] = smallTensorDims.GetShape()[i-sizeDifference];
-            }
-            armnn::TensorInfo reshapedInfo = smallTensorDims;
-            reshapedInfo.SetShape(armnn::TensorShape{ static_cast<unsigned int>(reshapedDims.size()),
-                                                      reshapedDims.data() });
-
-            armnn::ReshapeDescriptor reshapeDesc;
-            reshapeDesc.m_TargetShape = reshapedInfo.GetShape();
-            armnn::IConnectableLayer* const reshapeLayer = m_Network->AddReshapeLayer(reshapeDesc);
-            smallTensorHandle.Connect(reshapeLayer->GetInputSlot(0));
-            reshapeLayer->GetOutputSlot(0).SetTensorInfo(reshapedInfo);
-
-            // Connect the outputs from new reshape and original input layer
-            reshapeLayer->GetOutputSlot(0).Connect(startLayer->GetInputSlot(0));
-            bigTensorHandle.Connect(startLayer->GetInputSlot(1));
-        }
-        else
-        {
-            input0.Connect(startLayer->GetInputSlot(0));
-            input1.Connect(startLayer->GetInputSlot(1));
-        }
-
+        BroadcastTensor(input0, input1, startLayer, *m_Network);
         return SetupAndTrackLayerOutputSlot(operation, 0, *endLayer);
     }
     else
@@ -594,12 +698,12 @@ bool ModelToINetworkConverter::ConvertAdd(const V1_0::Operation& operation)
     }
 }
 
-bool ModelToINetworkConverter::ConvertAveragePool2d(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertAveragePool2d(const neuralnetworks::V1_0::Operation& operation)
 {
     return ConvertPooling2d(operation, __func__, armnn::PoolingAlgorithm::Average);
 }
 
-bool ModelToINetworkConverter::ConvertConcatenation(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertConcatenation(const neuralnetworks::V1_0::Operation& operation)
 {
     // The first N (0..N-1) inputs are tensors. The Nth input is the concatenation axis.
     if (operation.inputs.size() <= 1)
@@ -622,6 +726,7 @@ bool ModelToINetworkConverter::ConvertConcatenation(const V1_0::Operation& opera
         return Fail("%s: Operation has no outputs", __func__);
     }
 
+
     armnn::TensorInfo  outputInfo  = GetTensorInfoForOperand(*outputOperand);
     armnn::TensorShape outputShape = outputInfo.GetShape();
 
@@ -640,40 +745,14 @@ bool ModelToINetworkConverter::ConvertConcatenation(const V1_0::Operation& opera
         return Fail("%s: Operation has invalid concat axis: %d", __func__, concatDim);
     }
 
-    // ArmNN uses Compute Library subtensors to perform concatenation
-    // This only works when concatenating along dimension 0 or 1 for a 4-D tensor,
-    // or along dimension 0 for a 3-D tensor.
-    const armnn::PermutationVector* permuteVectorIn = &IdentityPermutation;
-    const armnn::PermutationVector* permuteVectorOut = &IdentityPermutation;
-
-    assert(permuteVectorOut != nullptr);
-
-    if (outputShape.GetNumDimensions() == 4) {
-        if (concatDim == 3) {
-            concatDim = 1;
-            permuteVectorIn = &NHWCToArmNN;
-            permuteVectorOut = &ArmNNToNHWC;
-            outputShape = armnnUtils::Permuted(outputShape, *permuteVectorIn);
-            outputInfo.SetShape(outputShape);
-        } else if (concatDim == 2) {
-            concatDim = 1;
-            permuteVectorIn = &SwapDim1And2;
-            permuteVectorOut = &SwapDim1And2;
-            outputShape = armnnUtils::Permuted(outputShape, *permuteVectorIn);
-            outputInfo.SetShape(outputShape);
-        }
-    }
-    else if (!(outputShape.GetNumDimensions() == 3 && concatDim == 0))
-    {
-        // Operation unsupported
-        return false;
-    }
-
     std::vector<LayerInputHandle> inputHandles;
     std::vector<armnn::TensorShape> inputShapes;
 
     inputHandles.reserve(numInputTensors);
     inputShapes.reserve(numInputTensors);
+
+    bool inputsHaveBeenReshaped = false;
+    unsigned int tensorDimensionsAdded = 0;
 
     for (uint32_t i = 0; i < numInputTensors; ++i)
     {
@@ -683,9 +762,45 @@ bool ModelToINetworkConverter::ConvertConcatenation(const V1_0::Operation& opera
             return Fail("%s: Operation has invalid inputs", __func__);
         }
 
-        inputShapes.emplace_back(GetTensorShapeForOperand(*operand));
-        inputHandles.emplace_back(ConvertToLayerInputHandle(operation, i));
+        armnn::TensorShape operandShape = GetTensorShapeForOperand(*operand);
+        LayerInputHandle operandInputHandle = ConvertToLayerInputHandle(operation, i);
 
+        if (operandShape.GetNumDimensions() == 0)
+        {
+            return Fail("%s: Operands with rank 0 are not supported", __func__);
+        }
+
+        if (RequiresReshape(operandShape))
+        {
+            inputsHaveBeenReshaped = true;
+
+            armnn::TensorInfo reshapeInfo = operandInputHandle.GetTensorInfo();
+
+            // Expand the tensor to three dimensions
+            if (operandShape.GetNumDimensions() == 2)
+            {
+                reshapeInfo.SetShape(armnn::TensorShape({1, operandShape[0], operandShape[1]}));
+                tensorDimensionsAdded = 1;
+            }
+            else
+            {
+                reshapeInfo.SetShape(armnn::TensorShape({1, 1, operandShape[0]}));
+                tensorDimensionsAdded = 2;
+            }
+
+            armnn::IConnectableLayer& newReshape = AddReshapeLayer(
+                    *m_Network,
+                    operandInputHandle,
+                    reshapeInfo
+            );
+
+            // Point to the reshape operation rather then the input operation
+            operandShape = reshapeInfo.GetShape();
+            operandInputHandle = LayerInputHandle(true, &newReshape.GetOutputSlot(0), reshapeInfo);
+        }
+
+        inputShapes.emplace_back(operandShape);
+        inputHandles.emplace_back(operandInputHandle);
 
         if (!inputHandles.back().IsValid())
         {
@@ -695,9 +810,34 @@ bool ModelToINetworkConverter::ConvertConcatenation(const V1_0::Operation& opera
 
     assert(inputShapes.size() == inputHandles.size());
 
+    if (inputsHaveBeenReshaped)
+    {
+        // Adjust the concatenation dimension by the amount of dimensions added (if any)
+        concatDim += tensorDimensionsAdded;
+
+        // Add extra dimensions to the output shape to reflect the addition of the reshape layers
+        if (tensorDimensionsAdded == 1)
+        {
+            outputShape = armnn::TensorShape({1, outputShape[0], outputShape[1]});
+        }
+        else if (tensorDimensionsAdded == 2)
+        {
+            outputShape = armnn::TensorShape({1, 1, outputShape[0], outputShape[1]});
+        }
+    }
+
+    // Get the pair of permutations required for the concatenation
+    std::pair<armnn::PermutationVector, armnn::PermutationVector> permutationPair =
+            std::make_pair(IdentityPermutation4D, IdentityPermutation4D);
+
+    CreatePermutationParameters(inputShapes[0].GetNumDimensions(), concatDim, permutationPair);
+
+    outputShape = armnnUtils::Permuted(outputShape, permutationPair.first);
+    outputInfo.SetShape(outputShape);
+
     // this is no-op for identity swizzles, otherwise it replaces both
     // the handles and shapes with the swizzled layer output handles and shapes
-    SwizzleInputs(*m_Network, inputHandles, inputShapes, *permuteVectorIn);
+    SwizzleInputs(*m_Network, inputHandles, inputShapes, permutationPair.first);
 
     // Create an armnn merger layer descriptor - this will also perform validation on the input shapes
     armnn::OriginsDescriptor mergerDescriptor;
@@ -746,19 +886,39 @@ bool ModelToINetworkConverter::ConvertConcatenation(const V1_0::Operation& opera
         inputHandles[static_cast<unsigned int>(i)].Connect(layer->GetInputSlot(i));
     }
 
-    if (permuteVectorOut != &IdentityPermutation)
+    // Add permutation layer and connect the output to it, the permutation becomes the output layer
+    armnn::IConnectableLayer& deswizzleLayer = AddPermuteLayer(*m_Network,
+                                                               layer->GetOutputSlot(0),
+                                                               permutationPair.second);
+    layer = &deswizzleLayer;
+
+    if (inputsHaveBeenReshaped)
     {
-        // Add permutation layer and connect the output to it, the permutation becomes the output layer
-        armnn::IConnectableLayer& deswizzleLayer = AddPermuteLayer(*m_Network,
-                                                                   layer->GetOutputSlot(0),
-                                                                   *permuteVectorOut);
-        layer = &deswizzleLayer;
+        armnn::TensorInfo afterConcatInfo = layer->GetOutputSlot(0).GetTensorInfo();
+
+        // Undo the reshape knowing the amount of dimensions added
+        if (tensorDimensionsAdded == 1)
+        {
+            afterConcatInfo.SetShape(armnn::TensorShape({ afterConcatInfo.GetShape()[1],
+                                                          afterConcatInfo.GetShape()[2] }));
+        }
+        else if (tensorDimensionsAdded == 2)
+        {
+            afterConcatInfo.SetShape(armnn::TensorShape({ afterConcatInfo.GetShape()[2],
+                                                          afterConcatInfo.GetShape()[3] }));
+        }
+
+        layer = &AddReshapeLayer(
+                *m_Network,
+                layer->GetOutputSlot(0),
+                afterConcatInfo
+        );
     }
 
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer);
 }
 
-bool ModelToINetworkConverter::ConvertConv2d(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertConv2d(const neuralnetworks::V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
@@ -860,7 +1020,7 @@ bool ModelToINetworkConverter::ConvertConv2d(const V1_0::Operation& operation)
     }
 }
 
-bool ModelToINetworkConverter::ConvertDepthwiseConv2d(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertDepthwiseConv2d(const neuralnetworks::V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
@@ -959,8 +1119,10 @@ bool ModelToINetworkConverter::ConvertDepthwiseConv2d(const V1_0::Operation& ope
                           armnn::IsDepthwiseConvolutionSupported,
                           m_Compute,
                           swizzledInputInfo,
+                          swizzledOutputInfo,
                           desc,
-                          weights.GetInfo()))
+                          weights.GetInfo(),
+                          bias.GetInfo()))
     {
         return false;
     }
@@ -979,7 +1141,7 @@ bool ModelToINetworkConverter::ConvertDepthwiseConv2d(const V1_0::Operation& ope
     }
 }
 
-bool ModelToINetworkConverter::ConvertFloor(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertFloor(const neuralnetworks::V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
@@ -1009,7 +1171,7 @@ bool ModelToINetworkConverter::ConvertFloor(const V1_0::Operation& operation)
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer);
 }
 
-bool ModelToINetworkConverter::ConvertFullyConnected(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertFullyConnected(const neuralnetworks::V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
@@ -1026,18 +1188,6 @@ bool ModelToINetworkConverter::ConvertFullyConnected(const V1_0::Operation& oper
     const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    armnn::TensorInfo reshapedInfo = inputInfo;
-
-    if (inputInfo.GetNumDimensions() > 2U)
-    {
-        unsigned int dim1 = inputInfo.GetShape()[1];
-        for (unsigned int i = 2U; i < inputInfo.GetNumDimensions(); ++i)
-        {
-            dim1 *= inputInfo.GetShape()[i];
-        }
-        reshapedInfo.SetShape(armnn::TensorShape({inputInfo.GetShape()[0], dim1}));
-    }
-
     // ArmNN does not currently support non-fixed weights or bias
     ConstTensorPin weightsPin = ConvertOperationInputToConstTensorPin(operation, 1); // 2D
     ConstTensorPin biasPin = ConvertOperationInputToConstTensorPin(operation, 2);    // 1D
@@ -1047,9 +1197,30 @@ bool ModelToINetworkConverter::ConvertFullyConnected(const V1_0::Operation& oper
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    // ensuring that the bias value is within 1% of the weights input (small float differences can exist)
     armnn::ConstTensor weights = weightsPin.GetConstTensor();
     armnn::ConstTensor bias = biasPin.GetConstTensor();
+
+    armnn::TensorInfo reshapedInfo = inputInfo;
+    if (inputInfo.GetNumDimensions() > 2U)
+    {
+        unsigned int dim0 = inputInfo.GetShape()[0];
+        unsigned int dim1 = inputInfo.GetShape()[1];
+
+        for (unsigned int i = 2U; i < inputInfo.GetNumDimensions(); ++i)
+        {
+            dim1 *= inputInfo.GetShape()[i];
+        }
+
+        unsigned int divisor = weights.GetInfo().GetShape()[1] / dim1;
+        if(dim0 % divisor != 0)
+        {
+            return Fail("%s: Failed to deduce tensor shape", __func__);
+        }
+
+        reshapedInfo.SetShape(armnn::TensorShape({dim0 / divisor, dim1 * divisor}));
+    }
+
+    // ensuring that the bias value is within 1% of the weights input (small float differences can exist)
     SanitizeBiasQuantizationScale(bias.GetInfo(), weights.GetInfo(), reshapedInfo);
 
     ActivationFn activationFunction;
@@ -1065,7 +1236,10 @@ bool ModelToINetworkConverter::ConvertFullyConnected(const V1_0::Operation& oper
     if (!IsLayerSupported(__func__,
                           armnn::IsFullyConnectedSupported,
                           m_Compute,
-                          reshapedInfo,
+                          inputInfo,
+                          outputInfo,
+                          weights.GetInfo(),
+                          bias.GetInfo(),
                           desc))
     {
         return false;
@@ -1100,7 +1274,7 @@ bool ModelToINetworkConverter::ConvertFullyConnected(const V1_0::Operation& oper
     }
 }
 
-bool ModelToINetworkConverter::ConvertLocalResponseNormalization(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertLocalResponseNormalization(const neuralnetworks::V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
@@ -1158,7 +1332,7 @@ bool ModelToINetworkConverter::ConvertLocalResponseNormalization(const V1_0::Ope
     return SetupAndTrackLayerOutputSlot(operation, 0, outSwizzleLayer);
 }
 
-bool ModelToINetworkConverter::ConvertLogistic(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertLogistic(const neuralnetworks::V1_0::Operation& operation)
 {
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::Sigmoid;
@@ -1166,7 +1340,7 @@ bool ModelToINetworkConverter::ConvertLogistic(const V1_0::Operation& operation)
     return ConvertToActivation(operation, __func__, desc);
 }
 
-bool ModelToINetworkConverter::ConvertL2Normalization(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertL2Normalization(const neuralnetworks::V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
@@ -1189,7 +1363,8 @@ bool ModelToINetworkConverter::ConvertL2Normalization(const V1_0::Operation& ope
     if (!IsLayerSupported(__func__,
                           armnn::IsL2NormalizationSupported,
                           m_Compute,
-                          swizzledInputInfo))
+                          swizzledInputInfo,
+                          swizzledOutputInfo))
     {
         return false;
     }
@@ -1203,17 +1378,17 @@ bool ModelToINetworkConverter::ConvertL2Normalization(const V1_0::Operation& ope
     return SetupAndTrackLayerOutputSlot(operation, 0, outSwizzleLayer);
 }
 
-bool ModelToINetworkConverter::ConvertL2Pool2d(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertL2Pool2d(const neuralnetworks::V1_0::Operation& operation)
 {
     return ConvertPooling2d(operation, __func__, armnn::PoolingAlgorithm::L2);
 }
 
-bool ModelToINetworkConverter::ConvertMaxPool2d(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertMaxPool2d(const neuralnetworks::V1_0::Operation& operation)
 {
     return ConvertPooling2d(operation, __func__, armnn::PoolingAlgorithm::Max);
 }
 
-bool ModelToINetworkConverter::ConvertMul(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertMul(const neuralnetworks::V1_0::Operation& operation)
 {
     LayerInputHandle input0 = ConvertToLayerInputHandle(operation, 0);
     LayerInputHandle input1 = ConvertToLayerInputHandle(operation, 1);
@@ -1223,24 +1398,12 @@ bool ModelToINetworkConverter::ConvertMul(const V1_0::Operation& operation)
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
+    // The FuseActivation parameter is always the input index 2
+    // and it should be optional
     ActivationFn activationFunction;
-    if (!GetInputActivationFunction(operation, 2, activationFunction))
+    if (!GetOptionalInputActivation(operation, 2, activationFunction))
     {
         return Fail("%s: Operation has invalid inputs", __func__);
-    }
-
-    if (!ValidateBroadcast(m_Model, operation, 2u))
-    {
-        return Fail("%s is invalid due to broadcasting", __func__);
-    }
-
-    if (!IsLayerSupported(__func__,
-                          armnn::IsMultiplicationSupported,
-                          m_Compute,
-                          input0.GetTensorInfo(),
-                          input1.GetTensorInfo()))
-    {
-        return false;
     }
 
     const Operand* outputOperand = GetOutputOperand(operation, 0);
@@ -1252,14 +1415,25 @@ bool ModelToINetworkConverter::ConvertMul(const V1_0::Operation& operation)
 
     const armnn::TensorInfo& outInfo = GetTensorInfoForOperand(*outputOperand);
 
+    if (!IsLayerSupported(__func__,
+                          armnn::IsMultiplicationSupported,
+                          m_Compute,
+                          input0.GetTensorInfo(),
+                          input1.GetTensorInfo(),
+                          outInfo))
+    {
+        return false;
+    }
+
     armnn::IConnectableLayer* const startLayer = m_Network->AddMultiplicationLayer();
     armnn::IConnectableLayer* const endLayer = ProcessActivation(outInfo, activationFunction, startLayer);
 
+    const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
+    const armnn::TensorInfo& inputTensorInfo1 = input1.GetTensorInfo();
+
     if (endLayer != nullptr)
     {
-        input0.Connect(startLayer->GetInputSlot(0));
-        input1.Connect(startLayer->GetInputSlot(1));
-
+        BroadcastTensor(input0, input1, startLayer, *m_Network);
         return SetupAndTrackLayerOutputSlot(operation, 0, *endLayer);
     }
     else
@@ -1268,7 +1442,7 @@ bool ModelToINetworkConverter::ConvertMul(const V1_0::Operation& operation)
     }
 }
 
-bool ModelToINetworkConverter::ConvertReLu(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertReLu(const neuralnetworks::V1_0::Operation& operation)
 {
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::ReLu;
@@ -1276,7 +1450,7 @@ bool ModelToINetworkConverter::ConvertReLu(const V1_0::Operation& operation)
     return ConvertToActivation(operation, __func__, desc);
 }
 
-bool ModelToINetworkConverter::ConvertReLu1(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertReLu1(const neuralnetworks::V1_0::Operation& operation)
 {
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::BoundedReLu;
@@ -1286,7 +1460,7 @@ bool ModelToINetworkConverter::ConvertReLu1(const V1_0::Operation& operation)
     return ConvertToActivation(operation, __func__, desc);
 }
 
-bool ModelToINetworkConverter::ConvertReLu6(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertReLu6(const neuralnetworks::V1_0::Operation& operation)
 {
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::BoundedReLu;
@@ -1295,13 +1469,21 @@ bool ModelToINetworkConverter::ConvertReLu6(const V1_0::Operation& operation)
     return ConvertToActivation(operation, __func__, desc);
 }
 
-bool ModelToINetworkConverter::ConvertSoftmax(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertSoftmax(const neuralnetworks::V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
+
+    const Operand* outputOperand = GetOutputOperand(operation, 0);
+    if (!outputOperand)
+    {
+        return Fail("%s: Operation has no outputs", __func__);
+    }
+
+    const armnn::TensorInfo outInfo = GetTensorInfoForOperand(*outputOperand);
 
     armnn::SoftmaxDescriptor desc;
     if (!GetInputFloat32(operation, 1, desc.m_Beta))
@@ -1313,6 +1495,7 @@ bool ModelToINetworkConverter::ConvertSoftmax(const V1_0::Operation& operation)
                           armnn::IsSoftmaxSupported,
                           m_Compute,
                           input.GetTensorInfo(),
+                          outInfo,
                           desc))
     {
         return false;
@@ -1325,7 +1508,7 @@ bool ModelToINetworkConverter::ConvertSoftmax(const V1_0::Operation& operation)
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer);
 }
 
-bool ModelToINetworkConverter::ConvertTanH(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertTanH(const neuralnetworks::V1_0::Operation& operation)
 {
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::TanH;
@@ -1335,7 +1518,7 @@ bool ModelToINetworkConverter::ConvertTanH(const V1_0::Operation& operation)
     return ConvertToActivation(operation, __func__, desc);
 }
 
-bool ModelToINetworkConverter::ConvertReshape(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertReshape(const neuralnetworks::V1_0::Operation& operation)
 {
     const Operand* inputOperand = GetInputOperand(operation, 0);
     const Operand* requestedShapeOperand = GetInputOperand(operation, 1);
@@ -1403,7 +1586,7 @@ bool ModelToINetworkConverter::ConvertReshape(const V1_0::Operation& operation)
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer);
 }
 
-bool ModelToINetworkConverter::ConvertResizeBilinear(const V1_0::Operation& operation)
+bool ModelToINetworkConverter::ConvertResizeBilinear(const neuralnetworks::V1_0::Operation& operation)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
     if (!input.IsValid())
@@ -1449,7 +1632,307 @@ bool ModelToINetworkConverter::ConvertResizeBilinear(const V1_0::Operation& oper
 
 }
 
-bool ModelToINetworkConverter::ConvertToActivation(const V1_0::Operation& operation,
+bool ModelToINetworkConverter::ConvertLstm(const neuralnetworks::V1_0::Operation& operation)
+{
+    // Inputs:
+    // 00: The input: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, input_size], where
+    //      “batch_size” corresponds to the batching dimension, and “input_size” is the size of the input.
+    LayerInputHandle input = ConvertToLayerInputHandle(operation, 0);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Could not read input 0: input", __func__);
+    }
+    // 18: The output state: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size].
+    LayerInputHandle outputStateIn = ConvertToLayerInputHandle(operation, 18);
+    if (!outputStateIn.IsValid())
+    {
+        return Fail("%s: Could not read input 18: outputStateIn", __func__);
+    }
+    // 19: The cell state: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units].
+    LayerInputHandle cellStateIn = ConvertToLayerInputHandle(operation, 19);
+    if (!cellStateIn.IsValid())
+    {
+        return Fail("%s: Could not read input 19: cellStateIn", __func__);
+    }
+
+    // Get the mandatory input tensors:
+    // 02: The input-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, input_size].
+    const ConstTensorPin inputToForgetWeightsPin = ConvertOperationInputToConstTensorPin(operation, 2);
+    // 03: The input-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units, input_size].
+    const ConstTensorPin inputToCellWeightsPin = ConvertOperationInputToConstTensorPin(operation, 3);
+    // 04: The input-to-output weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, input_size].
+    const ConstTensorPin inputToOutputWeightsPin = ConvertOperationInputToConstTensorPin(operation, 4);
+    // 06: The recurrent-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, output_size].
+    const ConstTensorPin recurrentToForgetWeightsPin = ConvertOperationInputToConstTensorPin(operation, 6);
+    // 07: The recurrent-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, output_size].
+    const ConstTensorPin recurrentToCellWeightsPin = ConvertOperationInputToConstTensorPin(operation, 7);
+    // 08: The recurrent-to-output weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, output_size].
+    const ConstTensorPin recurrentToOutputWeightsPin = ConvertOperationInputToConstTensorPin(operation, 8);
+    // 13: The forget gate bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    const ConstTensorPin forgetGateBiasPin = ConvertOperationInputToConstTensorPin(operation, 13);
+    // 14: The cell bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    const ConstTensorPin cellBiasPin = ConvertOperationInputToConstTensorPin(operation, 14);
+    // 15: The output gate bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    const ConstTensorPin outputGateBiasPin = ConvertOperationInputToConstTensorPin(operation, 15);
+
+    if (!inputToForgetWeightsPin.IsValid() ||
+        !inputToCellWeightsPin.IsValid() ||
+        !inputToOutputWeightsPin.IsValid() ||
+        !recurrentToForgetWeightsPin.IsValid() ||
+        !recurrentToCellWeightsPin.IsValid() ||
+        !recurrentToOutputWeightsPin.IsValid() ||
+        !forgetGateBiasPin.IsValid() ||
+        !cellBiasPin.IsValid() ||
+        !outputGateBiasPin.IsValid())
+    {
+        return Fail("%s: Operation has invalid tensor inputs", __func__);
+    }
+
+    // Get the optional input tensors:
+    // 01: The input-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, input_size], where “num_units” corresponds to the number of cell units.
+    const ConstTensorPin inputToInputWeightsPin = ConvertOperationInputToConstTensorPin(operation, 1);
+    // 05: The recurrent-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, output_size], where “output_size” corresponds to either the number of cell units (i.e.,
+    //     “num_units”), or the second dimension of the “projection_weights”, if defined.
+    const ConstTensorPin recurrentToInputWeightsPin = ConvertOperationInputToConstTensorPin(operation, 5);
+    // 09: The cell-to-input weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    const ConstTensorPin cellToInputWeightsPin = ConvertOperationInputToConstTensorPin(operation, 9);
+    // 10: The cell-to-forget weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    const ConstTensorPin cellToForgetWeightsPin = ConvertOperationInputToConstTensorPin(operation, 10);
+    // 11: The cell-to-output weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    const ConstTensorPin cellToOutputWeightsPin = ConvertOperationInputToConstTensorPin(operation, 11);
+    // 12: The input gate bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    const ConstTensorPin inputGateBiasPin = ConvertOperationInputToConstTensorPin(operation, 12);
+    // 16: The projection weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [output_size, num_units].
+    const ConstTensorPin projectionWeightsPin = ConvertOperationInputToConstTensorPin(operation, 16);
+    // 17: The projection bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [output_size].
+    const ConstTensorPin projectionBiasPin = ConvertOperationInputToConstTensorPin(operation, 17);
+
+    if ((!inputToInputWeightsPin.IsValid() && !inputToInputWeightsPin.IsOptional()) ||
+        (!recurrentToInputWeightsPin.IsValid() && !recurrentToInputWeightsPin.IsOptional()) ||
+        (!cellToInputWeightsPin.IsValid() && !cellToInputWeightsPin.IsOptional()) ||
+        (!cellToForgetWeightsPin.IsValid() && !cellToForgetWeightsPin.IsOptional()) ||
+        (!cellToOutputWeightsPin.IsValid() && !cellToOutputWeightsPin.IsOptional()) ||
+        (!inputGateBiasPin.IsValid() && !inputGateBiasPin.IsOptional()) ||
+        (!projectionWeightsPin.IsValid() && !projectionWeightsPin.IsOptional()) ||
+        (!projectionBiasPin.IsValid() && !projectionBiasPin.IsOptional()))
+    {
+        return Fail("%s: Operation has invalid tensor inputs", __func__);
+    }
+
+    // Get the mandatory input scalars (actually 1-D tensors of size 1):
+    // 20: The activation function: A value indicating the activation function:
+    //     0: None; 1: Relu; 3: Relu6; 4: Tanh; 6: Sigmoid.
+    // 21: The clipping threshold: for the cell state, such that values are bound within [-cell_clip, cell_clip].
+    //     If set to 0.0 then clipping is disabled.
+    // 22: The clipping threshold: for the output from the projection layer, such that values are bound within
+    //     [-proj_clip, proj_clip]. If set to 0.0 then clipping is disabled.
+    ActivationFn activation;
+    float cellClip;
+    float projClip;
+    if (!GetInputActivationFunctionFromTensor(operation, 20, activation) ||
+        !GetInputScalar(operation, 21, OperandType::FLOAT32, cellClip) ||
+        !GetInputScalar(operation, 22, OperandType::FLOAT32, projClip))
+    {
+        return Fail("%s: Operation has invalid scalar inputs", __func__);
+    }
+
+    // Outputs:
+    // 00: The scratch buffer: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units * 4] with
+    //     CIFG, or [batch_size, num_units * 3] without CIFG.
+    const Operand* scratchBuffer = GetOutputOperand(operation, 0);
+    if (!scratchBuffer)
+    {
+        return Fail("%s: Could not read output 0: scratchBuffer", __func__);
+    }
+    // 01: The output state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size].
+    const Operand* outputStateOut = GetOutputOperand(operation, 1);
+    if (!outputStateOut)
+    {
+        return Fail("%s: Could not read output 1: outputStateOut", __func__);
+    }
+    // 02: The cell state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units].
+    const Operand* cellStateOut = GetOutputOperand(operation, 2);
+    if (!cellStateOut)
+    {
+        return Fail("%s: Could not read output 2: cellStateOut", __func__);
+    }
+    // 03: The output: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size]. This is
+    //     effectively the same as the current “output state (out)” value.
+    const Operand* output = GetOutputOperand(operation, 3);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 3: output", __func__);
+    }
+
+    // set the params structure for the AddLstmLayer call
+    armnn::LstmInputParams params;
+    params.m_InputToInputWeights = inputToInputWeightsPin.GetConstTensorPtr();
+    params.m_InputToForgetWeights = inputToForgetWeightsPin.GetConstTensorPtr();
+    params.m_InputToCellWeights = inputToCellWeightsPin.GetConstTensorPtr();
+    params.m_InputToOutputWeights = inputToOutputWeightsPin.GetConstTensorPtr();
+    params.m_RecurrentToInputWeights = recurrentToInputWeightsPin.GetConstTensorPtr();
+    params.m_RecurrentToForgetWeights = recurrentToForgetWeightsPin.GetConstTensorPtr();
+    params.m_RecurrentToCellWeights = recurrentToCellWeightsPin.GetConstTensorPtr();
+    params.m_RecurrentToOutputWeights = recurrentToOutputWeightsPin.GetConstTensorPtr();
+    params.m_CellToInputWeights = cellToInputWeightsPin.GetConstTensorPtr();
+    params.m_CellToForgetWeights = cellToForgetWeightsPin.GetConstTensorPtr();
+    params.m_CellToOutputWeights = cellToOutputWeightsPin.GetConstTensorPtr();
+    params.m_InputGateBias = inputGateBiasPin.GetConstTensorPtr();
+    params.m_ForgetGateBias = forgetGateBiasPin.GetConstTensorPtr();
+    params.m_CellBias = cellBiasPin.GetConstTensorPtr();
+    params.m_OutputGateBias = outputGateBiasPin.GetConstTensorPtr();
+    params.m_ProjectionWeights = projectionWeightsPin.GetConstTensorPtr();
+    params.m_ProjectionBias = projectionBiasPin.GetConstTensorPtr();
+
+    // set the layer descriptor
+    armnn::LstmDescriptor desc;
+    desc.m_ActivationFunc = activation;
+    desc.m_ClippingThresCell = cellClip;
+    desc.m_ClippingThresProj = projClip;
+    desc.m_CifgEnabled = (params.m_InputToInputWeights == nullptr ||
+                          params.m_RecurrentToInputWeights == nullptr ||
+                          params.m_InputGateBias == nullptr);
+    desc.m_PeepholeEnabled = (params.m_CellToForgetWeights != nullptr ||
+                              params.m_CellToOutputWeights != nullptr);
+    desc.m_ProjectionEnabled = (params.m_ProjectionWeights != nullptr);
+
+    // validate the optional input groups
+    if (desc.m_CifgEnabled &&
+        (params.m_InputToInputWeights != nullptr ||
+         params.m_RecurrentToInputWeights != nullptr ||
+         params.m_InputGateBias != nullptr))
+    {
+        return Fail("%s: All, or none, of input-to-input weights, recurrent-to-input weights,"
+                    " and input gate bias must be provided", __func__);
+    }
+
+    if (!desc.m_ProjectionEnabled && params.m_ProjectionBias != nullptr)
+    {
+        return Fail("%s: projection bias should not be provided without projection weights", __func__);
+    }
+
+    if (desc.m_PeepholeEnabled &&
+        (params.m_CellToForgetWeights == nullptr ||
+         params.m_CellToOutputWeights == nullptr ||
+         (!desc.m_CifgEnabled && params.m_CellToInputWeights == nullptr)))
+    {
+        return Fail("%s: All, or none, of cell-to-forget weights and cell-to-output weights must be provided"
+                    " and, if CIFG is not enabled, cell-to-input weights must also be provided", __func__);
+    }
+
+    // Check if the layer is supported
+    // Inputs
+    const armnn::TensorInfo& inputInfo         = input.GetTensorInfo();
+    const armnn::TensorInfo& outputStateInInfo = outputStateIn.GetTensorInfo();
+    const armnn::TensorInfo& cellStateInInfo   = cellStateIn.GetTensorInfo();
+
+    // Outputs
+    const armnn::TensorInfo& scratchBufferInfo  = GetTensorInfoForOperand(*scratchBuffer);
+    const armnn::TensorInfo& outputStateOutInfo = GetTensorInfoForOperand(*outputStateOut);
+    const armnn::TensorInfo& cellStateOutInfo   = GetTensorInfoForOperand(*cellStateOut);
+    const armnn::TensorInfo& outputInfo         = GetTensorInfoForOperand(*output);
+
+    // Basic parameters
+    const armnn::TensorInfo& inputToForgetWeights = params.m_InputToForgetWeights->GetInfo();
+    const armnn::TensorInfo& inputToCellWeights   = params.m_InputToCellWeights->GetInfo();
+    const armnn::TensorInfo& inputToOutputWeights = params.m_InputToOutputWeights->GetInfo();
+    const armnn::TensorInfo& recurrentToForgetWeights = params.m_RecurrentToForgetWeights->GetInfo();
+    const armnn::TensorInfo& recurrentToCellWeights = params.m_RecurrentToCellWeights->GetInfo();
+    const armnn::TensorInfo& recurrentToOutputWeights = params.m_RecurrentToOutputWeights->GetInfo();
+    const armnn::TensorInfo& forgetGateBias = params.m_ForgetGateBias->GetInfo();
+    const armnn::TensorInfo& cellBias = params.m_CellBias->GetInfo();
+    const armnn::TensorInfo& outputGateBias = params.m_OutputGateBias->GetInfo();
+
+    //Optional parameters
+    const armnn::TensorInfo* inputToInputWeights = nullptr;
+    const armnn::TensorInfo* recurrentToInputWeights = nullptr;
+    const armnn::TensorInfo* cellToInputWeights = nullptr;
+    const armnn::TensorInfo* inputGateBias = nullptr;
+    const armnn::TensorInfo* projectionWeights = nullptr;
+    const armnn::TensorInfo* projectionBias    = nullptr;
+    const armnn::TensorInfo* cellToForgetWeights = nullptr;
+    const armnn::TensorInfo* cellToOutputWeights = nullptr;
+
+    if(!desc.m_CifgEnabled)
+    {
+        inputToInputWeights = &(params.m_InputToInputWeights->GetInfo());
+        recurrentToInputWeights = &(params.m_RecurrentToInputWeights->GetInfo());
+        if (params.m_CellToInputWeights != nullptr)
+        {
+            cellToInputWeights = &(params.m_CellToInputWeights->GetInfo());
+        }
+        inputGateBias = &(params.m_InputGateBias->GetInfo());
+    }
+
+    if(desc.m_ProjectionEnabled)
+    {
+        projectionWeights = &(params.m_ProjectionWeights->GetInfo());
+        if (params.m_ProjectionBias != nullptr)
+        {
+            projectionBias = &(params.m_ProjectionBias->GetInfo());
+        }
+    }
+
+    if(desc.m_PeepholeEnabled)
+    {
+        cellToForgetWeights = &(params.m_CellToForgetWeights->GetInfo());
+        cellToOutputWeights = &(params.m_CellToOutputWeights->GetInfo());
+    }
+
+    if (!IsLayerSupported(__func__,
+                          armnn::IsLstmSupported,
+                          m_Compute,
+                          inputInfo,
+                          outputStateInInfo,
+                          cellStateInInfo,
+                          scratchBufferInfo,
+                          outputStateOutInfo,
+                          cellStateOutInfo,
+                          outputInfo,
+                          desc,
+                          inputToForgetWeights,
+                          inputToCellWeights,
+                          inputToOutputWeights,
+                          recurrentToForgetWeights,
+                          recurrentToCellWeights,
+                          recurrentToOutputWeights,
+                          forgetGateBias,
+                          cellBias,
+                          outputGateBias,
+                          inputToInputWeights,
+                          recurrentToInputWeights,
+                          cellToInputWeights,
+                          inputGateBias,
+                          projectionWeights,
+                          projectionBias,
+                          cellToForgetWeights,
+                          cellToOutputWeights))
+    {
+        return false;
+    }
+
+    // Add the layer
+    armnn::IConnectableLayer* layer = m_Network->AddLstmLayer(desc, params, "Lstm");
+
+    input.Connect(layer->GetInputSlot(0));
+    outputStateIn.Connect(layer->GetInputSlot(1));
+    cellStateIn.Connect(layer->GetInputSlot(2));
+
+    return (SetupAndTrackLayerOutputSlot(operation, 0, *layer, 0) &&
+            SetupAndTrackLayerOutputSlot(operation, 1, *layer, 1) &&
+            SetupAndTrackLayerOutputSlot(operation, 2, *layer, 2) &&
+            SetupAndTrackLayerOutputSlot(operation, 3, *layer, 3));
+}
+
+bool ModelToINetworkConverter::ConvertToActivation(const neuralnetworks::V1_0::Operation& operation,
     const char* operationName,
     const armnn::ActivationDescriptor& activationDesc)
 {
@@ -1459,10 +1942,17 @@ bool ModelToINetworkConverter::ConvertToActivation(const V1_0::Operation& operat
         return Fail("%s: Input 0 is invalid", operationName);
     }
 
+    const Operand* outputOperand = GetOutputOperand(operation, 0);
+    if (!outputOperand)
+    {
+        return false;
+    }
+    const armnn::TensorInfo outInfo = GetTensorInfoForOperand(*outputOperand);
     if (!IsLayerSupported(__func__,
                           armnn::IsActivationSupported,
                           m_Compute,
                           input.GetTensorInfo(),
+                          outInfo,
                           activationDesc))
     {
         return false;
@@ -1475,7 +1965,7 @@ bool ModelToINetworkConverter::ConvertToActivation(const V1_0::Operation& operat
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer);
 }
 
-bool ModelToINetworkConverter::ConvertPooling2d(const V1_0::Operation& operation,
+bool ModelToINetworkConverter::ConvertPooling2d(const neuralnetworks::V1_0::Operation& operation,
     const char* operationName,
     armnn::PoolingAlgorithm poolType)
 {
@@ -1625,7 +2115,8 @@ const void* ModelToINetworkConverter::GetOperandValueReadOnlyAddress(const Opera
     return valueStart;
 }
 
-const Operand* ModelToINetworkConverter::GetInputOperand(const V1_0::Operation& operation, uint32_t inputIndex) const
+const Operand* ModelToINetworkConverter::GetInputOperand(const neuralnetworks::V1_0::Operation& operation,
+                                                         uint32_t inputIndex) const
 {
     if (inputIndex >= operation.inputs.size())
     {
@@ -1637,7 +2128,8 @@ const Operand* ModelToINetworkConverter::GetInputOperand(const V1_0::Operation& 
     return &m_Model.operands[operation.inputs[inputIndex]];
 }
 
-const Operand* ModelToINetworkConverter::GetOutputOperand(const V1_0::Operation& operation, uint32_t outputIndex) const
+const Operand* ModelToINetworkConverter::GetOutputOperand(const neuralnetworks::V1_0::Operation& operation,
+                                                          uint32_t outputIndex) const
 {
     if (outputIndex >= operation.outputs.size())
     {
@@ -1650,7 +2142,7 @@ const Operand* ModelToINetworkConverter::GetOutputOperand(const V1_0::Operation&
 }
 
 template<typename T>
-bool ModelToINetworkConverter::GetInputScalar(const V1_0::Operation& operation, uint32_t inputIndex,
+bool ModelToINetworkConverter::GetInputScalar(const neuralnetworks::V1_0::Operation& operation, uint32_t inputIndex,
     OperandType type, T& outValue) const
 {
     const Operand* operand = GetInputOperand(operation, inputIndex);
@@ -1681,33 +2173,75 @@ bool ModelToINetworkConverter::GetInputScalar(const V1_0::Operation& operation, 
     return true;
 }
 
-bool ModelToINetworkConverter::GetInputInt32(const V1_0::Operation& operation,
+bool ModelToINetworkConverter::GetInputInt32(const neuralnetworks::V1_0::Operation& operation,
                                              uint32_t inputIndex, int32_t& outValue) const
 {
     return GetInputScalar(operation, inputIndex, OperandType::INT32, outValue);
 }
 
-bool ModelToINetworkConverter::GetInputFloat32(const V1_0::Operation& operation,
+bool ModelToINetworkConverter::GetInputFloat32(const neuralnetworks::V1_0::Operation& operation,
                                                uint32_t inputIndex, float& outValue) const
 {
     return GetInputScalar(operation, inputIndex, OperandType::FLOAT32, outValue);
 }
 
-bool ModelToINetworkConverter::GetInputActivationFunction(const V1_0::Operation& operation,
-    uint32_t inputIndex,
-    ActivationFn& outActivationFunction) const
+bool ModelToINetworkConverter::GetInputActivationFunctionImpl(const neuralnetworks::V1_0::Operation& operation,
+                                                              uint32_t inputIndex,
+                                                              OperandType type,
+                                                              ActivationFn& outActivationFunction) const
 {
+    if (type != OperandType::INT32 && type != OperandType::TENSOR_INT32)
+    {
+        return Fail("%s: unexpected operand type: %s (should be %s or %s)",
+                    __func__,
+                    toString(type).c_str(),
+                    toString(OperandType::INT32).c_str(),
+                    toString(OperandType::TENSOR_INT32).c_str());
+    }
+
     int32_t activationFunctionAsInt;
-    if (!GetInputInt32(operation, inputIndex, activationFunctionAsInt))
+    if (!GetInputScalar(operation, inputIndex, type, activationFunctionAsInt))
     {
         return Fail("%s: failed to get activation input value", __func__);
     }
-
     outActivationFunction = static_cast<ActivationFn>(activationFunctionAsInt);
     return true;
 }
 
-bool ModelToINetworkConverter::GetInputPaddingScheme(const V1_0::Operation& operation,
+bool ModelToINetworkConverter::GetInputActivationFunction(const neuralnetworks::V1_0::Operation& operation,
+                                                          uint32_t inputIndex,
+                                                          ActivationFn& outActivationFunction) const
+{
+    return GetInputActivationFunctionImpl(operation, inputIndex, OperandType::INT32, outActivationFunction);
+}
+
+bool ModelToINetworkConverter::GetInputActivationFunctionFromTensor(const neuralnetworks::V1_0::Operation& operation,
+                                                                    uint32_t inputIndex,
+                                                                    ActivationFn& outActivationFunction) const
+{
+    // This only accepts a 1-D tensor of size 1
+    return GetInputActivationFunctionImpl(operation, inputIndex, OperandType::INT32, outActivationFunction);
+}
+
+bool ModelToINetworkConverter::GetOptionalInputActivation(const neuralnetworks::V1_0::Operation& operation,
+                                uint32_t inputIndex,
+                                ActivationFn& activationFunction) const
+{
+    if (operation.inputs.size() <= inputIndex)
+    {
+        activationFunction = ActivationFn::kActivationNone;
+    }
+    else
+    {
+        if (!GetInputActivationFunction(operation, inputIndex, activationFunction))
+        {
+            return Fail("%s: Operation has invalid inputs", __func__);
+        }
+    }
+    return true;
+}
+
+bool ModelToINetworkConverter::GetInputPaddingScheme(const neuralnetworks::V1_0::Operation& operation,
     uint32_t inputIndex,
     android::nn::PaddingScheme& outPaddingScheme) const
 {
@@ -1722,7 +2256,7 @@ bool ModelToINetworkConverter::GetInputPaddingScheme(const V1_0::Operation& oper
 }
 
 LayerInputHandle ModelToINetworkConverter::ConvertToLayerInputHandle(
-    const V1_0::Operation& operation,
+    const neuralnetworks::V1_0::Operation& operation,
     uint32_t inputIndex)
 {
     const Operand* operand = GetInputOperand(operation, inputIndex);
@@ -1791,22 +2325,22 @@ LayerInputHandle ModelToINetworkConverter::ConvertToLayerInputHandle(
     }
 }
 
-ConstTensorPin ModelToINetworkConverter::ConvertOperationInputToConstTensorPin(const V1_0::Operation& operation,
-    uint32_t inputIndex, const armnn::PermutationVector& dimensionMappings,
-    const armnn::TensorShape* overrideTensorShape)
+ConstTensorPin ModelToINetworkConverter::ConvertOperationInputToConstTensorPin(
+        const neuralnetworks::V1_0::Operation& operation,
+        uint32_t inputIndex, const armnn::PermutationVector& dimensionMappings,
+        const armnn::TensorShape* overrideTensorShape, bool optional)
 {
     const Operand* operand = GetInputOperand(operation, inputIndex);
     if (!operand)
     {
-        Fail("%s: failed to get input operand", __func__);
+        Fail("%s: failed to get input operand: index=%u", __func__, inputIndex);
         return ConstTensorPin();
     }
-
-    return ConvertOperandToConstTensorPin(*operand, dimensionMappings, overrideTensorShape);
+    return ConvertOperandToConstTensorPin(*operand, dimensionMappings, overrideTensorShape, optional);
 }
 
 ConstTensorPin ModelToINetworkConverter::ConvertOperandToConstTensorPin(const Operand& operand,
-    const armnn::PermutationVector& dimensionMappings, const armnn::TensorShape* overrideTensorShape)
+    const armnn::PermutationVector& dimensionMappings, const armnn::TensorShape* overrideTensorShape, bool optional)
 {
     if (!IsOperandTypeSupportedForTensors(operand.type))
     {
@@ -1823,6 +2357,12 @@ ConstTensorPin ModelToINetworkConverter::ConvertOperandToConstTensorPin(const Op
     const void* const valueStart = GetOperandValueReadOnlyAddress(operand);
     if (!valueStart)
     {
+        if (optional)
+        {
+            // optional tensor with no values is not really an error; return it as invalid, but marked as optional
+            return ConstTensorPin(true);
+        }
+        // mandatory tensor with no values
         Fail("%s: failed to get operand address", __func__);
         return ConstTensorPin();
     }
@@ -1919,7 +2459,7 @@ armnn::IConnectableLayer* ModelToINetworkConverter::ProcessActivation(const armn
         }
 
         if (!IsLayerSupported(__func__, armnn::IsActivationSupported, m_Compute,
-                              prevLayer->GetOutputSlot(0).GetTensorInfo(), activationDesc))
+                              prevLayer->GetOutputSlot(0).GetTensorInfo(), tensorInfo, activationDesc))
         {
             return nullptr;
         }
@@ -1933,24 +2473,33 @@ armnn::IConnectableLayer* ModelToINetworkConverter::ProcessActivation(const armn
     return activationLayer;
 }
 
-bool ModelToINetworkConverter::SetupAndTrackLayerOutputSlot(const V1_0::Operation& operation, uint32_t outputIndex,
-                                                            armnn::IConnectableLayer& layer)
+bool ModelToINetworkConverter::SetupAndTrackLayerOutputSlot(const neuralnetworks::V1_0::Operation& operation,
+                                                            uint32_t operationOutputIndex,
+                                                            armnn::IConnectableLayer& layer,
+                                                            uint32_t layerOutputIndex)
 {
-    const Operand* outputOperand = GetOutputOperand(operation, outputIndex);
+    const Operand* outputOperand = GetOutputOperand(operation, operationOutputIndex);
 
-    if ((outputOperand == nullptr) || (outputIndex >= layer.GetNumOutputSlots()))
+    if ((outputOperand == nullptr) || (operationOutputIndex >= layer.GetNumOutputSlots()))
     {
         return false;
     }
 
-    armnn::IOutputSlot& outputSlot = layer.GetOutputSlot(outputIndex);
+    armnn::IOutputSlot& outputSlot = layer.GetOutputSlot(layerOutputIndex);
 
-    const uint32_t operandIndex = operation.outputs[outputIndex];
+    const uint32_t operandIndex = operation.outputs[operationOutputIndex];
     m_OutputSlotForOperand[operandIndex] = &outputSlot;
 
     outputSlot.SetTensorInfo(GetTensorInfoForOperand(*outputOperand));
 
     return true;
+}
+
+bool ModelToINetworkConverter::SetupAndTrackLayerOutputSlot(const neuralnetworks::V1_0::Operation& operation,
+                                                            uint32_t outputIndex,
+                                                            armnn::IConnectableLayer& layer)
+{
+    return SetupAndTrackLayerOutputSlot(operation, outputIndex, layer, outputIndex);
 }
 
 bool ModelToINetworkConverter::IsOperationSupported(uint32_t operationIndex) const

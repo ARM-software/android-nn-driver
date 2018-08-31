@@ -72,9 +72,9 @@ android::sp<IMemory> AddPoolAndGetData(uint32_t size, Request& request);
 
 void AddPoolAndSetData(uint32_t size, Request& request, const float* data);
 
-void AddOperand(V1_0::Model& model, const Operand& op);
+void AddOperand(::android::hardware::neuralnetworks::V1_0::Model& model, const Operand& op);
 
-void AddIntOperand(V1_0::Model& model, int32_t value);
+void AddIntOperand(::android::hardware::neuralnetworks::V1_0::Model& model, int32_t value);
 
 template<typename T>
 OperandType TypeToOperandType();
@@ -86,7 +86,10 @@ template<>
 OperandType TypeToOperandType<int32_t>();
 
 template<typename T>
-void AddTensorOperand(V1_0::Model& model, hidl_vec<uint32_t> dimensions, T* values)
+void AddTensorOperand(::android::hardware::neuralnetworks::V1_0::Model& model,
+                      hidl_vec<uint32_t> dimensions,
+                      T* values,
+                      OperandType operandType = OperandType::TENSOR_FLOAT32)
 {
     uint32_t totalElements = 1;
     for (uint32_t dim : dimensions)
@@ -99,7 +102,7 @@ void AddTensorOperand(V1_0::Model& model, hidl_vec<uint32_t> dimensions, T* valu
     location.length = totalElements * sizeof(T);
 
     Operand op    = {};
-    op.type       = TypeToOperandType<T>();
+    op.type       = operandType;
     op.dimensions = dimensions;
     op.lifetime   = OperandLifeTime::CONSTANT_COPY;
     op.location   = location;
@@ -113,14 +116,18 @@ void AddTensorOperand(V1_0::Model& model, hidl_vec<uint32_t> dimensions, T* valu
     AddOperand(model, op);
 }
 
-void AddInputOperand(V1_0::Model& model, hidl_vec<uint32_t> dimensions);
+void AddInputOperand(::android::hardware::neuralnetworks::V1_0::Model& model,
+                     hidl_vec<uint32_t> dimensions,
+                     ::android::hardware::neuralnetworks::V1_0::OperandType operandType = OperandType::TENSOR_FLOAT32);
 
-void AddOutputOperand(V1_0::Model& model, hidl_vec<uint32_t> dimensions);
+void AddOutputOperand(::android::hardware::neuralnetworks::V1_0::Model& model,
+                      hidl_vec<uint32_t> dimensions,
+                      ::android::hardware::neuralnetworks::V1_0::OperandType operandType = OperandType::TENSOR_FLOAT32);
 
-android::sp<IPreparedModel> PrepareModel(const V1_0::Model& model,
+android::sp<IPreparedModel> PrepareModel(const ::android::hardware::neuralnetworks::V1_0::Model& model,
                                          armnn_driver::ArmnnDriver& driver);
 
-android::sp<IPreparedModel> PrepareModelWithStatus(const V1_0::Model& model,
+android::sp<IPreparedModel> PrepareModelWithStatus(const ::android::hardware::neuralnetworks::V1_0::Model& model,
                                                    armnn_driver::ArmnnDriver& driver,
                                                    ErrorStatus & prepareStatus,
                                                    ErrorStatus expectedStatus=ErrorStatus::NONE);

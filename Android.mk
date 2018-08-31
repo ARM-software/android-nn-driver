@@ -12,12 +12,12 @@ ARMNN_UTILS_HEADER_PATH := $(LOCAL_PATH)/armnn/src/armnnUtils
 OPENCL_HEADER_PATH := $(LOCAL_PATH)/clframework/include
 NN_HEADER_PATH := $(LOCAL_PATH)/../../../frameworks/ml/nn/runtime/include
 
-###################
-# libarmnn-driver #
-###################
+#######################
+# libarmnn-driver@1.0 #
+#######################
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := libarmnn-driver
+LOCAL_MODULE := libarmnn-driver@1.0
 LOCAL_MODULE_TAGS := eng optional
 LOCAL_ARM_MODE := arm
 LOCAL_PROPRIETARY_MODULE := true
@@ -25,16 +25,16 @@ LOCAL_PROPRIETARY_MODULE := true
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
 LOCAL_C_INCLUDES := \
-	$(ARMNN_HEADER_PATH) \
-	$(ARMNN_UTILS_HEADER_PATH) \
-	$(OPENCL_HEADER_PATH) \
-	$(NN_HEADER_PATH)
+        $(ARMNN_HEADER_PATH) \
+        $(ARMNN_UTILS_HEADER_PATH) \
+        $(OPENCL_HEADER_PATH) \
+        $(NN_HEADER_PATH)
 
 LOCAL_CFLAGS := \
-	-std=c++14 \
-	-fexceptions \
-	-Werror \
-	-Wno-format-security
+        -std=c++14 \
+        -fexceptions \
+        -Werror \
+        -Wno-format-security
 ifeq ($(PLATFORM_VERSION),9)
 # Required to build with the changes made to the Android ML framework starting from Android P,
 # regardless of the HAL version used for the build.
@@ -42,42 +42,109 @@ LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_P
 endif
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
-	LOCAL_CFLAGS+= -UNDEBUG
+LOCAL_CFLAGS+= \
+        -UNDEBUG
 endif
 
 LOCAL_SRC_FILES := \
-	ArmnnDriver.cpp \
-	ArmnnPreparedModel.cpp \
-	ModelToINetworkConverter.cpp \
-	RequestThread.cpp \
-	Utils.cpp
+        1.0/ArmnnDriverImpl.cpp \
+        DriverOptions.cpp \
+        ArmnnDevice.cpp \
+        ArmnnPreparedModel.cpp \
+        ModelToINetworkConverter.cpp \
+        RequestThread.cpp \
+        Utils.cpp
 
 LOCAL_STATIC_LIBRARIES := \
-	libneuralnetworks_common \
-	libarmnn \
-	libboost_log \
-	libboost_program_options \
-	libboost_system \
-	libboost_thread \
-	armnn-arm_compute
+        libneuralnetworks_common \
+        libarmnn \
+        libboost_log \
+        libboost_program_options \
+        libboost_system \
+        libboost_thread \
+        armnn-arm_compute
 
 LOCAL_SHARED_LIBRARIES := \
-	libbase \
-	libhidlbase \
-	libhidltransport \
-	libhidlmemory \
-	liblog \
-	libutils \
-	android.hardware.neuralnetworks@1.0 \
-	android.hidl.allocator@1.0 \
-	android.hidl.memory@1.0 \
-	libOpenCL
+        libbase \
+        libhidlbase \
+        libhidltransport \
+        libhidlmemory \
+        liblog \
+        libutils \
+        android.hardware.neuralnetworks@1.0 \
+        android.hidl.allocator@1.0 \
+        android.hidl.memory@1.0 \
+        libOpenCL
 ifeq ($(PLATFORM_VERSION),9)
 # Required to build the 1.0 version of the NN Driver on Android P and later versions,
 # as the 1.0 version of the NN API needs the 1.1 HAL headers to be included regardless.
 LOCAL_SHARED_LIBRARIES+= \
-	android.hardware.neuralnetworks@1.1
+        android.hardware.neuralnetworks@1.1
 endif
+
+include $(BUILD_STATIC_LIBRARY)
+
+#######################
+# libarmnn-driver@1.1 #
+#######################
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libarmnn-driver@1.1
+LOCAL_MODULE_TAGS := eng optional
+LOCAL_ARM_MODE := arm
+LOCAL_PROPRIETARY_MODULE := true
+# Mark source files as dependent on Android.mk
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+
+LOCAL_C_INCLUDES := \
+        $(ARMNN_HEADER_PATH) \
+        $(ARMNN_UTILS_HEADER_PATH) \
+        $(OPENCL_HEADER_PATH) \
+        $(NN_HEADER_PATH)
+
+LOCAL_CFLAGS := \
+        -std=c++14 \
+        -fexceptions \
+        -Werror \
+        -Wno-format-security \
+        -DARMNN_ANDROID_P \
+        -DARMNN_ANDROID_NN_V1_1
+ifeq ($(ARMNN_DRIVER_DEBUG),1)
+LOCAL_CFLAGS+= \
+        -UNDEBUG
+endif
+
+LOCAL_SRC_FILES := \
+        1.0/ArmnnDriverImpl.cpp \
+        1.1/ArmnnDriverImpl.cpp \
+        DriverOptions.cpp \
+        ArmnnDevice.cpp \
+        ArmnnPreparedModel.cpp \
+        ModelToINetworkConverter.cpp \
+        RequestThread.cpp \
+        Utils.cpp
+
+LOCAL_STATIC_LIBRARIES := \
+        libneuralnetworks_common \
+        libarmnn \
+        libboost_log \
+        libboost_program_options \
+        libboost_system \
+        libboost_thread \
+        armnn-arm_compute
+
+LOCAL_SHARED_LIBRARIES := \
+        libbase \
+        libhidlbase \
+        libhidltransport \
+        libhidlmemory \
+        liblog \
+        libutils \
+        android.hardware.neuralnetworks@1.0 \
+        android.hardware.neuralnetworks@1.1 \
+        android.hidl.allocator@1.0 \
+        android.hidl.memory@1.0 \
+        libOpenCL
 
 include $(BUILD_STATIC_LIBRARY)
 
@@ -95,55 +162,109 @@ LOCAL_PROPRIETARY_MODULE := true
 # Mark source files as dependent on Android.mk
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
-LOCAL_C_INCLUDES :=	 \
-	$(ARMNN_HEADER_PATH) \
-	$(NN_HEADER_PATH)
+LOCAL_C_INCLUDES := \
+        $(ARMNN_HEADER_PATH) \
+        $(NN_HEADER_PATH)
 
 LOCAL_CFLAGS := \
-	-std=c++14 \
-	-fexceptions
+        -std=c++14 \
+        -fexceptions
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
-	LOCAL_CFLAGS+= -UNDEBUG
+LOCAL_CFLAGS += \
+        -UNDEBUG
 endif
 
 LOCAL_SRC_FILES := \
-	service.cpp
+        service.cpp
 
 LOCAL_STATIC_LIBRARIES := \
-	libarmnn-driver \
-	libneuralnetworks_common \
-	libarmnn \
-	libboost_log \
-	libboost_program_options \
-	libboost_system \
-	libboost_thread \
-	armnn-arm_compute
-ifeq ($(PLATFORM_VERSION),9)
-# Required to build the 1.0 version of the NN Driver on Android P and later versions.
-LOCAL_STATIC_LIBRARIES+= \
-	libomp
-endif
+        libarmnn-driver@1.0 \
+        libneuralnetworks_common \
+        libarmnn \
+        libboost_log \
+        libboost_program_options \
+        libboost_system \
+        libboost_thread \
+        armnn-arm_compute
 
 LOCAL_SHARED_LIBRARIES := \
-	libbase \
-	libhidlbase \
-	libhidltransport \
-	libhidlmemory \
-	libdl \
-	libhardware \
-	liblog \
-	libtextclassifier_hash \
-	libutils \
-	android.hardware.neuralnetworks@1.0 \
-	android.hidl.allocator@1.0 \
-	android.hidl.memory@1.0 \
-	libOpenCL
+        libbase \
+        libhidlbase \
+        libhidltransport \
+        libhidlmemory \
+        libdl \
+        libhardware \
+        liblog \
+        libtextclassifier_hash \
+        libutils \
+        android.hardware.neuralnetworks@1.0 \
+        android.hidl.allocator@1.0 \
+        android.hidl.memory@1.0 \
+        libOpenCL
 ifeq ($(PLATFORM_VERSION),9)
 # Required to build the 1.0 version of the NN Driver on Android P and later versions,
 # as the 1.0 version of the NN API needs the 1.1 HAL headers to be included regardless.
 LOCAL_SHARED_LIBRARIES+= \
-	android.hardware.neuralnetworks@1.1
+        android.hardware.neuralnetworks@1.1
 endif
+
+include $(BUILD_EXECUTABLE)
+
+#####################################################
+# android.hardware.neuralnetworks@1.1-service-armnn #
+#####################################################
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := android.hardware.neuralnetworks@1.1-service-armnn
+LOCAL_INIT_RC := android.hardware.neuralnetworks@1.1-service-armnn.rc
+LOCAL_MODULE_TAGS := eng optional
+LOCAL_ARM_MODE := arm
+LOCAL_MODULE_RELATIVE_PATH := hw
+LOCAL_PROPRIETARY_MODULE := true
+# Mark source files as dependent on Android.mk
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+
+LOCAL_C_INCLUDES := \
+        $(ARMNN_HEADER_PATH) \
+        $(NN_HEADER_PATH)
+
+LOCAL_CFLAGS := \
+        -std=c++14 \
+        -fexceptions \
+        -DARMNN_ANDROID_NN_V1_1
+ifeq ($(ARMNN_DRIVER_DEBUG),1)
+LOCAL_CFLAGS += \
+        -UNDEBUG
+endif
+
+LOCAL_SRC_FILES := \
+        service.cpp
+
+LOCAL_STATIC_LIBRARIES := \
+        libarmnn-driver@1.1 \
+        libneuralnetworks_common \
+        libarmnn \
+        libboost_log \
+        libboost_program_options \
+        libboost_system \
+        libboost_thread \
+        armnn-arm_compute
+
+LOCAL_SHARED_LIBRARIES := \
+        libbase \
+        libhidlbase \
+        libhidltransport \
+        libhidlmemory \
+        libdl \
+        libhardware \
+        liblog \
+        libtextclassifier_hash \
+        libutils \
+        android.hardware.neuralnetworks@1.0 \
+        android.hardware.neuralnetworks@1.1 \
+        android.hidl.allocator@1.0 \
+        android.hidl.memory@1.0 \
+        libOpenCL
 
 include $(BUILD_EXECUTABLE)
 

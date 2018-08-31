@@ -11,7 +11,6 @@
 #include <log/log.h>
 
 #include <string>
-#include <vector>
 
 using namespace armnn_driver;
 using namespace std;

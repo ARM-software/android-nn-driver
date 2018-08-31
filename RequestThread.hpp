@@ -10,8 +10,9 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "CpuExecutor.h"
-#include "HalInterfaces.h"
+#include "ArmnnDriver.hpp"
+
+#include <CpuExecutor.h>
 #include <armnn/ArmNN.hpp>
 
 namespace armnn_driver

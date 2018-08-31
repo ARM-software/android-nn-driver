@@ -6,13 +6,13 @@
 #include <boost/test/unit_test.hpp>
 #include <log/log.h>
 
-#include "OperationsUtils.h"
+#include <OperationsUtils.h>
 
 BOOST_AUTO_TEST_SUITE(Convolution2DTests)
 
-using ArmnnDriver = armnn_driver::ArmnnDriver;
-using DriverOptions = armnn_driver::DriverOptions;
+using namespace android::hardware;
 using namespace driverTestHelpers;
+using namespace armnn_driver;
 
 namespace
 {
@@ -20,7 +20,7 @@ namespace
 void PaddingTestImpl(android::nn::PaddingScheme paddingScheme)
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
-    V1_0::Model model  = {};
+    neuralnetworks::V1_0::Model model  = {};
 
     uint32_t outSize = paddingScheme == android::nn::kPaddingSame ? 2 : 1;
 
@@ -39,7 +39,7 @@ void PaddingTestImpl(android::nn::PaddingScheme paddingScheme)
 
     // make the convolution operation
     model.operations.resize(1);
-    model.operations[0].type = V1_0::OperationType::CONV_2D;
+    model.operations[0].type = neuralnetworks::V1_0::OperationType::CONV_2D;
     model.operations[0].inputs  = hidl_vec<uint32_t>{0, 1, 2, 3, 4, 5, 6};
     model.operations[0].outputs = hidl_vec<uint32_t>{7};
 
