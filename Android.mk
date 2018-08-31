@@ -40,11 +40,11 @@ ifeq ($(PLATFORM_VERSION),9)
 # regardless of the HAL version used for the build.
 LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_P
-endif
+endif # PLATFORM_VERSION == 9
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS+= \
         -UNDEBUG
-endif
+endif # ARMNN_DRIVER_DEBUG == 1
 
 LOCAL_SRC_FILES := \
         1.0/ArmnnDriverImpl.cpp \
@@ -80,9 +80,12 @@ ifeq ($(PLATFORM_VERSION),9)
 # as the 1.0 version of the NN API needs the 1.1 HAL headers to be included regardless.
 LOCAL_SHARED_LIBRARIES+= \
         android.hardware.neuralnetworks@1.1
-endif
+endif # PLATFORM_VERSION == 9
 
 include $(BUILD_STATIC_LIBRARY)
+
+ifeq ($(PLATFORM_VERSION),9)
+# The following target is available starting from Android P
 
 #######################
 # libarmnn-driver@1.1 #
@@ -112,7 +115,7 @@ LOCAL_CFLAGS := \
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS+= \
         -UNDEBUG
-endif
+endif # ARMNN_DRIVER_DEBUG == 1
 
 LOCAL_SRC_FILES := \
         1.0/ArmnnDriverImpl.cpp \
@@ -148,6 +151,8 @@ LOCAL_SHARED_LIBRARIES := \
 
 include $(BUILD_STATIC_LIBRARY)
 
+endif # PLATFORM_VERSION == 9
+
 #####################################################
 # android.hardware.neuralnetworks@1.0-service-armnn #
 #####################################################
@@ -172,7 +177,7 @@ LOCAL_CFLAGS := \
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS += \
         -UNDEBUG
-endif
+endif # ARMNN_DRIVER_DEBUG == 1
 
 LOCAL_SRC_FILES := \
         service.cpp
@@ -206,9 +211,12 @@ ifeq ($(PLATFORM_VERSION),9)
 # as the 1.0 version of the NN API needs the 1.1 HAL headers to be included regardless.
 LOCAL_SHARED_LIBRARIES+= \
         android.hardware.neuralnetworks@1.1
-endif
+endif # PLATFORM_VERSION == 9
 
 include $(BUILD_EXECUTABLE)
+
+ifeq ($(PLATFORM_VERSION),9)
+# The following target is available starting from Android P
 
 #####################################################
 # android.hardware.neuralnetworks@1.1-service-armnn #
@@ -235,7 +243,7 @@ LOCAL_CFLAGS := \
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS += \
         -UNDEBUG
-endif
+endif # ARMNN_DRIVER_DEBUG == 1
 
 LOCAL_SRC_FILES := \
         service.cpp
@@ -267,6 +275,8 @@ LOCAL_SHARED_LIBRARIES := \
         libOpenCL
 
 include $(BUILD_EXECUTABLE)
+
+endif # PLATFORM_VERSION == 9
 
 ##########################
 # armnn module and tests #

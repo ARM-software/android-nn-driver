@@ -41,7 +41,7 @@ ifeq ($(PLATFORM_VERSION),9)
 # regardless of the HAL version used for the build.
 LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_P
-endif
+endif # PLATFORM_VERSION == 9
 
 LOCAL_SRC_FILES := \
         Tests.cpp \
@@ -83,9 +83,12 @@ ifeq ($(PLATFORM_VERSION),9)
 # as the 1.0 version of the NN API needs the 1.1 HAL headers to be included regardless.
 LOCAL_SHARED_LIBRARIES+= \
         android.hardware.neuralnetworks@1.1
-endif
+endif # PLATFORM_VERSION == 9
 
 include $(BUILD_EXECUTABLE)
+
+ifeq ($(PLATFORM_VERSION),9)
+# The following target is available starting from Android P
 
 ##########################
 # armnn-driver-tests@1.1 #
@@ -152,4 +155,6 @@ LOCAL_SHARED_LIBRARIES := \
         libOpenCL
 
 include $(BUILD_EXECUTABLE)
+
+endif # PLATFORM_VERSION == 9
 
