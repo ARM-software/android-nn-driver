@@ -483,8 +483,8 @@ ModelToINetworkConverter<HalVersion>::ModelToINetworkConverter(armnn::Compute co
 template<typename HalVersion>
 void ModelToINetworkConverter<HalVersion>::Convert()
 {
-    using Model = typename HalVersion::Model;
-    ALOGV("ModelToINetworkConverter::Convert(): %s", GetModelSummary<Model>(m_Model).c_str());
+    using HalModel = typename HalVersion::Model;
+    ALOGV("ModelToINetworkConverter::Convert(): %s", GetModelSummary<HalModel>(m_Model).c_str());
 
     // map the memory pool into shared pointers
     m_MemPools.clear();
@@ -665,12 +665,65 @@ bool ModelToINetworkConverter<HalVersion>::ConvertOperation(const neuralnetworks
     {
         switch (operation.type)
         {
-            // TODO: provide cases for converting the new v1.1 operations
+            case neuralnetworks::V1_1::OperationType::DIV:
+                return ConvertDiv(operation);
             default:
-            return Fail("%s: Operation type %s not supported in ArmnnDriver",
-                        __func__, toString(operation.type).c_str());
+                return Fail("%s: Operation type %s not supported in ArmnnDriver",
+                            __func__, toString(operation.type).c_str());
         }
     }
+}
+
+template<typename HalVersion>
+bool ModelToINetworkConverter<HalVersion>::ConvertDiv(const neuralnetworks::V1_1::Operation& operation)
+{
+    LayerInputHandle input0 = ConvertToLayerInputHandle(operation, 0);
+    LayerInputHandle input1 = ConvertToLayerInputHandle(operation, 1);
+
+    if (!input0.IsValid() || !input1.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    // The FuseActivation parameter is always the input index 2
+    // and it should be optional
+    ActivationFn activationFunction;
+    if (!GetOptionalInputActivation(operation, 2, activationFunction))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* outputOperand = GetOutputOperand(operation, 0);
+    if (!outputOperand)
+    {
+        return false;
+    }
+
+    const armnn::TensorInfo& outInfo = GetTensorInfoForOperand(*outputOperand);
+
+    if (!IsLayerSupported(__func__,
+                          armnn::IsDivisionSupported,
+                          m_Compute,
+                          input0.GetTensorInfo(),
+                          input1.GetTensorInfo(),
+                          outInfo))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const startLayer = m_Network->AddDivisionLayer();
+    armnn::IConnectableLayer* const endLayer = ProcessActivation(outInfo, activationFunction, startLayer);
+
+    const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
+    const armnn::TensorInfo& inputTensorInfo1 = input1.GetTensorInfo();
+
+    if (endLayer)
+    {
+        BroadcastTensor(input0, input1, startLayer, *m_Network);
+        return SetupAndTrackLayerOutputSlot(operation, 0, *endLayer);
+    }
+
+    return Fail("%s: ProcessActivation failed", __func__);
 }
 #endif
 
@@ -2172,8 +2225,9 @@ const void* ModelToINetworkConverter<HalVersion>::GetOperandValueReadOnlyAddress
 }
 
 template<typename HalVersion>
-const Operand* ModelToINetworkConverter<HalVersion>::GetInputOperand(const neuralnetworks::V1_0::Operation& operation,
-    uint32_t inputIndex) const
+template<typename HalOperation>
+const Operand* ModelToINetworkConverter<HalVersion>::GetInputOperand(const HalOperation& operation,
+                                                                     uint32_t inputIndex) const
 {
     if (inputIndex >= operation.inputs.size())
     {
@@ -2186,8 +2240,9 @@ const Operand* ModelToINetworkConverter<HalVersion>::GetInputOperand(const neura
 }
 
 template<typename HalVersion>
-const Operand* ModelToINetworkConverter<HalVersion>::GetOutputOperand(const neuralnetworks::V1_0::Operation& operation,
-    uint32_t outputIndex) const
+template<typename HalOperation>
+const Operand* ModelToINetworkConverter<HalVersion>::GetOutputOperand(const HalOperation& operation,
+                                                                      uint32_t outputIndex) const
 {
     if (outputIndex >= operation.outputs.size())
     {
@@ -2200,10 +2255,11 @@ const Operand* ModelToINetworkConverter<HalVersion>::GetOutputOperand(const neur
 }
 
 template<typename HalVersion>
-template<typename T>
-bool ModelToINetworkConverter<HalVersion>::GetInputScalar(const neuralnetworks::V1_0::Operation& operation,
-    uint32_t inputIndex,
-    OperandType type, T& outValue) const
+template<typename HalOperation, typename T>
+bool ModelToINetworkConverter<HalVersion>::GetInputScalar(const HalOperation& operation,
+                                                          uint32_t inputIndex,
+                                                          OperandType type,
+                                                          T& outValue) const
 {
     const Operand* operand = GetInputOperand(operation, inputIndex);
     if (!operand)
@@ -2234,25 +2290,29 @@ bool ModelToINetworkConverter<HalVersion>::GetInputScalar(const neuralnetworks::
 }
 
 template<typename HalVersion>
-bool ModelToINetworkConverter<HalVersion>::GetInputInt32(const neuralnetworks::V1_0::Operation& operation,
-                                             uint32_t inputIndex, int32_t& outValue) const
+template<typename HalOperation>
+bool ModelToINetworkConverter<HalVersion>::GetInputInt32(const HalOperation& operation,
+                                                         uint32_t inputIndex,
+                                                         int32_t& outValue) const
 {
     return GetInputScalar(operation, inputIndex, OperandType::INT32, outValue);
 }
 
 template<typename HalVersion>
-bool ModelToINetworkConverter<HalVersion>::GetInputFloat32(const neuralnetworks::V1_0::Operation& operation,
-                                               uint32_t inputIndex, float& outValue) const
+template<typename HalOperation>
+bool ModelToINetworkConverter<HalVersion>::GetInputFloat32(const HalOperation& operation,
+                                                           uint32_t inputIndex,
+                                                           float& outValue) const
 {
     return GetInputScalar(operation, inputIndex, OperandType::FLOAT32, outValue);
 }
 
 template<typename HalVersion>
-bool ModelToINetworkConverter<HalVersion>::GetInputActivationFunctionImpl(
-    const neuralnetworks::V1_0::Operation& operation,
-    uint32_t inputIndex,
-    OperandType type,
-    ActivationFn& outActivationFunction) const
+template<typename HalOperation>
+bool ModelToINetworkConverter<HalVersion>::GetInputActivationFunctionImpl(const HalOperation& operation,
+                                                                          uint32_t inputIndex,
+                                                                          OperandType type,
+                                                                          ActivationFn& outActivationFunction) const
 {
     if (type != OperandType::INT32 && type != OperandType::TENSOR_INT32)
     {
@@ -2273,17 +2333,18 @@ bool ModelToINetworkConverter<HalVersion>::GetInputActivationFunctionImpl(
 }
 
 template<typename HalVersion>
-bool ModelToINetworkConverter<HalVersion>::GetInputActivationFunction(
-    const neuralnetworks::V1_0::Operation& operation,
-    uint32_t inputIndex,
-    ActivationFn& outActivationFunction) const
+template<typename HalOperation>
+bool ModelToINetworkConverter<HalVersion>::GetInputActivationFunction(const HalOperation& operation,
+                                                                      uint32_t inputIndex,
+                                                                      ActivationFn& outActivationFunction) const
 {
     return GetInputActivationFunctionImpl(operation, inputIndex, OperandType::INT32, outActivationFunction);
 }
 
 template<typename HalVersion>
+template<typename HalOperation>
 bool ModelToINetworkConverter<HalVersion>::GetInputActivationFunctionFromTensor(
-    const neuralnetworks::V1_0::Operation& operation,
+    const HalOperation& operation,
     uint32_t inputIndex,
     ActivationFn& outActivationFunction) const
 {
@@ -2292,9 +2353,10 @@ bool ModelToINetworkConverter<HalVersion>::GetInputActivationFunctionFromTensor(
 }
 
 template<typename HalVersion>
-bool ModelToINetworkConverter<HalVersion>::GetOptionalInputActivation(const neuralnetworks::V1_0::Operation& operation,
-    uint32_t inputIndex,
-    ActivationFn& activationFunction) const
+template<typename HalOperation>
+bool ModelToINetworkConverter<HalVersion>::GetOptionalInputActivation(const HalOperation& operation,
+                                                                      uint32_t inputIndex,
+                                                                      ActivationFn& activationFunction) const
 {
     if (operation.inputs.size() <= inputIndex)
     {
@@ -2311,9 +2373,10 @@ bool ModelToINetworkConverter<HalVersion>::GetOptionalInputActivation(const neur
 }
 
 template<typename HalVersion>
-bool ModelToINetworkConverter<HalVersion>::GetInputPaddingScheme(const neuralnetworks::V1_0::Operation& operation,
-    uint32_t inputIndex,
-    android::nn::PaddingScheme& outPaddingScheme) const
+template<typename HalOperation>
+bool ModelToINetworkConverter<HalVersion>::GetInputPaddingScheme(const HalOperation& operation,
+                                                                 uint32_t inputIndex,
+                                                                 PaddingScheme& outPaddingScheme) const
 {
     int32_t paddingSchemeAsInt;
     if (!GetInputInt32(operation, inputIndex, paddingSchemeAsInt))
@@ -2326,9 +2389,9 @@ bool ModelToINetworkConverter<HalVersion>::GetInputPaddingScheme(const neuralnet
 }
 
 template<typename HalVersion>
-LayerInputHandle ModelToINetworkConverter<HalVersion>::ConvertToLayerInputHandle(
-    const neuralnetworks::V1_0::Operation& operation,
-    uint32_t inputIndex)
+template<typename HalOperation>
+LayerInputHandle ModelToINetworkConverter<HalVersion>::ConvertToLayerInputHandle(const HalOperation& operation,
+                                                                                 uint32_t inputIndex)
 {
     const Operand* operand = GetInputOperand(operation, inputIndex);
     if (!operand)
@@ -2397,10 +2460,13 @@ LayerInputHandle ModelToINetworkConverter<HalVersion>::ConvertToLayerInputHandle
 }
 
 template<typename HalVersion>
+template<typename HalOperation>
 ConstTensorPin ModelToINetworkConverter<HalVersion>::ConvertOperationInputToConstTensorPin(
-        const neuralnetworks::V1_0::Operation& operation,
-        uint32_t inputIndex, const armnn::PermutationVector& dimensionMappings,
-        const armnn::TensorShape* overrideTensorShape, bool optional)
+    const HalOperation& operation,
+    uint32_t inputIndex,
+    const armnn::PermutationVector& dimensionMappings,
+    const armnn::TensorShape* overrideTensorShape,
+    bool optional)
 {
     const Operand* operand = GetInputOperand(operation, inputIndex);
     if (!operand)
@@ -2550,11 +2616,11 @@ armnn::IConnectableLayer* ModelToINetworkConverter<HalVersion>::ProcessActivatio
 }
 
 template<typename HalVersion>
-bool ModelToINetworkConverter<HalVersion>::SetupAndTrackLayerOutputSlot(
-    const neuralnetworks::V1_0::Operation& operation,
-    uint32_t operationOutputIndex,
-    armnn::IConnectableLayer& layer,
-    uint32_t layerOutputIndex)
+template<typename HalOperation>
+bool ModelToINetworkConverter<HalVersion>::SetupAndTrackLayerOutputSlot(const HalOperation& operation,
+                                                                        uint32_t operationOutputIndex,
+                                                                        armnn::IConnectableLayer& layer,
+                                                                        uint32_t layerOutputIndex)
 {
     const Operand* outputOperand = GetOutputOperand(operation, operationOutputIndex);
 
@@ -2574,10 +2640,10 @@ bool ModelToINetworkConverter<HalVersion>::SetupAndTrackLayerOutputSlot(
 }
 
 template<typename HalVersion>
-bool ModelToINetworkConverter<HalVersion>::SetupAndTrackLayerOutputSlot(
-    const neuralnetworks::V1_0::Operation& operation,
-    uint32_t outputIndex,
-    armnn::IConnectableLayer& layer)
+template<typename HalOperation>
+bool ModelToINetworkConverter<HalVersion>::SetupAndTrackLayerOutputSlot(const HalOperation& operation,
+                                                                        uint32_t outputIndex,
+                                                                        armnn::IConnectableLayer& layer)
 {
     return SetupAndTrackLayerOutputSlot(operation, outputIndex, layer, outputIndex);
 }

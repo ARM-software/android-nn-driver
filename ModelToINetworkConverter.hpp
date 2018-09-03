@@ -47,7 +47,7 @@ struct HalVersion_1_1
 
 // A helper performing the conversion from an AndroidNN driver Model representation,
 // to an armnn::INetwork object
-template <typename HalVersion>
+template<typename HalVersion>
 class ModelToINetworkConverter
 {
 public:
@@ -69,6 +69,8 @@ private:
 
 #if defined(ARMNN_ANDROID_NN_V1_1)
     bool ConvertOperation(const ::android::hardware::neuralnetworks::V1_1::Operation& operation);
+
+    bool ConvertDiv(const ::android::hardware::neuralnetworks::V1_1::Operation& operation);
 #endif
 
     bool ConvertOperation(const ::android::hardware::neuralnetworks::V1_0::Operation& operation);
@@ -117,78 +119,87 @@ private:
 
     bool ConvertToActivation(const ::android::hardware::neuralnetworks::V1_0::Operation& operation,
                              const char* operationName,
-        const armnn::ActivationDescriptor& activationDesc);
+                             const armnn::ActivationDescriptor& activationDesc);
 
     bool ConvertPooling2d(const ::android::hardware::neuralnetworks::V1_0::Operation& operation,
                           const char* name, armnn::PoolingAlgorithm poolType);
 
-
     const void* GetOperandValueReadOnlyAddress(const Operand& operand) const;
 
-    const Operand* GetInputOperand(const ::android::hardware::neuralnetworks::V1_0::Operation& operation,
-                                   uint32_t inputIndex) const;
+    template<typename HalOperation>
+    const Operand* GetInputOperand(const HalOperation& operation, uint32_t inputIndex) const;
 
-    const Operand* GetOutputOperand(const ::android::hardware::neuralnetworks::V1_0::Operation& operation,
-                                    uint32_t outputIndex) const;
+    template<typename HalOperation>
+    const Operand* GetOutputOperand(const HalOperation& operation, uint32_t outputIndex) const;
 
-    template <typename T>
-    bool GetInputScalar(const ::android::hardware::neuralnetworks::V1_0::Operation& operation, uint32_t inputIndex,
-                        OperandType type, T& outValue) const;
+    template<typename HalOperation, typename T>
+    bool GetInputScalar(const HalOperation& operation, uint32_t inputIndex, OperandType type, T& outValue) const;
 
-    bool GetInputInt32(const ::android::hardware::neuralnetworks::V1_0::Operation& operation, uint32_t inputIndex,
-                       int32_t& outValue) const;
+    template<typename HalOperation>
+    bool GetInputInt32(const HalOperation& operation, uint32_t inputIndex, int32_t& outValue) const;
 
-    bool GetInputFloat32(const ::android::hardware::neuralnetworks::V1_0::Operation& operation, uint32_t inputIndex,
-                         float& outValue) const;
+    template<typename HalOperation>
+    bool GetInputFloat32(const HalOperation& operation, uint32_t inputIndex, float& outValue) const;
 
-    bool GetInputActivationFunctionImpl(const ::android::hardware::neuralnetworks::V1_0::Operation& operation,
+    template<typename HalOperation>
+    bool GetInputActivationFunctionImpl(const HalOperation& operation,
                                         uint32_t inputIndex,
                                         OperandType type,
                                         ActivationFn& outActivationFunction) const;
 
-    bool GetInputActivationFunction(const ::android::hardware::neuralnetworks::V1_0::Operation& operation,
+    template<typename HalOperation>
+    bool GetInputActivationFunction(const HalOperation& operation,
                                     uint32_t inputIndex,
                                     ActivationFn& outActivationFunction) const;
 
-    bool GetInputActivationFunctionFromTensor(const ::android::hardware::neuralnetworks::V1_0::Operation& operation,
+    template<typename HalOperation>
+    bool GetInputActivationFunctionFromTensor(const HalOperation& operation,
                                               uint32_t inputIndex,
                                               ActivationFn& outActivationFunction) const;
 
-    bool GetOptionalInputActivation(const ::android::hardware::neuralnetworks::V1_0::Operation& operation,
+    template<typename HalOperation>
+    bool GetOptionalInputActivation(const HalOperation& operation,
                                     uint32_t inputIndex,
                                     ActivationFn& activationFunction) const;
 
-    bool GetInputPaddingScheme(const ::android::hardware::neuralnetworks::V1_0::Operation& operation,
+    template<typename HalOperation>
+    bool GetInputPaddingScheme(const HalOperation& operation,
                                uint32_t inputIndex,
                                android::nn::PaddingScheme& outPaddingScheme) const;
 
-    LayerInputHandle ConvertToLayerInputHandle(const ::android::hardware::neuralnetworks::V1_0::Operation& operation,
-                                               uint32_t inputIndex);
+    template<typename HalOperation>
+    LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation, uint32_t inputIndex);
 
+    template<typename HalOperation>
     ConstTensorPin ConvertOperationInputToConstTensorPin(
-            const ::android::hardware::neuralnetworks::V1_0::Operation& operation, uint32_t inputIndex,
-            const armnn::PermutationVector& dimensionMappings = g_DontPermute,
-            const armnn::TensorShape* overrideTensorShape = nullptr, bool optional = false);
-
-    ConstTensorPin ConvertOperandToConstTensorPin(const Operand& operand,
+        const HalOperation& operation,
+        uint32_t inputIndex,
         const armnn::PermutationVector& dimensionMappings = g_DontPermute,
-        const armnn::TensorShape* overrideTensorShape = nullptr, bool optional = false);
+        const armnn::TensorShape* overrideTensorShape = nullptr,
+        bool optional = false);
+
+    ConstTensorPin ConvertOperandToConstTensorPin(
+        const Operand& operand,
+        const armnn::PermutationVector& dimensionMappings = g_DontPermute,
+        const armnn::TensorShape* overrideTensorShape = nullptr,
+        bool optional = false);
 
     bool GetTensorInt32Values(const Operand& operand, std::vector<int32_t>& outValues) const;
 
-
-    armnn::IConnectableLayer* ProcessActivation(const armnn::TensorInfo& tensorInfo, ActivationFn activation,
+    armnn::IConnectableLayer* ProcessActivation(const armnn::TensorInfo& tensorInfo,
+                                                ActivationFn activation,
                                                 armnn::IConnectableLayer* prevLayer);
 
-    bool SetupAndTrackLayerOutputSlot(const ::android::hardware::neuralnetworks::V1_0::Operation& operation,
+    template<typename HalOperation>
+    bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
                                       uint32_t operationOutputIndex,
                                       armnn::IConnectableLayer& layer,
                                       uint32_t layerOutputIndex);
 
-    bool SetupAndTrackLayerOutputSlot(const ::android::hardware::neuralnetworks::V1_0::Operation& operation,
+    template<typename HalOperation>
+    bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
                                       uint32_t outputIndex,
                                       armnn::IConnectableLayer& layer);
-
 
     // Input data
     armnn::Compute                m_Compute;
@@ -201,7 +212,7 @@ private:
     std::map<uint32_t, bool> m_OperationSupported;
 
     // Working/intermediate data
-    std::vector<armnn::IOutputSlot*>  m_OutputSlotForOperand;
+    std::vector<armnn::IOutputSlot*>          m_OutputSlotForOperand;
     std::vector<android::nn::RunTimePoolInfo> m_MemPools;
 };
 
