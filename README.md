@@ -29,10 +29,11 @@ For Android P, a new version of the NN API is available (1.1),
 thus the following should be added to `device.mk` instead:
 <pre>
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.1-service-armnn
-</pre>
-`Android.mk` contains the module definition of both versions of the ArmNN driver.
+</pre> `Android.mk` contains the module definition of both versions of the ArmNN driver.
+
 4. Build Android as normal, i.e. run `make` in `<ANDROID_ROOT>`
 5. To confirm that the ArmNN driver has been built, check for driver service executable at
+
 <pre>
 <ANDROID_ROOT>/out/target/product/<product>system/vendor/bin/hw
 </pre>
