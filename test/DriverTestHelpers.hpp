@@ -10,6 +10,7 @@
 
 #include "../ArmnnDriver.hpp"
 #include <iosfwd>
+#include <boost/test/unit_test.hpp>
 
 namespace android
 {
@@ -72,9 +73,31 @@ android::sp<IMemory> AddPoolAndGetData(uint32_t size, Request& request);
 
 void AddPoolAndSetData(uint32_t size, Request& request, const float* data);
 
-void AddOperand(::android::hardware::neuralnetworks::V1_0::Model& model, const Operand& op);
+template<typename HalModel>
+void AddOperand(HalModel& model, const Operand& op)
+{
+    model.operands.resize(model.operands.size() + 1);
+    model.operands[model.operands.size() - 1] = op;
+}
 
-void AddIntOperand(::android::hardware::neuralnetworks::V1_0::Model& model, int32_t value);
+template<typename HalModel>
+void AddIntOperand(HalModel& model, int32_t value)
+{
+    DataLocation location = {};
+    location.offset = model.operandValues.size();
+    location.length = sizeof(int32_t);
+
+    Operand op    = {};
+    op.type       = OperandType::INT32;
+    op.dimensions = hidl_vec<uint32_t>{};
+    op.lifetime   = OperandLifeTime::CONSTANT_COPY;
+    op.location   = location;
+
+    model.operandValues.resize(model.operandValues.size() + location.length);
+    *reinterpret_cast<int32_t*>(&model.operandValues[location.offset]) = value;
+
+    AddOperand<HalModel>(model, op);
+}
 
 template<typename T>
 OperandType TypeToOperandType();
@@ -85,8 +108,8 @@ OperandType TypeToOperandType<float>();
 template<>
 OperandType TypeToOperandType<int32_t>();
 
-template<typename T>
-void AddTensorOperand(::android::hardware::neuralnetworks::V1_0::Model& model,
+template<typename HalModel, typename T>
+void AddTensorOperand(HalModel& model,
                       hidl_vec<uint32_t> dimensions,
                       T* values,
                       OperandType operandType = OperandType::TENSOR_FLOAT32)
@@ -113,28 +136,67 @@ void AddTensorOperand(::android::hardware::neuralnetworks::V1_0::Model& model,
         *(reinterpret_cast<T*>(&model.operandValues[location.offset]) + i) = values[i];
     }
 
-    AddOperand(model, op);
+    AddOperand<HalModel>(model, op);
 }
 
-void AddInputOperand(::android::hardware::neuralnetworks::V1_0::Model& model,
+template<typename HalModel>
+void AddInputOperand(HalModel& model,
                      hidl_vec<uint32_t> dimensions,
-                     ::android::hardware::neuralnetworks::V1_0::OperandType operandType = OperandType::TENSOR_FLOAT32);
+                     OperandType operandType = OperandType::TENSOR_FLOAT32)
+{
+    Operand op    = {};
+    op.type       = operandType;
+    op.dimensions = dimensions;
+    op.lifetime   = OperandLifeTime::MODEL_INPUT;
 
-void AddOutputOperand(::android::hardware::neuralnetworks::V1_0::Model& model,
+    AddOperand<HalModel>(model, op);
+
+    model.inputIndexes.resize(model.inputIndexes.size() + 1);
+    model.inputIndexes[model.inputIndexes.size() - 1] = model.operands.size() - 1;
+}
+
+template<typename HalModel>
+void AddOutputOperand(HalModel& model,
                       hidl_vec<uint32_t> dimensions,
-                      ::android::hardware::neuralnetworks::V1_0::OperandType operandType = OperandType::TENSOR_FLOAT32);
+                      OperandType operandType = OperandType::TENSOR_FLOAT32)
+{
+    Operand op    = {};
+    op.type       = operandType;
+    op.scale      = operandType == OperandType::TENSOR_QUANT8_ASYMM ? 1.f / 255.f : 0.f;
+    op.dimensions = dimensions;
+    op.lifetime   = OperandLifeTime::MODEL_OUTPUT;
 
-android::sp<IPreparedModel> PrepareModel(const ::android::hardware::neuralnetworks::V1_0::Model& model,
-                                         armnn_driver::ArmnnDriver& driver);
+    AddOperand<HalModel>(model, op);
+
+    model.outputIndexes.resize(model.outputIndexes.size() + 1);
+    model.outputIndexes[model.outputIndexes.size() - 1] = model.operands.size() - 1;
+}
 
 android::sp<IPreparedModel> PrepareModelWithStatus(const ::android::hardware::neuralnetworks::V1_0::Model& model,
                                                    armnn_driver::ArmnnDriver& driver,
-                                                   ErrorStatus & prepareStatus,
-                                                   ErrorStatus expectedStatus=ErrorStatus::NONE);
+                                                   ErrorStatus& prepareStatus,
+                                                   ErrorStatus expectedStatus = ErrorStatus::NONE);
+
+#if defined(ARMNN_ANDROID_NN_V1_1) // Using ::android::hardware::neuralnetworks::V1_1.
+
+android::sp<IPreparedModel> PrepareModelWithStatus(const ::android::hardware::neuralnetworks::V1_1::Model& model,
+                                                   armnn_driver::ArmnnDriver& driver,
+                                                   ErrorStatus& prepareStatus,
+                                                   ErrorStatus expectedStatus = ErrorStatus::NONE);
+
+#endif
+
+template<typename HalModel>
+android::sp<IPreparedModel> PrepareModel(const HalModel& model,
+                                         armnn_driver::ArmnnDriver& driver)
+{
+    ErrorStatus prepareStatus = ErrorStatus::NONE;
+    return PrepareModelWithStatus(model, driver, prepareStatus);
+}
 
 ErrorStatus Execute(android::sp<IPreparedModel> preparedModel,
                     const Request& request,
-                    ErrorStatus expectedStatus=ErrorStatus::NONE);
+                    ErrorStatus expectedStatus = ErrorStatus::NONE);
 
 android::sp<ExecutionCallback> ExecuteNoWait(android::sp<IPreparedModel> preparedModel,
                                              const Request& request);

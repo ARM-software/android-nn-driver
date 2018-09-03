@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedLayerContinueOnFailure)
 // during mem pool mapping we properly report an error to the framework via a callback
 BOOST_AUTO_TEST_CASE(ModelToINetworkConverterMemPoolFail)
 {
-    auto driver = std::make_unique<ArmnnDriver>(armnn::Compute::CpuRef);
+    auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
     ErrorStatus errorStatus;
     std::vector<bool> supported;

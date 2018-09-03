@@ -44,10 +44,10 @@ LOCAL_CFLAGS+= \
 endif # PLATFORM_VERSION == 9
 
 LOCAL_SRC_FILES := \
+        1.0/Convolution2D.cpp \
         Tests.cpp \
         UtilsTests.cpp \
         Concurrent.cpp \
-        Convolution2D.cpp \
         FullyConnected.cpp \
         GenericLayerTests.cpp \
         DriverTestHelpers.cpp \
@@ -118,10 +118,11 @@ LOCAL_CFLAGS := \
         -DARMNN_ANDROID_NN_V1_1
 
 LOCAL_SRC_FILES := \
+        1.0/Convolution2D.cpp \
+        1.1/Convolution2D.cpp \
         Tests.cpp \
         UtilsTests.cpp \
         Concurrent.cpp \
-        Convolution2D.cpp \
         FullyConnected.cpp \
         GenericLayerTests.cpp \
         DriverTestHelpers.cpp \

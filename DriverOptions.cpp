@@ -27,12 +27,12 @@ using namespace std;
 namespace armnn_driver
 {
 
-DriverOptions::DriverOptions(armnn::Compute computeDevice)
+DriverOptions::DriverOptions(armnn::Compute computeDevice, bool fp16Enabled)
     : m_ComputeDevice(computeDevice)
     , m_VerboseLogging(false)
     , m_ClTunedParametersMode(armnn::IGpuAccTunedParameters::Mode::UseTunedParameters)
     , m_EnableGpuProfiling(false)
-    , m_fp16Enabled(false)
+    , m_fp16Enabled(fp16Enabled)
 {
 }
 

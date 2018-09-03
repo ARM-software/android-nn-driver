@@ -16,7 +16,7 @@ namespace armnn_driver
 class DriverOptions
 {
 public:
-    DriverOptions(armnn::Compute computeDevice);
+    DriverOptions(armnn::Compute computeDevice, bool fp16Enabled = false);
     DriverOptions(int argc, char** argv);
     DriverOptions(DriverOptions&& other) = default;
 

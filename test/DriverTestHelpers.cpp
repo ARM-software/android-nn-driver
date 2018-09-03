@@ -109,68 +109,11 @@ void AddPoolAndSetData(uint32_t size, Request& request, const float* data)
     memcpy(dst, data, size * sizeof(float));
 }
 
-void AddOperand(neuralnetworks::V1_0::Model& model, const Operand& op)
-{
-    model.operands.resize(model.operands.size() + 1);
-    model.operands[model.operands.size() - 1] = op;
-}
-
-void AddIntOperand(neuralnetworks::V1_0::Model& model, int32_t value)
-{
-    DataLocation location = {};
-    location.offset = model.operandValues.size();
-    location.length = sizeof(int32_t);
-
-    Operand op    = {};
-    op.type = OperandType::INT32;
-    op.dimensions = hidl_vec<uint32_t>{};
-    op.lifetime   = OperandLifeTime::CONSTANT_COPY;
-    op.location   = location;
-
-    model.operandValues.resize(model.operandValues.size() + location.length);
-    *reinterpret_cast<int32_t*>(&model.operandValues[location.offset]) = value;
-
-    AddOperand(model, op);
-}
-
-void AddInputOperand(neuralnetworks::V1_0::Model& model,
-                     hidl_vec<uint32_t> dimensions,
-                     neuralnetworks::V1_0::OperandType operandType)
-{
-    Operand op    = {};
-    op.type       = operandType;
-    op.dimensions = dimensions;
-    op.lifetime   = OperandLifeTime::MODEL_INPUT;
-
-    AddOperand(model, op);
-
-    model.inputIndexes.resize(model.inputIndexes.size() + 1);
-    model.inputIndexes[model.inputIndexes.size() - 1] = model.operands.size() - 1;
-}
-
-void AddOutputOperand(neuralnetworks::V1_0::Model& model,
-                      hidl_vec<uint32_t> dimensions,
-                      neuralnetworks::V1_0::OperandType operandType)
-{
-    Operand op = {};
-    op.type       = operandType;
-    op.scale      = operandType == neuralnetworks::V1_0::OperandType::TENSOR_QUANT8_ASYMM ? 1.f / 255.f : 0.f;
-    op.dimensions = dimensions;
-    op.lifetime   = OperandLifeTime::MODEL_OUTPUT;
-
-    AddOperand(model, op);
-
-    model.outputIndexes.resize(model.outputIndexes.size() + 1);
-    model.outputIndexes[model.outputIndexes.size() - 1] = model.operands.size() - 1;
-}
-
-
 android::sp<IPreparedModel> PrepareModelWithStatus(const neuralnetworks::V1_0::Model& model,
                                                    armnn_driver::ArmnnDriver& driver,
-                                                   ErrorStatus & prepareStatus,
+                                                   ErrorStatus& prepareStatus,
                                                    ErrorStatus expectedStatus)
 {
-
     android::sp<PreparedModelCallback> cb(new PreparedModelCallback());
     driver.prepareModel(model, cb);
 
@@ -183,12 +126,26 @@ android::sp<IPreparedModel> PrepareModelWithStatus(const neuralnetworks::V1_0::M
     return cb->GetPreparedModel();
 }
 
-android::sp<IPreparedModel> PrepareModel(const neuralnetworks::V1_0::Model& model,
-                                         armnn_driver::ArmnnDriver& driver)
+#if defined(ARMNN_ANDROID_NN_V1_1) // Using ::android::hardware::neuralnetworks::V1_1.
+
+android::sp<IPreparedModel> PrepareModelWithStatus(const neuralnetworks::V1_1::Model& model,
+                                                   armnn_driver::ArmnnDriver& driver,
+                                                   ErrorStatus& prepareStatus,
+                                                   ErrorStatus expectedStatus)
 {
-    ErrorStatus prepareStatus = ErrorStatus::NONE;
-    return PrepareModelWithStatus(model, driver, prepareStatus);
+    android::sp<PreparedModelCallback> cb(new PreparedModelCallback());
+    driver.prepareModel_1_1(model, neuralnetworks::V1_1::ExecutionPreference::LOW_POWER, cb);
+
+    prepareStatus = cb->GetErrorStatus();
+    BOOST_TEST(prepareStatus == expectedStatus);
+    if (expectedStatus == ErrorStatus::NONE)
+    {
+        BOOST_TEST((cb->GetPreparedModel() != nullptr));
+    }
+    return cb->GetPreparedModel();
 }
+
+#endif
 
 ErrorStatus Execute(android::sp<IPreparedModel> preparedModel,
                     const Request& request,

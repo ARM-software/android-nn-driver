@@ -19,6 +19,7 @@ class HalPolicy
 public:
     using Model                     = V1_1::Model;
     using Operation                 = V1_1::Operation;
+    using OperationType             = V1_1::OperationType;
     using getSupportedOperations_cb = V1_1::IDevice::getSupportedOperations_1_1_cb;
 
     static bool ConvertOperation(const Operation& operation, const Model& model, ConversionData& data);
