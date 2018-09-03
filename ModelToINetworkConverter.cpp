@@ -484,6 +484,7 @@ template<typename HalVersion>
 void ModelToINetworkConverter<HalVersion>::Convert()
 {
     using HalModel = typename HalVersion::Model;
+
     ALOGV("ModelToINetworkConverter::Convert(): %s", GetModelSummary<HalModel>(m_Model).c_str());
 
     // map the memory pool into shared pointers
@@ -2658,7 +2659,7 @@ bool ModelToINetworkConverter<HalVersion>::IsOperationSupported(uint32_t operati
 
 template class ModelToINetworkConverter<HalVersion_1_0>;
 
-#if defined(ARMNN_ANDROID_NN_V1_1)
+#if defined(ARMNN_ANDROID_NN_V1_1) // Using ::android::hardware::neuralnetworks::V1_1.
 template class ModelToINetworkConverter<HalVersion_1_1>;
 #endif
 

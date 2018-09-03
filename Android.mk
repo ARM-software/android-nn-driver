@@ -47,7 +47,7 @@ LOCAL_CFLAGS+= \
 endif # ARMNN_DRIVER_DEBUG == 1
 
 LOCAL_SRC_FILES := \
-        1.0/ArmnnDriverImpl.cpp \
+        ArmnnDriverImpl.cpp \
         DriverOptions.cpp \
         ArmnnDevice.cpp \
         ArmnnPreparedModel.cpp \
@@ -118,8 +118,7 @@ LOCAL_CFLAGS+= \
 endif # ARMNN_DRIVER_DEBUG == 1
 
 LOCAL_SRC_FILES := \
-        1.0/ArmnnDriverImpl.cpp \
-        1.1/ArmnnDriverImpl.cpp \
+        ArmnnDriverImpl.cpp \
         DriverOptions.cpp \
         ArmnnDevice.cpp \
         ArmnnPreparedModel.cpp \

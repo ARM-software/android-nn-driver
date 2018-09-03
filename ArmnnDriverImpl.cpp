@@ -3,6 +3,8 @@
 // See LICENSE file in the project root for full license information.
 //
 
+#define LOG_TAG "ArmnnDriver"
+
 #include "ArmnnDriverImpl.hpp"
 #include "ModelToINetworkConverter.hpp"
 #include "ArmnnPreparedModel.hpp"
@@ -37,7 +39,7 @@ void NotifyCallbackAndCheck(const sp<IPreparedModelCallback>& callback,
     // This check is required, if the callback fails and it isn't checked it will bring down the service
     if (!returned.isOk())
     {
-        ALOGE("V1_0::ArmnnDriverImpl::prepareModel: hidl callback failed to return properly: %s ",
+        ALOGE("ArmnnDriverImpl::prepareModel: hidl callback failed to return properly: %s ",
             returned.description().c_str());
     }
 }
@@ -46,7 +48,7 @@ Return<ErrorStatus> FailPrepareModel(ErrorStatus error,
                                      const string& message,
                                      const sp<IPreparedModelCallback>& callback)
 {
-    ALOGW("V1_0::ArmnnDriverImpl::prepareModel: %s", message.c_str());
+    ALOGW("ArmnnDriverImpl::prepareModel: %s", message.c_str());
     NotifyCallbackAndCheck(callback, error, nullptr);
     return error;
 }
@@ -55,16 +57,15 @@ Return<ErrorStatus> FailPrepareModel(ErrorStatus error,
 
 namespace armnn_driver
 {
-namespace V1_0
-{
 
-Return<void> ArmnnDriverImpl::getCapabilities(
+template <typename HalVersion>
+Return<void> ArmnnDriverImpl<HalVersion>::getCapabilities(
         const armnn::IRuntimePtr& runtime,
-        neuralnetworks::V1_0::IDevice::getCapabilities_cb cb)
+        HalGetCapabilities_cb cb)
 {
-    ALOGV("V1_0::ArmnnDriverImpl::getCapabilities()");
+    ALOGV("ArmnnDriverImpl::getCapabilities()");
 
-    neuralnetworks::V1_0::Capabilities capabilities;
+    HalCapabilities capabilities;
     if (runtime)
     {
         capabilities.float32Performance.execTime =
@@ -94,13 +95,14 @@ Return<void> ArmnnDriverImpl::getCapabilities(
     return Void();
 }
 
-Return<void> ArmnnDriverImpl::getSupportedOperations(
+template <typename HalVersion>
+Return<void> ArmnnDriverImpl<HalVersion>::getSupportedOperations(
         const armnn::IRuntimePtr& runtime,
         const DriverOptions& options,
-        const neuralnetworks::V1_0::Model& model,
-        neuralnetworks::V1_0::IDevice::getSupportedOperations_cb cb)
+        const HalModel& model,
+        HalGetSupportedOperations_cb cb)
 {
-    ALOGV("V1_0::ArmnnDriverImpl::getSupportedOperations()");
+    ALOGV("ArmnnDriverImpl::getSupportedOperations()");
 
     vector<bool> result;
 
@@ -110,7 +112,7 @@ Return<void> ArmnnDriverImpl::getSupportedOperations(
         return Void();
     }
 
-    // Run general model validation, if this doesn't pass we shouldn't analyse the model anyway
+    // Run general model validation, if this doesn't pass we shouldn't analyse the model anyway.
     if (!android::nn::validateModel(model))
     {
         cb(ErrorStatus::INVALID_ARGUMENT, result);
@@ -118,18 +120,19 @@ Return<void> ArmnnDriverImpl::getSupportedOperations(
     }
 
     // Attempt to convert the model to an ArmNN input network (INetwork).
-    armnn_driver::ModelToINetworkConverter<HalVersion_1_0> modelConverter(options.GetComputeDevice(),
-        model, options.GetForcedUnsupportedOperations());
+    ModelToINetworkConverter<HalVersion> modelConverter(options.GetComputeDevice(),
+                                                        model,
+                                                        options.GetForcedUnsupportedOperations());
 
     if (modelConverter.GetConversionResult() != ConversionResult::Success
-        && modelConverter.GetConversionResult() != ConversionResult::UnsupportedFeature)
+            && modelConverter.GetConversionResult() != ConversionResult::UnsupportedFeature)
     {
         cb(ErrorStatus::GENERAL_FAILURE, result);
         return Void();
     }
 
     // Check each operation if it was converted successfully and copy the flags
-    // into the result (vector<bool>) that we need to return to Android
+    // into the result (vector<bool>) that we need to return to Android.
     result.reserve(model.operations.size());
     for (uint32_t operationIdx = 0; operationIdx < model.operations.size(); operationIdx++)
     {
@@ -141,48 +144,51 @@ Return<void> ArmnnDriverImpl::getSupportedOperations(
     return Void();
 }
 
-Return<ErrorStatus> ArmnnDriverImpl::prepareModel(
+template <typename HalVersion>
+Return<ErrorStatus> ArmnnDriverImpl<HalVersion>::prepareModel(
         const armnn::IRuntimePtr& runtime,
         const armnn::IGpuAccTunedParametersPtr& clTunedParameters,
         const DriverOptions& options,
-        const neuralnetworks::V1_0::Model& model,
+        const HalModel& model,
         const sp<IPreparedModelCallback>& cb,
-        bool  float32ToFloat16)
+        bool float32ToFloat16)
 {
-    ALOGV("V1_0::ArmnnDriverImpl::prepareModel()");
+    ALOGV("ArmnnDriverImpl::prepareModel()");
 
     if (cb.get() == nullptr)
     {
-        ALOGW("V1_0::ArmnnDriverImpl::prepareModel: Invalid callback passed to prepareModel");
+        ALOGW("ArmnnDriverImpl::prepareModel: Invalid callback passed to prepareModel");
         return ErrorStatus::INVALID_ARGUMENT;
     }
 
     if (!runtime)
     {
         return FailPrepareModel(ErrorStatus::DEVICE_UNAVAILABLE,
-                                "V1_0::ArmnnDriverImpl::prepareModel: Device unavailable", cb);
+                                "ArmnnDriverImpl::prepareModel: Device unavailable", cb);
     }
 
     if (!android::nn::validateModel(model))
     {
         return FailPrepareModel(ErrorStatus::INVALID_ARGUMENT,
-                                "V1_0::ArmnnDriverImpl::prepareModel: Invalid model passed as input", cb);
+                                "ArmnnDriverImpl::prepareModel: Invalid model passed as input", cb);
     }
 
     // Deliberately ignore any unsupported operations requested by the options -
     // at this point we're being asked to prepare a model that we've already declared support for
     // and the operation indices may be different to those in getSupportedOperations anyway.
     set<unsigned int> unsupportedOperations;
-    armnn_driver::ModelToINetworkConverter<HalVersion_1_0> modelConverter(options.GetComputeDevice(), model,
-        unsupportedOperations);
+    ModelToINetworkConverter<HalVersion> modelConverter(options.GetComputeDevice(),
+                                                        model,
+                                                        unsupportedOperations);
 
     if (modelConverter.GetConversionResult() != ConversionResult::Success)
     {
-        FailPrepareModel(ErrorStatus::GENERAL_FAILURE, "ModelToINetworkConverter failed", cb);
+        FailPrepareModel(ErrorStatus::GENERAL_FAILURE,
+                         "ArmnnDriverImpl::prepareModel: ModelToINetworkConverter failed", cb);
         return ErrorStatus::NONE;
     }
 
-    // optimize the network
+    // Optimize the network
     armnn::IOptimizedNetworkPtr optNet(nullptr, nullptr);
     armnn::OptimizerOptions OptOptions;
     OptOptions.m_ReduceFp32ToFp16 = float32ToFloat16;
@@ -197,7 +203,7 @@ Return<ErrorStatus> ArmnnDriverImpl::prepareModel(
     catch (armnn::Exception &e)
     {
         stringstream message;
-        message << "armnn::Exception (" << e.what() << ") caught from optimize.";
+        message << "ArmnnDriverImpl::prepareModel: armnn::Exception (" << e.what() << ") caught from optimize.";
         FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
         return ErrorStatus::NONE;
     }
@@ -206,41 +212,39 @@ Return<ErrorStatus> ArmnnDriverImpl::prepareModel(
     if (!optNet)
     {
         FailPrepareModel(ErrorStatus::GENERAL_FAILURE,
-                         "V1_0::ArmnnDriverImpl::prepareModel: Invalid optimized network", cb);
+                         "ArmnnDriverImpl::prepareModel: Invalid optimized network", cb);
         return ErrorStatus::NONE;
     }
 
     // Export the optimized network graph to a dot file if an output dump directory
     // has been specified in the drivers' arguments.
-    ExportNetworkGraphToDotFile(*optNet,
-                                options.GetRequestInputsAndOutputsDumpDir(),
-                                model);
+    ExportNetworkGraphToDotFile<HalModel>(*optNet, options.GetRequestInputsAndOutputsDumpDir(), model);
 
-    // load it into the runtime
+    // Load it into the runtime.
     armnn::NetworkId netId = 0;
     try
     {
         if (runtime->LoadNetwork(netId, move(optNet)) != armnn::Status::Success)
         {
             return FailPrepareModel(ErrorStatus::GENERAL_FAILURE,
-                "V1_0::ArmnnDriverImpl::prepareModel: Network could not be loaded", cb);
+                                    "ArmnnDriverImpl::prepareModel: Network could not be loaded", cb);
         }
     }
     catch (armnn::Exception& e)
     {
         stringstream message;
-        message << "armnn::Exception (" << e.what()<< ") caught from LoadNetwork.";
+        message << "ArmnnDriverImpl::prepareModel: armnn::Exception (" << e.what()<< ") caught from LoadNetwork.";
         FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
         return ErrorStatus::NONE;
     }
 
-    unique_ptr<ArmnnPreparedModel> preparedModel(new ArmnnPreparedModel(
-        netId,
-        runtime.get(),
-        model,
-        options.GetRequestInputsAndOutputsDumpDir(),
-        options.IsGpuProfilingEnabled()
-    ));
+    unique_ptr<ArmnnPreparedModel<HalVersion>> preparedModel(
+                new ArmnnPreparedModel<HalVersion>(
+                    netId,
+                    runtime.get(),
+                    model,
+                    options.GetRequestInputsAndOutputsDumpDir(),
+                    options.IsGpuProfilingEnabled()));
 
     // Run a single 'dummy' inference of the model. This means that CL kernels will get compiled (and tuned if
     // this is enabled) before the first 'real' inference which removes the overhead of the first inference.
@@ -256,7 +260,7 @@ Return<ErrorStatus> ArmnnDriverImpl::prepareModel(
         }
         catch (const armnn::Exception& error)
         {
-            ALOGE("V1_0::ArmnnDriverImpl: Failed to save CL tuned parameters file '%s': %s",
+            ALOGE("ArmnnDriverImpl::prepareModel: Failed to save CL tuned parameters file '%s': %s",
                 options.GetClTunedParametersFile().c_str(), error.what());
         }
     }
@@ -266,12 +270,19 @@ Return<ErrorStatus> ArmnnDriverImpl::prepareModel(
     return ErrorStatus::NONE;
 }
 
-Return<DeviceStatus> ArmnnDriverImpl::getStatus()
+template <typename HalVersion>
+Return<DeviceStatus> ArmnnDriverImpl<HalVersion>::getStatus()
 {
-    ALOGV("V1_0::ArmnnDriverImpl::getStatus()");
+    ALOGV("ArmnnDriver::getStatus()");
 
     return DeviceStatus::AVAILABLE;
 }
 
-} // armnn_driver::namespace V1_0
+// Class template specializations
+template class ArmnnDriverImpl<HalVersion_1_0>;
+
+#ifdef ARMNN_ANDROID_NN_V1_1
+template class ArmnnDriverImpl<HalVersion_1_1>;
+#endif
+
 } // namespace armnn_driver

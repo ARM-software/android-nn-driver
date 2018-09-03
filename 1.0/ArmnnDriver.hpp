@@ -7,8 +7,8 @@
 
 #include <HalInterfaces.h>
 
-#include "ArmnnDriverImpl.hpp"
 #include "ArmnnDevice.hpp"
+#include "../ArmnnDriverImpl.hpp"
 
 #include <log/log.h>
 
@@ -29,36 +29,44 @@ public:
 
 public:
     Return<void> getCapabilities(
-            ::android::hardware::neuralnetworks::V1_0::IDevice::getCapabilities_cb cb)
+            ::android::hardware::neuralnetworks::V1_0::IDevice::getCapabilities_cb cb) override
     {
         ALOGV("V1_0::ArmnnDriver::getCapabilities()");
 
-        return ArmnnDriverImpl::getCapabilities(m_Runtime, cb);
+        return armnn_driver::ArmnnDriverImpl<HalVersion_1_0>::getCapabilities(m_Runtime,
+                                                                              cb);
     }
 
     Return<void> getSupportedOperations(
             const ::android::hardware::neuralnetworks::V1_0::Model& model,
-            ::android::hardware::neuralnetworks::V1_0::IDevice::getSupportedOperations_cb cb)
+            ::android::hardware::neuralnetworks::V1_0::IDevice::getSupportedOperations_cb cb) override
     {
         ALOGV("V1_0::ArmnnDriver::getSupportedOperations()");
 
-        return ArmnnDriverImpl::getSupportedOperations(m_Runtime, m_Options, model, cb);
+        return armnn_driver::ArmnnDriverImpl<HalVersion_1_0>::getSupportedOperations(m_Runtime,
+                                                                                     m_Options,
+                                                                                     model,
+                                                                                     cb);
     }
 
     Return<ErrorStatus> prepareModel(
             const ::android::hardware::neuralnetworks::V1_0::Model& model,
-            const android::sp<IPreparedModelCallback>& cb)
+            const android::sp<IPreparedModelCallback>& cb) override
     {
         ALOGV("V1_0::ArmnnDriver::prepareModel()");
 
-        return ArmnnDriverImpl::prepareModel(m_Runtime, m_ClTunedParameters, m_Options, model, cb);
+        return armnn_driver::ArmnnDriverImpl<HalVersion_1_0>::prepareModel(m_Runtime,
+                                                                           m_ClTunedParameters,
+                                                                           m_Options,
+                                                                           model,
+                                                                           cb);
     }
 
-    Return<DeviceStatus> getStatus()
+    Return<DeviceStatus> getStatus() override
     {
         ALOGV("V1_0::ArmnnDriver::getStatus()");
 
-        return ArmnnDriverImpl::getStatus();
+        return armnn_driver::ArmnnDriverImpl<HalVersion_1_0>::getStatus();
     }
 };
 

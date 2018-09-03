@@ -6,6 +6,7 @@
 #pragma once
 
 #include "ArmnnDriver.hpp"
+#include "ArmnnDriverImpl.hpp"
 
 #include <NeuralNetworks.h>
 #include <ActivationFunctor.h>
@@ -33,18 +34,6 @@ enum class ConversionResult
     UnsupportedFeature
 };
 
-struct HalVersion_1_0
-{
-    using Model = ::android::hardware::neuralnetworks::V1_0::Model;
-};
-
-#if defined(ARMNN_ANDROID_NN_V1_1)
-struct HalVersion_1_1
-{
-    using Model = ::android::hardware::neuralnetworks::V1_1::Model;
-};
-#endif
-
 // A helper performing the conversion from an AndroidNN driver Model representation,
 // to an armnn::INetwork object
 template<typename HalVersion>
@@ -54,8 +43,8 @@ public:
     using HalModel = typename HalVersion::Model;
 
     ModelToINetworkConverter(armnn::Compute compute,
-        const HalModel& model,
-        const std::set<unsigned int>& forcedUnsupportedOperations);
+                             const HalModel& model,
+                             const std::set<unsigned int>& forcedUnsupportedOperations);
 
     ConversionResult GetConversionResult() const { return m_ConversionResult; }
 

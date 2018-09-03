@@ -3,6 +3,8 @@
 // See LICENSE file in the project root for full license information.
 //
 
+#define LOG_TAG "ArmnnDriver"
+
 #include "ArmnnDevice.hpp"
 
 #include <OperationsUtils.h>
