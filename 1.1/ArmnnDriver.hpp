@@ -8,7 +8,9 @@
 #include <HalInterfaces.h>
 
 #include "ArmnnDevice.hpp"
+#include "ArmnnDriverImpl.hpp"
 #include "../ArmnnDriverImpl.hpp"
+#include "../1.0/ArmnnDriverImpl.hpp"
 
 #include <log/log.h>
 
@@ -33,8 +35,8 @@ public:
     {
         ALOGV("V1_1::ArmnnDriver::getCapabilities()");
 
-        return armnn_driver::ArmnnDriverImpl<HalVersion_1_0>::getCapabilities(m_Runtime,
-                                                                              cb);
+        return V1_0::ArmnnDriverImpl::getCapabilities(m_Runtime,
+                                                      cb);
     }
 
     Return<void> getSupportedOperations(
@@ -67,8 +69,8 @@ public:
     {
         ALOGV("V1_1::ArmnnDriver::getCapabilities_1_1()");
 
-        return armnn_driver::ArmnnDriverImpl<HalVersion_1_1>::getCapabilities(m_Runtime,
-                                                                              cb);
+        return V1_1::ArmnnDriverImpl::getCapabilities_1_1(m_Runtime,
+                                                          cb);
     }
 
     Return<void> getSupportedOperations_1_1(
@@ -103,7 +105,9 @@ public:
                                                                            m_ClTunedParameters,
                                                                            m_Options,
                                                                            model,
-                                                                           cb);
+                                                                           cb,
+                                                                           model.relaxComputationFloat32toFloat16
+                                                                           && m_Options.GetFp16Enabled());
     }
 
     Return<DeviceStatus> getStatus() override

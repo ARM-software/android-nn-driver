@@ -8,6 +8,7 @@
 #include <HalInterfaces.h>
 
 #include "ArmnnDevice.hpp"
+#include "ArmnnDriverImpl.hpp"
 #include "../ArmnnDriverImpl.hpp"
 
 #include <log/log.h>
@@ -33,8 +34,8 @@ public:
     {
         ALOGV("V1_0::ArmnnDriver::getCapabilities()");
 
-        return armnn_driver::ArmnnDriverImpl<HalVersion_1_0>::getCapabilities(m_Runtime,
-                                                                              cb);
+        return V1_0::ArmnnDriverImpl::getCapabilities(m_Runtime,
+                                                      cb);
     }
 
     Return<void> getSupportedOperations(

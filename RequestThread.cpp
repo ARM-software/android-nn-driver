@@ -134,7 +134,7 @@ void RequestThread<HalVersion>::Process()
 // Class template specializations
 template class RequestThread<HalVersion_1_0>;
 
-#ifdef ARMNN_ANDROID_NN_V1_1 // Using ::android::hardware::neuralnetworks::V1_1.
+#if defined(ARMNN_ANDROID_NN_V1_1) // Using ::android::hardware::neuralnetworks::V1_1.
 template class RequestThread<HalVersion_1_1>;
 #endif
 

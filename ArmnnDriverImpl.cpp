@@ -26,11 +26,6 @@ using namespace android::hardware;
 namespace
 {
 
-const char *g_Float32PerformanceExecTimeName = "ArmNN.float32Performance.execTime";
-const char *g_Float32PerformancePowerUsageName = "ArmNN.float32Performance.powerUsage";
-const char *g_Quantized8PerformanceExecTimeName = "ArmNN.quantized8Performance.execTime";
-const char *g_Quantized8PerformancePowerUsageName = "ArmNN.quantized8Performance.powerUsage";
-
 void NotifyCallbackAndCheck(const sp<IPreparedModelCallback>& callback,
                             ErrorStatus errorStatus,
                             const sp<IPreparedModel>& preparedModelPtr)
@@ -57,43 +52,6 @@ Return<ErrorStatus> FailPrepareModel(ErrorStatus error,
 
 namespace armnn_driver
 {
-
-template <typename HalVersion>
-Return<void> ArmnnDriverImpl<HalVersion>::getCapabilities(
-        const armnn::IRuntimePtr& runtime,
-        HalGetCapabilities_cb cb)
-{
-    ALOGV("ArmnnDriverImpl::getCapabilities()");
-
-    HalCapabilities capabilities;
-    if (runtime)
-    {
-        capabilities.float32Performance.execTime =
-            ParseSystemProperty(g_Float32PerformanceExecTimeName, .1f);
-
-        capabilities.float32Performance.powerUsage =
-            ParseSystemProperty(g_Float32PerformancePowerUsageName, .1f);
-
-        capabilities.quantized8Performance.execTime =
-            ParseSystemProperty(g_Quantized8PerformanceExecTimeName, .1f);
-
-        capabilities.quantized8Performance.powerUsage =
-            ParseSystemProperty(g_Quantized8PerformancePowerUsageName, .1f);
-
-        cb(ErrorStatus::NONE, capabilities);
-    }
-    else
-    {
-        capabilities.float32Performance.execTime = 0;
-        capabilities.float32Performance.powerUsage = 0;
-        capabilities.quantized8Performance.execTime = 0;
-        capabilities.quantized8Performance.powerUsage = 0;
-
-        cb(ErrorStatus::DEVICE_UNAVAILABLE, capabilities);
-    }
-
-    return Void();
-}
 
 template <typename HalVersion>
 Return<void> ArmnnDriverImpl<HalVersion>::getSupportedOperations(
@@ -281,7 +239,7 @@ Return<DeviceStatus> ArmnnDriverImpl<HalVersion>::getStatus()
 // Class template specializations
 template class ArmnnDriverImpl<HalVersion_1_0>;
 
-#ifdef ARMNN_ANDROID_NN_V1_1
+#if defined(ARMNN_ANDROID_NN_V1_1) // Using ::android::hardware::neuralnetworks::V1_1.
 template class ArmnnDriverImpl<HalVersion_1_1>;
 #endif
 

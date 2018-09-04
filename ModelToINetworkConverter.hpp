@@ -56,7 +56,7 @@ public:
 private:
     void Convert();
 
-#if defined(ARMNN_ANDROID_NN_V1_1)
+#if defined(ARMNN_ANDROID_NN_V1_1) // Using ::android::hardware::neuralnetworks::V1_1.
     bool ConvertOperation(const ::android::hardware::neuralnetworks::V1_1::Operation& operation);
 
     bool ConvertDiv(const ::android::hardware::neuralnetworks::V1_1::Operation& operation);

@@ -17,17 +17,13 @@ namespace armnn_driver
 struct HalVersion_1_0
 {
     using Model = ::android::hardware::neuralnetworks::V1_0::Model;
-    using Capabilities = ::android::hardware::neuralnetworks::V1_0::Capabilities;
-    using getCapabilities_cb = ::android::hardware::neuralnetworks::V1_0::IDevice::getCapabilities_cb;
     using getSupportedOperations_cb = ::android::hardware::neuralnetworks::V1_0::IDevice::getSupportedOperations_cb;
 };
 
-#if defined(ARMNN_ANDROID_NN_V1_1)
+#if defined(ARMNN_ANDROID_NN_V1_1) // Using ::android::hardware::neuralnetworks::V1_1.
 struct HalVersion_1_1
 {
     using Model = ::android::hardware::neuralnetworks::V1_1::Model;
-    using Capabilities = ::android::hardware::neuralnetworks::V1_1::Capabilities;
-    using getCapabilities_cb = ::android::hardware::neuralnetworks::V1_1::IDevice::getCapabilities_1_1_cb;
     using getSupportedOperations_cb = ::android::hardware::neuralnetworks::V1_1::IDevice::getSupportedOperations_1_1_cb;
 };
 #endif
@@ -37,13 +33,8 @@ class ArmnnDriverImpl
 {
 public:
     using HalModel = typename HalVersion::Model;
-    using HalCapabilities = typename HalVersion::Capabilities;
-    using HalGetCapabilities_cb = typename HalVersion::getCapabilities_cb;
     using HalGetSupportedOperations_cb = typename HalVersion::getSupportedOperations_cb;
 
-    static Return<void> getCapabilities(
-            const armnn::IRuntimePtr& runtime,
-            HalGetCapabilities_cb cb);
     static Return<void> getSupportedOperations(
             const armnn::IRuntimePtr& runtime,
             const DriverOptions& options,

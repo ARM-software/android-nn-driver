@@ -653,7 +653,7 @@ bool ModelToINetworkConverter<HalVersion>::ConvertOperation(const neuralnetworks
     }
 }
 
-#if defined(ARMNN_ANDROID_NN_V1_1)
+#if defined(ARMNN_ANDROID_NN_V1_1) // Using ::android::hardware::neuralnetworks::V1_1.
 template<typename HalVersion>
 bool ModelToINetworkConverter<HalVersion>::ConvertOperation(const neuralnetworks::V1_1::Operation& operation)
 {
