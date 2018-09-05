@@ -13,16 +13,15 @@
 
 namespace armnn_driver
 {
-namespace V1_1
+namespace hal_1_1
 {
 
 class ArmnnDriverImpl
 {
 public:
-    static Return<void> getCapabilities_1_1(
-            const armnn::IRuntimePtr& runtime,
-            ::android::hardware::neuralnetworks::V1_1::IDevice::getCapabilities_1_1_cb cb);
+    static Return<void> getCapabilities_1_1(const armnn::IRuntimePtr& runtime,
+                                            V1_1::IDevice::getCapabilities_1_1_cb cb);
 };
 
-} // namespace armnn_driver::V1_1
+} // namespace hal_1_1
 } // namespace armnn_driver

@@ -5,10 +5,9 @@
 
 #pragma once
 
-#include "RequestThread.hpp"
-
 #include "ArmnnDriver.hpp"
 #include "ArmnnDriverImpl.hpp"
+#include "RequestThread.hpp"
 
 #include <NeuralNetworks.h>
 #include <armnn/ArmNN.hpp>

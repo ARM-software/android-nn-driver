@@ -6,8 +6,8 @@
 #define LOG_TAG "ArmnnDriver"
 
 #include "ArmnnDriverImpl.hpp"
-#include "ModelToINetworkConverter.hpp"
 #include "ArmnnPreparedModel.hpp"
+#include "ModelToINetworkConverter.hpp"
 #include "SystemPropertiesUtils.hpp"
 
 #if defined(ARMNN_ANDROID_P)
@@ -53,12 +53,11 @@ Return<ErrorStatus> FailPrepareModel(ErrorStatus error,
 namespace armnn_driver
 {
 
-template <typename HalVersion>
-Return<void> ArmnnDriverImpl<HalVersion>::getSupportedOperations(
-        const armnn::IRuntimePtr& runtime,
-        const DriverOptions& options,
-        const HalModel& model,
-        HalGetSupportedOperations_cb cb)
+template<typename HalPolicy>
+Return<void> ArmnnDriverImpl<HalPolicy>::getSupportedOperations(const armnn::IRuntimePtr& runtime,
+                                                                const DriverOptions& options,
+                                                                const HalModel& model,
+                                                                HalGetSupportedOperations_cb cb)
 {
     ALOGV("ArmnnDriverImpl::getSupportedOperations()");
 
@@ -78,7 +77,7 @@ Return<void> ArmnnDriverImpl<HalVersion>::getSupportedOperations(
     }
 
     // Attempt to convert the model to an ArmNN input network (INetwork).
-    ModelToINetworkConverter<HalVersion> modelConverter(options.GetComputeDevice(),
+    ModelToINetworkConverter<HalPolicy> modelConverter(options.GetComputeDevice(),
                                                         model,
                                                         options.GetForcedUnsupportedOperations());
 
@@ -102,8 +101,8 @@ Return<void> ArmnnDriverImpl<HalVersion>::getSupportedOperations(
     return Void();
 }
 
-template <typename HalVersion>
-Return<ErrorStatus> ArmnnDriverImpl<HalVersion>::prepareModel(
+template<typename HalPolicy>
+Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
         const armnn::IRuntimePtr& runtime,
         const armnn::IGpuAccTunedParametersPtr& clTunedParameters,
         const DriverOptions& options,
@@ -135,7 +134,7 @@ Return<ErrorStatus> ArmnnDriverImpl<HalVersion>::prepareModel(
     // at this point we're being asked to prepare a model that we've already declared support for
     // and the operation indices may be different to those in getSupportedOperations anyway.
     set<unsigned int> unsupportedOperations;
-    ModelToINetworkConverter<HalVersion> modelConverter(options.GetComputeDevice(),
+    ModelToINetworkConverter<HalPolicy> modelConverter(options.GetComputeDevice(),
                                                         model,
                                                         unsupportedOperations);
 
@@ -196,8 +195,8 @@ Return<ErrorStatus> ArmnnDriverImpl<HalVersion>::prepareModel(
         return ErrorStatus::NONE;
     }
 
-    unique_ptr<ArmnnPreparedModel<HalVersion>> preparedModel(
-                new ArmnnPreparedModel<HalVersion>(
+    unique_ptr<ArmnnPreparedModel<HalPolicy>> preparedModel(
+                new ArmnnPreparedModel<HalPolicy>(
                     netId,
                     runtime.get(),
                     model,
@@ -228,19 +227,22 @@ Return<ErrorStatus> ArmnnDriverImpl<HalVersion>::prepareModel(
     return ErrorStatus::NONE;
 }
 
-template <typename HalVersion>
-Return<DeviceStatus> ArmnnDriverImpl<HalVersion>::getStatus()
+template<typename HalPolicy>
+Return<DeviceStatus> ArmnnDriverImpl<HalPolicy>::getStatus()
 {
     ALOGV("ArmnnDriver::getStatus()");
 
     return DeviceStatus::AVAILABLE;
 }
 
-// Class template specializations
-template class ArmnnDriverImpl<HalVersion_1_0>;
+///
+/// Class template specializations
+///
 
-#if defined(ARMNN_ANDROID_NN_V1_1) // Using ::android::hardware::neuralnetworks::V1_1.
-template class ArmnnDriverImpl<HalVersion_1_1>;
+template class ArmnnDriverImpl<hal_1_0::HalPolicy>;
+
+#if defined(ARMNN_ANDROID_NN_V1_1)
+template class ArmnnDriverImpl<hal_1_1::HalPolicy>;
 #endif
 
 } // namespace armnn_driver

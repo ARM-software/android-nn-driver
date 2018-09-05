@@ -295,11 +295,14 @@ void ArmnnPreparedModel<HalVersion>::ExecuteWithDummyInputs()
     }
 }
 
-// Class template specializations
-template class ArmnnPreparedModel<HalVersion_1_0>;
+///
+/// Class template specializations
+///
 
-#ifdef ARMNN_ANDROID_NN_V1_1 // Using ::android::hardware::neuralnetworks::V1_1.
-template class ArmnnPreparedModel<HalVersion_1_1>;
+template class ArmnnPreparedModel<hal_1_0::HalPolicy>;
+
+#if defined(ARMNN_ANDROID_NN_V1_1)
+template class ArmnnPreparedModel<hal_1_1::HalPolicy>;
 #endif
 
 } // namespace armnn_driver

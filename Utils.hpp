@@ -5,12 +5,11 @@
 
 #pragma once
 
-#include "ArmnnDriver.hpp"
-
-#include <NeuralNetworks.h>
-
 #include <armnn/ArmNN.hpp>
+
 #include <CpuExecutor.h>
+#include <HalInterfaces.h>
+#include <NeuralNetworks.h>
 
 #include <boost/format.hpp>
 #include <log/log.h>
@@ -131,4 +130,4 @@ void ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimizedNetwor
     }
 }
 
-}
+} // namespace armnn_driver

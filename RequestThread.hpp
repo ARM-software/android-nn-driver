@@ -105,4 +105,3 @@ private:
 };
 
 } // namespace armnn_driver
-

@@ -8,9 +8,9 @@
 #include "RequestThread.hpp"
 #include "ArmnnPreparedModel.hpp"
 
-#include <log/log.h>
-
 #include <boost/assert.hpp>
+
+#include <log/log.h>
 
 using namespace android;
 
@@ -131,12 +131,14 @@ void RequestThread<HalVersion>::Process()
     }
 }
 
-// Class template specializations
-template class RequestThread<HalVersion_1_0>;
+///
+/// Class template specializations
+///
 
-#if defined(ARMNN_ANDROID_NN_V1_1) // Using ::android::hardware::neuralnetworks::V1_1.
-template class RequestThread<HalVersion_1_1>;
+template class RequestThread<hal_1_0::HalPolicy>;
+
+#if defined(ARMNN_ANDROID_NN_V1_1)
+template class RequestThread<hal_1_1::HalPolicy>;
 #endif
 
 } // namespace armnn_driver
-

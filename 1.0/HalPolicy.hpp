@@ -1,0 +1,75 @@
+//
+// Copyright © 2017 Arm Ltd. All rights reserved.
+// SPDX-License-Identifier: MIT
+//
+
+#pragma once
+
+#include "ConversionUtils.hpp"
+
+#include <HalInterfaces.h>
+
+namespace V1_0 = ::android::hardware::neuralnetworks::V1_0;
+
+namespace armnn_driver
+{
+namespace hal_1_0
+{
+
+class HalPolicy
+{
+public:
+    using Model                     = V1_0::Model;
+    using Operation                 = V1_0::Operation;
+    using getSupportedOperations_cb = V1_0::IDevice::getSupportedOperations_cb;
+
+    static bool ConvertOperation(const Operation& operation, const Model& model, ConversionData& data);
+
+private:
+    static bool ConvertAdd(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertAveragePool2d(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertConcatenation(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertFloor(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertFullyConnected(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertLocalResponseNormalization(const Operation& operation,
+                                                  const Model& model,
+                                                  ConversionData& data);
+
+    static bool ConvertLogistic(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertLstm(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertL2Normalization(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertL2Pool2d(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertMaxPool2d(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertMul(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertReLu(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertReLu1(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertReLu6(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertSoftmax(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertTanH(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertReshape(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertResizeBilinear(const Operation& operation, const Model& model, ConversionData& data);
+};
+
+} // namespace hal_1_0
+} // namespace armnn_driver

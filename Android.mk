@@ -48,13 +48,15 @@ endif # ARMNN_DRIVER_DEBUG == 1
 
 LOCAL_SRC_FILES := \
         1.0/ArmnnDriverImpl.cpp \
+        1.0/HalPolicy.cpp \
         ArmnnDriverImpl.cpp \
         DriverOptions.cpp \
         ArmnnDevice.cpp \
         ArmnnPreparedModel.cpp \
         ModelToINetworkConverter.cpp \
         RequestThread.cpp \
-        Utils.cpp
+        Utils.cpp \
+        ConversionUtils.cpp
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
@@ -120,14 +122,17 @@ endif # ARMNN_DRIVER_DEBUG == 1
 
 LOCAL_SRC_FILES := \
         1.0/ArmnnDriverImpl.cpp \
+        1.0/HalPolicy.cpp \
         1.1/ArmnnDriverImpl.cpp \
+        1.1/HalPolicy.cpp \
         ArmnnDriverImpl.cpp \
         DriverOptions.cpp \
         ArmnnDevice.cpp \
         ArmnnPreparedModel.cpp \
         ModelToINetworkConverter.cpp \
         RequestThread.cpp \
-        Utils.cpp
+        Utils.cpp \
+        ConversionUtils.cpp
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
