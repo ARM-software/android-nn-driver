@@ -85,5 +85,4 @@ Individual files contain the following tag instead of the full license text.
 
     SPDX-License-Identifier: MIT
 
-This enables machine processing of license information based on the SPDX
-License Identifiers that are here available: http://spdx.org/licenses/
+This enables machine processing of license information based on the SPDX License Identifiers that are available here: http://spdx.org/licenses/
