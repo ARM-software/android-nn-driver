@@ -75,3 +75,15 @@ adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armn
 <pre>
 adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armnn --cl-tuned-parameters-file &lt;PATH_TO_TUNING_DATA&gt; &
 </pre>
+
+### License
+
+The android-nn-driver is provided under the [MIT](https://spdx.org/licenses/MIT.html) license.
+See [LICENSE](LICENSE) for more information. Contributions to this project are accepted under the same license.
+
+Individual files contain the following tag instead of the full license text.
+
+    SPDX-License-Identifier: MIT
+
+This enables machine processing of license information based on the SPDX
+License Identifiers that are here available: http://spdx.org/licenses/
