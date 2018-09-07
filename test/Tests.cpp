@@ -31,9 +31,9 @@ BOOST_AUTO_TEST_CASE(TestCapabilities)
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
     ErrorStatus error;
-    neuralnetworks::V1_0::Capabilities cap;
+    V1_0::Capabilities cap;
 
-    auto cb = [&](ErrorStatus status, const neuralnetworks::V1_0::Capabilities& capabilities)
+    auto cb = [&](ErrorStatus status, const V1_0::Capabilities& capabilities)
     {
         error = status;
         cap = capabilities;

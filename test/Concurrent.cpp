@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_CASE(ConcurrentExecute)
     ALOGI("ConcurrentExecute: entry");
 
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
-    neuralnetworks::V1_0::Model model = {};
+    V1_0::Model model = {};
 
     // add operands
     int32_t actValue      = 0;
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(ConcurrentExecute)
 
     // make the fully connected operation
     model.operations.resize(1);
-    model.operations[0].type = neuralnetworks::V1_0::OperationType::FULLY_CONNECTED;
+    model.operations[0].type = V1_0::OperationType::FULLY_CONNECTED;
     model.operations[0].inputs  = hidl_vec<uint32_t>{0, 1, 2, 3};
     model.operations[0].outputs = hidl_vec<uint32_t>{4};
 

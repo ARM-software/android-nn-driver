@@ -301,7 +301,7 @@ void ArmnnPreparedModel<HalVersion>::ExecuteWithDummyInputs()
 
 template class ArmnnPreparedModel<hal_1_0::HalPolicy>;
 
-#if defined(ARMNN_ANDROID_NN_V1_1)
+#ifdef ARMNN_ANDROID_NN_V1_1
 template class ArmnnPreparedModel<hal_1_1::HalPolicy>;
 #endif
 

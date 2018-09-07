@@ -109,7 +109,7 @@ void AddPoolAndSetData(uint32_t size, Request& request, const float* data)
     memcpy(dst, data, size * sizeof(float));
 }
 
-android::sp<IPreparedModel> PrepareModelWithStatus(const neuralnetworks::V1_0::Model& model,
+android::sp<IPreparedModel> PrepareModelWithStatus(const V1_0::Model& model,
                                                    armnn_driver::ArmnnDriver& driver,
                                                    ErrorStatus& prepareStatus,
                                                    ErrorStatus expectedStatus)
@@ -126,15 +126,15 @@ android::sp<IPreparedModel> PrepareModelWithStatus(const neuralnetworks::V1_0::M
     return cb->GetPreparedModel();
 }
 
-#if defined(ARMNN_ANDROID_NN_V1_1) // Using ::android::hardware::neuralnetworks::V1_1.
+#ifdef ARMNN_ANDROID_NN_V1_1
 
-android::sp<IPreparedModel> PrepareModelWithStatus(const neuralnetworks::V1_1::Model& model,
+android::sp<IPreparedModel> PrepareModelWithStatus(const V1_1::Model& model,
                                                    armnn_driver::ArmnnDriver& driver,
                                                    ErrorStatus& prepareStatus,
                                                    ErrorStatus expectedStatus)
 {
     android::sp<PreparedModelCallback> cb(new PreparedModelCallback());
-    driver.prepareModel_1_1(model, neuralnetworks::V1_1::ExecutionPreference::LOW_POWER, cb);
+    driver.prepareModel_1_1(model, V1_1::ExecutionPreference::LOW_POWER, cb);
 
     prepareStatus = cb->GetErrorStatus();
     BOOST_TEST(prepareStatus == expectedStatus);
@@ -172,12 +172,12 @@ template<>
 OperandType TypeToOperandType<float>()
 {
     return OperandType::TENSOR_FLOAT32;
-};
+}
 
 template<>
 OperandType TypeToOperandType<int32_t>()
 {
     return OperandType::TENSOR_INT32;
-};
+}
 
 } // namespace driverTestHelpers

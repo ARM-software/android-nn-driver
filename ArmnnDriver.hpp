@@ -9,7 +9,7 @@
 
 #include <log/log.h>
 
-#if defined(ARMNN_ANDROID_NN_V1_1)
+#ifdef ARMNN_ANDROID_NN_V1_1 // Using ::android::hardware::neuralnetworks::V1_1
 
 #include "1.1/ArmnnDriver.hpp"
 
@@ -29,7 +29,7 @@ public:
 
 } // namespace armnn_driver
 
-#else // Fallback to ::android::hardware::neuralnetworks::V1_0.
+#else // Fallback to ::android::hardware::neuralnetworks::V1_0
 
 #include "1.0/ArmnnDriver.hpp"
 

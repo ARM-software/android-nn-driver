@@ -31,7 +31,7 @@ std::ostream& operator<<(std::ostream& os, ErrorStatus stat);
 namespace driverTestHelpers
 {
 
-std::ostream& operator<<(std::ostream& os, android::hardware::neuralnetworks::V1_0::ErrorStatus stat);
+std::ostream& operator<<(std::ostream& os, V1_0::ErrorStatus stat);
 
 struct ExecutionCallback : public IExecutionCallback
 {
@@ -172,14 +172,14 @@ void AddOutputOperand(HalModel& model,
     model.outputIndexes[model.outputIndexes.size() - 1] = model.operands.size() - 1;
 }
 
-android::sp<IPreparedModel> PrepareModelWithStatus(const ::android::hardware::neuralnetworks::V1_0::Model& model,
+android::sp<IPreparedModel> PrepareModelWithStatus(const V1_0::Model& model,
                                                    armnn_driver::ArmnnDriver& driver,
                                                    ErrorStatus& prepareStatus,
                                                    ErrorStatus expectedStatus = ErrorStatus::NONE);
 
-#if defined(ARMNN_ANDROID_NN_V1_1) // Using ::android::hardware::neuralnetworks::V1_1.
+#ifdef ARMNN_ANDROID_NN_V1_1
 
-android::sp<IPreparedModel> PrepareModelWithStatus(const ::android::hardware::neuralnetworks::V1_1::Model& model,
+android::sp<IPreparedModel> PrepareModelWithStatus(const V1_1::Model& model,
                                                    armnn_driver::ArmnnDriver& driver,
                                                    ErrorStatus& prepareStatus,
                                                    ErrorStatus expectedStatus = ErrorStatus::NONE);

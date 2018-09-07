@@ -7,7 +7,7 @@
 
 #include <HalInterfaces.h>
 
-#include "ArmnnDevice.hpp"
+#include "../ArmnnDevice.hpp"
 #include "ArmnnDriverImpl.hpp"
 #include "HalPolicy.hpp"
 

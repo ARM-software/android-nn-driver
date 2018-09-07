@@ -114,7 +114,7 @@ void LstmTestImpl(hidl_vec<uint32_t> inputDimensions,
                   std::vector<float> outputValue)
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::GpuAcc));
-    neuralnetworks::V1_0::Model model = {};
+    V1_0::Model model = {};
 
     // Inputs:
     // 00: The input: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, input_size], where
@@ -198,7 +198,7 @@ void LstmTestImpl(hidl_vec<uint32_t> inputDimensions,
 
     // make the lstm operation
     model.operations.resize(1);
-    model.operations[0].type = neuralnetworks::V1_0::OperationType::LSTM;
+    model.operations[0].type = V1_0::OperationType::LSTM;
     model.operations[0].inputs =
         hidl_vec<uint32_t> {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
     model.operations[0].outputs = hidl_vec<uint32_t> {23, 24, 25, 26};
