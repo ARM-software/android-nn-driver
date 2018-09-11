@@ -82,7 +82,7 @@ DriverOptions::DriverOptions(int argc, char** argv)
 
         ("gpu-profiling,p",
          po::bool_switch(&m_EnableGpuProfiling),
-         "Turns GPU profiling on");
+         "Turns GPU profiling on")
 
         ("fp16-enabled,f",
          po::bool_switch(&m_fp16Enabled),
