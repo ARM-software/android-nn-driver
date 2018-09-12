@@ -26,6 +26,7 @@ public:
 
 private:
     static bool ConvertDiv(const Operation& operation, const Model& model, ConversionData& data);
+    static bool ConvertSub(const Operation& operation, const Model& model, ConversionData& data);
 };
 
 } // namespace hal_1_1

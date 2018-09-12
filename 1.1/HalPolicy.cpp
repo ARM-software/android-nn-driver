@@ -27,6 +27,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
         {
             case V1_1::OperationType::DIV:
                 return ConvertDiv(operation, model, data);
+            case V1_1::OperationType::SUB:
+                return ConvertSub(operation, model, data);
             default:
                 return Fail("%s: Operation type %s not supported in ArmnnDriver",
                             __func__, toString(operation.type).c_str());
@@ -71,6 +73,57 @@ bool HalPolicy::ConvertDiv(const Operation& operation, const Model& model, Conve
     }
 
     armnn::IConnectableLayer* const startLayer = data.m_Network->AddDivisionLayer();
+    armnn::IConnectableLayer* const endLayer = ProcessActivation(outInfo, activationFunction, startLayer, data);
+
+    const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
+    const armnn::TensorInfo& inputTensorInfo1 = input1.GetTensorInfo();
+
+    if (endLayer)
+    {
+        BroadcastTensor(input0, input1, startLayer, *data.m_Network);
+        return SetupAndTrackLayerOutputSlot(operation, 0, *endLayer, model, data);
+    }
+
+    return Fail("%s: ProcessActivation failed", __func__);
+}
+
+bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, ConversionData& data)
+{
+    LayerInputHandle input0 = ConvertToLayerInputHandle(operation, 0, model, data);
+    LayerInputHandle input1 = ConvertToLayerInputHandle(operation, 1, model, data);
+
+    if (!input0.IsValid() || !input1.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    // The FuseActivation parameter is always the input index 2
+    // and it should be optional
+    ActivationFn activationFunction;
+    if (!GetOptionalInputActivation(operation, 2, activationFunction, model, data))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* outputOperand = GetOutputOperand(operation, 0, model);
+    if (!outputOperand)
+    {
+        return false;
+    }
+
+    const armnn::TensorInfo& outInfo = GetTensorInfoForOperand(*outputOperand);
+
+    if (!IsLayerSupported(__func__,
+                          armnn::IsSubtractionSupported,
+                          data.m_Compute,
+                          input0.GetTensorInfo(),
+                          input1.GetTensorInfo(),
+                          outInfo))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const startLayer = data.m_Network->AddSubtractionLayer();
     armnn::IConnectableLayer* const endLayer = ProcessActivation(outInfo, activationFunction, startLayer, data);
 
     const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
