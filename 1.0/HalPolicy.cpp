@@ -1084,16 +1084,19 @@ bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& 
     const armnn::TensorInfo swizzledInputInfo  = armnnUtils::Permuted(inputInfo, NHWCToArmNN);
     const armnn::TensorInfo swizzledOutputInfo = armnnUtils::Permuted(outputInfo, NHWCToArmNN);
 
+    armnn::L2NormalizationDescriptor desc;
+
     if (!IsLayerSupported(__func__,
                           armnn::IsL2NormalizationSupported,
                           data.m_Compute,
                           swizzledInputInfo,
-                          swizzledOutputInfo))
+                          swizzledOutputInfo,
+                          desc))
     {
         return false;
     }
 
-    armnn::IConnectableLayer* layer = data.m_Network->AddL2NormalizationLayer();
+    armnn::IConnectableLayer* layer = data.m_Network->AddL2NormalizationLayer(desc);
     assert(layer != nullptr);
     layer->GetOutputSlot(0).SetTensorInfo(swizzledOutputInfo);
 
