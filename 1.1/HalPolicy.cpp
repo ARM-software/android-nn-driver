@@ -196,6 +196,9 @@ bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, Conv
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddMeanLayer(descriptor);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+    layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
 
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer, model, data);
 }
