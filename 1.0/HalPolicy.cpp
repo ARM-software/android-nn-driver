@@ -1083,16 +1083,14 @@ bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& 
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    const armnn::TensorInfo swizzledInputInfo  = armnnUtils::Permuted(inputInfo, NHWCToArmNN);
-    const armnn::TensorInfo swizzledOutputInfo = armnnUtils::Permuted(outputInfo, NHWCToArmNN);
-
     armnn::L2NormalizationDescriptor desc;
+    desc.m_DataLayout = armnn::DataLayout::NHWC;
 
     if (!IsLayerSupported(__func__,
                           armnn::IsL2NormalizationSupported,
                           data.m_Compute,
-                          swizzledInputInfo,
-                          swizzledOutputInfo,
+                          inputInfo,
+                          outputInfo,
                           desc))
     {
         return false;
@@ -1100,11 +1098,9 @@ bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& 
 
     armnn::IConnectableLayer* layer = data.m_Network->AddL2NormalizationLayer(desc);
     assert(layer != nullptr);
-    layer->GetOutputSlot(0).SetTensorInfo(swizzledOutputInfo);
+    input.Connect(layer->GetInputSlot(0));
 
-    armnn::IConnectableLayer& outSwizzleLayer = SwizzleInDeswizzleOut(*data.m_Network, input, *layer);
-
-    return SetupAndTrackLayerOutputSlot(operation, 0, outSwizzleLayer, model, data);
+    return SetupAndTrackLayerOutputSlot(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertL2Pool2d(const Operation& operation, const Model& model, ConversionData& data)
