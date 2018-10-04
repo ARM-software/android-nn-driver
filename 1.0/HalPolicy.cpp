@@ -5,6 +5,8 @@
 
 #include "HalPolicy.hpp"
 
+#include "armnn/Optional.hpp"
+
 namespace armnn_driver
 {
 namespace hal_1_0
@@ -409,7 +411,7 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
     }
 
     desc.m_BiasEnabled = true;
-    auto biases = boost::make_optional(bias.GetInfo());
+    armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
 
     if (!IsLayerSupported(__func__,
                           armnn::IsConvolution2dSupported,
@@ -532,7 +534,7 @@ bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& 
     }
 
     desc.m_BiasEnabled = true;
-    auto biases = boost::make_optional(bias.GetInfo());
+    armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
 
     if (!IsLayerSupported(__func__,
                           armnn::IsDepthwiseConvolutionSupported,
