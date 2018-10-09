@@ -150,12 +150,14 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     armnn::OptimizerOptions OptOptions;
     OptOptions.m_ReduceFp32ToFp16 = float32ToFloat16;
 
+    std::vector<std::string> errMessages;
     try
     {
         optNet = armnn::Optimize(*modelConverter.GetINetwork(),
                                  {options.GetComputeDevice()},
                                  runtime->GetDeviceSpec(),
-                                 OptOptions);
+                                 OptOptions,
+                                 errMessages);
     }
     catch (armnn::Exception &e)
     {
@@ -168,8 +170,13 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     // Check that the optimized network is valid.
     if (!optNet)
     {
+        stringstream message;
+        message << "ArmnnDriverImpl::prepareModel: Invalid optimized network";
+        for (const string& msg : errMessages) {
+            message << "\n" << msg;
+        }
         FailPrepareModel(ErrorStatus::GENERAL_FAILURE,
-                         "ArmnnDriverImpl::prepareModel: Invalid optimized network", cb);
+                         message.str(), cb);
         return ErrorStatus::NONE;
     }
 
