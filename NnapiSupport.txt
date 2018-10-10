@@ -31,6 +31,7 @@ RELU6                        (FLOAT32,QUANT8_ASYMM)
 RESHAPE                      (FLOAT32,QUANT8_ASYMM)
 RESIZE_BILINEAR              (FLOAT32)
 SOFTMAX                      (FLOAT32,QUANT8_ASYMM)
+SQUEEZE                      (FLOAT32,QUANT8_ASYMM)
 TANH                         (FLOAT32)
 LSTM                         (FLOAT32)
 
@@ -58,7 +59,6 @@ DIV
 MEAN
 PAD
 SPACE_TO_BATCH_ND
-SQUEEZE
 STRIDED_SLICE
 SUB
 TRANSPOSE

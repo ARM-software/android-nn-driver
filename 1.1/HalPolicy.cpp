@@ -33,6 +33,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
                 return ConvertMean(operation, model, data);
             case V1_1::OperationType::PAD:
                 return ConvertPad(operation, model, data);
+            case V1_1::OperationType::SQUEEZE:
+                return ConvertSqueeze(operation, model, data);
             default:
                 return Fail("%s: Operation type %s not supported in ArmnnDriver",
                             __func__, toString(operation.type).c_str());
@@ -265,6 +267,81 @@ bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, Conve
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddPadLayer(descriptor);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+    layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
+
+    return SetupAndTrackLayerOutputSlot(operation, 0, *layer, model, data);
+}
+
+bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, ConversionData& data)
+{
+    static const uint32_t dimensionSequence[] = { 0, 1, 2, 3 };
+    LayerInputHandle input = ConvertToLayerInputHandle(operation, 0, model, data);
+
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+
+    unsigned int rank = inputInfo.GetNumDimensions();
+    if( rank > 4 )
+    {
+        Fail("%s: Inputs with rank greater than: %i are not supported", __func__, rank);
+    }
+
+    // NOTE: Axis is an optional parameter to SQUEEZE, therefore we do not want to generate a failure
+    // if the operand index is out of bounds.
+    const Operand* axisOperand = GetInputOperand(operation, 1, model, false);
+
+    std::vector<int32_t> axis;
+    if(!axisOperand)
+    {
+        axis.assign(dimensionSequence,
+                    dimensionSequence+inputInfo.GetNumDimensions());
+    }
+    else
+    {
+        GetTensorInt32Values(*axisOperand, axis, model, data);
+    }
+
+    std::vector<uint32_t> outputDims;
+    for (auto& i : axis)
+    {
+        auto currentDimension = inputInfo.GetShape()[i];
+        bool skipSqueeze = (std::find(axis.begin(), axis.end(), i) == axis.end());
+
+        if (skipSqueeze || currentDimension != 1)
+        {
+            outputDims.push_back(currentDimension);
+        }
+    }
+
+    armnn::TensorShape outShape = armnn::TensorShape(static_cast<unsigned int>(outputDims.size()), outputDims.data());
+
+    armnn::TensorInfo outputInfo = inputInfo;
+    outputInfo.SetShape(outShape);
+
+    armnn::ReshapeDescriptor reshapeDesc;
+    reshapeDesc.m_TargetShape = outputInfo.GetShape();
+
+    const Operand* output = GetOutputOperand(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    if (!IsLayerSupported(__func__,
+                          armnn::IsReshapeSupported,
+                          data.m_Compute,
+                          inputInfo))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddReshapeLayer(reshapeDesc);
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
     layer->GetOutputSlot(0).SetTensorInfo(outputInfo);

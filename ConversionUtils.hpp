@@ -464,11 +464,15 @@ namespace armnn_driver
 using namespace android::nn;
 
 template<typename HalOperation, typename HalModel>
-const Operand* GetInputOperand(const HalOperation& operation, uint32_t inputIndex, const HalModel& model)
+const Operand* GetInputOperand(const HalOperation& operation, uint32_t inputIndex, const HalModel& model,
+                               bool failOnIndexOutOfBounds = true)
 {
     if (inputIndex >= operation.inputs.size())
     {
-        Fail("%s: invalid input index: %i out of %i", __func__, inputIndex, operation.inputs.size());
+        if (failOnIndexOutOfBounds)
+        {
+            Fail("%s: invalid input index: %i out of %i", __func__, inputIndex, operation.inputs.size());
+        }
         return nullptr;
     }
 
