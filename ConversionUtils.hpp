@@ -985,46 +985,19 @@ bool ConvertPooling2d(const HalOperation& operation,
         }
     }
 
-    // ArmNN does not accept a pool size of 1, but the ArmNN driver is expected to cope.
-    // This is mapped to a trivial splitter instead.
     armnn::IConnectableLayer* startLayer = nullptr;
-    if (desc.m_PoolWidth != 1 || desc.m_PoolHeight != 1)
+
+    if (!IsLayerSupported(__func__,
+                          armnn::IsPooling2dSupported,
+                          data.m_Compute,
+                          swizzledInputInfo,
+                          swizzledOutputInfo,
+                          desc))
     {
-        if (!IsLayerSupported(__func__,
-                              armnn::IsPooling2dSupported,
-                              data.m_Compute,
-                              swizzledInputInfo,
-                              swizzledOutputInfo,
-                              desc))
-        {
-            return false;
-        }
-
-        startLayer = data.m_Network->AddPooling2dLayer(desc);
+        return false;
     }
-    else
-    {
-        const unsigned int numDims = swizzledOutputInfo.GetNumDimensions();
 
-        armnn::ViewsDescriptor viewsDesc(1, numDims);
-
-        for (unsigned int i = 0; i < numDims; ++i)
-        {
-            viewsDesc.SetViewOriginCoord(0, i, 0);
-            viewsDesc.SetViewSize(0, i, swizzledOutputInfo.GetShape()[i]);
-        }
-
-        if (!IsLayerSupported(__func__,
-                              armnn::IsSplitterSupported,
-                              data.m_Compute,
-                              swizzledInputInfo,
-                              viewsDesc))
-        {
-            return false;
-        }
-
-        startLayer = data.m_Network->AddSplitterLayer(viewsDesc);
-    }
+    startLayer = data.m_Network->AddPooling2dLayer(desc);
 
     armnn::IConnectableLayer* endLayer = ProcessActivation(swizzledOutputInfo, activation, startLayer, data);
 
