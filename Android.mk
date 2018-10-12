@@ -60,12 +60,13 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libarmnn \
         libboost_log \
         libboost_program_options \
         libboost_system \
         libboost_thread \
         armnn-arm_compute
+
+LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
 
 LOCAL_SHARED_LIBRARIES := \
         libbase \
@@ -136,12 +137,13 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libarmnn \
         libboost_log \
         libboost_program_options \
         libboost_system \
         libboost_thread \
         armnn-arm_compute
+
+LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
 
 LOCAL_SHARED_LIBRARIES := \
         libbase \
@@ -192,12 +194,13 @@ LOCAL_SRC_FILES := \
 LOCAL_STATIC_LIBRARIES := \
         libarmnn-driver@1.0 \
         libneuralnetworks_common \
-        libarmnn \
         libboost_log \
         libboost_program_options \
         libboost_system \
         libboost_thread \
         armnn-arm_compute
+
+LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
 
 LOCAL_SHARED_LIBRARIES := \
         libbase \
@@ -258,12 +261,13 @@ LOCAL_SRC_FILES := \
 LOCAL_STATIC_LIBRARIES := \
         libarmnn-driver@1.1 \
         libneuralnetworks_common \
-        libarmnn \
         libboost_log \
         libboost_program_options \
         libboost_system \
         libboost_thread \
         armnn-arm_compute
+
+LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
 
 LOCAL_SHARED_LIBRARIES := \
         libbase \
