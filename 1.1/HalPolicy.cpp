@@ -300,19 +300,19 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
     if(!axisOperand)
     {
         axis.assign(dimensionSequence,
-                    dimensionSequence+inputInfo.GetNumDimensions());
+                    dimensionSequence+rank);
     }
     else
     {
         GetTensorInt32Values(*axisOperand, axis, model, data);
     }
 
-    std::vector<uint32_t> outputDims;
-    for (auto& i : axis)
-    {
-        auto currentDimension = inputInfo.GetShape()[i];
-        bool skipSqueeze = (std::find(axis.begin(), axis.end(), i) == axis.end());
 
+    std::vector<uint32_t> outputDims;
+    for(unsigned int i = 0; i < rank; i++)
+    {
+        bool skipSqueeze = (std::find(axis.begin(), axis.end(), i) == axis.end());
+        auto currentDimension = inputInfo.GetShape()[i];
         if (skipSqueeze || currentDimension != 1)
         {
             outputDims.push_back(currentDimension);
