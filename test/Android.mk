@@ -57,14 +57,15 @@ LOCAL_SRC_FILES := \
         TestTensor.cpp
 
 LOCAL_STATIC_LIBRARIES := \
-        libarmnn-driver@1.0 \
         libneuralnetworks_common \
-        libarmnn \
         libboost_log \
         libboost_system \
         libboost_unit_test_framework \
         libboost_thread \
         armnn-arm_compute
+
+LOCAL_WHOLE_STATIC_LIBRARIES := \
+        libarmnn-driver@1.0
 
 LOCAL_SHARED_LIBRARIES := \
         libbase \
@@ -132,14 +133,15 @@ LOCAL_SRC_FILES := \
         TestTensor.cpp
 
 LOCAL_STATIC_LIBRARIES := \
-        libarmnn-driver@1.1 \
         libneuralnetworks_common \
-        libarmnn \
         libboost_log \
         libboost_system \
         libboost_unit_test_framework \
         libboost_thread \
         armnn-arm_compute
+
+LOCAL_WHOLE_STATIC_LIBRARIES := \
+        libarmnn-driver@1.1
 
 LOCAL_SHARED_LIBRARIES := \
         libbase \
