@@ -35,6 +35,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
                 return ConvertPad(operation, model, data);
             case V1_1::OperationType::SQUEEZE:
                 return ConvertSqueeze(operation, model, data);
+            case V1_1::OperationType::TRANSPOSE:
+                return ConvertTranspose(operation, model, data);
             default:
                 return Fail("%s: Operation type %s not supported in ArmnnDriver",
                             __func__, toString(operation.type).c_str());
@@ -276,7 +278,6 @@ bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, Conve
 
 bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, ConversionData& data)
 {
-    static const uint32_t dimensionSequence[] = { 0, 1, 2, 3 };
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0, model, data);
 
     if (!input.IsValid())
@@ -287,20 +288,22 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
 
     unsigned int rank = inputInfo.GetNumDimensions();
-    if( rank > 4 )
+    if (rank > 4)
     {
-        Fail("%s: Inputs with rank greater than: %i are not supported", __func__, rank);
+        Fail("%s: Inputs with rank greater than 4 are not supported", __func__);
     }
 
     // NOTE: Axis is an optional parameter to SQUEEZE, therefore we do not want to generate a failure
     // if the operand index is out of bounds.
     const Operand* axisOperand = GetInputOperand(operation, 1, model, false);
 
+    const uint32_t dimensionSequence[] = { 0, 1, 2, 3 };
+
     std::vector<int32_t> axis;
-    if(!axisOperand)
+    if (!axisOperand)
     {
         axis.assign(dimensionSequence,
-                    dimensionSequence+rank);
+                    dimensionSequence + rank);
     }
     else
     {
@@ -309,7 +312,7 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
 
 
     std::vector<uint32_t> outputDims;
-    for(unsigned int i = 0; i < rank; i++)
+    for (unsigned int i = 0; i < rank; i++)
     {
         bool skipSqueeze = (std::find(axis.begin(), axis.end(), i) == axis.end());
         auto currentDimension = inputInfo.GetShape()[i];
@@ -319,7 +322,7 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
         }
     }
 
-    armnn::TensorShape outShape = armnn::TensorShape(static_cast<unsigned int>(outputDims.size()), outputDims.data());
+    armnn::TensorShape outShape = armnn::TensorShape(outputDims.size(), outputDims.data());
 
     armnn::TensorInfo outputInfo = inputInfo;
     outputInfo.SetShape(outShape);
@@ -344,7 +347,79 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
     armnn::IConnectableLayer* const layer = data.m_Network->AddReshapeLayer(reshapeDesc);
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
-    layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
+
+    return SetupAndTrackLayerOutputSlot(operation, 0, *layer, model, data);
+}
+
+bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model, ConversionData& data)
+{
+    LayerInputHandle input = ConvertToLayerInputHandle(operation, 0, model, data);
+
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+
+    unsigned int rank = inputInfo.GetNumDimensions();
+    if (rank > 4)
+    {
+        Fail("%s: Inputs with rank greater than 4 are not supported", __func__);
+    }
+
+    // NOTE: Axis is an optional parameter to TRANSPOSE, therefore we do not want to generate a failure
+    // if the operand index is out of bounds.
+    const Operand* permOperand = GetInputOperand(operation, 1, model, false);
+
+    std::vector<int32_t> perm(rank);
+    if (!permOperand)
+    {
+        // NOTE: If perm is not given, it is set to (n-1...0), where n is the rank of the tensor
+        for (unsigned int i = rank; i > 0; i--)
+        {
+            perm[rank - i] = boost::numeric_cast<int> (i - 1);
+        }
+    }
+    else
+    {
+        GetTensorInt32Values(*permOperand, perm, model, data);
+    }
+
+    std::vector<uint32_t> outputDims(perm.begin(), perm.begin() + rank);
+
+    auto permutationVector = armnn::PermutationVector(outputDims.data(), outputDims.size());
+    if (!permutationVector.IsEqual(NHWCToArmNN)
+        && !permutationVector.IsEqual(ArmNNToNHWC)
+        && !permutationVector.IsEqual({ 3, 2, 0, 1 }))
+    {
+       return Fail("%s: Only [0, 3, 1, 2], [0, 2, 3, 1] and [3, 2, 0, 1] permutations are supported.", __func__);
+    }
+
+    armnn::PermuteDescriptor permuteDesc;
+    permuteDesc.m_DimMappings = permutationVector;
+
+    const Operand* output = GetOutputOperand(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    if (!IsLayerSupported(__func__,
+                          armnn::IsPermuteSupported,
+                          data.m_Compute,
+                          inputInfo,
+                          outputInfo,
+                          permuteDesc))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddPermuteLayer(permuteDesc);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer, model, data);
 }

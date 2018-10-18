@@ -33,6 +33,7 @@ RESIZE_BILINEAR              (FLOAT32)
 SOFTMAX                      (FLOAT32,QUANT8_ASYMM)
 SQUEEZE                      (FLOAT32,QUANT8_ASYMM)
 TANH                         (FLOAT32)
+TRANSPOSE                    (FLOAT32,QUANT8_ASYMM)
 LSTM                         (FLOAT32)
 
 * Depthwise convolution only supports a value of 1 for the depth multiplier. In addition, the QUANT8_ASYMM version only supports 3x3 kernels.
@@ -61,6 +62,5 @@ PAD
 SPACE_TO_BATCH_ND
 STRIDED_SLICE
 SUB
-TRANSPOSE
 
 Where any of these operations are present the model will return false from the compliantWithV1_0(model) and the driver will not currently be utilised.
