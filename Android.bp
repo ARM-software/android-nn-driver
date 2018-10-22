@@ -390,6 +390,7 @@ cc_library_static {
         "clframework/src/runtime/CL/functions/CLPixelWiseMultiplication.cpp",
         "clframework/src/runtime/CL/functions/CLPoolingLayer.cpp",
         "clframework/src/runtime/CL/functions/CLQuantizationLayer.cpp",
+        "clframework/src/runtime/CL/functions/CLReduceMean.cpp",
         "clframework/src/runtime/CL/functions/CLReductionOperation.cpp",
         "clframework/src/runtime/CL/functions/CLRemap.cpp",
         "clframework/src/runtime/CL/functions/CLReorgLayer.cpp",
