@@ -712,16 +712,14 @@ bool HalPolicy::ConvertLocalResponseNormalization(const Operation& operation,
         return Fail("%s: Could not read output 0", __func__);
     }
 
-    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-
-    const armnn::TensorInfo swizzledInputInfo  = armnnUtils::Permuted(inputInfo, NHWCToArmNN);
-    const armnn::TensorInfo swizzledOutputInfo = armnnUtils::Permuted(outputInfo, NHWCToArmNN);
 
     armnn::NormalizationDescriptor descriptor;
 
+    descriptor.m_DataLayout = armnn::DataLayout::NHWC;
     descriptor.m_NormChannelType = armnn::NormalizationAlgorithmChannel::Across;
-    descriptor.m_NormMethodType  = armnn::NormalizationAlgorithmMethod::LocalBrightness;
+    descriptor.m_NormMethodType = armnn::NormalizationAlgorithmMethod::LocalBrightness;
 
     if (!input.IsValid() ||
         !GetInputScalar(operation, 1, OperandType::INT32, descriptor.m_NormSize, model, data) ||
@@ -739,8 +737,8 @@ bool HalPolicy::ConvertLocalResponseNormalization(const Operation& operation,
     if (!IsLayerSupported(__func__,
                         armnn::IsNormalizationSupported,
                         data.m_Compute,
-                        swizzledInputInfo,
-                        swizzledOutputInfo,
+                        inputInfo,
+                        outputInfo,
                         descriptor))
     {
         return false;
@@ -749,11 +747,9 @@ bool HalPolicy::ConvertLocalResponseNormalization(const Operation& operation,
 
     armnn::IConnectableLayer* layer = data.m_Network->AddNormalizationLayer(descriptor);
     assert(layer != nullptr);
-    layer->GetOutputSlot(0).SetTensorInfo(swizzledOutputInfo);
+    input.Connect(layer->GetInputSlot(0));
 
-    armnn::IConnectableLayer& outSwizzleLayer = SwizzleInDeswizzleOut(*data.m_Network, input, *layer);
-
-    return SetupAndTrackLayerOutputSlot(operation, 0, outSwizzleLayer, model, data);
+    return SetupAndTrackLayerOutputSlot(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertLogistic(const Operation& operation, const Model& model, ConversionData& data)
