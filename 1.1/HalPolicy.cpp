@@ -149,39 +149,42 @@ bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, Conve
 bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, ConversionData& data)
 {
     LayerInputHandle input = ConvertToLayerInputHandle(operation, 0, model, data);
-
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+    const Operand* axisOperand = GetInputOperand(operation, 1, model);
+    if (!axisOperand)
+    {
+        return Fail("%s: Could not read input 1", __func__);
+    }
+
+    std::vector<int32_t> axis;
+    if (!GetTensorInt32Values(*axisOperand, axis, model, data))
+    {
+        return Fail("%s: Input 1 has invalid values", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
+
+    // Convert the axis to unsigned int and remove duplicates.
+    unsigned int rank = inputInfo.GetNumDimensions();
+    std::set<unsigned int> uniqueAxis;
+    std::transform(axis.begin(), axis.end(),
+                   std::inserter(uniqueAxis, uniqueAxis.begin()),
+                   [rank](int i) -> unsigned int { return (i + rank) % rank; });
+
+    // Get the "keep dims" flag.
+    int32_t keepDims = 0;
+    if (!GetInputInt32(operation, 2, keepDims, model, data))
+    {
+        return Fail("%s: Could not read input 2", __func__);
+    }
 
     armnn::MeanDescriptor descriptor;
-
-    const Operand* axisOperand = GetInputOperand(operation, 1, model);
-    if (axisOperand)
-    {
-        std::vector<int32_t> axis;
-        GetTensorInt32Values(*axisOperand, axis, model, data);
-        unsigned int rank = inputInfo.GetNumDimensions();
-        // convert the axis to unsigned int.
-        for (auto& i : axis)
-        {
-            unsigned int unsignedAxis = (i + rank) % rank;
-            if (std::find(descriptor.m_Axis.begin(), descriptor.m_Axis.end(), unsignedAxis) == descriptor.m_Axis.end())
-            {
-                descriptor.m_Axis.push_back(unsignedAxis);
-            }
-        }
-    }
-
-    int32_t keepDims;
-    GetInputInt32(operation, 2, keepDims, model, data);
-    if (keepDims > 0)
-    {
-        descriptor.m_KeepDims = true;
-    }
+    descriptor.m_Axis.assign(uniqueAxis.begin(), uniqueAxis.end());
+    descriptor.m_KeepDims = keepDims > 0;
 
     const Operand* output = GetOutputOperand(operation, 0, model);
     if (!output)
@@ -204,7 +207,6 @@ bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, Conv
     armnn::IConnectableLayer* const layer = data.m_Network->AddMeanLayer(descriptor);
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
-    layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
 
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer, model, data);
 }
