@@ -121,6 +121,7 @@ LOCAL_CFLAGS := \
 LOCAL_SRC_FILES := \
         1.0/Convolution2D.cpp \
         1.1/Convolution2D.cpp \
+        1.1/Transpose.cpp \
         Tests.cpp \
         UtilsTests.cpp \
         Concurrent.cpp \
