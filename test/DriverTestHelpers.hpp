@@ -146,6 +146,7 @@ void AddInputOperand(HalModel& model,
 {
     Operand op    = {};
     op.type       = operandType;
+    op.scale      = operandType == OperandType::TENSOR_QUANT8_ASYMM ? 1.f / 255.f : 0.f;
     op.dimensions = dimensions;
     op.lifetime   = OperandLifeTime::MODEL_INPUT;
 

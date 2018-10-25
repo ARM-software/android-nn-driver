@@ -120,14 +120,12 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
 
     if (!runtime)
     {
-        return FailPrepareModel(ErrorStatus::DEVICE_UNAVAILABLE,
-                                "ArmnnDriverImpl::prepareModel: Device unavailable", cb);
+        return FailPrepareModel(ErrorStatus::DEVICE_UNAVAILABLE, "Device unavailable", cb);
     }
 
     if (!android::nn::validateModel(model))
     {
-        return FailPrepareModel(ErrorStatus::INVALID_ARGUMENT,
-                                "ArmnnDriverImpl::prepareModel: Invalid model passed as input", cb);
+        return FailPrepareModel(ErrorStatus::INVALID_ARGUMENT, "Invalid model passed as input", cb);
     }
 
     // Deliberately ignore any unsupported operations requested by the options -
@@ -140,8 +138,7 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
 
     if (modelConverter.GetConversionResult() != ConversionResult::Success)
     {
-        FailPrepareModel(ErrorStatus::GENERAL_FAILURE,
-                         "ArmnnDriverImpl::prepareModel: ModelToINetworkConverter failed", cb);
+        FailPrepareModel(ErrorStatus::GENERAL_FAILURE, "ModelToINetworkConverter failed", cb);
         return ErrorStatus::NONE;
     }
 
@@ -162,7 +159,7 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     catch (armnn::Exception &e)
     {
         stringstream message;
-        message << "ArmnnDriverImpl::prepareModel: armnn::Exception (" << e.what() << ") caught from optimize.";
+        message << "armnn::Exception (" << e.what() << ") caught from optimize.";
         FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
         return ErrorStatus::NONE;
     }
@@ -171,12 +168,12 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     if (!optNet)
     {
         stringstream message;
-        message << "ArmnnDriverImpl::prepareModel: Invalid optimized network";
-        for (const string& msg : errMessages) {
+        message << "Invalid optimized network";
+        for (const string& msg : errMessages)
+        {
             message << "\n" << msg;
         }
-        FailPrepareModel(ErrorStatus::GENERAL_FAILURE,
-                         message.str(), cb);
+        FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
         return ErrorStatus::NONE;
     }
 
@@ -190,14 +187,13 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     {
         if (runtime->LoadNetwork(netId, move(optNet)) != armnn::Status::Success)
         {
-            return FailPrepareModel(ErrorStatus::GENERAL_FAILURE,
-                                    "ArmnnDriverImpl::prepareModel: Network could not be loaded", cb);
+            return FailPrepareModel(ErrorStatus::GENERAL_FAILURE, "Network could not be loaded", cb);
         }
     }
     catch (armnn::Exception& e)
     {
         stringstream message;
-        message << "ArmnnDriverImpl::prepareModel: armnn::Exception (" << e.what()<< ") caught from LoadNetwork.";
+        message << "armnn::Exception (" << e.what()<< ") caught from LoadNetwork.";
         FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
         return ErrorStatus::NONE;
     }
@@ -225,7 +221,7 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
         catch (const armnn::Exception& error)
         {
             ALOGE("ArmnnDriverImpl::prepareModel: Failed to save CL tuned parameters file '%s': %s",
-                options.GetClTunedParametersFile().c_str(), error.what());
+                  options.GetClTunedParametersFile().c_str(), error.what());
         }
     }
 
