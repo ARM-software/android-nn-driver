@@ -800,6 +800,7 @@ LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
     {
         case OperandLifeTime::TEMPORARY_VARIABLE: // intentional fallthrough
         case OperandLifeTime::MODEL_INPUT:
+        case OperandLifeTime::MODEL_OUTPUT:
         {
             // The tensor is either an operand internal to the model, or a model input.
             // It can be associated with an ArmNN output slot for an existing layer.
