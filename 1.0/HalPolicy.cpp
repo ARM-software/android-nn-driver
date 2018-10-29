@@ -1324,18 +1324,17 @@ bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& m
     const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    const armnn::TensorInfo swizzledInputInfo = armnnUtils::Permuted(inputInfo, NHWCToArmNN);
-    const armnn::TensorInfo swizzledOutputInfo = armnnUtils::Permuted(outputInfo, NHWCToArmNN);
+    armnn::ResizeBilinearDescriptor desc;
+    desc.m_DataLayout = armnn::DataLayout::NHWC;
 
     if (!IsLayerSupported(__func__,
                           armnn::IsResizeBilinearSupported,
                           data.m_Compute,
-                          swizzledInputInfo))
+                          inputInfo))
     {
         return false;
     }
 
-    armnn::ResizeBilinearDescriptor desc;
 
     if (   !GetInputScalar(operation, 1, OperandType::INT32, desc.m_TargetHeight, model, data)
         || !GetInputScalar(operation, 2, OperandType::INT32, desc.m_TargetWidth, model, data))
@@ -1344,12 +1343,13 @@ bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& m
     }
 
     armnn::IConnectableLayer* layer = data.m_Network->AddResizeBilinearLayer(desc);
+
     assert(layer != nullptr);
-    layer->GetOutputSlot(0).SetTensorInfo(swizzledOutputInfo);
 
-    armnn::IConnectableLayer& outSwizzleLayer = SwizzleInDeswizzleOut(*data.m_Network, input, *layer);
+    layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
+    input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot(operation, 0, outSwizzleLayer, model, data);
+    return SetupAndTrackLayerOutputSlot(operation, 0, *layer, model, data);
 
 }
 
