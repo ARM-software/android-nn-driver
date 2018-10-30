@@ -354,11 +354,8 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    const armnn::TensorInfo swizzledInputInfo  = armnnUtils::Permuted(inputInfo, NHWCToArmNN);
-    const armnn::TensorInfo swizzledOutputInfo = armnnUtils::Permuted(outputInfo, NHWCToArmNN);
-
     // ArmNN does not currently support non-fixed weights or bias
-    const ConstTensorPin weightsPin = ConvertOperationInputToConstTensorPin(operation, 1, model, data, NHWCToArmNN);
+    const ConstTensorPin weightsPin = ConvertOperationInputToConstTensorPin(operation, 1, model, data);
     const ConstTensorPin biasPin    = ConvertOperationInputToConstTensorPin(operation, 2, model, data);
 
     if (!weightsPin.IsValid() || !biasPin.IsValid())
@@ -368,9 +365,10 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
 
     armnn::ConstTensor weights = weightsPin.GetConstTensor();
     armnn::ConstTensor bias = biasPin.GetConstTensor();
-    SanitizeBiasQuantizationScale(bias.GetInfo(), weights.GetInfo(), swizzledInputInfo);
+    SanitizeBiasQuantizationScale(bias.GetInfo(), weights.GetInfo(), inputInfo);
 
     armnn::Convolution2dDescriptor desc;
+    desc.m_DataLayout = armnn::DataLayout::NHWC;
     ActivationFn activation;
 
     if (operation.inputs.size() == 10)
@@ -397,10 +395,10 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
             return Fail("%s: Operation has invalid inputs", __func__);
         }
 
-        const uint32_t kernelX = weights.GetShape()[3];
-        const uint32_t kernelY = weights.GetShape()[2];
-        const uint32_t inputX  = swizzledInputInfo.GetShape()[3];
-        const uint32_t inputY  = swizzledInputInfo.GetShape()[2];
+        const uint32_t kernelX = weights.GetShape()[2];
+        const uint32_t kernelY = weights.GetShape()[1];
+        const uint32_t inputX  = inputInfo.GetShape()[2];
+        const uint32_t inputY  = inputInfo.GetShape()[1];
 
         CalcPadding(inputX, kernelX, desc.m_StrideX, desc.m_PadLeft, desc.m_PadRight, paddingScheme);
         CalcPadding(inputY, kernelY, desc.m_StrideY, desc.m_PadTop, desc.m_PadBottom, paddingScheme);
@@ -416,8 +414,8 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
     if (!IsLayerSupported(__func__,
                           armnn::IsConvolution2dSupported,
                           data.m_Compute,
-                          swizzledInputInfo,
-                          swizzledOutputInfo,
+                          inputInfo,
+                          outputInfo,
                           desc,
                           weights.GetInfo(),
                           biases))
@@ -426,18 +424,22 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
     }
 
     armnn::IConnectableLayer* startLayer = data.m_Network->AddConvolution2dLayer(desc, weights, bias);
-    armnn::IConnectableLayer* endLayer = ProcessActivation(swizzledOutputInfo, activation, startLayer, data);
 
-    if (endLayer != nullptr)
+    if (!startLayer)
     {
-        armnn::IConnectableLayer& outSwizzleLayer =
-                SwizzleInDeswizzleOut(*data.m_Network, input, *startLayer, *endLayer);
-        return SetupAndTrackLayerOutputSlot(operation, 0, outSwizzleLayer, model, data);
+        return Fail("%s: AddConvolution2dLayer failed", __func__);
     }
-    else
+
+    armnn::IConnectableLayer* endLayer = ProcessActivation(outputInfo, activation, startLayer, data);
+
+    if (!endLayer)
     {
         return Fail("%s: ProcessActivation failed", __func__);
     }
+
+    input.Connect(startLayer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot(operation, 0, *endLayer, model, data);
 }
 
 bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data)
