@@ -33,6 +33,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
                 return ConvertMean(operation, model, data);
             case V1_1::OperationType::PAD:
                 return ConvertPad(operation, model, data);
+            case V1_1::OperationType::SPACE_TO_BATCH_ND:
+                return ConvertSpaceToBatchNd(operation, model, data);
             case V1_1::OperationType::SQUEEZE:
                 return ConvertSqueeze(operation, model, data);
             case V1_1::OperationType::TRANSPOSE:
@@ -274,6 +276,92 @@ bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, Conve
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
     layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
+
+    return SetupAndTrackLayerOutputSlot(operation, 0, *layer, model, data);
+}
+
+bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& model, ConversionData& data)
+{
+    LayerInputHandle input = ConvertToLayerInputHandle(operation, 0, model, data);
+
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
+    unsigned int rank = inputInfo.GetNumDimensions();
+    unsigned int spatialDim = rank - 2;
+
+    if (rank != 4)
+    {
+        Fail("%s: Only inputs with rank 4 are supported", __func__);
+    }
+
+    armnn::SpaceToBatchNdDescriptor descriptor;
+    descriptor.m_DataLayout = armnn::DataLayout::NHWC;
+
+    const Operand* blockShapeOperand = GetInputOperand(operation, 1, model);
+    const Operand* paddingsOperand = GetInputOperand(operation, 2, model);
+
+    armnn::TensorShape blockShapeOperandShape = GetTensorShapeForOperand(*blockShapeOperand);
+    if (blockShapeOperandShape.GetNumDimensions() != 1 || blockShapeOperandShape.GetNumElements() != spatialDim)
+    {
+        return Fail("%s: Operation has invalid block shape operand: expected shape [%d]", __func__, spatialDim);
+    }
+
+    std::vector<int32_t> blockShape;
+    GetTensorInt32Values(*blockShapeOperand, blockShape, model, data);
+    for (unsigned int i = 0; i < blockShape.size(); i++)
+    {
+        if (blockShape[i] < 1)
+        {
+            return Fail("%s: Block shape must be at least 1 in all dimensions.", __func__);
+        }
+
+        descriptor.m_BlockShape.push_back((unsigned int) blockShape[i]);
+    }
+
+    armnn::TensorShape paddingsOperandShape = GetTensorShapeForOperand(*paddingsOperand);
+    if (paddingsOperandShape.GetNumDimensions() != 2 || paddingsOperandShape.GetNumElements() != 2 * spatialDim)
+    {
+        return Fail("%s: Operation has invalid paddings operand: expected shape [%d, 2]", __func__, spatialDim);
+    }
+
+    std::vector<int32_t> paddings;
+    GetTensorInt32Values(*paddingsOperand, paddings, model, data);
+    for (unsigned int i = 0; i < paddings.size() - 1; i += 2)
+    {
+        int paddingBeforeInput = paddings[i];
+        int paddingAfterInput = paddings[i + 1];
+        if (paddingBeforeInput < 0 || paddingAfterInput < 0)
+        {
+            return Fail("%s: Operation has invalid paddings operand, invalid padding values.", __func__);
+        }
+
+        descriptor.m_PadList.emplace_back((unsigned int) paddingBeforeInput, (unsigned int) paddingAfterInput);
+    }
+
+    const Operand* output = GetOutputOperand(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (!IsLayerSupported(__func__,
+                          armnn::IsSpaceToBatchNdSupported,
+                          data.m_Compute,
+                          inputInfo,
+                          outputInfo,
+                          descriptor))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddSpaceToBatchNdLayer(descriptor);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer, model, data);
 }
