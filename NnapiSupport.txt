@@ -14,6 +14,7 @@ The following AndroidNN operations are currently supported.
 AndroidNN operator           Tensor type supported
 ADD                          (FLOAT32,QUANT8_ASYMM)
 AVERAGE_POOL_2D              (FLOAT32,QUANT8_ASYMM)
+BATCH_TO_SPACE_ND            (FLOAT32,QUANT8_ASYMM)
 CONCATENATION                (FLOAT32)
 CONV_2D                      (FLOAT32,QUANT8_ASYMM)
 DEPTHWISE_CONV_2D*           (FLOAT32,QUANT8_ASYMM)
@@ -56,7 +57,6 @@ Where operations are not supported by the ArmNN Android NN Driver, the driver in
 
 The following AndroidNN 1.1 operations are currently not supported.
 
-BATCH_TO_SPACE_ND
 DIV
 MEAN
 PAD
