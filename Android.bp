@@ -300,6 +300,7 @@ cc_library_static {
         "clframework/src/runtime/Allocator.cpp",
         "clframework/src/runtime/BlobLifetimeManager.cpp",
         "clframework/src/runtime/BlobMemoryPool.cpp",
+        "clframework/src/runtime/MEMUtils.cpp",
         "clframework/src/runtime/CL/CLBufferAllocator.cpp",
         "clframework/src/runtime/CL/CLDistribution1D.cpp",
         "clframework/src/runtime/CL/CLHOG.cpp",
