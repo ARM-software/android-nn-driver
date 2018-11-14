@@ -32,6 +32,7 @@ private:
     static bool ConvertSpaceToBatchNd(const Operation& operation, const Model& model, ConversionData& data);
     static bool ConvertSqueeze(const Operation& operation, const Model& model, ConversionData& data);
     static bool ConvertTranspose(const Operation& operation, const Model& model, ConversionData& data);
+    static bool ConvertBatchToSpaceNd(const Operation& operation, const Model& model, ConversionData& data);
 };
 
 } // namespace hal_1_1

@@ -39,6 +39,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
                 return ConvertSqueeze(operation, model, data);
             case V1_1::OperationType::TRANSPOSE:
                 return ConvertTranspose(operation, model, data);
+            case V1_1::OperationType::BATCH_TO_SPACE_ND:
+                return ConvertBatchToSpaceNd(operation, model, data);
             default:
                 return Fail("%s: Operation type %s not supported in ArmnnDriver",
                             __func__, toString(operation.type).c_str());
@@ -513,6 +515,74 @@ bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model,
 
     return SetupAndTrackLayerOutputSlot(operation, 0, *layer, model, data);
 }
+
+bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& model, ConversionData& data)
+{
+    LayerInputHandle input = ConvertToLayerInputHandle(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* blockOperand = GetInputOperand(operation, 1, model);
+    if (!blockOperand)
+    {
+        return Fail("%s: Could not read input 1", __func__);
+    }
+
+    // Convert the block operand to int32
+    std::vector<int32_t> block;
+    if (!GetTensorInt32Values(*blockOperand, block, model, data))
+    {
+        return Fail("%s: Input 1 has invalid values", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
+
+    unsigned int rank = inputInfo.GetNumDimensions();
+    if (rank != 4)
+    {
+        Fail("%s: Only inputs with rank equal to 4 are supported", __func__);
+    }
+
+    if (std::any_of(block.cbegin(), block.cend(), [](int32_t i){ return i < 1; }))
+    {
+        return Fail("%s: Block sizes for each spatial dimension of the input tensor must be"
+                    " greater than or equal to 1", __func__);
+    }
+
+    armnn::BatchToSpaceNdDescriptor batchToSpaceNdDesc;
+    batchToSpaceNdDesc.m_BlockShape.assign(block.cbegin(), block.cend());
+    batchToSpaceNdDesc.m_DataLayout = armnn::DataLayout::NHWC;
+
+    // Setting crops to 0,0 0,0 as it is not supported in Android NN API
+    batchToSpaceNdDesc.m_Crops = {{0, 0}, {0, 0}};
+
+    const Operand* output = GetOutputOperand(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    if (!IsLayerSupported(__func__,
+                          armnn::IsBatchToSpaceNdSupported,
+                          data.m_Compute,
+                          inputInfo,
+                          outputInfo,
+                          batchToSpaceNdDesc))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddBatchToSpaceNdLayer(batchToSpaceNdDesc);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot(operation, 0, *layer, model, data);
+}
+
 
 } // namespace hal_1_1
 } // namespace armnn_driver
