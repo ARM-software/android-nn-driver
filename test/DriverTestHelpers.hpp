@@ -110,8 +110,8 @@ OperandType TypeToOperandType<int32_t>();
 
 template<typename HalModel, typename T>
 void AddTensorOperand(HalModel& model,
-                      hidl_vec<uint32_t> dimensions,
-                      T* values,
+                      const hidl_vec<uint32_t>& dimensions,
+                      const T* values,
                       OperandType operandType = OperandType::TENSOR_FLOAT32)
 {
     uint32_t totalElements = 1;
@@ -139,9 +139,18 @@ void AddTensorOperand(HalModel& model,
     AddOperand<HalModel>(model, op);
 }
 
+template<typename HalModel, typename T>
+void AddTensorOperand(HalModel& model,
+                      const hidl_vec<uint32_t>& dimensions,
+                      const std::vector<T>& values,
+                      OperandType operandType = OperandType::TENSOR_FLOAT32)
+{
+    AddTensorOperand<HalModel, T>(model, dimensions, values.data(), operandType);
+}
+
 template<typename HalModel>
 void AddInputOperand(HalModel& model,
-                     hidl_vec<uint32_t> dimensions,
+                     const hidl_vec<uint32_t>& dimensions,
                      OperandType operandType = OperandType::TENSOR_FLOAT32)
 {
     Operand op    = {};
@@ -158,7 +167,7 @@ void AddInputOperand(HalModel& model,
 
 template<typename HalModel>
 void AddOutputOperand(HalModel& model,
-                      hidl_vec<uint32_t> dimensions,
+                      const hidl_vec<uint32_t>& dimensions,
                       OperandType operandType = OperandType::TENSOR_FLOAT32)
 {
     Operand op    = {};

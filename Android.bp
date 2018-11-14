@@ -130,6 +130,8 @@ cc_library_static {
         "clframework/src/core/CL/kernels/CLWarpPerspectiveKernel.cpp",
         "clframework/src/core/CL/kernels/CLWeightsReshapeKernel.cpp",
         "clframework/src/core/CL/kernels/CLWidthConcatenateLayerKernel.cpp",
+        "clframework/src/core/CL/kernels/CLWidthConcatenate2TensorsKernel.cpp",
+        "clframework/src/core/CL/kernels/CLWidthConcatenate4TensorsKernel.cpp",
         "clframework/src/core/CL/kernels/CLWinogradFilterTransformKernel.cpp",
         "clframework/src/core/CL/kernels/CLWinogradInputTransformKernel.cpp",
         "clframework/src/core/CL/kernels/CLWinogradOutputTransformKernel.cpp",
