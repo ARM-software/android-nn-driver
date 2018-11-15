@@ -18,14 +18,18 @@ BATCH_TO_SPACE_ND            (FLOAT32,QUANT8_ASYMM)
 CONCATENATION                (FLOAT32)
 CONV_2D                      (FLOAT32,QUANT8_ASYMM)
 DEPTHWISE_CONV_2D*           (FLOAT32,QUANT8_ASYMM)
+DIV                          (FLOAT32,QUANT8_ASYMM)
 FLOOR                        (FLOAT32)
 FULLY_CONNECTED              (FLOAT32,QUANT8_ASYMM)
 L2_NORMALIZATION             (FLOAT32)
 L2_POOL_2D                   (FLOAT32)
 LOCAL_RESPONSE_NORMALIZATION (FLOAT32)
 LOGISTIC                     (FLOAT32,QUANT8_ASYMM)
+LSTM                         (FLOAT32)
 MAX_POOL_2D                  (FLOAT32,QUANT8_ASYMM)
+MEAN                         (FLOAT32,QUANT8_ASYMM)
 MUL                          (FLOAT32,QUANT8_ASYMM)
+PAD                          (FLOAT32,QUANT8_ASYMM)
 RELU                         (FLOAT32,QUANT8_ASYMM)
 RELU1                        (FLOAT32,QUANT8_ASYMM)
 RELU6                        (FLOAT32,QUANT8_ASYMM)
@@ -34,9 +38,10 @@ RESIZE_BILINEAR              (FLOAT32)
 SOFTMAX                      (FLOAT32,QUANT8_ASYMM)
 SPACE_TO_BATCH_ND            (FLOAT32,QUANT8_ASYMM)
 SQUEEZE                      (FLOAT32,QUANT8_ASYMM)
+STRIDED_SLICE                (FLOAT32,QUANT8_ASYMM)
+SUB                          (FLOAT32,QUANT8_ASYMM)
 TANH                         (FLOAT32)
 TRANSPOSE                    (FLOAT32,QUANT8_ASYMM)
-LSTM                         (FLOAT32)
 
 * Depthwise convolution only supports a value of 1 for the depth multiplier. In addition, the QUANT8_ASYMM version only supports 3x3 kernels.
 
@@ -54,13 +59,3 @@ SPACE_TO_DEPTH
 SVDF
 
 Where operations are not supported by the ArmNN Android NN Driver, the driver indicates this to the framework appropriately and the framework implements those operations using a CPU implementation.
-
-The following AndroidNN 1.1 operations are currently not supported.
-
-DIV
-MEAN
-PAD
-STRIDED_SLICE
-SUB
-
-Where any of these operations are present the model will return false from the compliantWithV1_0(model) and the driver will not currently be utilised.
