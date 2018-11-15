@@ -37,6 +37,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
                 return ConvertSpaceToBatchNd(operation, model, data);
             case V1_1::OperationType::SQUEEZE:
                 return ConvertSqueeze(operation, model, data);
+            case V1_1::OperationType::STRIDED_SLICE:
+                return ConvertStridedSlice(operation, model, data);
             case V1_1::OperationType::TRANSPOSE:
                 return ConvertTranspose(operation, model, data);
             case V1_1::OperationType::BATCH_TO_SPACE_ND:
@@ -437,6 +439,96 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddReshapeLayer(reshapeDesc);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot(operation, 0, *layer, model, data);
+}
+
+bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& model, ConversionData& data)
+{
+    LayerInputHandle input = ConvertToLayerInputHandle(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+
+    unsigned int rank = inputInfo.GetNumDimensions();
+    if (rank > 4)
+    {
+        Fail("%s: Inputs with rank greater than 4 are not supported", __func__);
+    }
+
+    const Operand* beginOperand = GetInputOperand(operation, 1, model);
+    const Operand* endOperand = GetInputOperand(operation, 2, model);
+    const Operand* stridesOperand = GetInputOperand(operation, 3, model);
+
+    std::vector<int32_t> beginValues;
+    std::vector<int32_t> endValues;
+    std::vector<int32_t> stridesValues;
+
+    // The length of the beginOperand, endOperand and stridesOperand must be of a rank(input)
+    auto ValidateInputOperands = [&] (const Operand& operand, std::vector<int32_t>& operandValues)
+    {
+        if (!GetTensorInt32Values(operand, operandValues, model, data))
+        {
+            return false;
+        }
+
+        if (operandValues.size() != rank)
+        {
+            return false;
+        }
+
+        return true;
+    };
+
+    if (!ValidateInputOperands(*beginOperand, beginValues)
+        || !ValidateInputOperands(*endOperand, endValues)
+        || !ValidateInputOperands(*stridesOperand, stridesValues))
+    {
+        return Fail("%s: Operation has invalid input operand", __func__);
+    }
+
+    // Stride cannot have value '0'
+    if (std::any_of(stridesValues.cbegin(), stridesValues.cend(), [](int32_t i){ return i == 0; }))
+    {
+        return Fail("%s: Stride must be non-zero value.", __func__);
+    }
+
+    armnn::StridedSliceDescriptor descriptor;
+    descriptor.m_Begin.assign(beginValues.cbegin(), beginValues.cend());
+    descriptor.m_End.assign(endValues.cbegin(), endValues.cend());
+    descriptor.m_Stride.assign(stridesValues.cbegin(), stridesValues.cend());
+    descriptor.m_DataLayout = armnn::DataLayout::NHWC;
+
+    // Get the "begin_mask", "end_mask", and "shrink_axis_mask" flags
+    if (!GetInputInt32(operation, 4, descriptor.m_BeginMask, model, data)
+        || !GetInputInt32(operation, 5, descriptor.m_EndMask, model, data)
+        || !GetInputInt32(operation, 6, descriptor.m_ShrinkAxisMask, model, data))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* output = GetOutputOperand(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    if (!IsLayerSupported(__func__,
+                          armnn::IsStridedSliceSupported,
+                          data.m_Compute,
+                          inputInfo,
+                          outputInfo,
+                          descriptor))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddStridedSliceLayer(descriptor);
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
