@@ -1342,7 +1342,8 @@ bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& m
     if (!IsLayerSupported(__func__,
                           armnn::IsResizeBilinearSupported,
                           data.m_Compute,
-                          inputInfo))
+                          inputInfo,
+                          outputInfo))
     {
         return false;
     }
