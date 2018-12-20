@@ -14,6 +14,7 @@ The following AndroidNN operations are currently supported.
 AndroidNN operator           Tensor type supported
 ADD                          (FLOAT32,QUANT8_ASYMM)
 AVERAGE_POOL_2D              (FLOAT32,QUANT8_ASYMM)
+BATCH_TO_SPACE_ND            (FLOAT32,QUANT8_ASYMM)
 CONCATENATION                (FLOAT32)
 CONV_2D                      (FLOAT32,QUANT8_ASYMM)
 DEPTHWISE_CONV_2D*           (FLOAT32,QUANT8_ASYMM)
@@ -35,7 +36,9 @@ RELU6                        (FLOAT32,QUANT8_ASYMM)
 RESHAPE                      (FLOAT32,QUANT8_ASYMM)
 RESIZE_BILINEAR              (FLOAT32)
 SOFTMAX                      (FLOAT32,QUANT8_ASYMM)
+SPACE_TO_BATCH_ND            (FLOAT32,QUANT8_ASYMM)
 SQUEEZE                      (FLOAT32,QUANT8_ASYMM)
+STRIDED_SLICE                (FLOAT32,QUANT8_ASYMM)
 SUB                          (FLOAT32,QUANT8_ASYMM)
 TANH                         (FLOAT32)
 TRANSPOSE                    (FLOAT32,QUANT8_ASYMM)
@@ -56,11 +59,3 @@ SPACE_TO_DEPTH
 SVDF
 
 Where operations are not supported by the ArmNN Android NN Driver, the driver indicates this to the framework appropriately and the framework implements those operations using a CPU implementation.
-
-The following AndroidNN 1.1 operations are currently not supported.
-
-BATCH_TO_SPACE_ND
-SPACE_TO_BATCH_ND
-STRIDED_SLICE
-
-Where any of these operations are present the model will return false from the compliantWithV1_0(model) and the driver will not currently be utilised.
