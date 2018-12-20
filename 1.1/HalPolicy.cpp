@@ -302,9 +302,6 @@ bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& m
         Fail("%s: Only inputs with rank 4 are supported", __func__);
     }
 
-    armnn::SpaceToBatchNdDescriptor descriptor;
-    descriptor.m_DataLayout = armnn::DataLayout::NHWC;
-
     const Operand* blockShapeOperand = GetInputOperand(operation, 1, model);
     const Operand* paddingsOperand = GetInputOperand(operation, 2, model);
 
@@ -316,14 +313,9 @@ bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& m
 
     std::vector<int32_t> blockShape;
     GetTensorInt32Values(*blockShapeOperand, blockShape, model, data);
-    for (unsigned int i = 0; i < blockShape.size(); i++)
+    if (std::any_of(blockShape.cbegin(), blockShape.cend(), [](int32_t i){ return i < 1; }))
     {
-        if (blockShape[i] < 1)
-        {
-            return Fail("%s: Block shape must be at least 1 in all dimensions.", __func__);
-        }
-
-        descriptor.m_BlockShape.push_back((unsigned int) blockShape[i]);
+        return Fail("%s: Block shape must be at least 1 in all dimensions.", __func__);
     }
 
     armnn::TensorShape paddingsOperandShape = GetTensorShapeForOperand(*paddingsOperand);
@@ -332,6 +324,7 @@ bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& m
         return Fail("%s: Operation has invalid paddings operand: expected shape [%d, 2]", __func__, spatialDim);
     }
 
+    std::vector<std::pair<unsigned int, unsigned int>> paddingList;
     std::vector<int32_t> paddings;
     GetTensorInt32Values(*paddingsOperand, paddings, model, data);
     for (unsigned int i = 0; i < paddings.size() - 1; i += 2)
@@ -343,8 +336,13 @@ bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& m
             return Fail("%s: Operation has invalid paddings operand, invalid padding values.", __func__);
         }
 
-        descriptor.m_PadList.emplace_back((unsigned int) paddingBeforeInput, (unsigned int) paddingAfterInput);
+        paddingList.emplace_back((unsigned int) paddingBeforeInput, (unsigned int) paddingAfterInput);
     }
+
+    armnn::SpaceToBatchNdDescriptor descriptor;
+    descriptor.m_DataLayout = armnn::DataLayout::NHWC;
+    descriptor.m_BlockShape.assign(blockShape.cbegin(), blockShape.cend());
+    descriptor.m_PadList.assign(paddingList.cbegin(), paddingList.cend());
 
     const Operand* output = GetOutputOperand(operation, 0, model);
     if (!output)
