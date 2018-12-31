@@ -518,6 +518,7 @@ cc_library_static {
         "clframework/src/runtime/NEON/functions/NEPixelWiseMultiplication.cpp",
         "clframework/src/runtime/NEON/functions/NEPoolingLayer.cpp",
         "clframework/src/runtime/NEON/functions/NEQuantizationLayer.cpp",
+        "clframework/src/runtime/NEON/functions/NEReduceMean.cpp",
         "clframework/src/runtime/NEON/functions/NEReductionOperation.cpp",
         "clframework/src/runtime/NEON/functions/NERemap.cpp",
         "clframework/src/runtime/NEON/functions/NEReorgLayer.cpp",
