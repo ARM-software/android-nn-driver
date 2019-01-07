@@ -30,7 +30,7 @@ void SwizzleAndroidNn4dTensorToArmNn(const armnn::TensorShape& inTensorShape, co
     const auto inputData = static_cast<const T*>(input);
     const auto outputData = static_cast<T*>(output);
 
-    armnnUtils::Permute(armnnUtils::Permuted(inTensorShape, mappings), mappings, inputData, outputData);
+    armnnUtils::Permute(armnnUtils::Permuted(inTensorShape, mappings), mappings, inputData, outputData, sizeof(T));
 }
 
 } // anonymous namespace
