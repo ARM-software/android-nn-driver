@@ -1299,18 +1299,18 @@ bool HalPolicy::ConvertReshape(const Operation& operation, const Model& model, C
         return Fail("%s: Could not read input 0", __func__);
     }
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsReshapeSupported,
-                          data.m_Compute,
-                          input.GetTensorInfo()))
-    {
-        return false;
-    }
-
-
     armnn::ReshapeDescriptor reshapeDescriptor;
     reshapeDescriptor.m_TargetShape = armnn::TensorShape(requestedShape.dimensions.size(),
                                                          requestedShape.dimensions.data());
+
+    if (!IsLayerSupported(__func__,
+                          armnn::IsReshapeSupported,
+                          data.m_Compute,
+                          input.GetTensorInfo(),
+                          reshapeDescriptor))
+    {
+        return false;
+    }
 
     armnn::IConnectableLayer* layer = data.m_Network->AddReshapeLayer(reshapeDescriptor);
     assert(layer != nullptr);

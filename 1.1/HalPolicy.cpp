@@ -431,7 +431,8 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
     if (!IsLayerSupported(__func__,
                           armnn::IsReshapeSupported,
                           data.m_Compute,
-                          inputInfo))
+                          inputInfo,
+                          reshapeDesc))
     {
         return false;
     }
