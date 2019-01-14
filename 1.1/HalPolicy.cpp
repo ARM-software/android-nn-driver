@@ -237,7 +237,7 @@ bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, Conve
 
     unsigned int rank = inputInfo.GetNumDimensions();
     armnn::TensorShape paddingsOperandShape = GetTensorShapeForOperand(*paddingsOperand);
-    if (paddingsOperandShape.GetNumDimensions() != rank || paddingsOperandShape.GetNumElements() != 2)
+    if (paddingsOperandShape.GetNumDimensions() != 2 || paddingsOperandShape.GetNumElements() != rank * 2)
     {
         return Fail("%s: Operation has invalid paddings operand: expected shape [%d, 2]",  __func__, rank);
     }
