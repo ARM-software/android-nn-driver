@@ -35,6 +35,7 @@ ArmnnDevice::ArmnnDevice(DriverOptions options)
         SetMinimumLogSeverity(base::INFO);
     }
 
+#if defined(ARMCOMPUTECL_ENABLED)
     try
     {
         armnn::IRuntime::CreationOptions options;
@@ -62,6 +63,7 @@ ArmnnDevice::ArmnnDevice(DriverOptions options)
     {
         ALOGE("ArmnnDevice: Failed to setup CL runtime: %s. Device will be unavailable.", error.what());
     }
+#endif
 }
 
 } // namespace armnn_driver

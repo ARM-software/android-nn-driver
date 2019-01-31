@@ -12,6 +12,11 @@ ARMNN_UTILS_HEADER_PATH := $(LOCAL_PATH)/armnn/src/armnnUtils
 OPENCL_HEADER_PATH := $(LOCAL_PATH)/clframework/include
 NN_HEADER_PATH := $(LOCAL_PATH)/../../../frameworks/ml/nn/runtime/include
 
+# Variables to control CL/NEON backend support
+# Set them to '0' to disable support for a specific backend
+ARMNN_COMPUTE_CL_ENABLED := 1
+ARMNN_COMPUTE_NEON_ENABLED := 1
+
 #######################
 # libarmnn-driver@1.0 #
 #######################
@@ -45,6 +50,14 @@ ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS+= \
         -UNDEBUG
 endif # ARMNN_DRIVER_DEBUG == 1
+ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMCOMPUTECL_ENABLED
+endif # ARMNN_COMPUTE_CL_ENABLED == 1
+ifeq ($(ARMNN_COMPUTE_NEON_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMCOMPUTENEON_ENABLED
+endif # ARMNN_COMPUTE_NEON_ENABLED == 1
 
 LOCAL_SRC_FILES := \
         1.0/ArmnnDriverImpl.cpp \
@@ -120,6 +133,14 @@ ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS+= \
         -UNDEBUG
 endif # ARMNN_DRIVER_DEBUG == 1
+ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMCOMPUTECL_ENABLED
+endif # ARMNN_COMPUTE_CL_ENABLED == 1
+ifeq ($(ARMNN_COMPUTE_NEON_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMCOMPUTENEON_ENABLED
+endif # ARMNN_COMPUTE_NEON_ENABLED == 1
 
 LOCAL_SRC_FILES := \
         1.0/ArmnnDriverImpl.cpp \
