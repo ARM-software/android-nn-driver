@@ -838,24 +838,32 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
     // Get the optional input tensors:
     // 01: The input-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, input_size], where “num_units” corresponds to the number of cell units.
-    const ConstTensorPin inputToInputWeightsPin = ConvertOperationInputToConstTensorPin(operation, 1, model, data);
+    const ConstTensorPin inputToInputWeightsPin = ConvertOperationInputToConstTensorPin(operation, 1, model, data,
+            g_DontPermute, nullptr, true);
     // 05: The recurrent-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, output_size], where “output_size” corresponds to either the number of cell units (i.e.,
     //     “num_units”), or the second dimension of the “projection_weights”, if defined.
-    const ConstTensorPin recurrentToInputWeightsPin = ConvertOperationInputToConstTensorPin(operation, 5, model, data);
+    const ConstTensorPin recurrentToInputWeightsPin = ConvertOperationInputToConstTensorPin(operation, 5, model, data,
+            g_DontPermute, nullptr, true);
     // 09: The cell-to-input weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    const ConstTensorPin cellToInputWeightsPin = ConvertOperationInputToConstTensorPin(operation, 9, model, data);
+    const ConstTensorPin cellToInputWeightsPin = ConvertOperationInputToConstTensorPin(operation, 9, model, data,
+            g_DontPermute, nullptr, true);
     // 10: The cell-to-forget weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    const ConstTensorPin cellToForgetWeightsPin = ConvertOperationInputToConstTensorPin(operation, 10, model, data);
+    const ConstTensorPin cellToForgetWeightsPin = ConvertOperationInputToConstTensorPin(operation, 10, model, data,
+            g_DontPermute, nullptr, true);
     // 11: The cell-to-output weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    const ConstTensorPin cellToOutputWeightsPin = ConvertOperationInputToConstTensorPin(operation, 11, model, data);
+    const ConstTensorPin cellToOutputWeightsPin = ConvertOperationInputToConstTensorPin(operation, 11, model, data,
+            g_DontPermute, nullptr, true);
     // 12: The input gate bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    const ConstTensorPin inputGateBiasPin = ConvertOperationInputToConstTensorPin(operation, 12, model, data);
+    const ConstTensorPin inputGateBiasPin = ConvertOperationInputToConstTensorPin(operation, 12, model, data,
+            g_DontPermute, nullptr, true);
     // 16: The projection weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [output_size, num_units].
-    const ConstTensorPin projectionWeightsPin = ConvertOperationInputToConstTensorPin(operation, 16, model, data);
+    const ConstTensorPin projectionWeightsPin = ConvertOperationInputToConstTensorPin(operation, 16, model, data,
+            g_DontPermute, nullptr, true);
     // 17: The projection bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [output_size].
-    const ConstTensorPin projectionBiasPin = ConvertOperationInputToConstTensorPin(operation, 17, model, data);
+    const ConstTensorPin projectionBiasPin = ConvertOperationInputToConstTensorPin(operation, 17, model, data,
+            g_DontPermute, nullptr, true);
 
     if ((!inputToInputWeightsPin.IsValid() && !inputToInputWeightsPin.IsOptional()) ||
         (!recurrentToInputWeightsPin.IsValid() && !recurrentToInputWeightsPin.IsOptional()) ||
