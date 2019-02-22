@@ -670,7 +670,7 @@ bool HalPolicy::ConvertFullyConnected(const Operation& operation, const Model& m
     if (!IsLayerSupported(__func__,
                           armnn::IsFullyConnectedSupported,
                           data.m_Compute,
-                          inputInfo,
+                          reshapedInfo,
                           outputInfo,
                           weights.GetInfo(),
                           bias.GetInfo(),
