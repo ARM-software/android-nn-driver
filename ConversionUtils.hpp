@@ -488,13 +488,16 @@ ConstTensorPin ConvertOperandToConstTensorPin(const Operand& operand,
         return ConstTensorPin();
     }
 
-    if (operand.lifetime != OperandLifeTime::CONSTANT_COPY && operand.lifetime != OperandLifeTime::CONSTANT_REFERENCE)
+    if (!optional &&
+        operand.lifetime != OperandLifeTime::CONSTANT_COPY &&
+        operand.lifetime != OperandLifeTime::CONSTANT_REFERENCE &&
+        operand.lifetime != OperandLifeTime::NO_VALUE)
     {
         Fail("%s: invalid operand lifetime: %s", __func__, toString(operand.lifetime).c_str());
         return ConstTensorPin();
     }
 
-    const void* const valueStart = GetOperandValueReadOnlyAddress(operand, model, data);
+    const void* const valueStart = GetOperandValueReadOnlyAddress(operand, model, data, optional);
     if (!valueStart)
     {
         if (optional)
@@ -539,7 +542,8 @@ ConstTensorPin ConvertOperationInputToConstTensorPin(const HalOperation& operati
 }
 
 template<typename HalModel>
-const void* GetOperandValueReadOnlyAddress(const Operand& operand, const HalModel& model, const ConversionData& data)
+const void* GetOperandValueReadOnlyAddress(const Operand& operand, const HalModel& model, const ConversionData& data,
+                                           bool optional = false)
 {
     const void* valueStart = nullptr;
 
@@ -556,6 +560,15 @@ const void* GetOperandValueReadOnlyAddress(const Operand& operand, const HalMode
             // Constant specified via a Memory object
             valueStart = GetMemoryFromPool(operand.location, data.m_MemPools);
             break;
+        }
+        case OperandLifeTime::NO_VALUE:
+        {
+            // An optional input tensor with no values is not an error so should not register as a fail
+            if (optional)
+            {
+                valueStart = nullptr;
+                break;
+            }
         }
         default:
         {

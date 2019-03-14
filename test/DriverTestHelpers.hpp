@@ -112,7 +112,8 @@ template<typename HalModel, typename T>
 void AddTensorOperand(HalModel& model,
                       const hidl_vec<uint32_t>& dimensions,
                       const T* values,
-                      OperandType operandType = OperandType::TENSOR_FLOAT32)
+                      OperandType operandType = OperandType::TENSOR_FLOAT32,
+                      OperandLifeTime operandLifeTime = OperandLifeTime::CONSTANT_COPY)
 {
     uint32_t totalElements = 1;
     for (uint32_t dim : dimensions)
@@ -121,8 +122,12 @@ void AddTensorOperand(HalModel& model,
     }
 
     DataLocation location = {};
-    location.offset = model.operandValues.size();
     location.length = totalElements * sizeof(T);
+
+    if(operandLifeTime == OperandLifeTime::CONSTANT_COPY)
+    {
+        location.offset = model.operandValues.size();
+    }
 
     Operand op    = {};
     op.type       = operandType;
@@ -143,9 +148,10 @@ template<typename HalModel, typename T>
 void AddTensorOperand(HalModel& model,
                       const hidl_vec<uint32_t>& dimensions,
                       const std::vector<T>& values,
-                      OperandType operandType = OperandType::TENSOR_FLOAT32)
+                      OperandType operandType = OperandType::TENSOR_FLOAT32,
+                      OperandLifeTime operandLifeTime = OperandLifeTime::CONSTANT_COPY)
 {
-    AddTensorOperand<HalModel, T>(model, dimensions, values.data(), operandType);
+    AddTensorOperand<HalModel, T>(model, dimensions, values.data(), operandType, operandLifeTime);
 }
 
 template<typename HalModel>
