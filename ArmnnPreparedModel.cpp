@@ -239,7 +239,13 @@ void ArmnnPreparedModel<HalVersion>::ExecuteGraph(
     // run it
     try
     {
-        m_Runtime->EnqueueWorkload(m_NetworkId, *pInputTensors, *pOutputTensors);
+        armnn::Status status = m_Runtime->EnqueueWorkload(m_NetworkId, *pInputTensors, *pOutputTensors);
+        if (status != armnn::Status::Success)
+        {
+            ALOGW("EnqueueWorkload failed");
+            NotifyCallbackAndCheck(callback, ErrorStatus::GENERAL_FAILURE, "ArmnnPreparedModel::ExecuteGraph");
+            return;
+        }
     }
     catch (armnn::Exception& e)
     {
@@ -262,7 +268,7 @@ void ArmnnPreparedModel<HalVersion>::ExecuteGraph(
 }
 
 template<typename HalVersion>
-void ArmnnPreparedModel<HalVersion>::ExecuteWithDummyInputs()
+bool ArmnnPreparedModel<HalVersion>::ExecuteWithDummyInputs()
 {
     std::vector<std::vector<char>> storage;
     armnn::InputTensors inputTensors;
@@ -287,12 +293,19 @@ void ArmnnPreparedModel<HalVersion>::ExecuteWithDummyInputs()
 
     try
     {
-        m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors);
+        armnn::Status status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors);
+        if (status != armnn::Status::Success)
+        {
+            ALOGW("ExecuteWithDummyInputs: EnqueueWorkload failed");
+            return false;
+        }
     }
     catch (armnn::Exception& e)
     {
         ALOGW("ExecuteWithDummyInputs: armnn::Exception caught from EnqueueWorkload: %s", e.what());
+        return false;
     }
+    return true;
 }
 
 ///

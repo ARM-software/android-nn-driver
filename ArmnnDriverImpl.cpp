@@ -208,7 +208,10 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
 
     // Run a single 'dummy' inference of the model. This means that CL kernels will get compiled (and tuned if
     // this is enabled) before the first 'real' inference which removes the overhead of the first inference.
-    preparedModel->ExecuteWithDummyInputs();
+    if (!preparedModel->ExecuteWithDummyInputs())
+    {
+        return FailPrepareModel(ErrorStatus::GENERAL_FAILURE, "Network could not be executed", cb);
+    }
 
     if (clTunedParameters &&
         options.GetClTunedParametersMode() == armnn::IGpuAccTunedParameters::Mode::UpdateTunedParameters)

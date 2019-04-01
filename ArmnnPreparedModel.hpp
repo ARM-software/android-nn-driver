@@ -42,7 +42,8 @@ public:
                       const ::android::sp<IExecutionCallback>& callback);
 
     /// Executes this model with dummy inputs (e.g. all zeroes).
-    void ExecuteWithDummyInputs();
+    /// \return false on failure, otherwise true
+    bool ExecuteWithDummyInputs();
 
 private:
     template <typename TensorBindingCollection>
