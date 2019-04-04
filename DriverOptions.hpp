@@ -9,6 +9,7 @@
 
 #include <set>
 #include <string>
+#include <vector>
 
 namespace armnn_driver
 {
@@ -17,10 +18,11 @@ class DriverOptions
 {
 public:
     DriverOptions(armnn::Compute computeDevice, bool fp16Enabled = false);
+    DriverOptions(const std::vector<armnn::BackendId>& backends, bool fp16Enabled);
     DriverOptions(int argc, char** argv);
     DriverOptions(DriverOptions&& other) = default;
 
-    armnn::Compute GetComputeDevice() const { return m_ComputeDevice; }
+    const std::vector<armnn::BackendId>& GetBackends() const { return m_Backends; }
     bool IsVerboseLoggingEnabled() const { return m_VerboseLogging; }
     const std::string& GetRequestInputsAndOutputsDumpDir() const { return m_RequestInputsAndOutputsDumpDir; }
     const std::set<unsigned int>& GetForcedUnsupportedOperations() const { return m_ForcedUnsupportedOperations; }
@@ -30,7 +32,7 @@ public:
     bool GetFp16Enabled() const { return m_fp16Enabled; }
 
 private:
-    armnn::Compute m_ComputeDevice;
+    std::vector<armnn::BackendId> m_Backends;
     bool m_VerboseLogging;
     std::string m_RequestInputsAndOutputsDumpDir;
     std::set<unsigned int> m_ForcedUnsupportedOperations;

@@ -90,12 +90,12 @@ bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, Conve
 
     const armnn::TensorInfo outInfo = GetTensorInfoForOperand(*outputOperand);
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsAdditionSupported,
-                          data.m_Compute,
-                          input0.GetTensorInfo(),
-                          input1.GetTensorInfo(),
-                          outInfo))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsAdditionSupported,
+                                       data.m_Backends,
+                                       input0.GetTensorInfo(),
+                                       input1.GetTensorInfo(),
+                                       outInfo))
     {
         return false;
     }
@@ -289,12 +289,12 @@ bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& mo
     std::vector<const armnn::TensorInfo*> inputTensorInfos;
     std::transform(inputHandles.begin(), inputHandles.end(), std::back_inserter(inputTensorInfos),
         [](const LayerInputHandle& h) -> const armnn::TensorInfo*{ return &h.GetTensorInfo(); });
-    if (!IsLayerSupported(__func__,
-                          armnn::IsMergerSupported,
-                          data.m_Compute,
-                          inputTensorInfos,
-                          outputInfo,
-                          mergerDescriptor))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsMergerSupported,
+                                       data.m_Backends,
+                                       inputTensorInfos,
+                                       outputInfo,
+                                       mergerDescriptor))
     {
         return false;
     }
@@ -420,14 +420,14 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
     desc.m_BiasEnabled = true;
     armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsConvolution2dSupported,
-                          data.m_Compute,
-                          inputInfo,
-                          outputInfo,
-                          desc,
-                          weights.GetInfo(),
-                          biases))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsConvolution2dSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       desc,
+                                       weights.GetInfo(),
+                                       biases))
     {
         return false;
     }
@@ -546,14 +546,14 @@ bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& 
     desc.m_BiasEnabled = true;
     armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsDepthwiseConvolutionSupported,
-                          data.m_Compute,
-                          inputInfo,
-                          outputInfo,
-                          desc,
-                          weights.GetInfo(),
-                          biases))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsDepthwiseConvolutionSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       desc,
+                                       weights.GetInfo(),
+                                       biases))
     {
         return false;
     }
@@ -589,11 +589,11 @@ bool HalPolicy::ConvertFloor(const Operation& operation, const Model& model, Con
         return Fail("%s: Operation has invalid outputs", __func__);
     }
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsFloorSupported,
-                          data.m_Compute,
-                          input.GetTensorInfo(),
-                          GetTensorInfoForOperand(*outputOperand)))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsFloorSupported,
+                                       data.m_Backends,
+                                       input.GetTensorInfo(),
+                                       GetTensorInfoForOperand(*outputOperand)))
     {
         return false;
     }
@@ -667,14 +667,14 @@ bool HalPolicy::ConvertFullyConnected(const Operation& operation, const Model& m
     desc.m_TransposeWeightMatrix = true;
     desc.m_BiasEnabled           = true;
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsFullyConnectedSupported,
-                          data.m_Compute,
-                          reshapedInfo,
-                          outputInfo,
-                          weights.GetInfo(),
-                          bias.GetInfo(),
-                          desc))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsFullyConnectedSupported,
+                                       data.m_Backends,
+                                       reshapedInfo,
+                                       outputInfo,
+                                       weights.GetInfo(),
+                                       bias.GetInfo(),
+                                       desc))
     {
         return false;
     }
@@ -746,12 +746,12 @@ bool HalPolicy::ConvertLocalResponseNormalization(const Operation& operation,
     // window rather than the radius as in AndroidNN.
     descriptor.m_NormSize = 1 + (2 * descriptor.m_NormSize);
 
-    if (!IsLayerSupported(__func__,
-                        armnn::IsNormalizationSupported,
-                        data.m_Compute,
-                        inputInfo,
-                        outputInfo,
-                        descriptor))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsNormalizationSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       descriptor))
     {
         return false;
     }
@@ -1037,34 +1037,34 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
         cellToOutputWeights = &(params.m_CellToOutputWeights->GetInfo());
     }
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsLstmSupported,
-                          data.m_Compute,
-                          inputInfo,
-                          outputStateInInfo,
-                          cellStateInInfo,
-                          scratchBufferInfo,
-                          outputStateOutInfo,
-                          cellStateOutInfo,
-                          outputInfo,
-                          desc,
-                          inputToForgetWeights,
-                          inputToCellWeights,
-                          inputToOutputWeights,
-                          recurrentToForgetWeights,
-                          recurrentToCellWeights,
-                          recurrentToOutputWeights,
-                          forgetGateBias,
-                          cellBias,
-                          outputGateBias,
-                          inputToInputWeights,
-                          recurrentToInputWeights,
-                          cellToInputWeights,
-                          inputGateBias,
-                          projectionWeights,
-                          projectionBias,
-                          cellToForgetWeights,
-                          cellToOutputWeights))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsLstmSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputStateInInfo,
+                                       cellStateInInfo,
+                                       scratchBufferInfo,
+                                       outputStateOutInfo,
+                                       cellStateOutInfo,
+                                       outputInfo,
+                                       desc,
+                                       inputToForgetWeights,
+                                       inputToCellWeights,
+                                       inputToOutputWeights,
+                                       recurrentToForgetWeights,
+                                       recurrentToCellWeights,
+                                       recurrentToOutputWeights,
+                                       forgetGateBias,
+                                       cellBias,
+                                       outputGateBias,
+                                       inputToInputWeights,
+                                       recurrentToInputWeights,
+                                       cellToInputWeights,
+                                       inputGateBias,
+                                       projectionWeights,
+                                       projectionBias,
+                                       cellToForgetWeights,
+                                       cellToOutputWeights))
     {
         return false;
     }
@@ -1102,12 +1102,12 @@ bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& 
     armnn::L2NormalizationDescriptor desc;
     desc.m_DataLayout = armnn::DataLayout::NHWC;
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsL2NormalizationSupported,
-                          data.m_Compute,
-                          inputInfo,
-                          outputInfo,
-                          desc))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsL2NormalizationSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       desc))
     {
         return false;
     }
@@ -1156,12 +1156,12 @@ bool HalPolicy::ConvertMul(const Operation& operation, const Model& model, Conve
 
     const armnn::TensorInfo& outInfo = GetTensorInfoForOperand(*outputOperand);
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsMultiplicationSupported,
-                          data.m_Compute,
-                          input0.GetTensorInfo(),
-                          input1.GetTensorInfo(),
-                          outInfo))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsMultiplicationSupported,
+                                       data.m_Backends,
+                                       input0.GetTensorInfo(),
+                                       input1.GetTensorInfo(),
+                                       outInfo))
     {
         return false;
     }
@@ -1232,12 +1232,12 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsSoftmaxSupported,
-                          data.m_Compute,
-                          input.GetTensorInfo(),
-                          outInfo,
-                          desc))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsSoftmaxSupported,
+                                       data.m_Backends,
+                                       input.GetTensorInfo(),
+                                       outInfo,
+                                       desc))
     {
         return false;
     }
@@ -1311,11 +1311,11 @@ bool HalPolicy::ConvertReshape(const Operation& operation, const Model& model, C
     reshapeDescriptor.m_TargetShape = armnn::TensorShape(requestedShape.dimensions.size(),
                                                          requestedShape.dimensions.data());
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsReshapeSupported,
-                          data.m_Compute,
-                          input.GetTensorInfo(),
-                          reshapeDescriptor))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsReshapeSupported,
+                                       data.m_Backends,
+                                       input.GetTensorInfo(),
+                                       reshapeDescriptor))
     {
         return false;
     }
@@ -1347,11 +1347,11 @@ bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& m
     armnn::ResizeBilinearDescriptor desc;
     desc.m_DataLayout = armnn::DataLayout::NHWC;
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsResizeBilinearSupported,
-                          data.m_Compute,
-                          inputInfo,
-                          outputInfo))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsResizeBilinearSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo))
     {
         return false;
     }

@@ -11,6 +11,7 @@
 #include <armnn/ArmNN.hpp>
 
 #include <set>
+#include <vector>
 
 namespace armnn_driver
 {
@@ -30,7 +31,7 @@ class ModelToINetworkConverter
 public:
     using HalModel = typename HalPolicy::Model;
 
-    ModelToINetworkConverter(armnn::Compute compute,
+    ModelToINetworkConverter(const std::vector<armnn::BackendId>& backends,
                              const HalModel& model,
                              const std::set<unsigned int>& forcedUnsupportedOperations);
 

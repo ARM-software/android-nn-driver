@@ -76,12 +76,12 @@ bool HalPolicy::ConvertDiv(const Operation& operation, const Model& model, Conve
 
     const armnn::TensorInfo& outInfo = GetTensorInfoForOperand(*outputOperand);
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsDivisionSupported,
-                          data.m_Compute,
-                          input0.GetTensorInfo(),
-                          input1.GetTensorInfo(),
-                          outInfo))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsDivisionSupported,
+                                       data.m_Backends,
+                                       input0.GetTensorInfo(),
+                                       input1.GetTensorInfo(),
+                                       outInfo))
     {
         return false;
     }
@@ -127,12 +127,12 @@ bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, Conve
 
     const armnn::TensorInfo& outInfo = GetTensorInfoForOperand(*outputOperand);
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsSubtractionSupported,
-                          data.m_Compute,
-                          input0.GetTensorInfo(),
-                          input1.GetTensorInfo(),
-                          outInfo))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsSubtractionSupported,
+                                       data.m_Backends,
+                                       input0.GetTensorInfo(),
+                                       input1.GetTensorInfo(),
+                                       outInfo))
     {
         return false;
     }
@@ -200,12 +200,12 @@ bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, Conv
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsMeanSupported,
-                          data.m_Compute,
-                          inputInfo,
-                          outputInfo,
-                          descriptor))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsMeanSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       descriptor))
     {
         return false;
     }
@@ -266,12 +266,12 @@ bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, Conve
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsPadSupported,
-                          data.m_Compute,
-                          inputInfo,
-                          outputInfo,
-                          descriptor))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsPadSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       descriptor))
     {
         return false;
     }
@@ -351,12 +351,12 @@ bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& m
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (!IsLayerSupported(__func__,
-                          armnn::IsSpaceToBatchNdSupported,
-                          data.m_Compute,
-                          inputInfo,
-                          outputInfo,
-                          descriptor))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsSpaceToBatchNdSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       descriptor))
     {
         return false;
     }
@@ -428,11 +428,11 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
         return Fail("%s: Could not read output 0", __func__);
     }
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsReshapeSupported,
-                          data.m_Compute,
-                          inputInfo,
-                          reshapeDesc))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsReshapeSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       reshapeDesc))
     {
         return false;
     }
@@ -517,12 +517,12 @@ bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& mod
     }
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsStridedSliceSupported,
-                          data.m_Compute,
-                          inputInfo,
-                          outputInfo,
-                          descriptor))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsStridedSliceSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       descriptor))
     {
         return false;
     }
@@ -590,12 +590,12 @@ bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model,
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsPermuteSupported,
-                          data.m_Compute,
-                          inputInfo,
-                          outputInfo,
-                          permuteDesc))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsPermuteSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       permuteDesc))
     {
         return false;
     }
@@ -657,12 +657,12 @@ bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& m
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    if (!IsLayerSupported(__func__,
-                          armnn::IsBatchToSpaceNdSupported,
-                          data.m_Compute,
-                          inputInfo,
-                          outputInfo,
-                          batchToSpaceNdDesc))
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsBatchToSpaceNdSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       batchToSpaceNdDesc))
     {
         return false;
     }

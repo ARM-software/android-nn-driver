@@ -16,6 +16,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/program_options.hpp>
 
+#include <algorithm>
 #include <cassert>
 #include <functional>
 #include <string>
@@ -28,7 +29,16 @@ namespace armnn_driver
 {
 
 DriverOptions::DriverOptions(armnn::Compute computeDevice, bool fp16Enabled)
-    : m_ComputeDevice(computeDevice)
+    : m_Backends({computeDevice})
+    , m_VerboseLogging(false)
+    , m_ClTunedParametersMode(armnn::IGpuAccTunedParameters::Mode::UseTunedParameters)
+    , m_EnableGpuProfiling(false)
+    , m_fp16Enabled(fp16Enabled)
+{
+}
+
+DriverOptions::DriverOptions(const std::vector<armnn::BackendId>& backends, bool fp16Enabled)
+    : m_Backends(backends)
     , m_VerboseLogging(false)
     , m_ClTunedParametersMode(armnn::IGpuAccTunedParameters::Mode::UseTunedParameters)
     , m_EnableGpuProfiling(false)
@@ -37,23 +47,22 @@ DriverOptions::DriverOptions(armnn::Compute computeDevice, bool fp16Enabled)
 }
 
 DriverOptions::DriverOptions(int argc, char** argv)
-    : m_ComputeDevice(armnn::Compute::GpuAcc)
-    , m_VerboseLogging(false)
+    : m_VerboseLogging(false)
     , m_ClTunedParametersMode(armnn::IGpuAccTunedParameters::Mode::UseTunedParameters)
     , m_EnableGpuProfiling(false)
     , m_fp16Enabled(false)
 {
     namespace po = boost::program_options;
 
-    std::string computeDeviceAsString;
     std::string unsupportedOperationsAsString;
     std::string clTunedParametersModeAsString;
 
     po::options_description optionsDesc("Options");
     optionsDesc.add_options()
         ("compute,c",
-         po::value<std::string>(&computeDeviceAsString)->default_value("GpuAcc"),
-         "Which device to run layers on by default. Possible values are: CpuRef, CpuAcc, GpuAcc")
+         po::value<std::vector<std::string>>()->
+            multitoken()->default_value(std::vector<std::string>{"GpuAcc"}, "{GpuAcc}"),
+         "Which backend to run layers on. Possible values are: CpuRef, CpuAcc, GpuAcc")
 
         ("verbose-logging,v",
          po::bool_switch(&m_VerboseLogging),
@@ -99,22 +108,26 @@ DriverOptions::DriverOptions(int argc, char** argv)
         ALOGW("An error occurred attempting to parse program options: %s", e.what());
     }
 
-    if (computeDeviceAsString == "CpuRef")
+    const std::vector<std::string> backends = variablesMap["compute"].as<std::vector<std::string>>();
+    const std::vector<string> supportedDevices({"CpuRef", "CpuAcc", "GpuAcc"});
+    m_Backends.reserve(backends.size());
+
+    for (auto&& backend : backends)
     {
-        m_ComputeDevice = armnn::Compute::CpuRef;
+        if (std::find(supportedDevices.cbegin(), supportedDevices.cend(), backend) == supportedDevices.cend())
+        {
+            ALOGW("Requested unknown backend %s", backend.c_str());
+        }
+        else
+        {
+            m_Backends.emplace_back(backend);
+        }
     }
-    else if (computeDeviceAsString == "GpuAcc")
+
+    if (m_Backends.empty())
     {
-        m_ComputeDevice = armnn::Compute::GpuAcc;
-    }
-    else if (computeDeviceAsString == "CpuAcc")
-    {
-        m_ComputeDevice = armnn::Compute::CpuAcc;
-    }
-    else
-    {
-        ALOGW("Requested unknown compute device %s. Defaulting to compute id %s",
-            computeDeviceAsString.c_str(), GetComputeDeviceAsCString(m_ComputeDevice));
+        m_Backends.emplace_back("GpuAcc");
+        ALOGW("No known backend specified. Defaulting to: GpuAcc");
     }
 
     if (!unsupportedOperationsAsString.empty())

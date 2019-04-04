@@ -13,10 +13,10 @@ namespace armnn_driver
 {
 
 template<typename HalPolicy>
-ModelToINetworkConverter<HalPolicy>::ModelToINetworkConverter(armnn::Compute compute,
+ModelToINetworkConverter<HalPolicy>::ModelToINetworkConverter(const std::vector<armnn::BackendId>& backends,
     const HalModel& model,
     const std::set<unsigned int>& forcedUnsupportedOperations)
-    : m_Data(compute)
+    : m_Data(backends)
     , m_Model(model)
     , m_ForcedUnsupportedOperations(forcedUnsupportedOperations)
     , m_ConversionResult(ConversionResult::Success)

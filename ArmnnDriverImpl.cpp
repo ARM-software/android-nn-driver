@@ -77,9 +77,9 @@ Return<void> ArmnnDriverImpl<HalPolicy>::getSupportedOperations(const armnn::IRu
     }
 
     // Attempt to convert the model to an ArmNN input network (INetwork).
-    ModelToINetworkConverter<HalPolicy> modelConverter(options.GetComputeDevice(),
-                                                        model,
-                                                        options.GetForcedUnsupportedOperations());
+    ModelToINetworkConverter<HalPolicy> modelConverter(options.GetBackends(),
+                                                       model,
+                                                       options.GetForcedUnsupportedOperations());
 
     if (modelConverter.GetConversionResult() != ConversionResult::Success
             && modelConverter.GetConversionResult() != ConversionResult::UnsupportedFeature)
@@ -132,9 +132,9 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     // at this point we're being asked to prepare a model that we've already declared support for
     // and the operation indices may be different to those in getSupportedOperations anyway.
     set<unsigned int> unsupportedOperations;
-    ModelToINetworkConverter<HalPolicy> modelConverter(options.GetComputeDevice(),
-                                                        model,
-                                                        unsupportedOperations);
+    ModelToINetworkConverter<HalPolicy> modelConverter(options.GetBackends(),
+                                                       model,
+                                                       unsupportedOperations);
 
     if (modelConverter.GetConversionResult() != ConversionResult::Success)
     {
@@ -151,7 +151,7 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     try
     {
         optNet = armnn::Optimize(*modelConverter.GetINetwork(),
-                                 {options.GetComputeDevice()},
+                                 options.GetBackends(),
                                  runtime->GetDeviceSpec(),
                                  OptOptions,
                                  errMessages);
