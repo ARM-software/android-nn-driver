@@ -16,6 +16,7 @@
 
 #include <boost/assert.hpp>
 #include <boost/core/ignore_unused.hpp>
+#include <boost/numeric/conversion/cast.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
 #include <log/log.h>
