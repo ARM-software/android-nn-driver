@@ -12,8 +12,24 @@
 #include <log/log.h>
 
 #include <memory>
+#include <string>
 
 using namespace android;
+
+namespace
+{
+
+std::string GetBackendString(const armnn_driver::DriverOptions& options)
+{
+    std::stringstream backends;
+    for (auto&& b : options.GetBackends())
+    {
+        backends << b << " ";
+    }
+    return backends.str();
+}
+
+} // anonymous namespace
 
 namespace armnn_driver
 {
@@ -64,6 +80,8 @@ ArmnnDevice::ArmnnDevice(DriverOptions options)
         ALOGE("ArmnnDevice: Failed to setup CL runtime: %s. Device will be unavailable.", error.what());
     }
 #endif
+    ALOGV("ArmnnDevice: Created device with the following backends: %s",
+          GetBackendString(m_Options).c_str());
 }
 
 } // namespace armnn_driver
