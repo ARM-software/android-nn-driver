@@ -45,6 +45,7 @@ endif # PLATFORM_VERSION == 9
 
 LOCAL_SRC_FILES := \
         1.0/Convolution2D.cpp \
+        1.0/FullyConnectedReshape.cpp \
         Tests.cpp \
         UtilsTests.cpp \
         Concurrent.cpp \
