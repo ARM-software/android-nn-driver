@@ -17,21 +17,17 @@ inline armnn::TensorShape FlattenFullyConnectedInput(const armnn::TensorShape &i
 {
     if (inputShape.GetNumDimensions() > 2U)
     {
-        unsigned int dim0 = inputShape[0];
-        unsigned int dim1 = inputShape[1];
+        unsigned int totalInputElements = inputShape.GetNumElements();
+        unsigned int inputSize = weightsShape[1];
 
-        for (unsigned int i = 2U; i < inputShape.GetNumDimensions(); ++i)
-        {
-            dim1 *= inputShape[i];
-        }
+        unsigned int batchSize = totalInputElements / inputSize;
 
-        unsigned int divisor = weightsShape[1] / dim1;
-        if(dim0 % divisor != 0)
+        if(totalInputElements % batchSize != 0)
         {
             throw std::runtime_error("Failed to deduce tensor shape");
         }
 
-        return armnn::TensorShape({dim0 / divisor, dim1 * divisor});
+        return armnn::TensorShape({batchSize, inputSize});
     }
     else
     {
