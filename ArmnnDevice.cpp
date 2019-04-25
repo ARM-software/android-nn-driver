@@ -57,7 +57,8 @@ ArmnnDevice::ArmnnDevice(DriverOptions options)
         armnn::IRuntime::CreationOptions options;
         if (!m_Options.GetClTunedParametersFile().empty())
         {
-            m_ClTunedParameters = armnn::IGpuAccTunedParameters::Create(m_Options.GetClTunedParametersMode());
+            m_ClTunedParameters = armnn::IGpuAccTunedParameters::Create(m_Options.GetClTunedParametersMode(),
+                                                                        m_Options.GetClTuningLevel());
             try
             {
                 m_ClTunedParameters->Load(m_Options.GetClTunedParametersFile().c_str());

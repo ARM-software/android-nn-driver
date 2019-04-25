@@ -32,6 +32,7 @@ DriverOptions::DriverOptions(armnn::Compute computeDevice, bool fp16Enabled)
     : m_Backends({computeDevice})
     , m_VerboseLogging(false)
     , m_ClTunedParametersMode(armnn::IGpuAccTunedParameters::Mode::UseTunedParameters)
+    , m_ClTuningLevel(armnn::IGpuAccTunedParameters::TuningLevel::Rapid)
     , m_EnableGpuProfiling(false)
     , m_fp16Enabled(fp16Enabled)
 {
@@ -41,6 +42,7 @@ DriverOptions::DriverOptions(const std::vector<armnn::BackendId>& backends, bool
     : m_Backends(backends)
     , m_VerboseLogging(false)
     , m_ClTunedParametersMode(armnn::IGpuAccTunedParameters::Mode::UseTunedParameters)
+    , m_ClTuningLevel(armnn::IGpuAccTunedParameters::TuningLevel::Rapid)
     , m_EnableGpuProfiling(false)
     , m_fp16Enabled(fp16Enabled)
 {
@@ -49,6 +51,7 @@ DriverOptions::DriverOptions(const std::vector<armnn::BackendId>& backends, bool
 DriverOptions::DriverOptions(int argc, char** argv)
     : m_VerboseLogging(false)
     , m_ClTunedParametersMode(armnn::IGpuAccTunedParameters::Mode::UseTunedParameters)
+    , m_ClTuningLevel(armnn::IGpuAccTunedParameters::TuningLevel::Rapid)
     , m_EnableGpuProfiling(false)
     , m_fp16Enabled(false)
 {
@@ -56,6 +59,7 @@ DriverOptions::DriverOptions(int argc, char** argv)
 
     std::string unsupportedOperationsAsString;
     std::string clTunedParametersModeAsString;
+    std::string clTuningLevelAsString;
 
     po::options_description optionsDesc("Options");
     optionsDesc.add_options()
@@ -88,6 +92,13 @@ DriverOptions::DriverOptions(int argc, char** argv)
          "--cl-tuned-parameters-file. "
          "If 'UpdateTunedParameters', will also find the optimum parameters when preparing new networks and update "
          "the file accordingly.")
+
+        ("cl-tuning-level,o",
+         po::value<std::string>(&clTuningLevelAsString)->default_value("rapid"),
+         "exhaustive: all lws values are tested "
+         "normal: reduced number of lws values but enough to still have the performance really close to the "
+         "exhaustive approach "
+         "rapid: only 3 lws values should be tested for each kernel ")
 
         ("gpu-profiling,p",
          po::bool_switch(&m_EnableGpuProfiling),
@@ -165,6 +176,24 @@ DriverOptions::DriverOptions(int argc, char** argv)
         {
             ALOGW("Requested unknown cl-tuned-parameters-mode '%s'. Defaulting to UseTunedParameters",
                 clTunedParametersModeAsString.c_str());
+        }
+
+        if (clTuningLevelAsString == "exhaustive")
+        {
+            m_ClTuningLevel = armnn::IGpuAccTunedParameters::TuningLevel::Exhaustive;
+        }
+        else if (clTuningLevelAsString == "normal")
+        {
+            m_ClTuningLevel = armnn::IGpuAccTunedParameters::TuningLevel::Normal;
+        }
+        else if (clTuningLevelAsString == "rapid")
+        {
+            m_ClTuningLevel = armnn::IGpuAccTunedParameters::TuningLevel::Rapid;
+        }
+        else
+        {
+            ALOGW("Requested unknown cl-tuner-mode '%s'. Defaulting to rapid",
+                  clTuningLevelAsString.c_str());
         }
     }
 }

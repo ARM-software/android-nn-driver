@@ -28,6 +28,7 @@ public:
     const std::set<unsigned int>& GetForcedUnsupportedOperations() const { return m_ForcedUnsupportedOperations; }
     const std::string& GetClTunedParametersFile() const { return m_ClTunedParametersFile; }
     armnn::IGpuAccTunedParameters::Mode GetClTunedParametersMode() const { return m_ClTunedParametersMode; }
+    armnn::IGpuAccTunedParameters::TuningLevel GetClTuningLevel() const { return m_ClTuningLevel; }
     bool IsGpuProfilingEnabled() const { return m_EnableGpuProfiling; }
     bool GetFp16Enabled() const { return m_fp16Enabled; }
 
@@ -38,6 +39,7 @@ private:
     std::set<unsigned int> m_ForcedUnsupportedOperations;
     std::string m_ClTunedParametersFile;
     armnn::IGpuAccTunedParameters::Mode m_ClTunedParametersMode;
+    armnn::IGpuAccTunedParameters::TuningLevel m_ClTuningLevel;
     bool m_EnableGpuProfiling;
     bool m_fp16Enabled;
 };
