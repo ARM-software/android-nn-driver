@@ -75,12 +75,17 @@ check for messages in logcat with the `ArmnnDriver` tag.
 
 ### Using the GPU tuner
 
-The GPU tuner is a feature of the Compute Library that finds optimum values for GPU acceleration tuning parameters. The recommended way of using it with ArmNN is to generate the tuning data during development of the Android image for a device, and use it in read-only mode during normal operation:
+The GPU tuner is a feature of the Compute Library that finds optimum values for GPU acceleration tuning parameters.
+There are three levels of tuning: exhaustive, normal and rapid.
+Exhaustive means that all lws values are tested.
+Normal means that a reduced number of lws values are tested, but that generally is sufficient to have a performance close enough to the exhaustive approach.
+Rapid means that only 3 lws values should be tested for each kernel.
+The recommended way of using it with ArmNN is to generate the tuning data during development of the Android image for a device, and use it in read-only mode during normal operation:
 
 1. Run the ArmNN driver service executable in tuning mode. The path to the tuning data must be writable by the service.
 The following examples assume that the 1.0 version of the driver is being used:
 <pre>
-adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armnn --cl-tuned-parameters-file &lt;PATH_TO_TUNING_DATA&gt; --cl-tuned-parameters-mode UpdateTunedParameters &
+adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armnn --cl-tuned-parameters-file &lt;PATH_TO_TUNING_DATA&gt; --cl-tuned-parameters-mode UpdateTunedParameters --cl-tuning-level exhaustive &
 </pre>
 2. Run a representative set of Android NNAPI testing loads. In this mode of operation, each NNAPI workload will be slow the first time it is executed, as the tuning parameters are being selected. Subsequent executions will use the tuning data which has been generated.
 3. Stop the service.
