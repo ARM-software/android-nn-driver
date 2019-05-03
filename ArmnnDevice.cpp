@@ -81,6 +81,31 @@ ArmnnDevice::ArmnnDevice(DriverOptions options)
         ALOGE("ArmnnDevice: Failed to setup CL runtime: %s. Device will be unavailable.", error.what());
     }
 #endif
+    std::vector<armnn::BackendId> backends;
+
+    if (m_Runtime)
+    {
+        const armnn::BackendIdSet supportedDevices = m_Runtime->GetDeviceSpec().GetSupportedBackends();
+        for (auto &backend : m_Options.GetBackends())
+        {
+            if (std::find(supportedDevices.cbegin(), supportedDevices.cend(), backend) == supportedDevices.cend())
+            {
+                ALOGW("Requested unknown backend %s", backend.Get().c_str());
+            }
+            else
+            {
+                backends.push_back(backend);
+            }
+        }
+    }
+
+    if (backends.empty())
+    {
+        backends.emplace_back("GpuAcc");
+        ALOGW("No known backend specified. Defaulting to: GpuAcc");
+    }
+
+    m_Options.SetBackends(backends);
     ALOGV("ArmnnDevice: Created device with the following backends: %s",
           GetBackendString(m_Options).c_str());
 }

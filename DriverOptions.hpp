@@ -31,6 +31,7 @@ public:
     armnn::IGpuAccTunedParameters::TuningLevel GetClTuningLevel() const { return m_ClTuningLevel; }
     bool IsGpuProfilingEnabled() const { return m_EnableGpuProfiling; }
     bool GetFp16Enabled() const { return m_fp16Enabled; }
+    void SetBackends(const std::vector<armnn::BackendId>& backends) { m_Backends = backends; }
 
 private:
     std::vector<armnn::BackendId> m_Backends;
