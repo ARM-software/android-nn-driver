@@ -42,7 +42,7 @@ public:
                  std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& memPools,
                  std::shared_ptr<armnn::InputTensors>& inputTensors,
                  std::shared_ptr<armnn::OutputTensors>& outputTensors,
-                 const ::android::sp<IExecutionCallback>& callback);
+                 const ::android::sp<V1_0::IExecutionCallback>& callback);
 
 private:
     RequestThread(const RequestThread&) = delete;
@@ -55,7 +55,7 @@ private:
                          std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& memPools,
                          std::shared_ptr<armnn::InputTensors>& inputTensors,
                          std::shared_ptr<armnn::OutputTensors>& outputTensors,
-                         const ::android::sp<IExecutionCallback>& cb)
+                         const ::android::sp<V1_0::IExecutionCallback>& cb)
             : m_Model(model)
             , m_MemPools(memPools)
             , m_InputTensors(inputTensors)
@@ -68,7 +68,7 @@ private:
         std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>> m_MemPools;
         std::shared_ptr<armnn::InputTensors> m_InputTensors;
         std::shared_ptr<armnn::OutputTensors> m_OutputTensors;
-        const ::android::sp<IExecutionCallback> m_callback;
+        const ::android::sp<V1_0::IExecutionCallback> m_callback;
     };
 
     enum class ThreadMsgType

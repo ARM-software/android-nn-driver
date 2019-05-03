@@ -27,7 +27,7 @@ namespace
 {
 using namespace armnn_driver;
 
-void NotifyCallbackAndCheck(const ::android::sp<IExecutionCallback>& callback, ErrorStatus errorStatus,
+void NotifyCallbackAndCheck(const ::android::sp<V1_0::IExecutionCallback>& callback, ErrorStatus errorStatus,
                             std::string callingFunction)
 {
     Return<void> returned = callback->notify(errorStatus);
@@ -141,7 +141,7 @@ ArmnnPreparedModel<HalVersion>::~ArmnnPreparedModel()
 
 template<typename HalVersion>
 Return<ErrorStatus> ArmnnPreparedModel<HalVersion>::execute(const Request& request,
-                                                            const ::android::sp<IExecutionCallback>& callback)
+                                                            const ::android::sp<V1_0::IExecutionCallback>& callback)
 {
     ALOGV("ArmnnPreparedModel::execute(): %s", GetModelSummary(m_Model).c_str());
     m_RequestCount++;
@@ -230,7 +230,7 @@ void ArmnnPreparedModel<HalVersion>::ExecuteGraph(
         std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& pMemPools,
         std::shared_ptr<armnn::InputTensors>& pInputTensors,
         std::shared_ptr<armnn::OutputTensors>& pOutputTensors,
-        const ::android::sp<IExecutionCallback>& callback)
+        const ::android::sp<V1_0::IExecutionCallback>& callback)
 {
     ALOGV("ArmnnPreparedModel::ExecuteGraph(...)");
 

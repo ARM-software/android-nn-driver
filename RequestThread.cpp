@@ -55,7 +55,7 @@ void RequestThread<HalVersion>::PostMsg(ArmnnPreparedModel<HalVersion>* model,
                                         std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& memPools,
                                         std::shared_ptr<armnn::InputTensors>& inputTensors,
                                         std::shared_ptr<armnn::OutputTensors>& outputTensors,
-                                        const ::android::sp<IExecutionCallback>& callback)
+                                        const ::android::sp<V1_0::IExecutionCallback>& callback)
 {
     ALOGV("RequestThread::PostMsg(...)");
     auto data = std::make_shared<AsyncExecuteData>(model,
