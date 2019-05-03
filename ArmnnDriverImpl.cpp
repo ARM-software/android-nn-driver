@@ -26,9 +26,9 @@ using namespace android::hardware;
 namespace
 {
 
-void NotifyCallbackAndCheck(const sp<IPreparedModelCallback>& callback,
+void NotifyCallbackAndCheck(const sp<V1_0::IPreparedModelCallback>& callback,
                             ErrorStatus errorStatus,
-                            const sp<IPreparedModel>& preparedModelPtr)
+                            const sp<V1_0::IPreparedModel>& preparedModelPtr)
 {
     Return<void> returned = callback->notify(errorStatus, preparedModelPtr);
     // This check is required, if the callback fails and it isn't checked it will bring down the service
@@ -41,7 +41,7 @@ void NotifyCallbackAndCheck(const sp<IPreparedModelCallback>& callback,
 
 Return<ErrorStatus> FailPrepareModel(ErrorStatus error,
                                      const string& message,
-                                     const sp<IPreparedModelCallback>& callback)
+                                     const sp<V1_0::IPreparedModelCallback>& callback)
 {
     ALOGW("ArmnnDriverImpl::prepareModel: %s", message.c_str());
     NotifyCallbackAndCheck(callback, error, nullptr);
@@ -107,7 +107,7 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
         const armnn::IGpuAccTunedParametersPtr& clTunedParameters,
         const DriverOptions& options,
         const HalModel& model,
-        const sp<IPreparedModelCallback>& cb,
+        const sp<V1_0::IPreparedModelCallback>& cb,
         bool float32ToFloat16)
 {
     ALOGV("ArmnnDriverImpl::prepareModel()");

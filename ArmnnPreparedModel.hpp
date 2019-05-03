@@ -19,7 +19,7 @@ namespace armnn_driver
 {
 
 template <typename HalVersion>
-class ArmnnPreparedModel : public IPreparedModel
+class ArmnnPreparedModel : public V1_0::IPreparedModel
 {
 public:
     using HalModel = typename HalVersion::Model;
@@ -33,13 +33,13 @@ public:
     virtual ~ArmnnPreparedModel();
 
     virtual Return<ErrorStatus> execute(const Request& request,
-                                        const ::android::sp<IExecutionCallback>& callback) override;
+                                        const ::android::sp<V1_0::IExecutionCallback>& callback) override;
 
     /// execute the graph prepared from the request
     void ExecuteGraph(std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& pMemPools,
                       std::shared_ptr<armnn::InputTensors>& pInputTensors,
                       std::shared_ptr<armnn::OutputTensors>& pOutputTensors,
-                      const ::android::sp<IExecutionCallback>& callback);
+                      const ::android::sp<V1_0::IExecutionCallback>& callback);
 
     /// Executes this model with dummy inputs (e.g. all zeroes).
     /// \return false on failure, otherwise true

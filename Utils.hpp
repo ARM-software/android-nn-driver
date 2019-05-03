@@ -19,6 +19,8 @@
 #include <fstream>
 #include <iomanip>
 
+namespace V1_0 = ::android::hardware::neuralnetworks::V1_0;
+
 namespace armnn_driver
 {
 
@@ -44,9 +46,9 @@ void* GetMemoryFromPool(DataLocation location,
                         const std::vector<android::nn::RunTimePoolInfo>& memPools);
 
 /// Can throw UnsupportedOperand
-armnn::TensorInfo GetTensorInfoForOperand(const Operand& operand);
+armnn::TensorInfo GetTensorInfoForOperand(const V1_0::Operand& operand);
 
-std::string GetOperandSummary(const Operand& operand);
+std::string GetOperandSummary(const V1_0::Operand& operand);
 
 template <typename HalModel>
 std::string GetModelSummary(const HalModel& model)

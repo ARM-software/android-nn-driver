@@ -74,19 +74,19 @@ void* GetMemoryFromPool(DataLocation location, const std::vector<android::nn::Ru
     return memory;
 }
 
-armnn::TensorInfo GetTensorInfoForOperand(const Operand& operand)
+armnn::TensorInfo GetTensorInfoForOperand(const V1_0::Operand& operand)
 {
     armnn::DataType type;
 
     switch (operand.type)
     {
-        case OperandType::TENSOR_FLOAT32:
+        case V1_0::OperandType::TENSOR_FLOAT32:
             type = armnn::DataType::Float32;
             break;
-        case OperandType::TENSOR_QUANT8_ASYMM:
+        case V1_0::OperandType::TENSOR_QUANT8_ASYMM:
             type = armnn::DataType::QuantisedAsymm8;
             break;
-        case OperandType::TENSOR_INT32:
+        case V1_0::OperandType::TENSOR_INT32:
             type = armnn::DataType::Signed32;
             break;
         default:
@@ -101,7 +101,7 @@ armnn::TensorInfo GetTensorInfoForOperand(const Operand& operand)
     return ret;
 }
 
-std::string GetOperandSummary(const Operand& operand)
+std::string GetOperandSummary(const V1_0::Operand& operand)
 {
     return android::hardware::details::arrayToString(operand.dimensions, operand.dimensions.size()) + " " +
         toString(operand.type);

@@ -9,6 +9,8 @@
 
 #include <HalInterfaces.h>
 
+namespace V1_0 = ::android::hardware::neuralnetworks::V1_0;
+
 namespace armnn_driver
 {
 
@@ -30,7 +32,7 @@ public:
             const armnn::IGpuAccTunedParametersPtr& clTunedParameters,
             const DriverOptions& options,
             const HalModel& model,
-            const android::sp<IPreparedModelCallback>& cb,
+            const android::sp<V1_0::IPreparedModelCallback>& cb,
             bool float32ToFloat16 = false);
 
     static Return<DeviceStatus> getStatus();

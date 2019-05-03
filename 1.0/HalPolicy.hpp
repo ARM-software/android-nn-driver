@@ -20,6 +20,8 @@ class HalPolicy
 {
 public:
     using Model                     = V1_0::Model;
+    using Operand                   = V1_0::Operand;
+    using OperandType               = V1_0::OperandType;
     using Operation                 = V1_0::Operation;
     using OperationType             = V1_0::OperationType;
     using getSupportedOperations_cb = V1_0::IDevice::getSupportedOperations_cb;

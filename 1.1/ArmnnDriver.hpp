@@ -52,7 +52,7 @@ public:
     }
 
     Return<ErrorStatus> prepareModel(const V1_0::Model& model,
-                                     const android::sp<IPreparedModelCallback>& cb) override
+                                     const android::sp<V1_0::IPreparedModelCallback>& cb) override
     {
         ALOGV("hal_1_1::ArmnnDriver::prepareModel()");
 
@@ -83,7 +83,7 @@ public:
 
     Return<ErrorStatus> prepareModel_1_1(const V1_1::Model& model,
                                          V1_1::ExecutionPreference preference,
-                                         const android::sp<IPreparedModelCallback>& cb) override
+                                         const android::sp<V1_0::IPreparedModelCallback>& cb) override
     {
         ALOGV("hal_1_1::ArmnnDriver::prepareModel_1_1()");
 

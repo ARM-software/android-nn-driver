@@ -68,7 +68,7 @@ void ModelToINetworkConverter<HalPolicy>::Convert()
         {
             // inputs in android nn are represented by operands
             uint32_t inputIndex = m_Model.inputIndexes[i];
-            const Operand& operand = m_Model.operands[inputIndex];
+            const V1_0::Operand& operand = m_Model.operands[inputIndex];
             const armnn::TensorInfo& tensor = GetTensorInfoForOperand(operand);
             armnn::IConnectableLayer* layer = m_Data.m_Network->AddInputLayer(i);
 
@@ -137,7 +137,7 @@ void ModelToINetworkConverter<HalPolicy>::Convert()
             {
                 // outputs in android nn are represented by operands
                 uint32_t outputIndex = m_Model.outputIndexes[i];
-                const Operand& operand = m_Model.operands[outputIndex];
+                const V1_0::Operand& operand = m_Model.operands[outputIndex];
                 const armnn::TensorInfo& tensor = GetTensorInfoForOperand(operand);
                 armnn::IConnectableLayer* layer = m_Data.m_Network->AddOutputLayer(i);
 
