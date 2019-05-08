@@ -54,7 +54,7 @@ Return<void> ExecutionCallback::wait()
 }
 
 Return<void> PreparedModelCallback::notify(ErrorStatus status,
-                                           const android::sp<IPreparedModel>& preparedModel)
+                                           const android::sp<V1_0::IPreparedModel>& preparedModel)
 {
     m_ErrorStatus = status;
     m_PreparedModel = preparedModel;
@@ -109,10 +109,10 @@ void AddPoolAndSetData(uint32_t size, Request& request, const float* data)
     memcpy(dst, data, size * sizeof(float));
 }
 
-android::sp<IPreparedModel> PrepareModelWithStatus(const V1_0::Model& model,
-                                                   armnn_driver::ArmnnDriver& driver,
-                                                   ErrorStatus& prepareStatus,
-                                                   ErrorStatus expectedStatus)
+android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_0::Model& model,
+                                                         armnn_driver::ArmnnDriver& driver,
+                                                         ErrorStatus& prepareStatus,
+                                                         ErrorStatus expectedStatus)
 {
     android::sp<PreparedModelCallback> cb(new PreparedModelCallback());
     driver.prepareModel(model, cb);
@@ -128,10 +128,10 @@ android::sp<IPreparedModel> PrepareModelWithStatus(const V1_0::Model& model,
 
 #ifdef ARMNN_ANDROID_NN_V1_1
 
-android::sp<IPreparedModel> PrepareModelWithStatus(const V1_1::Model& model,
-                                                   armnn_driver::ArmnnDriver& driver,
-                                                   ErrorStatus& prepareStatus,
-                                                   ErrorStatus expectedStatus)
+android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_1::Model& model,
+                                                         armnn_driver::ArmnnDriver& driver,
+                                                         ErrorStatus& prepareStatus,
+                                                         ErrorStatus expectedStatus)
 {
     android::sp<PreparedModelCallback> cb(new PreparedModelCallback());
     driver.prepareModel_1_1(model, V1_1::ExecutionPreference::LOW_POWER, cb);
@@ -147,7 +147,7 @@ android::sp<IPreparedModel> PrepareModelWithStatus(const V1_1::Model& model,
 
 #endif
 
-ErrorStatus Execute(android::sp<IPreparedModel> preparedModel,
+ErrorStatus Execute(android::sp<V1_0::IPreparedModel> preparedModel,
                     const Request& request,
                     ErrorStatus expectedStatus)
 {
@@ -160,7 +160,7 @@ ErrorStatus Execute(android::sp<IPreparedModel> preparedModel,
     return execStatus;
 }
 
-android::sp<ExecutionCallback> ExecuteNoWait(android::sp<IPreparedModel> preparedModel, const Request& request)
+android::sp<ExecutionCallback> ExecuteNoWait(android::sp<V1_0::IPreparedModel> preparedModel, const Request& request)
 {
     android::sp<ExecutionCallback> cb(new ExecutionCallback());
     BOOST_TEST(preparedModel->execute(request, cb) == ErrorStatus::NONE);

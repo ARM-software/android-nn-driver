@@ -51,7 +51,7 @@ MergerTestImpl(const std::vector<const TestTensor*> & inputs,
 
     // make the prepared model
     ErrorStatus prepareStatus=ErrorStatus::NONE;
-    android::sp<IPreparedModel> preparedModel = PrepareModelWithStatus(model,
+    android::sp<V1_0::IPreparedModel> preparedModel = PrepareModelWithStatus(model,
                                                                        *driver,
                                                                        prepareStatus,
                                                                        expectedPrepareStatus);

@@ -59,7 +59,7 @@ void PaddingTestImpl(android::nn::PaddingScheme paddingScheme, bool fp16Enabled 
 
     // make the prepared model
     SetModelFp16Flag(model, fp16Enabled);
-    android::sp<IPreparedModel> preparedModel = PrepareModel(model, *driver);
+    android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, *driver);
 
     // construct the request
     DataLocation inloc    = {};

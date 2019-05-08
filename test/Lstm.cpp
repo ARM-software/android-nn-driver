@@ -137,7 +137,7 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
 
     // 01: The input-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, input_size], where “num_units” corresponds to the number of cell units.
-    AddTensorOperand(model, inputToInputWeightsDimensions, inputToInputWeightsValue, OperandType::TENSOR_FLOAT32,
+    AddTensorOperand(model, inputToInputWeightsDimensions, inputToInputWeightsValue, V1_0::OperandType::TENSOR_FLOAT32,
                      CreateNoValueLifeTime(inputToInputWeightsDimensions));
     // 02: The input-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, input_size].
@@ -151,7 +151,7 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
     //     [num_units, output_size], where “output_size” corresponds to either the number of cell units (i.e.,
     //     “num_units”), or the second dimension of the “projection_weights”, if defined.
     AddTensorOperand(model, recurrentToInputWeightsDimensions, recurrentToInputWeightsValue,
-                     OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(recurrentToInputWeightsDimensions));
+                     V1_0::OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(recurrentToInputWeightsDimensions));
     // 06: The recurrent-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, output_size].
     AddTensorOperand(model, recurrentToForgetWeightsDimensions, recurrentToForgetWeightsValue);
@@ -163,16 +163,16 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
     AddTensorOperand(model, recurrentToOutputWeightsDimensions, recurrentToOutputWeightsValue);
     // 09: The cell-to-input weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
     AddTensorOperand(model, cellToInputWeightsDimensions, cellToInputWeightsValue,
-                     OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(cellToInputWeightsDimensions));
+                     V1_0::OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(cellToInputWeightsDimensions));
     // 10: The cell-to-forget weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
     AddTensorOperand(model, cellToForgetWeightsDimensions, cellToForgetWeightsValue,
-                     OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(cellToForgetWeightsDimensions));
+                     V1_0::OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(cellToForgetWeightsDimensions));
     // 11: The cell-to-output weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
     AddTensorOperand(model, cellToOutputWeightsDimensions, cellToOutputWeightsValue,
-                     OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(cellToOutputWeightsDimensions));
+                     V1_0::OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(cellToOutputWeightsDimensions));
     // 12: The input gate bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
     AddTensorOperand(model, inputGateBiasDimensions, inputGateBiasValue,
-                     OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(inputGateBiasDimensions));
+                     V1_0::OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(inputGateBiasDimensions));
     // 13: The forget gate bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
     AddTensorOperand(model, forgetGateBiasDimensions, forgetGateBiasValue);
     // 14: The cell bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
@@ -182,10 +182,10 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
     // 16: The projection weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [output_size, num_units].
     AddTensorOperand(model, projectionWeightsDimensions, projectionWeightsValue,
-                     OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(projectionWeightsDimensions));
+                     V1_0::OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(projectionWeightsDimensions));
     // 17: The projection bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [output_size].
     AddTensorOperand(model, projectionBiasDimensions, projectionBiasValue,
-                     OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(projectionBiasDimensions));
+                     V1_0::OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(projectionBiasDimensions));
 
     // 18: The output state: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size].
     AddInputOperand(model, outputStateInDimensions);
@@ -196,15 +196,15 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
     // 20: The activation function: A value indicating the activation function:
     //     0: None; 1: Relu; 3: Relu6; 4: Tanh; 6: Sigmoid.
     AddTensorOperand(model, activationFunctionDimensions,
-                     activationFunctionValue, OperandType::INT32);
+                     activationFunctionValue, V1_0::OperandType::INT32);
     // 21: The clipping threshold: for the cell state, such that values are bound within [-cell_clip, cell_clip].
     //     If set to 0.0 then clipping is disabled.
     AddTensorOperand(model, cellClippingThresholdDimensions,
-                     cellClippingThresholdValue, OperandType::FLOAT32);
+                     cellClippingThresholdValue, V1_0::OperandType::FLOAT32);
     // 22: The clipping threshold: for the output from the projection layer, such that values are bound within
     //     [-proj_clip, proj_clip]. If set to 0.0 then clipping is disabled.
     AddTensorOperand(model, projectionClippingThresholdDimensions,
-                     projectionClippingThresholdValue, OperandType::FLOAT32);
+                     projectionClippingThresholdValue, V1_0::OperandType::FLOAT32);
 
     // Outputs:
     //  0: The scratch buffer: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units * 4] with
@@ -261,7 +261,7 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
     float* outputData = static_cast<float*>(static_cast<void*>(outputMemory->getPointer()));
 
     // make the prepared model and run the execution
-    android::sp<IPreparedModel> preparedModel = PrepareModel(model, *driver);
+    android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, *driver);
     if (preparedModel.get() != nullptr)
     {
         Execute(preparedModel, request);

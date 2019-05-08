@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(ConcurrentExecute)
 
     // make the prepared models
     const size_t maxRequests = 5;
-    android::sp<IPreparedModel> preparedModels[maxRequests];
+    android::sp<V1_0::IPreparedModel> preparedModels[maxRequests];
     for (size_t i = 0; i < maxRequests; ++i)
     {
         preparedModels[i] = PrepareModel(model, *driver);

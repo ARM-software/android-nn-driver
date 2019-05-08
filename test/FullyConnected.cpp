@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(FullyConnected)
     model.operations[0].outputs = hidl_vec<uint32_t>{4};
 
     // make the prepared model
-    android::sp<IPreparedModel> preparedModel = PrepareModel(model, *driver);
+    android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, *driver);
 
     // construct the request
     DataLocation inloc = {};
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInput)
     model.operations[0].outputs = hidl_vec<uint32_t>{4};
 
     // make the prepared model
-    android::sp<IPreparedModel> preparedModel = PrepareModel(model, *driver);
+    android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, *driver);
 
 
     // construct the request
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInputReshape)
     model.operations[0].outputs = hidl_vec<uint32_t>{4};
 
     // make the prepared model
-    android::sp<IPreparedModel> preparedModel = PrepareModel(model, *driver);
+    android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, *driver);
 
 
     // construct the request
