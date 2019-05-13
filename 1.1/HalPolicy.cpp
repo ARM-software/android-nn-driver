@@ -7,6 +7,55 @@
 
 #include "../1.0/HalPolicy.hpp"
 
+namespace
+{
+static std::vector<V1_0::OperationType> opsEquivalentInV10({
+    V1_0::OperationType::ADD,
+    V1_0::OperationType::AVERAGE_POOL_2D,
+    V1_0::OperationType::CONCATENATION,
+    V1_0::OperationType::CONV_2D,
+    V1_0::OperationType::DEPTHWISE_CONV_2D,
+    V1_0::OperationType::FLOOR,
+    V1_0::OperationType::FULLY_CONNECTED,
+    V1_0::OperationType::LOCAL_RESPONSE_NORMALIZATION,
+    V1_0::OperationType::LOGISTIC,
+    V1_0::OperationType::LSTM,
+    V1_0::OperationType::L2_NORMALIZATION,
+    V1_0::OperationType::L2_POOL_2D,
+    V1_0::OperationType::MAX_POOL_2D,
+    V1_0::OperationType::MUL,
+    V1_0::OperationType::RELU,
+    V1_0::OperationType::RELU1,
+    V1_0::OperationType::RELU6,
+    V1_0::OperationType::SOFTMAX,
+    V1_0::OperationType::TANH,
+    V1_0::OperationType::RESHAPE,
+    V1_0::OperationType::RESIZE_BILINEAR,
+});
+
+bool CompliantWithVersion10(const V1_1::Operation & operation)
+{
+    std::vector<V1_0::OperationType>::iterator it;
+    it = std::find(opsEquivalentInV10.begin(), opsEquivalentInV10.end(),
+                   static_cast<V1_0::OperationType>(operation.type));
+
+    if(it != opsEquivalentInV10.end())
+    {
+        return true;
+    }
+    return false;
+}
+
+V1_0::Operation ConvertOperationToVersion10(const V1_1::Operation & operation)
+{
+    V1_0::Operation v10Operation;
+    v10Operation.type = static_cast<V1_0::OperationType>(operation.type);
+    v10Operation.inputs = operation.inputs;
+    v10Operation.outputs = operation.outputs;
+    return v10Operation;
+}
+}
+
 namespace armnn_driver
 {
 namespace hal_1_1
@@ -14,9 +63,9 @@ namespace hal_1_1
 
 bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model, ConversionData& data)
 {
-    if (compliantWithV1_0(operation))
+    if (CompliantWithVersion10(operation))
     {
-        hal_1_0::HalPolicy::Operation v10Operation = convertToV1_0(operation);
+        hal_1_0::HalPolicy::Operation v10Operation = ConvertOperationToVersion10(operation);
         hal_1_0::HalPolicy::Model v10Model = convertToV1_0(model);
 
         return hal_1_0::HalPolicy::ConvertOperation(v10Operation, v10Model, data);
