@@ -1,7 +1,7 @@
 ------ ArmNN for Android NNAPI supported operations ------
 
-This release of ArmNN for Android supports use as a driver for the Android Neural Networks API. It implements the android.hardware.neuralnetworks@1.0 interface.
-android.hardware.neuralnetworks@1.1 models available in Android P can be executed if they return true from the utility method compliantWithV1_0(model).
+This release of ArmNN for Android supports use as a driver for the Android Neural Networks API. It implements the
+android.hardware.neuralnetworks@1.0 and android.hardware.neuralnetworks@1.1 HAL interfaces.
 
 For more information on the Android Neural Networks API, see https://developer.android.com/ndk/guides/neuralnetworks/index.html
 
