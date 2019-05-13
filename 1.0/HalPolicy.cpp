@@ -292,7 +292,7 @@ bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& mo
     std::transform(inputHandles.begin(), inputHandles.end(), std::back_inserter(inputTensorInfos),
         [](const LayerInputHandle& h) -> const armnn::TensorInfo*{ return &h.GetTensorInfo(); });
     if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsMergerSupported,
+                                       armnn::IsConcatSupported,
                                        data.m_Backends,
                                        inputTensorInfos,
                                        outputInfo,
@@ -301,7 +301,7 @@ bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& mo
         return false;
     }
 
-    armnn::IConnectableLayer* layer = data.m_Network->AddMergerLayer(mergerDescriptor);
+    armnn::IConnectableLayer* layer = data.m_Network->AddConcatLayer(mergerDescriptor);
     assert(layer != nullptr);
     layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
 
