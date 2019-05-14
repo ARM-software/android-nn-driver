@@ -434,7 +434,8 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
         return false;
     }
 
-    armnn::IConnectableLayer* startLayer = data.m_Network->AddConvolution2dLayer(desc, weights, bias);
+    armnn::IConnectableLayer* startLayer =
+            data.m_Network->AddConvolution2dLayer(desc, weights, armnn::Optional<armnn::ConstTensor>(bias));
 
     if (!startLayer)
     {
@@ -560,7 +561,8 @@ bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& 
         return false;
     }
 
-    armnn::IConnectableLayer* startLayer = data.m_Network->AddDepthwiseConvolution2dLayer(desc, weights, bias);
+    armnn::IConnectableLayer* startLayer =
+            data.m_Network->AddDepthwiseConvolution2dLayer(desc, weights, armnn::Optional<armnn::ConstTensor>(bias));
     if (!startLayer)
     {
         return Fail("%s: AddDepthwiseConvolution2dLayer failed", __func__);
@@ -669,7 +671,8 @@ bool HalPolicy::ConvertFullyConnected(const Operation& operation, const Model& m
         return false;
     }
 
-    armnn::IConnectableLayer* startLayer = data.m_Network->AddFullyConnectedLayer(desc, weights, bias);
+    armnn::IConnectableLayer* startLayer =
+            data.m_Network->AddFullyConnectedLayer(desc, weights, armnn::Optional<armnn::ConstTensor>(bias));
     armnn::IConnectableLayer* endLayer = ProcessActivation(outputInfo, activationFunction, startLayer, data);
 
     if (endLayer != nullptr)
