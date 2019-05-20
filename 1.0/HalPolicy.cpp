@@ -273,8 +273,7 @@ bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& mo
         // The merger descriptor is always created across the only supported concat dimension
         // which is 0, 1 or 3 for a 4-D tensor, or 0 or 2 for a 3-D tensor.
         mergerDescriptor =
-            armnn::CreateMergerDescriptorForConcatenation(
-                inputShapes.begin(), inputShapes.end(), concatDim);
+            armnn::CreateDescriptorForConcatenation(inputShapes.begin(), inputShapes.end(), concatDim);
     }
     catch (const armnn::Exception& error)
     {
