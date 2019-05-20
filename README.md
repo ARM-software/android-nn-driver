@@ -11,6 +11,8 @@ For more information about supported operations and configurations, see NnapiSup
 1. Android source tree for Android O MR1 or later, in the directory `<ANDROID_ROOT>`
 2. Mali OpenCL driver integrated into the Android source tree
 
+Please Note: ArmNN Neural Networks driver does not currently support Mali OpenCL driver for Android Q.
+
 ### Procedure
 
 1. Place this source directory at `<ANDROID_ROOT>/vendor/arm/android-nn-driver`
@@ -21,17 +23,24 @@ To update the build environment, add to the contents of the variable `PRODUCT_PA
 within the device-specific makefile that is located in the `<ANDROID_ROOT>/device/<manufacturer>/<product>`
 directory. This file is normally called `device.mk`:
 
-For Android O or Android P, using NN API version (1.0), the following should be added to `device.mk`:
+For Android O, P or Q, using NN API version (1.0), the following should be added to `device.mk`:
 <pre>
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.0-service-armnn
 </pre>
-For Android P, a new version of the NN API is available (1.1),
+
+For Android P or Q, a new version of the NN API is available (1.1),
 thus the following should be added to `device.mk` instead:
 <pre>
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.1-service-armnn
 </pre> `Android.mk` contains the module definition of both versions of the ArmNN driver.
 
-For Android P the vendor manifest.xml requires the Neural Network HAL information.
+Similarly, the Neon or CL backend can be enabled/disabled by setting ARMNN_COMPUTE_CL_ENABLE or
+ARMNN_COMPUTE_NEON_ENABLE in `device.mk`:
+<pre>
+ARMNN_COMPUTE_CL_ENABLE := 1
+</pre>
+
+For Android P and Android Q the vendor manifest.xml requires the Neural Network HAL information.
 ```xml
 <hal format="hidl">
     <name>android.hardware.neuralnetworks</name>
@@ -48,12 +57,18 @@ For Android P the vendor manifest.xml requires the Neural Network HAL informatio
 4. Build Android as normal, i.e. run `make` in `<ANDROID_ROOT>`
 5. To confirm that the ArmNN driver has been built, check for driver service executable at
 
+Android O and Android P
 <pre>
-<ANDROID_ROOT>/out/target/product/<product>system/vendor/bin/hw
+<ANDROID_ROOT>/out/target/product/<product>/system/vendor/bin/hw
 </pre>
 For example, if the ArmNN driver has been built with the NN API 1.0, check for the following file:
 <pre>
-<ANDROID_ROOT>/out/target/product/<product>system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armnn
+<ANDROID_ROOT>/out/target/product/<product>/system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armnn
+</pre>
+
+Android Q has a different path:
+<pre>
+<ANDROID_ROOT>/out/target/product/<product>/vendor/bin/hw
 </pre>
 
 Please Note: Android O is only compatible with NN API version 1.0.
