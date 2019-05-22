@@ -29,12 +29,12 @@ extern const armnn::PermutationVector g_DontPermute;
 class UnsupportedOperand: public std::runtime_error
 {
 public:
-    UnsupportedOperand(const OperandType type)
+    UnsupportedOperand(const V1_0::OperandType type)
         : std::runtime_error("Operand type is unsupported")
         , m_type(type)
     {}
 
-    OperandType m_type;
+    V1_0::OperandType m_type;
 };
 
 /// Swizzles tensor data in @a input according to the dimension mappings.

@@ -3,6 +3,40 @@
 // SPDX-License-Identifier: MIT
 //
 
+bootstrap_go_package {
+    name: "armnn_nn_driver",
+    pkgPath: "android-nn-driver",
+    deps: [
+        "blueprint",
+        "blueprint-pathtools",
+        "blueprint-proptools",
+        "soong",
+        "soong-android",
+        "soong-cc",
+    ],
+    srcs: [
+        "androidnn.go",
+    ],
+    pluginFor: [ "soong_build" ],
+}
+
+armnn_nn_driver_defaults {
+       name: "armnn-nn-driver-default-cppflags",
+       cppflags: [
+            "-std=c++14",
+            "-fexceptions",
+            "-DBOOST_NO_AUTO_PTR",
+            "-DEMBEDDED_KERNELS",
+            "-DARM_COMPUTE_ASSERTS_ENABLED",
+            "-DARM_COMPUTE_CPP_SCHEDULER",
+            "-Wno-unused-parameter",
+            "-DNO_DOT_IN_TOOLCHAIN",
+
+            "-no-integrated-as"
+    ],
+    rtti: true,
+}
+
 ////////////////////////////////////////////
 //                                        //
 //              Arm Compute               //
@@ -10,6 +44,7 @@
 ////////////////////////////////////////////
 cc_library_static {
     name: "armnn-arm_compute",
+    defaults: ["armnn-nn-driver-default-cppflags"],
     proprietary: true,
     local_include_dirs: ["clframework/build/android-arm64v8a/src/core",
                          "clframework/build/android-arm64v8a/src/core/CL",
@@ -698,16 +733,6 @@ cc_library_static {
             ],
         },
     },
-    cppflags: [
-        "-std=c++14",
-        "-fexceptions",
-        "-DEMBEDDED_KERNELS",
-        "-DARM_COMPUTE_ASSERTS_ENABLED",
-        "-DARM_COMPUTE_CPP_SCHEDULER",
-        "-Wno-unused-parameter",
-        "-DNO_DOT_IN_TOOLCHAIN",
-        "-no-integrated-as"
-    ],
     rtti: true,
 }
 
@@ -724,6 +749,10 @@ cc_defaults {
         "-O3",
         "-fexceptions",
         "-Wno-unused-parameter",
+        "-DBOOST_NO_AUTO_PTR"
+    ],
+    cppflags: [
+        "-std=c++14"
     ],
     rtti: true,
 }

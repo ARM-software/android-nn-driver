@@ -30,7 +30,7 @@ void TransposeTestImpl(const TestTensor & inputs, int32_t perm[],
     V1_1::Model model = {};
 
     AddInputOperand(model,inputs.GetDimensions());
-    AddTensorOperand(model, hidl_vec<uint32_t>{4}, perm, OperandType::TENSOR_INT32);
+    AddTensorOperand(model, hidl_vec<uint32_t>{4}, perm, V1_0::OperandType::TENSOR_INT32);
     AddOutputOperand(model, expectedOutputTensor.GetDimensions());
 
     model.operations.resize(1);
@@ -38,7 +38,7 @@ void TransposeTestImpl(const TestTensor & inputs, int32_t perm[],
     model.operations[0].inputs  = hidl_vec<uint32_t>{0, 1};
     model.operations[0].outputs = hidl_vec<uint32_t>{2};
 
-    android::sp<IPreparedModel> preparedModel = PrepareModel(model, *driver);
+    android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, *driver);
 
     // the request's memory pools will follow the same order as
     // the inputs

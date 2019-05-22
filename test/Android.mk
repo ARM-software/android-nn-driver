@@ -18,7 +18,12 @@ ARMNN_DRIVER_HEADER_PATH := $(LOCAL_PATH)/..
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := armnn-driver-tests@1.0
+ifeq ($(PLATFORM_VERSION),Q)
+# "eng" is deprecated in Android Q
+LOCAL_MODULE_TAGS := optional
+else
 LOCAL_MODULE_TAGS := eng optional
+endif
 LOCAL_ARM_MODE := arm
 LOCAL_PROPRIETARY_MODULE := true
 # Mark source files as dependent on Android.mk
@@ -36,7 +41,8 @@ LOCAL_CFLAGS := \
         -Werror \
         -O0 \
         -UNDEBUG
-ifeq ($(PLATFORM_VERSION),9)
+
+ifeq ($(P_OR_LATER),1)
 # Required to build with the changes made to the Android ML framework starting from Android P,
 # regardless of the HAL version used for the build.
 LOCAL_CFLAGS+= \
@@ -78,18 +84,32 @@ LOCAL_SHARED_LIBRARIES := \
         libutils \
         android.hardware.neuralnetworks@1.0 \
         android.hidl.allocator@1.0 \
-        android.hidl.memory@1.0 \
-        libOpenCL
-ifeq ($(PLATFORM_VERSION),9)
+        android.hidl.memory@1.0
+
+ifeq ($(P_OR_LATER),1)
 # Required to build the 1.0 version of the NN Driver on Android P and later versions,
 # as the 1.0 version of the NN API needs the 1.1 HAL headers to be included regardless.
 LOCAL_SHARED_LIBRARIES+= \
         android.hardware.neuralnetworks@1.1
 endif # PLATFORM_VERSION == 9
 
+ifeq ($(Q_OR_LATER),1)
+LOCAL_SHARED_LIBRARIES+= \
+        libnativewindow \
+        libui \
+        libfmq \
+        libcutils \
+        android.hardware.neuralnetworks@1.2
+endif # PLATFORM_VERSION == Q
+
+ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+LOCAL_SHARED_LIBRARIES+= \
+        libOpenCL
+endif
+
 include $(BUILD_EXECUTABLE)
 
-ifeq ($(PLATFORM_VERSION),9)
+ifeq ($(P_OR_LATER),1)
 # The following target is available starting from Android P
 
 ##########################
@@ -98,7 +118,13 @@ ifeq ($(PLATFORM_VERSION),9)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := armnn-driver-tests@1.1
+ifeq ($(PLATFORM_VERSION),Q)
+# "eng" is deprecated in Android Q
+LOCAL_MODULE_TAGS := optional
+else
 LOCAL_MODULE_TAGS := eng optional
+endif
+#PRODUCT_PACKAGES_ENG := libarmnn
 LOCAL_ARM_MODE := arm
 LOCAL_PROPRIETARY_MODULE := true
 # Mark source files as dependent on Android.mk
@@ -157,8 +183,21 @@ LOCAL_SHARED_LIBRARIES := \
         android.hardware.neuralnetworks@1.0 \
         android.hardware.neuralnetworks@1.1 \
         android.hidl.allocator@1.0 \
-        android.hidl.memory@1.0 \
+        android.hidl.memory@1.0
+
+ifeq ($(Q_OR_LATER),1)
+LOCAL_SHARED_LIBRARIES+= \
+        libnativewindow \
+        libui \
+        libfmq \
+        libcutils \
+        android.hardware.neuralnetworks@1.2
+endif # PLATFORM_VERSION == Q
+
+ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+LOCAL_SHARED_LIBRARIES+= \
         libOpenCL
+endif
 
 include $(BUILD_EXECUTABLE)
 

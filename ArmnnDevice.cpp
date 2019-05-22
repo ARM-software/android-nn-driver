@@ -51,10 +51,11 @@ ArmnnDevice::ArmnnDevice(DriverOptions options)
         SetMinimumLogSeverity(base::INFO);
     }
 
+    armnn::IRuntime::CreationOptions runtimeOptions;
+
 #if defined(ARMCOMPUTECL_ENABLED)
     try
     {
-        armnn::IRuntime::CreationOptions options;
         if (!m_Options.GetClTunedParametersFile().empty())
         {
             m_ClTunedParameters = armnn::IGpuAccTunedParameters::Create(m_Options.GetClTunedParametersMode(),
@@ -69,18 +70,17 @@ ArmnnDevice::ArmnnDevice(DriverOptions options)
                 ALOGW("ArmnnDevice: Failed to load CL tuned parameters file '%s': %s",
                       m_Options.GetClTunedParametersFile().c_str(), error.what());
             }
-            options.m_GpuAccTunedParameters = m_ClTunedParameters;
+            runtimeOptions.m_GpuAccTunedParameters = m_ClTunedParameters;
         }
-
-        options.m_EnableGpuProfiling = m_Options.IsGpuProfilingEnabled();
-
-        m_Runtime = armnn::IRuntime::Create(options);
     }
     catch (const armnn::ClRuntimeUnavailableException& error)
     {
         ALOGE("ArmnnDevice: Failed to setup CL runtime: %s. Device will be unavailable.", error.what());
     }
 #endif
+    runtimeOptions.m_EnableGpuProfiling = m_Options.IsGpuProfilingEnabled();
+    m_Runtime = armnn::IRuntime::Create(runtimeOptions);
+
     std::vector<armnn::BackendId> backends;
 
     if (m_Runtime)

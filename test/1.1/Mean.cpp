@@ -32,7 +32,7 @@ void MeanTestImpl(const TestTensor& input,
 
     V1_1::Model model = {};
     AddInputOperand (model, input.GetDimensions());
-    AddTensorOperand(model, axisDimensions, const_cast<int32_t*>(axisValues), OperandType::TENSOR_INT32);
+    AddTensorOperand(model, axisDimensions, const_cast<int32_t*>(axisValues), V1_0::OperandType::TENSOR_INT32);
     AddIntOperand   (model, keepDims);
     AddOutputOperand(model, expectedOutput.GetDimensions());
 
@@ -42,7 +42,7 @@ void MeanTestImpl(const TestTensor& input,
     model.operations[0].outputs            = hidl_vec<uint32_t>{ 3 };
     model.relaxComputationFloat32toFloat16 = fp16Enabled;
 
-    android::sp<IPreparedModel> preparedModel = PrepareModel(model, *driver);
+    android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, *driver);
 
     // The request's memory pools will follow the same order as the inputs
     DataLocation inLoc    = {};
