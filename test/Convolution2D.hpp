@@ -20,6 +20,15 @@ using namespace armnn_driver;
 
 namespace driverTestHelpers
 {
+#define ARMNN_ANDROID_FP16_TEST(result, fp16Expectation, fp32Expectation, fp16Enabled) \
+   if (fp16Enabled) \
+   { \
+       BOOST_TEST((result == fp16Expectation || result == fp32Expectation), result << \
+       " does not match either " << fp16Expectation << "[fp16] or " << fp32Expectation << "[fp32]"); \
+   } else \
+   { \
+      BOOST_TEST(result == fp32Expectation); \
+   }
 
 void SetModelFp16Flag(V1_0::Model& model, bool fp16Enabled);
 
@@ -33,7 +42,13 @@ void PaddingTestImpl(android::nn::PaddingScheme paddingScheme, bool fp16Enabled 
     using HalModel         = typename HalPolicy::Model;
     using HalOperationType = typename HalPolicy::OperationType;
 
-    auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::GpuAcc, fp16Enabled));
+    armnn::Compute computeDevice = armnn::Compute::GpuAcc;
+
+#ifndef ARMCOMPUTECL_ENABLED
+    computeDevice = armnn::Compute::CpuRef;
+#endif
+
+    auto driver = std::make_unique<ArmnnDriver>(DriverOptions(computeDevice, fp16Enabled));
     HalModel model = {};
 
     uint32_t outSize = paddingScheme == android::nn::kPaddingSame ? 2 : 1;
@@ -97,26 +112,11 @@ void PaddingTestImpl(android::nn::PaddingScheme paddingScheme, bool fp16Enabled 
     switch (paddingScheme)
     {
     case android::nn::kPaddingValid:
-        if (fp16Enabled)
-        {
-            BOOST_TEST(outdata[0] == 1022.f);
-        }
-        else
-        {
-            BOOST_TEST(outdata[0] == 1022.25f);
-        }
+        ARMNN_ANDROID_FP16_TEST(outdata[0], 1022.f, 1022.25f, fp16Enabled)
         break;
     case android::nn::kPaddingSame:
-        if (fp16Enabled)
-        {
-            BOOST_TEST(outdata[0] == 1022.f);
-            BOOST_TEST(outdata[1] == 0.f);
-        }
-        else
-        {
-            BOOST_TEST(outdata[0] == 1022.25f);
-            BOOST_TEST(outdata[1] == 0.f);
-        }
+        ARMNN_ANDROID_FP16_TEST(outdata[0], 1022.f, 1022.25f, fp16Enabled)
+        BOOST_TEST(outdata[1] == 0.f);
         break;
     default:
         BOOST_TEST(false);

@@ -18,7 +18,11 @@ using namespace armnn_driver;
 namespace
 {
 
-static const boost::array<armnn::Compute, 2> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef, armnn::Compute::GpuAcc }};
+#ifndef ARMCOMPUTECL_ENABLED
+    static const boost::array<armnn::Compute, 1> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef }};
+#else
+    static const boost::array<armnn::Compute, 2> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef, armnn::Compute::GpuAcc }};
+#endif
 
 void MeanTestImpl(const TestTensor& input,
                   const hidl_vec<uint32_t>& axisDimensions,
