@@ -60,7 +60,7 @@ LOCAL_SRC_FILES := \
         DriverTestHelpers.cpp \
         SystemProperties.cpp \
         Lstm.cpp \
-        Merger.cpp \
+        Concat.cpp \
         TestTensor.cpp
 
 LOCAL_STATIC_LIBRARIES := \
@@ -158,7 +158,7 @@ LOCAL_SRC_FILES := \
         DriverTestHelpers.cpp \
         SystemProperties.cpp \
         Lstm.cpp \
-        Merger.cpp \
+        Concat.cpp \
         TestTensor.cpp
 
 LOCAL_STATIC_LIBRARIES := \

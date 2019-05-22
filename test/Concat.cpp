@@ -10,7 +10,7 @@
 #include <log/log.h>
 
 
-BOOST_AUTO_TEST_SUITE(MergerTests)
+BOOST_AUTO_TEST_SUITE(ConcatTests)
 
 using namespace android::hardware;
 using namespace driverTestHelpers;
@@ -26,7 +26,7 @@ namespace
 #endif
 
 void
-MergerTestImpl(const std::vector<const TestTensor*> & inputs,
+ConcatTestImpl(const std::vector<const TestTensor*> & inputs,
                 int32_t concatAxis,
                 const TestTensor & expectedOutputTensor,
                 armnn::Compute computeDevice,
@@ -149,7 +149,7 @@ BOOST_DATA_TEST_CASE(SimpleConcatAxis0, COMPUTE_DEVICES)
 
     TestTensor expected{armnn::TensorShape{3,1,1,1},{0,1,2}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(ConcatAxis0_NoInterleave, COMPUTE_DEVICES)
@@ -169,7 +169,7 @@ BOOST_DATA_TEST_CASE(ConcatAxis0_NoInterleave, COMPUTE_DEVICES)
                                                      8,  9,
                                                      10, 11}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(SimpleConcatAxis1, COMPUTE_DEVICES)
@@ -181,7 +181,7 @@ BOOST_DATA_TEST_CASE(SimpleConcatAxis1, COMPUTE_DEVICES)
 
     TestTensor expected{armnn::TensorShape{1,3,1,1},{0,1,2}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(ConcatAxis1_NoInterleave, COMPUTE_DEVICES)
@@ -201,7 +201,7 @@ BOOST_DATA_TEST_CASE(ConcatAxis1_NoInterleave, COMPUTE_DEVICES)
                                                      8,  9,
                                                      10, 11}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(SimpleConcatAxis1_DoInterleave, COMPUTE_DEVICES)
@@ -217,7 +217,7 @@ BOOST_DATA_TEST_CASE(SimpleConcatAxis1_DoInterleave, COMPUTE_DEVICES)
     TestTensor expected{armnn::TensorShape{2,6,1,1},{0, 1, 4, 5, 6, 10,
                                                      2, 3, 7, 8, 9, 11}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(SimpleConcatAxis2, COMPUTE_DEVICES)
@@ -229,7 +229,7 @@ BOOST_DATA_TEST_CASE(SimpleConcatAxis2, COMPUTE_DEVICES)
 
     TestTensor expected{armnn::TensorShape{1,1,3,1},{0,1,2}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(ConcatAxis2_NoInterleave, COMPUTE_DEVICES)
@@ -249,7 +249,7 @@ BOOST_DATA_TEST_CASE(ConcatAxis2_NoInterleave, COMPUTE_DEVICES)
                                                      8,  9,
                                                      10, 11}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(SimpleConcatAxis2_DoInterleave, COMPUTE_DEVICES)
@@ -265,7 +265,7 @@ BOOST_DATA_TEST_CASE(SimpleConcatAxis2_DoInterleave, COMPUTE_DEVICES)
     TestTensor expected{armnn::TensorShape{1,2,6,1},{0, 1, 4, 5, 6, 10,
                                                      2, 3, 7, 8, 9, 11}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(SimpleConcatAxis3, COMPUTE_DEVICES)
@@ -277,7 +277,7 @@ BOOST_DATA_TEST_CASE(SimpleConcatAxis3, COMPUTE_DEVICES)
 
     TestTensor expected{armnn::TensorShape{1,1,1,3},{0,1,2}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(SimpleConcatAxis3_DoInterleave, COMPUTE_DEVICES)
@@ -293,7 +293,7 @@ BOOST_DATA_TEST_CASE(SimpleConcatAxis3_DoInterleave, COMPUTE_DEVICES)
     TestTensor expected{armnn::TensorShape{1,1,2,6},{0, 1, 4, 5, 6, 10,
                                                      2, 3, 7, 8, 9, 11}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(AxisTooBig, COMPUTE_DEVICES)
@@ -306,7 +306,7 @@ BOOST_DATA_TEST_CASE(AxisTooBig, COMPUTE_DEVICES)
     // see: https://www.tensorflow.org/api_docs/python/tf/concat
     TestTensor uncheckedOutput{armnn::TensorShape{1,1,1,1},{0}};
     ErrorStatus expectedParserStatus = ErrorStatus::GENERAL_FAILURE;
-    MergerTestImpl({&aIn, &bIn}, axis, uncheckedOutput, sample, expectedParserStatus);
+    ConcatTestImpl({&aIn, &bIn}, axis, uncheckedOutput, sample, expectedParserStatus);
 }
 
 BOOST_DATA_TEST_CASE(AxisTooSmall, COMPUTE_DEVICES)
@@ -319,7 +319,7 @@ BOOST_DATA_TEST_CASE(AxisTooSmall, COMPUTE_DEVICES)
     // see: https://www.tensorflow.org/api_docs/python/tf/concat
     TestTensor uncheckedOutput{armnn::TensorShape{1,1,1,1},{0}};
     ErrorStatus expectedParserStatus = ErrorStatus::GENERAL_FAILURE;
-    MergerTestImpl({&aIn, &bIn}, axis, uncheckedOutput, sample, expectedParserStatus);
+    ConcatTestImpl({&aIn, &bIn}, axis, uncheckedOutput, sample, expectedParserStatus);
 }
 
 BOOST_DATA_TEST_CASE(TooFewInputs, COMPUTE_DEVICES)
@@ -329,7 +329,7 @@ BOOST_DATA_TEST_CASE(TooFewInputs, COMPUTE_DEVICES)
 
     // We need at least two tensors to concatenate
     ErrorStatus expectedParserStatus = ErrorStatus::GENERAL_FAILURE;
-    MergerTestImpl({&aIn}, axis, aIn, sample, expectedParserStatus);
+    ConcatTestImpl({&aIn}, axis, aIn, sample, expectedParserStatus);
 }
 
 BOOST_DATA_TEST_CASE(MismatchedInputDimensions, COMPUTE_DEVICES)
@@ -346,7 +346,7 @@ BOOST_DATA_TEST_CASE(MismatchedInputDimensions, COMPUTE_DEVICES)
 
     // The input dimensions must be compatible
     ErrorStatus expectedParserStatus = ErrorStatus::GENERAL_FAILURE;
-    MergerTestImpl({&aIn, &bIn, &mismatched}, axis, expected, sample, expectedParserStatus);
+    ConcatTestImpl({&aIn, &bIn, &mismatched}, axis, expected, sample, expectedParserStatus);
 }
 
 BOOST_DATA_TEST_CASE(MismatchedInputRanks, COMPUTE_DEVICES)
@@ -358,7 +358,7 @@ BOOST_DATA_TEST_CASE(MismatchedInputRanks, COMPUTE_DEVICES)
 
     // The input dimensions must be compatible
     ErrorStatus expectedParserStatus = ErrorStatus::GENERAL_FAILURE;
-    MergerTestImpl({&aIn, &bIn}, axis, expected, sample, expectedParserStatus);
+    ConcatTestImpl({&aIn, &bIn}, axis, expected, sample, expectedParserStatus);
 }
 
 BOOST_DATA_TEST_CASE(MismatchedOutputDimensions, COMPUTE_DEVICES)
@@ -376,7 +376,7 @@ BOOST_DATA_TEST_CASE(MismatchedOutputDimensions, COMPUTE_DEVICES)
 
     // The input and output dimensions must be compatible
     ErrorStatus expectedParserStatus = ErrorStatus::GENERAL_FAILURE;
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, mismatched, sample, expectedParserStatus);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, mismatched, sample, expectedParserStatus);
 }
 
 BOOST_DATA_TEST_CASE(MismatchedOutputRank, COMPUTE_DEVICES)
@@ -394,7 +394,7 @@ BOOST_DATA_TEST_CASE(MismatchedOutputRank, COMPUTE_DEVICES)
 
     // The input and output ranks must match
     ErrorStatus expectedParserStatus = ErrorStatus::GENERAL_FAILURE;
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, mismatched, sample, expectedParserStatus);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, mismatched, sample, expectedParserStatus);
 }
 
 BOOST_DATA_TEST_CASE(ValidNegativeAxis, COMPUTE_DEVICES)
@@ -412,7 +412,7 @@ BOOST_DATA_TEST_CASE(ValidNegativeAxis, COMPUTE_DEVICES)
     TestTensor expected{armnn::TensorShape{1,1,2,6},{0, 1, 4, 5, 6, 10,
                                                      2, 3, 7, 8, 9, 11}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(SimpleConcatAxisZero3D, COMPUTE_DEVICES)
@@ -424,7 +424,7 @@ BOOST_DATA_TEST_CASE(SimpleConcatAxisZero3D, COMPUTE_DEVICES)
 
     TestTensor expected{armnn::TensorShape{3,1,1},{0,1,2}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(SimpleConcatAxisOne3D, COMPUTE_DEVICES)
@@ -436,7 +436,7 @@ BOOST_DATA_TEST_CASE(SimpleConcatAxisOne3D, COMPUTE_DEVICES)
 
     TestTensor expected{armnn::TensorShape{1,3,1},{0,1,2}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(SimpleConcatAxisTwo3D, COMPUTE_DEVICES)
@@ -448,7 +448,7 @@ BOOST_DATA_TEST_CASE(SimpleConcatAxisTwo3D, COMPUTE_DEVICES)
 
     TestTensor expected{armnn::TensorShape{1,1,3},{0,1,2}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(SimpleConcatAxisZero2D, COMPUTE_DEVICES)
@@ -460,7 +460,7 @@ BOOST_DATA_TEST_CASE(SimpleConcatAxisZero2D, COMPUTE_DEVICES)
 
     TestTensor expected{armnn::TensorShape{3,1},{0,1,2}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(SimpleConcatAxisOne2D, COMPUTE_DEVICES)
@@ -472,7 +472,7 @@ BOOST_DATA_TEST_CASE(SimpleConcatAxisOne2D, COMPUTE_DEVICES)
 
     TestTensor expected{armnn::TensorShape{1,3},{0,1,2}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_DATA_TEST_CASE(SimpleConcatAxisZero1D, COMPUTE_DEVICES)
@@ -484,7 +484,7 @@ BOOST_DATA_TEST_CASE(SimpleConcatAxisZero1D, COMPUTE_DEVICES)
 
     TestTensor expected{armnn::TensorShape{3},{0,1,2}};
 
-    MergerTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
+    ConcatTestImpl({&aIn, &bIn, &cIn}, axis, expected, sample);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -265,19 +265,19 @@ bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& mo
     // the handles and shapes with the swizzled layer output handles and shapes
     SwizzleInputs(*data.m_Network, inputHandles, inputShapes, permutationPair.first);
 
-    // Create an armnn merger layer descriptor - this will also perform validation on the input shapes
-    armnn::OriginsDescriptor mergerDescriptor;
+    // Create an armnn concat layer descriptor - this will also perform validation on the input shapes
+    armnn::OriginsDescriptor concatDescriptor;
 
     try
     {
-        // The merger descriptor is always created across the only supported concat dimension
+        // The concat descriptor is always created across the only supported concat dimension
         // which is 0, 1 or 3 for a 4-D tensor, or 0 or 2 for a 3-D tensor.
-        mergerDescriptor =
+        concatDescriptor =
             armnn::CreateDescriptorForConcatenation(inputShapes.begin(), inputShapes.end(), concatDim);
     }
     catch (const armnn::Exception& error)
     {
-        return Fail("%s: Error preparing merger descriptor. %s", __func__, error.what());
+        return Fail("%s: Error preparing concat descriptor. %s", __func__, error.what());
     }
 
     // Validate the output shape is correct given the input shapes based on the
@@ -295,12 +295,12 @@ bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& mo
                                        data.m_Backends,
                                        inputTensorInfos,
                                        outputInfo,
-                                       mergerDescriptor))
+                                       concatDescriptor))
     {
         return false;
     }
 
-    armnn::IConnectableLayer* layer = data.m_Network->AddConcatLayer(mergerDescriptor);
+    armnn::IConnectableLayer* layer = data.m_Network->AddConcatLayer(concatDescriptor);
     assert(layer != nullptr);
     layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
 
