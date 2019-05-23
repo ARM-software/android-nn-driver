@@ -8,7 +8,7 @@ For more information about supported operations and configurations, see NnapiSup
 
 ### Prerequisites
 
-1. Android source tree for Android O MR1 or later, in the directory `<ANDROID_ROOT>`
+1. Android source tree for Android P FSK-R3 or later, in the directory `<ANDROID_ROOT>`
 2. Mali OpenCL driver integrated into the Android source tree
 
 Please Note: ArmNN Neural Networks driver does not currently support Mali OpenCL driver for Android Q.
@@ -23,7 +23,7 @@ To update the build environment, add to the contents of the variable `PRODUCT_PA
 within the device-specific makefile that is located in the `<ANDROID_ROOT>/device/<manufacturer>/<product>`
 directory. This file is normally called `device.mk`:
 
-For Android O, P or Q, using NN API version (1.0), the following should be added to `device.mk`:
+For Android P or Q, using NN API version (1.0), the following should be added to `device.mk`:
 <pre>
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.0-service-armnn
 </pre>
@@ -57,7 +57,7 @@ For Android P and Android Q the vendor manifest.xml requires the Neural Network 
 4. Build Android as normal, i.e. run `make` in `<ANDROID_ROOT>`
 5. To confirm that the ArmNN driver has been built, check for driver service executable at
 
-Android O and Android P
+Android P
 <pre>
 <ANDROID_ROOT>/out/target/product/<product>/system/vendor/bin/hw
 </pre>
@@ -70,8 +70,6 @@ Android Q has a different path:
 <pre>
 <ANDROID_ROOT>/out/target/product/<product>/vendor/bin/hw
 </pre>
-
-Please Note: Android O is only compatible with NN API version 1.0.
 
 ### Testing
 
