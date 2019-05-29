@@ -28,6 +28,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertConv2d(operation, model, data);
         case V1_0::OperationType::DEPTHWISE_CONV_2D:
             return ConvertDepthwiseConv2d(operation, model, data);
+        case V1_0::OperationType::DEQUANTIZE:
+            return ConvertDequantize(operation, model, data);
         case V1_0::OperationType::FLOOR:
             return ConvertFloor(operation, model, data);
         case V1_0::OperationType::FULLY_CONNECTED:
@@ -576,6 +578,37 @@ bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& 
     input.Connect(startLayer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot(operation, 0, *endLayer, model, data);
+}
+
+bool HalPolicy::ConvertDequantize(const Operation& operation, const Model& model, ConversionData& data)
+{
+    LayerInputHandle input = ConvertToLayerInputHandle(operation, 0, model, data);
+
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid input", __func__);
+    }
+
+    const Operand* const outputOperand = GetOutputOperand(operation, 0, model);
+    if (!outputOperand)
+    {
+        return Fail("%s: Operation has invalid outputs", __func__);
+    }
+
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsDequantizeSupported,
+                                       data.m_Backends,
+                                       input.GetTensorInfo(),
+                                       GetTensorInfoForOperand(*outputOperand)))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddDequantizeLayer();
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertFloor(const Operation& operation, const Model& model, ConversionData& data)
