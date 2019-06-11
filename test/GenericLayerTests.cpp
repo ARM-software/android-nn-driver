@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
 
     driver->getSupportedOperations(model1, cb);
 
-#if defined(ARMNN_ANDROID_P)
+#if defined(ARMNN_ANDROID_P) || defined(ARMNN_ANDROID_Q)
     // In Android P, android::nn::validateModel returns INVALID_ARGUMENT, because of the wrong number of inputs for the
     // fully connected layer (1 instead of 4)
     BOOST_TEST((int)errorStatus == (int)ErrorStatus::INVALID_ARGUMENT);

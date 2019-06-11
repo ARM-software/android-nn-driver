@@ -49,15 +49,15 @@ private:
     template <typename TensorBindingCollection>
     void DumpTensorsIfRequired(char const* tensorNamePrefix, const TensorBindingCollection& tensorBindings);
 
-    armnn::NetworkId                 m_NetworkId;
-    armnn::IRuntime*                 m_Runtime;
-    HalModel                         m_Model;
+    armnn::NetworkId                                     m_NetworkId;
+    armnn::IRuntime*                                     m_Runtime;
+    HalModel                                             m_Model;
     // There must be a single RequestThread for all ArmnnPreparedModel objects to ensure serial execution of workloads
     // It is specific to this class, so it is declared as static here
-    static RequestThread<HalVersion> m_RequestThread;
-    uint32_t                         m_RequestCount;
-    const std::string&               m_RequestInputsAndOutputsDumpDir;
-    const bool                       m_GpuProfilingEnabled;
+    static RequestThread<ArmnnPreparedModel, HalVersion> m_RequestThread;
+    uint32_t                                             m_RequestCount;
+    const std::string&                                   m_RequestInputsAndOutputsDumpDir;
+    const bool                                           m_GpuProfilingEnabled;
 };
 
 }

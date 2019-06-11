@@ -19,10 +19,7 @@
 namespace armnn_driver
 {
 
-template<typename HalVersion>
-class ArmnnPreparedModel;
-
-template<typename HalVersion>
+template<template <typename HalVersion> class PreparedModel, typename HalVersion>
 class RequestThread
 {
 public:
@@ -38,7 +35,7 @@ public:
     /// @param[in] inputTensors pointer to the input tensors for the request
     /// @param[in] outputTensors pointer to the output tensors for the request
     /// @param[in] callback the android notification callback
-    void PostMsg(armnn_driver::ArmnnPreparedModel<HalVersion>* model,
+    void PostMsg(PreparedModel<HalVersion>* model,
                  std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& memPools,
                  std::shared_ptr<armnn::InputTensors>& inputTensors,
                  std::shared_ptr<armnn::OutputTensors>& outputTensors,
@@ -51,7 +48,7 @@ private:
     /// storage for a prepared model and args for the asyncExecute call
     struct AsyncExecuteData
     {
-        AsyncExecuteData(ArmnnPreparedModel<HalVersion>* model,
+        AsyncExecuteData(PreparedModel<HalVersion>* model,
                          std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& memPools,
                          std::shared_ptr<armnn::InputTensors>& inputTensors,
                          std::shared_ptr<armnn::OutputTensors>& outputTensors,
@@ -64,7 +61,7 @@ private:
         {
         }
 
-        armnn_driver::ArmnnPreparedModel<HalVersion>* m_Model;
+        PreparedModel<HalVersion>* m_Model;
         std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>> m_MemPools;
         std::shared_ptr<armnn::InputTensors> m_InputTensors;
         std::shared_ptr<armnn::OutputTensors> m_OutputTensors;

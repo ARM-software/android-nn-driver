@@ -12,7 +12,7 @@
 #include <log/log.h>
 #include <OperationsUtils.h>
 
-#if defined(ARMNN_ANDROID_P)
+#if defined(ARMNN_ANDROID_P) || defined(ARMNN_ANDROID_Q)
 // The headers of the ML framework have changed between Android O and Android P.
 // The validation functions have been moved into their own header, ValidateHal.h.
 #include <ValidateHal.h>
@@ -89,7 +89,7 @@ namespace armnn_driver
 {
 
 template<typename HalVersion>
-RequestThread<HalVersion> ArmnnPreparedModel<HalVersion>::m_RequestThread;
+RequestThread<ArmnnPreparedModel, HalVersion> ArmnnPreparedModel<HalVersion>::m_RequestThread;
 
 template<typename HalVersion>
 template <typename TensorBindingCollection>
@@ -318,4 +318,8 @@ template class ArmnnPreparedModel<hal_1_0::HalPolicy>;
 template class ArmnnPreparedModel<hal_1_1::HalPolicy>;
 #endif
 
+#ifdef ARMNN_ANDROID_NN_V1_2
+template class ArmnnPreparedModel<hal_1_1::HalPolicy>;
+template class ArmnnPreparedModel<hal_1_2::HalPolicy>;
+#endif
 } // namespace armnn_driver

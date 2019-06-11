@@ -4,7 +4,6 @@
 //
 
 #pragma once
-
 #include <armnn/ArmNN.hpp>
 
 #include <CpuExecutor.h>
@@ -21,20 +20,25 @@
 
 namespace V1_0 = ::android::hardware::neuralnetworks::V1_0;
 
+#ifdef ARMNN_ANDROID_NN_V1_2 // Using ::android::hardware::neuralnetworks::V1_2
+namespace V1_2 = ::android::hardware::neuralnetworks::V1_2;
+#endif
+
 namespace armnn_driver
 {
 
 extern const armnn::PermutationVector g_DontPermute;
 
+template <typename OperandType>
 class UnsupportedOperand: public std::runtime_error
 {
 public:
-    UnsupportedOperand(const V1_0::OperandType type)
+    UnsupportedOperand(const OperandType type)
         : std::runtime_error("Operand type is unsupported")
         , m_type(type)
     {}
 
-    V1_0::OperandType m_type;
+    OperandType m_type;
 };
 
 /// Swizzles tensor data in @a input according to the dimension mappings.
@@ -48,7 +52,15 @@ void* GetMemoryFromPool(DataLocation location,
 /// Can throw UnsupportedOperand
 armnn::TensorInfo GetTensorInfoForOperand(const V1_0::Operand& operand);
 
+#ifdef ARMNN_ANDROID_NN_V1_2 // Using ::android::hardware::neuralnetworks::V1_2
+armnn::TensorInfo GetTensorInfoForOperand(const V1_2::Operand& operand);
+#endif
+
 std::string GetOperandSummary(const V1_0::Operand& operand);
+
+#ifdef ARMNN_ANDROID_NN_V1_2 // Using ::android::hardware::neuralnetworks::V1_2
+std::string GetOperandSummary(const V1_2::Operand& operand);
+#endif
 
 template <typename HalModel>
 std::string GetModelSummary(const HalModel& model)

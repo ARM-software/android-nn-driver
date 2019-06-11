@@ -3,31 +3,20 @@
 // SPDX-License-Identifier: MIT
 //
 
-#define LOG_TAG "ArmnnDriver"
-
 #include "ArmnnDriverImpl.hpp"
-#include "ArmnnPreparedModel.hpp"
+#include "../ArmnnPreparedModel_1_2.hpp"
+#include "../ModelToINetworkConverter.hpp"
+#include "../SystemPropertiesUtils.hpp"
 
-#ifdef ARMNN_ANDROID_NN_V1_2 // Using ::android::hardware::neuralnetworks::V1_2
-#include "ArmnnPreparedModel_1_2.hpp"
-#endif
-
-#include "ModelToINetworkConverter.hpp"
-#include "SystemPropertiesUtils.hpp"
-#include <ValidateHal.h>
 #include <log/log.h>
-
-using namespace std;
-using namespace android;
-using namespace android::nn;
-using namespace android::hardware;
 
 namespace
 {
 
-void NotifyCallbackAndCheck(const sp<V1_0::IPreparedModelCallback>& callback,
+const char *g_RelaxedFloat32toFloat16PerformanceExecTime = "ArmNN.relaxedFloat32toFloat16Performance.execTime";
+void NotifyCallbackAndCheck(const sp<V1_2::IPreparedModelCallback>& callback,
                             ErrorStatus errorStatus,
-                            const sp<V1_0::IPreparedModel>& preparedModelPtr)
+                            const sp<V1_2::IPreparedModel>& preparedModelPtr)
 {
     Return<void> returned = callback->notify(errorStatus, preparedModelPtr);
     // This check is required, if the callback fails and it isn't checked it will bring down the service
@@ -39,28 +28,27 @@ void NotifyCallbackAndCheck(const sp<V1_0::IPreparedModelCallback>& callback,
 }
 
 Return<ErrorStatus> FailPrepareModel(ErrorStatus error,
-                                     const string& message,
-                                     const sp<V1_0::IPreparedModelCallback>& callback)
+                                     const std::string& message,
+                                     const sp<V1_2::IPreparedModelCallback>& callback)
 {
     ALOGW("ArmnnDriverImpl::prepareModel: %s", message.c_str());
     NotifyCallbackAndCheck(callback, error, nullptr);
     return error;
 }
 
-
-} // namespace
+} // anonymous namespace
 
 namespace armnn_driver
 {
+namespace hal_1_2
+{
 
-template<typename HalPolicy>
-Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
-        const armnn::IRuntimePtr& runtime,
-        const armnn::IGpuAccTunedParametersPtr& clTunedParameters,
-        const DriverOptions& options,
-        const HalModel& model,
-        const sp<V1_0::IPreparedModelCallback>& cb,
-        bool float32ToFloat16)
+Return<ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(const armnn::IRuntimePtr& runtime,
+                                                           const armnn::IGpuAccTunedParametersPtr& clTunedParameters,
+                                                           const DriverOptions& options,
+                                                           const V1_2::Model& model,
+                                                           const sp<V1_2::IPreparedModelCallback>& cb,
+                                                           bool float32ToFloat16)
 {
     ALOGV("ArmnnDriverImpl::prepareModel()");
 
@@ -83,7 +71,7 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     // Deliberately ignore any unsupported operations requested by the options -
     // at this point we're being asked to prepare a model that we've already declared support for
     // and the operation indices may be different to those in getSupportedOperations anyway.
-    set<unsigned int> unsupportedOperations;
+    std::set<unsigned int> unsupportedOperations;
     ModelToINetworkConverter<HalPolicy> modelConverter(options.GetBackends(),
                                                        model,
                                                        unsupportedOperations);
@@ -110,7 +98,7 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     }
     catch (armnn::Exception &e)
     {
-        stringstream message;
+        std::stringstream message;
         message << "armnn::Exception (" << e.what() << ") caught from optimize.";
         FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
         return ErrorStatus::NONE;
@@ -119,9 +107,9 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     // Check that the optimized network is valid.
     if (!optNet)
     {
-        stringstream message;
+        std::stringstream message;
         message << "Invalid optimized network";
-        for (const string& msg : errMessages)
+        for (const std::string& msg : errMessages)
         {
             message << "\n" << msg;
         }
@@ -131,7 +119,8 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
 
     // Export the optimized network graph to a dot file if an output dump directory
     // has been specified in the drivers' arguments.
-    ExportNetworkGraphToDotFile<HalModel>(*optNet, options.GetRequestInputsAndOutputsDumpDir(), model);
+    ExportNetworkGraphToDotFile<hal_1_2::HalPolicy::Model>(*optNet, options.GetRequestInputsAndOutputsDumpDir(),
+            model);
 
     // Load it into the runtime.
     armnn::NetworkId netId = 0;
@@ -144,14 +133,14 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     }
     catch (armnn::Exception& e)
     {
-        stringstream message;
+        std::stringstream message;
         message << "armnn::Exception (" << e.what()<< ") caught from LoadNetwork.";
         FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
         return ErrorStatus::NONE;
     }
 
-    unique_ptr<ArmnnPreparedModel<HalPolicy>> preparedModel(
-            new ArmnnPreparedModel<HalPolicy>(
+    std::unique_ptr<ArmnnPreparedModel_1_2<hal_1_2::HalPolicy>> preparedModel(
+            new ArmnnPreparedModel_1_2<hal_1_2::HalPolicy>(
                     netId,
                     runtime.get(),
                     model,
@@ -185,75 +174,33 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     return ErrorStatus::NONE;
 }
 
-template<typename HalPolicy>
-Return<void> ArmnnDriverImpl<HalPolicy>::getSupportedOperations(const armnn::IRuntimePtr& runtime,
-                                                                const DriverOptions& options,
-                                                                const HalModel& model,
-                                                                HalGetSupportedOperations_cb cb)
+Return<void> ArmnnDriverImpl::getCapabilities_1_2(const armnn::IRuntimePtr& runtime,
+                                                  V1_2::IDevice::getCapabilities_1_2_cb cb)
 {
-    ALOGV("ArmnnDriverImpl::getSupportedOperations()");
+    ALOGV("hal_1_2::ArmnnDriverImpl::getCapabilities()");
 
-    vector<bool> result;
+    V1_2::Capabilities capabilities;
 
-    if (!runtime)
+    if (runtime)
     {
-        cb(ErrorStatus::DEVICE_UNAVAILABLE, result);
-        return Void();
+        capabilities.relaxedFloat32toFloat16PerformanceScalar.execTime =
+                ParseSystemProperty(g_RelaxedFloat32toFloat16PerformanceExecTime, .1f);
+
+        capabilities.relaxedFloat32toFloat16PerformanceTensor.execTime =
+                ParseSystemProperty(g_RelaxedFloat32toFloat16PerformanceExecTime, .1f);
+
+        cb(ErrorStatus::NONE, capabilities);
+    }
+    else
+    {
+        capabilities.relaxedFloat32toFloat16PerformanceScalar.execTime = 0;
+        capabilities.relaxedFloat32toFloat16PerformanceTensor.execTime = 0;
+
+        cb(ErrorStatus::DEVICE_UNAVAILABLE, capabilities);
     }
 
-    // Run general model validation, if this doesn't pass we shouldn't analyse the model anyway.
-    if (!android::nn::validateModel(model))
-    {
-        cb(ErrorStatus::INVALID_ARGUMENT, result);
-        return Void();
-    }
-
-    // Attempt to convert the model to an ArmNN input network (INetwork).
-    ModelToINetworkConverter<HalPolicy> modelConverter(options.GetBackends(),
-                                                       model,
-                                                       options.GetForcedUnsupportedOperations());
-
-    if (modelConverter.GetConversionResult() != ConversionResult::Success
-            && modelConverter.GetConversionResult() != ConversionResult::UnsupportedFeature)
-    {
-        cb(ErrorStatus::GENERAL_FAILURE, result);
-        return Void();
-    }
-
-    // Check each operation if it was converted successfully and copy the flags
-    // into the result (vector<bool>) that we need to return to Android.
-    result.reserve(model.operations.size());
-    for (uint32_t operationIdx = 0; operationIdx < model.operations.size(); operationIdx++)
-    {
-        bool operationSupported = modelConverter.IsOperationSupported(operationIdx);
-        result.push_back(operationSupported);
-    }
-
-    cb(ErrorStatus::NONE, result);
     return Void();
 }
 
-template<typename HalPolicy>
-Return<DeviceStatus> ArmnnDriverImpl<HalPolicy>::getStatus()
-{
-    ALOGV("ArmnnDriver::getStatus()");
-
-    return DeviceStatus::AVAILABLE;
-}
-
-///
-/// Class template specializations
-///
-
-template class ArmnnDriverImpl<hal_1_0::HalPolicy>;
-
-#ifdef ARMNN_ANDROID_NN_V1_1
-template class ArmnnDriverImpl<hal_1_1::HalPolicy>;
-#endif
-
-#ifdef ARMNN_ANDROID_NN_V1_2
-template class ArmnnDriverImpl<hal_1_1::HalPolicy>;
-template class ArmnnDriverImpl<hal_1_2::HalPolicy>;
-#endif
-
+} // namespace hal_1_2
 } // namespace armnn_driver

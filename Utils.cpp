@@ -63,7 +63,7 @@ void* GetMemoryFromPool(DataLocation location, const std::vector<android::nn::Ru
 
     // Type android::nn::RunTimePoolInfo has changed between Android O and Android P, where
     // "buffer" has been made private and must be accessed via the accessor method "getBuffer".
-#if defined(ARMNN_ANDROID_P) // Use the new Android P implementation.
+#if defined(ARMNN_ANDROID_P) || defined(ARMNN_ANDROID_Q) // Use the new Android implementation.
     uint8_t* memPoolBuffer = memPool.getBuffer();
 #else // Fallback to the old Android O implementation.
     uint8_t* memPoolBuffer = memPool.buffer;
@@ -90,7 +90,7 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_0::Operand& operand)
             type = armnn::DataType::Signed32;
             break;
         default:
-            throw UnsupportedOperand(operand.type);
+            throw UnsupportedOperand<V1_0::OperandType>(operand.type);
     }
 
     armnn::TensorInfo ret(operand.dimensions.size(), operand.dimensions.data(), type);
@@ -101,11 +101,55 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_0::Operand& operand)
     return ret;
 }
 
+#ifdef ARMNN_ANDROID_NN_V1_2 // Using ::android::hardware::neuralnetworks::V1_2
+
+armnn::TensorInfo GetTensorInfoForOperand(const V1_2::Operand& operand)
+{
+    armnn::DataType type;
+
+    switch (operand.type)
+    {
+        case V1_2::OperandType::TENSOR_FLOAT32:
+            type = armnn::DataType::Float32;
+            break;
+        case V1_2::OperandType::TENSOR_QUANT8_ASYMM:
+            type = armnn::DataType::QuantisedAsymm8;
+            break;
+        case V1_2::OperandType::TENSOR_QUANT16_SYMM:
+            type = armnn::DataType::QuantisedSymm16;
+            break;
+        case V1_2::OperandType::TENSOR_INT32:
+            type = armnn::DataType::Signed32;
+            break;
+        default:
+            throw UnsupportedOperand<V1_2::OperandType>(operand.type);
+    }
+
+    armnn::TensorInfo ret(operand.dimensions.size(), operand.dimensions.data(), type);
+
+    ret.SetQuantizationScale(operand.scale);
+    ret.SetQuantizationOffset(operand.zeroPoint);
+
+    return ret;
+}
+
+#endif
+
 std::string GetOperandSummary(const V1_0::Operand& operand)
 {
     return android::hardware::details::arrayToString(operand.dimensions, operand.dimensions.size()) + " " +
         toString(operand.type);
 }
+
+#ifdef ARMNN_ANDROID_NN_V1_2 // Using ::android::hardware::neuralnetworks::V1_2
+
+std::string GetOperandSummary(const V1_2::Operand& operand)
+{
+    return android::hardware::details::arrayToString(operand.dimensions, operand.dimensions.size()) + " " +
+           toString(operand.type);
+}
+
+#endif
 
 using DumpElementFunction = void (*)(const armnn::ConstTensor& tensor,
     unsigned int elementIndex,

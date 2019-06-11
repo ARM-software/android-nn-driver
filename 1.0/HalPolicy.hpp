@@ -35,10 +35,6 @@ private:
 
     static bool ConvertConcatenation(const Operation& operation, const Model& model, ConversionData& data);
 
-    static bool ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data);
-
-    static bool ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data);
-
     static bool ConvertDequantize(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertFloor(const Operation& operation, const Model& model, ConversionData& data);
@@ -74,6 +70,10 @@ private:
     static bool ConvertReshape(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertResizeBilinear(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ValidateConv2dParameters(const Operation& operation);
+
+    static bool ValidateDepthwiseConv2dParameters(const Operation& operation);
 };
 
 } // namespace hal_1_0

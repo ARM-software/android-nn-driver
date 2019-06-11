@@ -7,6 +7,7 @@
 
 #include <armnn/ArmNN.hpp>
 
+#include "armnn/src/armnnUtils/DataLayoutIndexed.hpp"
 #include "armnn/src/armnnUtils/Permute.hpp"
 #include "Utils.hpp"
 
@@ -159,7 +160,8 @@ bool IsLayerSupportedForAnyBackend(const char* funcName,
     return false;
 }
 
-armnn::TensorShape GetTensorShapeForOperand(const V1_0::Operand& operand)
+template<typename Operand>
+armnn::TensorShape GetTensorShapeForOperand(const Operand& operand)
 {
     return armnn::TensorShape(operand.dimensions.size(), operand.dimensions.data());
 }
@@ -170,6 +172,34 @@ inline bool IsOperandTypeSupportedForTensors(V1_0::OperandType type)
            type == V1_0::OperandType::TENSOR_QUANT8_ASYMM ||
            type == V1_0::OperandType::TENSOR_INT32;
 }
+
+#ifdef ARMNN_ANDROID_NN_V1_2
+
+inline bool IsOperandTypeSupportedForTensors(V1_2::OperandType type)
+{
+    return type == V1_2::OperandType::BOOL                ||
+           type == V1_2::OperandType::TENSOR_FLOAT16      ||
+           type == V1_2::OperandType::TENSOR_FLOAT32      ||
+           type == V1_2::OperandType::TENSOR_QUANT8_ASYMM ||
+           type == V1_2::OperandType::TENSOR_QUANT16_SYMM ||
+           type == V1_2::OperandType::TENSOR_INT32;
+}
+
+#endif
+
+inline bool IsBool(V1_0::Operand)
+{
+    return false;
+}
+
+#ifdef ARMNN_ANDROID_NN_V1_2
+
+inline bool IsBool(V1_2::Operand operand)
+{
+    return operand.type == V1_2::OperandType::BOOL;
+}
+
+#endif
 
 void BroadcastTensor(LayerInputHandle& input0, LayerInputHandle& input1, armnn::IConnectableLayer* startLayer,
                      armnn::INetwork& network)
@@ -462,9 +492,9 @@ namespace armnn_driver
 
 using namespace android::nn;
 
-template<typename HalOperation, typename HalModel>
-const V1_0::Operand* GetInputOperand(const HalOperation& operation, uint32_t inputIndex, const HalModel& model,
-                               bool failOnIndexOutOfBounds = true)
+template<typename HalOperand, typename HalOperation, typename HalModel>
+const HalOperand* GetInputOperand(const HalOperation& operation, uint32_t inputIndex, const HalModel& model,
+                                  bool failOnIndexOutOfBounds = true)
 {
     if (inputIndex >= operation.inputs.size())
     {
@@ -479,8 +509,8 @@ const V1_0::Operand* GetInputOperand(const HalOperation& operation, uint32_t inp
     return &model.operands[operation.inputs[inputIndex]];
 }
 
-template<typename HalOperation, typename HalModel>
-const V1_0::Operand* GetOutputOperand(const HalOperation& operation, uint32_t outputIndex, const HalModel& model)
+template<typename HalOperand, typename HalOperation, typename HalModel>
+const HalOperand* GetOutputOperand(const HalOperation& operation, uint32_t outputIndex, const HalModel& model)
 {
     if (outputIndex >= operation.outputs.size())
     {
@@ -494,8 +524,8 @@ const V1_0::Operand* GetOutputOperand(const HalOperation& operation, uint32_t ou
     return &model.operands[operation.outputs[outputIndex]];
 }
 
-template<typename HalModel>
-ConstTensorPin ConvertOperandToConstTensorPin(const V1_0::Operand& operand,
+template<typename HalOperand, typename HalModel>
+ConstTensorPin ConvertOperandToConstTensorPin(const HalOperand& operand,
                                               const HalModel& model,
                                               const ConversionData& data,
                                               const armnn::PermutationVector& dimensionMappings = g_DontPermute,
@@ -538,7 +568,7 @@ ConstTensorPin ConvertOperandToConstTensorPin(const V1_0::Operand& operand,
     return ConstTensorPin(tensorInfo, valueStart, operand.location.length, dimensionMappings);
 }
 
-template<typename HalOperation, typename HalModel>
+template<typename HalOperand, typename HalOperation, typename HalModel>
 ConstTensorPin ConvertOperationInputToConstTensorPin(const HalOperation& operation,
                                                      uint32_t inputIndex,
                                                      const HalModel& model,
@@ -547,7 +577,7 @@ ConstTensorPin ConvertOperationInputToConstTensorPin(const HalOperation& operati
                                                      const armnn::TensorShape* overrideTensorShape = nullptr,
                                                      bool optional = false)
 {
-    const V1_0::Operand* operand = GetInputOperand(operation, inputIndex, model);
+    const HalOperand* operand = GetInputOperand<HalOperand>(operation, inputIndex, model);
     if (!operand)
     {
         Fail("%s: failed to get input operand: index=%u", __func__, inputIndex);
@@ -561,8 +591,8 @@ ConstTensorPin ConvertOperationInputToConstTensorPin(const HalOperation& operati
                                           optional);
 }
 
-template<typename HalModel>
-const void* GetOperandValueReadOnlyAddress(const V1_0::Operand& operand,
+template<typename HalOperand, typename HalModel>
+const void* GetOperandValueReadOnlyAddress(const HalOperand& operand,
                                            const HalModel& model,
                                            const ConversionData& data,
                                            bool optional = false)
@@ -605,15 +635,15 @@ const void* GetOperandValueReadOnlyAddress(const V1_0::Operand& operand,
     return valueStart;
 }
 
-template<typename HalOperation, typename HalModel, typename OutputType>
+template<typename HalOperand, typename HalOperandType, typename HalOperation, typename HalModel, typename OutputType>
 bool GetInputScalar(const HalOperation& operation,
                     uint32_t inputIndex,
-                    V1_0::OperandType type,
+                    HalOperandType type,
                     OutputType& outValue,
                     const HalModel& model,
                     const ConversionData& data)
 {
-    const V1_0::Operand* operand = GetInputOperand(operation, inputIndex, model);
+    const HalOperand* operand = GetInputOperand<HalOperand>(operation, inputIndex, model);
     if (!operand)
     {
         return Fail("%s: invalid input operand at index %i", __func__, inputIndex);
@@ -641,37 +671,37 @@ bool GetInputScalar(const HalOperation& operation,
     return true;
 }
 
-template<typename HalOperation, typename HalModel>
+template<typename HalOperand, typename HalOperandType, typename HalOperation, typename HalModel>
 bool GetInputInt32(const HalOperation& operation,
                    uint32_t inputIndex,
                    int32_t& outValue,
                    const HalModel& model,
                    const ConversionData& data)
 {
-    return GetInputScalar(operation, inputIndex,V1_0::OperandType::INT32, outValue, model, data);
+    return GetInputScalar<HalOperand, HalOperandType>(operation, inputIndex, HalOperandType::INT32, outValue, model,
+            data);
 }
 
-
-template<typename HalOperation, typename HalModel>
+template<typename HalOperand, typename HalOperandType, typename HalOperation, typename HalModel>
 bool GetInputFloat32(const HalOperation& operation,
                      uint32_t inputIndex,
                      float& outValue,
                      const HalModel& model,
                      const ConversionData& data)
 {
-    return GetInputScalar(operation, inputIndex,V1_0::OperandType::FLOAT32, outValue, model, data);
+    return GetInputScalar<HalOperand, HalOperandType>(operation, inputIndex, HalOperandType::FLOAT32, outValue, model,
+            data);
 }
 
-
-template<typename HalOperation, typename HalModel>
+template<typename HalOperand, typename HalOperandType, typename HalOperation, typename HalModel>
 bool GetInputActivationFunctionImpl(const HalOperation& operation,
                                     uint32_t inputIndex,
-                                   V1_0::OperandType type,
+                                    HalOperandType type,
                                     ActivationFn& outActivationFunction,
                                     const HalModel& model,
                                     const ConversionData& data)
 {
-    if (type !=V1_0::OperandType::INT32 && type !=V1_0::OperandType::TENSOR_INT32)
+    if (type != HalOperandType::INT32 && type != HalOperandType::TENSOR_INT32)
     {
         return Fail("%s: unexpected operand type: %s (should be %s or %s)",
                     __func__,
@@ -681,7 +711,7 @@ bool GetInputActivationFunctionImpl(const HalOperation& operation,
     }
 
     int32_t activationFunctionAsInt;
-    if (!GetInputScalar(operation, inputIndex, type, activationFunctionAsInt, model, data))
+    if (!GetInputScalar<HalOperand, HalOperandType>(operation, inputIndex, type, activationFunctionAsInt, model, data))
     {
         return Fail("%s: failed to get activation input value", __func__);
     }
@@ -689,23 +719,22 @@ bool GetInputActivationFunctionImpl(const HalOperation& operation,
     return true;
 }
 
-
-template<typename HalOperation, typename HalModel>
+template<typename HalOperand, typename HalOperandType, typename HalOperation, typename HalModel>
 bool GetInputActivationFunction(const HalOperation& operation,
                                 uint32_t inputIndex,
                                 ActivationFn& outActivationFunction,
                                 const HalModel& model,
                                 const ConversionData& data)
 {
-    return GetInputActivationFunctionImpl(operation,
-                                          inputIndex,
-                                         V1_0::OperandType::INT32,
-                                          outActivationFunction,
-                                          model,
-                                          data);
+    return GetInputActivationFunctionImpl<HalOperand, HalOperandType>(operation,
+                                                                      inputIndex,
+                                                                      HalOperandType::INT32,
+                                                                      outActivationFunction,
+                                                                      model,
+                                                                      data);
 }
 
-template<typename HalOperation, typename HalModel>
+template<typename HalOperand, typename HalOperandType, typename HalOperation, typename HalModel>
 bool GetInputActivationFunctionFromTensor(const HalOperation& operation,
                                           uint32_t inputIndex,
                                           ActivationFn& outActivationFunction,
@@ -713,16 +742,16 @@ bool GetInputActivationFunctionFromTensor(const HalOperation& operation,
                                           const ConversionData& data)
 {
     // This only accepts a 1-D tensor of size 1
-    return GetInputActivationFunctionImpl(operation,
-                                          inputIndex,
-                                         V1_0::OperandType::INT32,
-                                          outActivationFunction,
-                                          model,
-                                          data);
+    return GetInputActivationFunctionImpl<HalOperand, HalOperandType>(operation,
+                                                                      inputIndex,
+                                                                      HalOperandType::INT32,
+                                                                      outActivationFunction,
+                                                                      model,
+                                                                      data);
 }
 
 
-template<typename HalOperation, typename HalModel>
+template<typename HalOperand, typename HalOperandType, typename HalOperation, typename HalModel>
 bool GetOptionalInputActivation(const HalOperation& operation,
                                 uint32_t inputIndex,
                                 ActivationFn& activationFunction,
@@ -735,7 +764,8 @@ bool GetOptionalInputActivation(const HalOperation& operation,
     }
     else
     {
-        if (!GetInputActivationFunction(operation, inputIndex, activationFunction, model, data))
+        if (!GetInputActivationFunction<HalOperand, HalOperandType>(operation, inputIndex, activationFunction, model,
+                data))
         {
             return Fail("%s: Operation has invalid inputs", __func__);
         }
@@ -743,13 +773,13 @@ bool GetOptionalInputActivation(const HalOperation& operation,
     return true;
 }
 
-template<typename HalModel>
-bool GetTensorInt32Values(const V1_0::Operand& operand,
+template<typename HalOperand, typename HalOperandType, typename HalModel>
+bool GetTensorInt32Values(const HalOperand& operand,
                           std::vector<int32_t>& outValues,
                           const HalModel& model,
                           const ConversionData& data)
 {
-    if (operand.type !=V1_0::OperandType::TENSOR_INT32)
+    if (operand.type != HalOperandType::TENSOR_INT32)
     {
         return Fail("%s: invalid operand type: %s", __func__, toString(operand.type).c_str());
     }
@@ -773,7 +803,7 @@ bool GetTensorInt32Values(const V1_0::Operand& operand,
     return true;
 }
 
-template<typename HalOperation, typename HalModel>
+template<typename HalOperand, typename HalOperandType, typename HalOperation, typename HalModel>
 bool GetInputPaddingScheme(const HalOperation& operation,
                            uint32_t inputIndex,
                            PaddingScheme& outPaddingScheme,
@@ -781,7 +811,7 @@ bool GetInputPaddingScheme(const HalOperation& operation,
                            const ConversionData& data)
 {
     int32_t paddingSchemeAsInt;
-    if (!GetInputInt32(operation, inputIndex, paddingSchemeAsInt, model, data))
+    if (!GetInputInt32<HalOperand, HalOperandType>(operation, inputIndex, paddingSchemeAsInt, model, data))
     {
         return Fail("%s: failed to get padding scheme input value", __func__);
     }
@@ -790,13 +820,13 @@ bool GetInputPaddingScheme(const HalOperation& operation,
     return true;
 }
 
-template<typename HalOperation, typename HalModel>
+template<typename HalOperand, typename HalOperation, typename HalModel>
 LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
                                            uint32_t inputIndex,
                                            const HalModel& model,
                                            ConversionData& data)
 {
-    const V1_0::Operand* operand = GetInputOperand(operation, inputIndex, model);
+    const HalOperand* operand = GetInputOperand<HalOperand>(operation, inputIndex, model);
     if (!operand)
     {
         Fail("%s: failed to get input operand %i", __func__, inputIndex);
@@ -863,20 +893,87 @@ LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
     }
 }
 
-template<typename HalOperation, typename HalModel>
+template<typename HalOperand, typename HalOperation, typename HalModel>
+bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
+                                  uint32_t operationOutputIndex,
+                                  armnn::IConnectableLayer& layer,
+                                  uint32_t layerOutputIndex,
+                                  const HalModel& model,
+                                  ConversionData& data)
+{
+    const HalOperand* outputOperand = GetOutputOperand<HalOperand>(operation, operationOutputIndex, model);
+    if ((outputOperand == nullptr) || (operationOutputIndex >= layer.GetNumOutputSlots()))
+    {
+        return false;
+    }
+
+    armnn::IOutputSlot& outputSlot = layer.GetOutputSlot(layerOutputIndex);
+
+    const uint32_t operandIndex = operation.outputs[operationOutputIndex];
+    data.m_OutputSlotForOperand[operandIndex] = &outputSlot;
+
+    outputSlot.SetTensorInfo(GetTensorInfoForOperand(*outputOperand));
+
+    return true;
+}
+
+template<typename HalOperand, typename HalOperation, typename HalModel>
+armnn::DataLayout OptionalDataLayout(const HalOperation& operation,
+                        uint32_t inputIndex,
+                        const HalModel& model,
+                        ConversionData& data)
+{
+    const HalOperand* operand = GetInputOperand<HalOperand>(operation, inputIndex, model);
+    if (!operand)
+    {
+        return armnn::DataLayout::NHWC;
+    }
+
+    if (!IsBool(*operand))
+    {
+        return armnn::DataLayout::NHWC;
+    }
+
+    const void* valueAddress = GetOperandValueReadOnlyAddress(*operand, model, data);
+    if (!valueAddress)
+    {
+        return armnn::DataLayout::NHWC;
+    }
+
+    if (*(static_cast<const bool*>(valueAddress)))
+    {
+        return armnn::DataLayout::NCHW;
+    }
+    else
+    {
+        return armnn::DataLayout::NHWC;
+    }
+}
+
+template<typename HalOperand, typename HalOperation, typename HalModel>
+bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
+                                  uint32_t outputIndex,
+                                  armnn::IConnectableLayer& layer,
+                                  const HalModel& model,
+                                  ConversionData& data)
+{
+    return SetupAndTrackLayerOutputSlot<HalOperand>(operation, outputIndex, layer, outputIndex, model, data);
+}
+
+template<typename HalOperand, typename HalOperation, typename HalModel>
 bool ConvertToActivation(const HalOperation& operation,
                          const char* operationName,
                          const armnn::ActivationDescriptor& activationDesc,
                          const HalModel& model,
                          ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<HalOperand>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Input 0 is invalid", operationName);
     }
 
-    const V1_0::Operand* outputOperand = GetOutputOperand(operation, 0, model);
+    const HalOperand* outputOperand = GetOutputOperand<HalOperand>(operation, 0, model);
     if (!outputOperand)
     {
         return false;
@@ -896,57 +993,23 @@ bool ConvertToActivation(const HalOperation& operation,
     BOOST_ASSERT(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalOperand>(operation, 0, *layer, model, data);
 }
 
-template<typename HalOperation, typename HalModel>
-bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
-                                  uint32_t operationOutputIndex,
-                                  armnn::IConnectableLayer& layer,
-                                  uint32_t layerOutputIndex,
-                                  const HalModel& model,
-                                  ConversionData& data)
-{
-    const V1_0::Operand* outputOperand = GetOutputOperand(operation, operationOutputIndex, model);
-    if ((outputOperand == nullptr) || (operationOutputIndex >= layer.GetNumOutputSlots()))
-    {
-        return false;
-    }
-
-    armnn::IOutputSlot& outputSlot = layer.GetOutputSlot(layerOutputIndex);
-
-    const uint32_t operandIndex = operation.outputs[operationOutputIndex];
-    data.m_OutputSlotForOperand[operandIndex] = &outputSlot;
-
-    outputSlot.SetTensorInfo(GetTensorInfoForOperand(*outputOperand));
-
-    return true;
-}
-
-template<typename HalOperation, typename HalModel>
-bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
-                                  uint32_t outputIndex,
-                                  armnn::IConnectableLayer& layer,
-                                  const HalModel& model,
-                                  ConversionData& data)
-{
-    return SetupAndTrackLayerOutputSlot(operation, outputIndex, layer, outputIndex, model, data);
-}
-
-template<typename HalOperation, typename HalModel>
+template<typename HalOperand, typename HalOperandType, typename HalOperation, typename HalModel>
 bool ConvertPooling2d(const HalOperation& operation,
                       const char* operationName,
                       armnn::PoolingAlgorithm poolType,
                       const HalModel& model,
                       ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<HalOperand>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Could not read input 0", operationName);
     }
 
-    const V1_0::Operand* output = GetOutputOperand(operation, 0, model);
+    const HalOperand* output = GetOutputOperand<HalOperand>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -966,12 +1029,16 @@ bool ConvertPooling2d(const HalOperation& operation,
     {
         // one input, 6 parameters (padding, stridex, stridey, width, height, activation type)
         android::nn::PaddingScheme scheme;
-        if (!GetInputPaddingScheme(operation, 1, scheme, model, data)
-            || !GetInputScalar(operation, 2,V1_0::OperandType::INT32, desc.m_StrideX, model, data)
-            || !GetInputScalar(operation, 3,V1_0::OperandType::INT32, desc.m_StrideY, model, data)
-            || !GetInputScalar(operation, 4,V1_0::OperandType::INT32, desc.m_PoolWidth, model, data)
-            || !GetInputScalar(operation, 5,V1_0::OperandType::INT32, desc.m_PoolHeight, model, data)
-            || !GetInputActivationFunction(operation, 6, activation, model, data))
+        if (!GetInputPaddingScheme<HalOperand, HalOperandType>(operation, 1, scheme, model, data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 2, HalOperandType::INT32, desc.m_StrideX, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 3, HalOperandType::INT32, desc.m_StrideY, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 4, HalOperandType::INT32, desc.m_PoolWidth, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 5, HalOperandType::INT32, desc.m_PoolHeight,
+                    model, data)
+            || !GetInputActivationFunction<HalOperand, HalOperandType>(operation, 6, activation, model, data))
         {
             return Fail("%s: Operation has invalid inputs", operationName);
         }
@@ -985,15 +1052,23 @@ bool ConvertPooling2d(const HalOperation& operation,
     else
     {
         // one input, 9 parameters (padding l r t b, stridex, stridey, width, height, activation type)
-        if (!GetInputScalar(operation, 1,V1_0::OperandType::INT32, desc.m_PadLeft, model, data)
-            || !GetInputScalar(operation, 2,V1_0::OperandType::INT32, desc.m_PadRight, model, data)
-            || !GetInputScalar(operation, 3,V1_0::OperandType::INT32, desc.m_PadTop, model, data)
-            || !GetInputScalar(operation, 4,V1_0::OperandType::INT32, desc.m_PadBottom, model, data)
-            || !GetInputScalar(operation, 5,V1_0::OperandType::INT32, desc.m_StrideX, model, data)
-            || !GetInputScalar(operation, 6,V1_0::OperandType::INT32, desc.m_StrideY, model, data)
-            || !GetInputScalar(operation, 7,V1_0::OperandType::INT32, desc.m_PoolWidth, model, data)
-            || !GetInputScalar(operation, 8,V1_0::OperandType::INT32, desc.m_PoolHeight, model, data)
-            || !GetInputActivationFunction(operation, 9, activation, model, data))
+        if (!GetInputScalar<HalOperand, HalOperandType>(operation, 1, HalOperandType::INT32, desc.m_PadLeft, model,
+                data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 2, HalOperandType::INT32, desc.m_PadRight, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 3, HalOperandType::INT32, desc.m_PadTop, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 4, HalOperandType::INT32, desc.m_PadBottom, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 5, HalOperandType::INT32, desc.m_StrideX, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 6, HalOperandType::INT32, desc.m_StrideY, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 7, HalOperandType::INT32, desc.m_PoolWidth, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 8, HalOperandType::INT32, desc.m_PoolHeight,
+                    model, data)
+            || !GetInputActivationFunction<HalOperand, HalOperandType>(operation, 9, activation, model, data))
         {
             return Fail("%s: Operation has invalid inputs", operationName);
         }
@@ -1023,7 +1098,276 @@ bool ConvertPooling2d(const HalOperation& operation,
 
     input.Connect(pooling2dLayer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot(operation, 0, *endLayer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalOperand>(operation, 0, *endLayer, model, data);
+}
+
+template<typename HalOperand, typename HalOperandType, typename HalOperation, typename HalModel>
+bool ConvertConv2d(const HalOperation& operation, const HalModel& model, ConversionData& data)
+{
+    LayerInputHandle input = ConvertToLayerInputHandle<HalOperand>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const HalOperand* output = GetOutputOperand<HalOperand>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    // ArmNN does not currently support non-fixed weights or bias
+    const ConstTensorPin weightsPin = ConvertOperationInputToConstTensorPin<HalOperand>(operation, 1, model, data);
+    const ConstTensorPin biasPin    = ConvertOperationInputToConstTensorPin<HalOperand>(operation, 2, model, data);
+
+    if (!weightsPin.IsValid() || !biasPin.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    armnn::ConstTensor weights = weightsPin.GetConstTensor();
+    armnn::ConstTensor bias = biasPin.GetConstTensor();
+    SanitizeBiasQuantizationScale(bias.GetInfo(), weights.GetInfo(), inputInfo);
+
+    armnn::Convolution2dDescriptor desc;
+    desc.m_DataLayout = armnn::DataLayout::NHWC;
+    ActivationFn activation;
+
+    if (operation.inputs.size() >= 10)
+    {
+        if (!GetInputScalar<HalOperand, HalOperandType>(operation, 3, HalOperandType::INT32, desc.m_PadLeft, model,
+                data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 4, HalOperandType::INT32, desc.m_PadRight, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 5, HalOperandType::INT32, desc.m_PadTop, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 6, HalOperandType::INT32, desc.m_PadBottom, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 7, HalOperandType::INT32, desc.m_StrideX, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 8, HalOperandType::INT32, desc.m_StrideY, model,
+                    data)
+            || !GetInputActivationFunction<HalOperand, HalOperandType>(operation, 9, activation, model, data))
+        {
+            return Fail("%s: Operation has invalid inputs", __func__);
+        }
+        desc.m_DataLayout = OptionalDataLayout<HalOperand>(operation, 10, model, data);
+    }
+    else if (operation.inputs.size() >= 7)
+    {
+        android::nn::PaddingScheme paddingScheme;
+        if (!GetInputPaddingScheme<HalOperand, HalOperandType>(operation, 3, paddingScheme, model, data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 4, HalOperandType::INT32, desc.m_StrideX,
+                    model, data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 5, HalOperandType::INT32, desc.m_StrideY, model,
+                    data)
+            || !GetInputActivationFunction<HalOperand, HalOperandType>(operation, 6, activation, model, data))
+        {
+            return Fail("%s: Operation has invalid inputs", __func__);
+        }
+
+        const uint32_t kernelX = weights.GetShape()[2];
+        const uint32_t kernelY = weights.GetShape()[1];
+        const uint32_t inputX  = inputInfo.GetShape()[2];
+        const uint32_t inputY  = inputInfo.GetShape()[1];
+
+        CalcPadding(inputX, kernelX, desc.m_StrideX, desc.m_PadLeft, desc.m_PadRight, paddingScheme);
+        CalcPadding(inputY, kernelY, desc.m_StrideY, desc.m_PadTop, desc.m_PadBottom, paddingScheme);
+
+        desc.m_DataLayout = OptionalDataLayout<HalOperand>(operation, 7, model, data);
+    }
+    else
+    {
+        return Fail("%s: Unsupported number of operation inputs", __func__);
+    }
+
+    desc.m_BiasEnabled = true;
+    armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
+
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsConvolution2dSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       desc,
+                                       weights.GetInfo(),
+                                       biases))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* startLayer =
+            data.m_Network->AddConvolution2dLayer(desc, weights, armnn::Optional<armnn::ConstTensor>(bias));
+
+    if (!startLayer)
+    {
+        return Fail("%s: AddConvolution2dLayer failed", __func__);
+    }
+
+    armnn::IConnectableLayer* endLayer = ProcessActivation(outputInfo, activation, startLayer, data);
+
+    if (!endLayer)
+    {
+        return Fail("%s: ProcessActivation failed", __func__);
+    }
+
+    input.Connect(startLayer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalOperand>(operation, 0, *endLayer, model, data);
+}
+
+template<typename HalOperand, typename HalOperandType, typename HalOperation, typename HalModel>
+bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model, ConversionData& data)
+{
+    LayerInputHandle input = ConvertToLayerInputHandle<HalOperand>(operation, 0, model, data);
+
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const HalOperand* output = GetOutputOperand<HalOperand>(operation, 0, model);
+
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    // ArmNN does not currently support non-fixed weights or bias
+
+    // Find the shape of the weights tensor. In AndroidNN this will be [ 1, H, W, I * M ]
+    const HalOperand* weightsOperand = GetInputOperand<HalOperand>(operation, 1, model);
+
+    if (weightsOperand == nullptr)
+    {
+        return Fail("%s: Operand is invalid", __func__);
+    }
+    armnn::DepthwiseConvolution2dDescriptor desc;
+    desc.m_DataLayout = armnn::DataLayout::NHWC;
+
+    // Look ahead to find the optional DataLayout, if present
+    if (operation.inputs.size() >= 12)
+    {
+        desc.m_DataLayout = OptionalDataLayout<HalOperand>(operation, 11, model, data);
+    }
+    else if (operation.inputs.size() >= 9)
+    {
+        desc.m_DataLayout = OptionalDataLayout<HalOperand>(operation, 8, model, data);
+    }
+
+    armnnUtils::DataLayoutIndexed dataLayoutIndexed(desc.m_DataLayout);
+    unsigned int channelsIndex = dataLayoutIndexed.GetChannelsIndex();
+    unsigned int widthIndex = dataLayoutIndexed.GetWidthIndex();
+    unsigned int heightIndex = dataLayoutIndexed.GetHeightIndex();
+
+    // Reinterpret weight data as [ H, W, I, M ]
+    armnn::TensorShape weightsShape({ weightsOperand->dimensions[1],
+                                      weightsOperand->dimensions[2],
+                                      inputInfo.GetShape()[channelsIndex],
+                                      weightsOperand->dimensions[3] / inputInfo.GetShape()[channelsIndex] });
+
+    // Swizzle weight data [ H, W, I, M ] -> [ M, I, H, W ]
+    const armnn::PermutationVector HWIMToMIHW = { 2U, 3U, 1U, 0U };
+
+    const ConstTensorPin weightsPin = ConvertOperationInputToConstTensorPin<HalOperand>(operation, 1, model, data,
+                                                                                        HWIMToMIHW, &weightsShape);
+
+    // Bias is a 1D tensor
+    const ConstTensorPin biasPin = ConvertOperationInputToConstTensorPin<HalOperand>(operation, 2, model, data);
+
+    if (!weightsPin.IsValid() || !biasPin.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    armnn::ConstTensor weights = weightsPin.GetConstTensor();
+    armnn::ConstTensor bias = biasPin.GetConstTensor();
+    SanitizeBiasQuantizationScale(bias.GetInfo(), weights.GetInfo(), inputInfo);
+
+    ActivationFn activation;
+
+    if (operation.inputs.size() >= 11)
+    {
+        if (!GetInputScalar<HalOperand, HalOperandType>(operation, 3, HalOperandType::INT32, desc.m_PadLeft, model,
+                data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 4, HalOperandType::INT32, desc.m_PadRight, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 5, HalOperandType::INT32, desc.m_PadTop, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 6, HalOperandType::INT32, desc.m_PadBottom, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 7, HalOperandType::INT32, desc.m_StrideX, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 8, HalOperandType::INT32, desc.m_StrideY, model,
+                    data)
+            || !GetInputActivationFunction<HalOperand, HalOperandType>(operation,  10, activation, model, data))
+        {
+            return Fail("%s: Operation has invalid inputs", __func__);
+        }
+    }
+    else if (operation.inputs.size() >= 8)
+    {
+        android::nn::PaddingScheme paddingScheme;
+        if (!GetInputPaddingScheme<HalOperand, HalOperandType>(operation, 3, paddingScheme, model, data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 4, HalOperandType::INT32, desc.m_StrideX, model,
+                    data)
+            || !GetInputScalar<HalOperand, HalOperandType>(operation, 5, HalOperandType::INT32, desc.m_StrideY, model,
+                    data)
+            || !GetInputActivationFunction<HalOperand, HalOperandType>(operation, 7, activation, model, data))
+        {
+            return Fail("%s: Operation has invalid inputs", __func__);
+        }
+
+        const uint32_t kernelX = weights.GetShape()[3];
+        const uint32_t kernelY = weights.GetShape()[2];
+        const uint32_t inputX  = inputInfo.GetShape()[widthIndex];
+        const uint32_t inputY  = inputInfo.GetShape()[heightIndex];
+
+        CalcPadding(inputX, kernelX, desc.m_StrideX, desc.m_PadLeft, desc.m_PadRight, paddingScheme);
+        CalcPadding(inputY, kernelY, desc.m_StrideY, desc.m_PadTop, desc.m_PadBottom, paddingScheme);
+    }
+    else
+    {
+        return Fail("%s: Unsupported number of operation inputs", __func__);
+    }
+
+    desc.m_BiasEnabled = true;
+    armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
+
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsDepthwiseConvolutionSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       desc,
+                                       weights.GetInfo(),
+                                       biases))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* startLayer =
+            data.m_Network->AddDepthwiseConvolution2dLayer(desc, weights, armnn::Optional<armnn::ConstTensor>(bias));
+    if (!startLayer)
+    {
+        return Fail("%s: AddDepthwiseConvolution2dLayer failed", __func__);
+    }
+
+    armnn::IConnectableLayer* endLayer = ProcessActivation(outputInfo, activation, startLayer, data);
+    if (!endLayer)
+    {
+        return Fail("%s: ProcessActivation failed", __func__);
+    }
+
+    input.Connect(startLayer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalOperand>(operation, 0, *endLayer, model, data);
 }
 
 } // namespace armnn_driver

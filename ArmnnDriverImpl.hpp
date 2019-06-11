@@ -10,6 +10,11 @@
 #include <HalInterfaces.h>
 
 namespace V1_0 = ::android::hardware::neuralnetworks::V1_0;
+namespace V1_1 = ::android::hardware::neuralnetworks::V1_1;
+
+#ifdef ARMNN_ANDROID_NN_V1_2 // Using ::android::hardware::neuralnetworks::V1_2
+namespace V1_2 = ::android::hardware::neuralnetworks::V1_2;
+#endif
 
 namespace armnn_driver
 {
@@ -36,6 +41,7 @@ public:
             bool float32ToFloat16 = false);
 
     static Return<DeviceStatus> getStatus();
+
 };
 
 } // namespace armnn_driver
