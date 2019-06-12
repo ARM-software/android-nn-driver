@@ -1181,7 +1181,8 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
                     data)
             || !GetInputScalar<HalOperand, HalOperandType>(operation, 8, HalOperandType::INT32, desc.m_StrideY, model,
                     data)
-            || !GetInputActivationFunction<HalOperand, HalOperandType>(operation, 9, activation, model, data))
+            || !GetInputActivationFunction<HalOperand, HalOperandType>(operation, 9, activation, model, data)
+            || !GetOptionalConvolutionDilationParams<HalOperand, HalOperandType>(operation, 11, desc, model, data))
         {
             return Fail("%s: Operation has invalid inputs", __func__);
         }
@@ -1195,7 +1196,8 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
                     model, data)
             || !GetInputScalar<HalOperand, HalOperandType>(operation, 5, HalOperandType::INT32, desc.m_StrideY, model,
                     data)
-            || !GetInputActivationFunction<HalOperand, HalOperandType>(operation, 6, activation, model, data))
+            || !GetInputActivationFunction<HalOperand, HalOperandType>(operation, 6, activation, model, data)
+            || !GetOptionalConvolutionDilationParams<HalOperand, HalOperandType>(operation, 8, desc, model, data))
         {
             return Fail("%s: Operation has invalid inputs", __func__);
         }
