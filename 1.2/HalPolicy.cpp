@@ -131,9 +131,9 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
     switch (operation.type)
     {
         case V1_2::OperationType::CONV_2D:
-            return ConvertConv2d<Operand, OperandType, Operation, Model>(operation, model, data);
+            return ConvertConv2d<hal_1_2::HalPolicy>(operation, model, data);
         case V1_2::OperationType::DEPTHWISE_CONV_2D:
-            return ConvertDepthwiseConv2d<Operand, OperandType, Operation, Model>(operation, model, data);
+            return ConvertDepthwiseConv2d<hal_1_2::HalPolicy>(operation, model, data);
         default:
             return Fail("%s: Operation type %s not supported in ArmnnDriver",
                         __func__, toString(operation.type).c_str());

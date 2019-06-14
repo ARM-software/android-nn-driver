@@ -19,6 +19,8 @@ class HalPolicy
 public:
     using Model                     = V1_2::Model;
     using Operand                   = V1_2::Operand;
+    using OperandLifeTime           = V1_0::OperandLifeTime;
+    using OperandType               = V1_2::OperandType;
     using Operation                 = V1_2::Operation;
     using OperationType             = V1_2::OperationType;
     using ExecutionCallback         = V1_2::IExecutionCallback;

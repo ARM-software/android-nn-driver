@@ -102,8 +102,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
 
 bool HalPolicy::ConvertDiv(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input0 = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
-    LayerInputHandle input1 = ConvertToLayerInputHandle<Operand>(operation, 1, model, data);
+    LayerInputHandle input0 = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
+    LayerInputHandle input1 = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 1, model, data);
 
     if (!input0.IsValid() || !input1.IsValid())
     {
@@ -113,12 +113,12 @@ bool HalPolicy::ConvertDiv(const Operation& operation, const Model& model, Conve
     // The FuseActivation parameter is always the input index 2
     // and it should be optional
     ActivationFn activationFunction;
-    if (!GetOptionalInputActivation<Operand, OperandType>(operation, 2, activationFunction, model, data))
+    if (!GetOptionalInputActivation<hal_1_1::HalPolicy>(operation, 2, activationFunction, model, data))
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* outputOperand = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* outputOperand = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
     if (!outputOperand)
     {
         return false;
@@ -145,7 +145,7 @@ bool HalPolicy::ConvertDiv(const Operation& operation, const Model& model, Conve
     if (endLayer)
     {
         BroadcastTensor(input0, input1, startLayer, *data.m_Network);
-        return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *endLayer, model, data);
+        return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *endLayer, model, data);
     }
 
     return Fail("%s: ProcessActivation failed", __func__);
@@ -153,8 +153,8 @@ bool HalPolicy::ConvertDiv(const Operation& operation, const Model& model, Conve
 
 bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input0 = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
-    LayerInputHandle input1 = ConvertToLayerInputHandle<Operand>(operation, 1, model, data);
+    LayerInputHandle input0 = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
+    LayerInputHandle input1 = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 1, model, data);
 
     if (!input0.IsValid() || !input1.IsValid())
     {
@@ -164,12 +164,12 @@ bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, Conve
     // The FuseActivation parameter is always the input index 2
     // and it should be optional
     ActivationFn activationFunction;
-    if (!GetOptionalInputActivation<Operand, OperandType>(operation, 2, activationFunction, model, data))
+    if (!GetOptionalInputActivation<hal_1_1::HalPolicy>(operation, 2, activationFunction, model, data))
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* outputOperand = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* outputOperand = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
     if (!outputOperand)
     {
         return false;
@@ -196,7 +196,7 @@ bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, Conve
     if (endLayer)
     {
         BroadcastTensor(input0, input1, startLayer, *data.m_Network);
-        return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *endLayer, model, data);
+        return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *endLayer, model, data);
     }
 
     return Fail("%s: ProcessActivation failed", __func__);
@@ -204,20 +204,20 @@ bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, Conve
 
 bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* axisOperand = GetInputOperand<Operand>(operation, 1, model);
+    const Operand* axisOperand = GetInputOperand<hal_1_1::HalPolicy>(operation, 1, model);
     if (!axisOperand)
     {
         return Fail("%s: Could not read input 1", __func__);
     }
 
     std::vector<int32_t> axis;
-    if (!GetTensorInt32Values<Operand, OperandType>(*axisOperand, axis, model, data))
+    if (!GetTensorInt32Values<hal_1_1::HalPolicy>(*axisOperand, axis, model, data))
     {
         return Fail("%s: Input 1 has invalid values", __func__);
     }
@@ -233,7 +233,7 @@ bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, Conv
 
     // Get the "keep dims" flag.
     int32_t keepDims = 0;
-    if (!GetInputInt32<Operand, OperandType>(operation, 2, keepDims, model, data))
+    if (!GetInputInt32<hal_1_1::HalPolicy>(operation, 2, keepDims, model, data))
     {
         return Fail("%s: Could not read input 2", __func__);
     }
@@ -242,7 +242,7 @@ bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, Conv
     descriptor.m_Axis.assign(uniqueAxis.begin(), uniqueAxis.end());
     descriptor.m_KeepDims = keepDims > 0;
 
-    const Operand* output = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -264,12 +264,12 @@ bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, Conv
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
 
     if (!input.IsValid())
     {
@@ -278,7 +278,7 @@ bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, Conve
 
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
 
-    const Operand* paddingsOperand = GetInputOperand<Operand>(operation, 1, model);
+    const Operand* paddingsOperand = GetInputOperand<hal_1_1::HalPolicy>(operation, 1, model);
 
     if (!paddingsOperand)
     {
@@ -286,14 +286,14 @@ bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, Conve
     }
 
     unsigned int rank = inputInfo.GetNumDimensions();
-    armnn::TensorShape paddingsOperandShape = GetTensorShapeForOperand<HalPolicy::Operand>(*paddingsOperand);
+    armnn::TensorShape paddingsOperandShape = GetTensorShapeForOperand(*paddingsOperand);
     if (paddingsOperandShape.GetNumDimensions() != 2 || paddingsOperandShape.GetNumElements() != rank * 2)
     {
         return Fail("%s: Operation has invalid paddings operand: expected shape [%d, 2]",  __func__, rank);
     }
 
     std::vector<int32_t> paddings;
-    GetTensorInt32Values<Operand, OperandType>(*paddingsOperand, paddings, model, data);
+    GetTensorInt32Values<hal_1_1::HalPolicy>(*paddingsOperand, paddings, model, data);
 
     // add padding for each dimension of input tensor.
     armnn::PadDescriptor descriptor;
@@ -308,7 +308,7 @@ bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, Conve
         descriptor.m_PadList.emplace_back((unsigned int) paddingBeforeInput, (unsigned int) paddingAfterInput);
     }
 
-    const Operand* output = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -331,12 +331,12 @@ bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, Conve
     input.Connect(layer->GetInputSlot(0));
     layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
 
-    return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
 
     if (!input.IsValid())
     {
@@ -352,17 +352,17 @@ bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& m
         Fail("%s: Only inputs with rank 4 are supported", __func__);
     }
 
-    const Operand* blockShapeOperand = GetInputOperand<Operand>(operation, 1, model);
-    const Operand* paddingsOperand = GetInputOperand<Operand>(operation, 2, model);
+    const Operand* blockShapeOperand = GetInputOperand<hal_1_1::HalPolicy>(operation, 1, model);
+    const Operand* paddingsOperand   = GetInputOperand<hal_1_1::HalPolicy>(operation, 2, model);
 
-    armnn::TensorShape blockShapeOperandShape = GetTensorShapeForOperand<Operand>(*blockShapeOperand);
+    armnn::TensorShape blockShapeOperandShape = GetTensorShapeForOperand(*blockShapeOperand);
     if (blockShapeOperandShape.GetNumDimensions() != 1 || blockShapeOperandShape.GetNumElements() != spatialDim)
     {
         return Fail("%s: Operation has invalid block shape operand: expected shape [%d]", __func__, spatialDim);
     }
 
     std::vector<int32_t> blockShape;
-    GetTensorInt32Values<Operand, OperandType>(*blockShapeOperand, blockShape, model, data);
+    GetTensorInt32Values<hal_1_1::HalPolicy>(*blockShapeOperand, blockShape, model, data);
     if (std::any_of(blockShape.cbegin(), blockShape.cend(), [](int32_t i){ return i < 1; }))
     {
         return Fail("%s: Block shape must be at least 1 in all dimensions.", __func__);
@@ -376,7 +376,7 @@ bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& m
 
     std::vector<std::pair<unsigned int, unsigned int>> paddingList;
     std::vector<int32_t> paddings;
-    GetTensorInt32Values<Operand, OperandType>(*paddingsOperand, paddings, model, data);
+    GetTensorInt32Values<hal_1_1::HalPolicy>(*paddingsOperand, paddings, model, data);
     for (unsigned int i = 0; i < paddings.size() - 1; i += 2)
     {
         int paddingBeforeInput = paddings[i];
@@ -394,7 +394,7 @@ bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& m
     descriptor.m_BlockShape.assign(blockShape.cbegin(), blockShape.cend());
     descriptor.m_PadList.assign(paddingList.cbegin(), paddingList.cend());
 
-    const Operand* output = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -415,12 +415,12 @@ bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& m
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
 
     if (!input.IsValid())
     {
@@ -437,7 +437,7 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
 
     // NOTE: Axis is an optional parameter to SQUEEZE, therefore we do not want to generate a failure
     // if the operand index is out of bounds.
-    const Operand* axisOperand = GetInputOperand<Operand>(operation, 1, model, false);
+    const Operand* axisOperand = GetInputOperand<hal_1_1::HalPolicy>(operation, 1, model, false);
 
     const uint32_t dimensionSequence[] = { 0, 1, 2, 3 };
 
@@ -449,7 +449,7 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
     }
     else
     {
-        GetTensorInt32Values<Operand, OperandType>(*axisOperand, axis, model, data);
+        GetTensorInt32Values<hal_1_1::HalPolicy>(*axisOperand, axis, model, data);
     }
 
 
@@ -472,7 +472,7 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
     armnn::ReshapeDescriptor reshapeDesc;
     reshapeDesc.m_TargetShape = outputInfo.GetShape();
 
-    const Operand* output = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -491,12 +491,12 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
@@ -509,9 +509,9 @@ bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& mod
         Fail("%s: Inputs with rank greater than 4 are not supported", __func__);
     }
 
-    const Operand* beginOperand = GetInputOperand<Operand>(operation, 1, model);
-    const Operand* endOperand = GetInputOperand<Operand>(operation, 2, model);
-    const Operand* stridesOperand = GetInputOperand<Operand>(operation, 3, model);
+    const Operand* beginOperand   = GetInputOperand<hal_1_1::HalPolicy>(operation, 1, model);
+    const Operand* endOperand     = GetInputOperand<hal_1_1::HalPolicy>(operation, 2, model);
+    const Operand* stridesOperand = GetInputOperand<hal_1_1::HalPolicy>(operation, 3, model);
 
     std::vector<int32_t> beginValues;
     std::vector<int32_t> endValues;
@@ -520,7 +520,7 @@ bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& mod
     // The length of the beginOperand, endOperand and stridesOperand must be of a rank(input)
     auto ValidateInputOperands = [&] (const Operand& operand, std::vector<int32_t>& operandValues)
     {
-        if (!GetTensorInt32Values<Operand, OperandType>(operand, operandValues, model, data))
+        if (!GetTensorInt32Values<hal_1_1::HalPolicy>(operand, operandValues, model, data))
         {
             return false;
         }
@@ -553,14 +553,14 @@ bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& mod
     descriptor.m_DataLayout = armnn::DataLayout::NHWC;
 
     // Get the "begin_mask", "end_mask", and "shrink_axis_mask" flags
-    if (!GetInputInt32<Operand, OperandType>(operation, 4, descriptor.m_BeginMask, model, data)
-        || !GetInputInt32<Operand, OperandType>(operation, 5, descriptor.m_EndMask, model, data)
-        || !GetInputInt32<Operand, OperandType>(operation, 6, descriptor.m_ShrinkAxisMask, model, data))
+    if (!GetInputInt32<hal_1_1::HalPolicy>(operation, 4, descriptor.m_BeginMask, model, data) ||
+        !GetInputInt32<hal_1_1::HalPolicy>(operation, 5, descriptor.m_EndMask, model, data) ||
+        !GetInputInt32<hal_1_1::HalPolicy>(operation, 6, descriptor.m_ShrinkAxisMask, model, data))
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* output = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -581,12 +581,12 @@ bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& mod
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
 
     if (!input.IsValid())
     {
@@ -603,7 +603,7 @@ bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model,
 
     // NOTE: Axis is an optional parameter to TRANSPOSE, therefore we do not want to generate a failure
     // if the operand index is out of bounds.
-    const Operand* permOperand = GetInputOperand<Operand>(operation, 1, model, false);
+    const Operand* permOperand = GetInputOperand<hal_1_1::HalPolicy>(operation, 1, model, false);
 
     std::vector<int32_t> perm(rank);
     if (!permOperand)
@@ -616,7 +616,7 @@ bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model,
     }
     else
     {
-        GetTensorInt32Values<Operand, OperandType>(*permOperand, perm, model, data);
+        GetTensorInt32Values<hal_1_1::HalPolicy>(*permOperand, perm, model, data);
     }
 
     std::vector<uint32_t> outputDims(perm.begin(), perm.begin() + rank);
@@ -632,7 +632,7 @@ bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model,
     armnn::PermuteDescriptor permuteDesc;
     permuteDesc.m_DimMappings = permutationVector;
 
-    const Operand* output = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -654,18 +654,18 @@ bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model,
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* blockOperand = GetInputOperand<Operand>(operation, 1, model);
+    const Operand* blockOperand = GetInputOperand<hal_1_1::HalPolicy>(operation, 1, model);
     if (!blockOperand)
     {
         return Fail("%s: Could not read input 1", __func__);
@@ -673,7 +673,7 @@ bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& m
 
     // Convert the block operand to int32
     std::vector<int32_t> block;
-    if (!GetTensorInt32Values<Operand, OperandType>(*blockOperand, block, model, data))
+    if (!GetTensorInt32Values<hal_1_1::HalPolicy>(*blockOperand, block, model, data))
     {
         return Fail("%s: Input 1 has invalid values", __func__);
     }
@@ -699,7 +699,7 @@ bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& m
     // Setting crops to 0,0 0,0 as it is not supported in Android NN API
     batchToSpaceNdDesc.m_Crops = {{0, 0}, {0, 0}};
 
-    const Operand* output = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -721,7 +721,7 @@ bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& m
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 

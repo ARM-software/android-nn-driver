@@ -25,11 +25,11 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
         case V1_0::OperationType::CONCATENATION:
             return ConvertConcatenation(operation, model, data);
         case V1_0::OperationType::CONV_2D:
-            return ValidateConv2dParameters(operation)
-                    && ConvertConv2d<Operand, OperandType, Operation, Model>(operation, model, data);
+            return ValidateConv2dParameters(operation) &&
+                   ConvertConv2d<hal_1_0::HalPolicy>(operation, model, data);
         case V1_0::OperationType::DEPTHWISE_CONV_2D:
-            return ValidateDepthwiseConv2dParameters(operation)
-                    && ConvertDepthwiseConv2d<Operand, OperandType, Operation, Model>(operation, model, data);
+            return ValidateDepthwiseConv2dParameters(operation) &&
+                   ConvertDepthwiseConv2d<hal_1_0::HalPolicy>(operation, model, data);
         case V1_0::OperationType::DEQUANTIZE:
             return ConvertDequantize(operation, model, data);
         case V1_0::OperationType::FLOOR:
@@ -90,8 +90,8 @@ bool HalPolicy::ValidateDepthwiseConv2dParameters(const Operation &operation)
 
 bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input0 = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
-    LayerInputHandle input1 = ConvertToLayerInputHandle<Operand>(operation, 1, model, data);
+    LayerInputHandle input0 = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
+    LayerInputHandle input1 = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 1, model, data);
 
     if (!input0.IsValid() || !input1.IsValid())
     {
@@ -101,12 +101,12 @@ bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, Conve
     // The FuseActivation parameter is always the input index 2
     // and it should be optional
     ActivationFn activationFunction;
-    if (!GetOptionalInputActivation<Operand, OperandType>(operation, 2, activationFunction, model, data))
+    if (!GetOptionalInputActivation<hal_1_0::HalPolicy>(operation, 2, activationFunction, model, data))
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* outputOperand = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* outputOperand = GetOutputOperand<hal_1_0::HalPolicy>(operation, 0, model);
     if (!outputOperand)
     {
         return false;
@@ -133,7 +133,7 @@ bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, Conve
     if (endLayer != nullptr)
     {
         BroadcastTensor(input0, input1, startLayer, *data.m_Network);
-        return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *endLayer, model, data);
+        return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *endLayer, model, data);
     }
     else
     {
@@ -143,7 +143,7 @@ bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, Conve
 
 bool HalPolicy::ConvertAveragePool2d(const Operation& operation, const Model& model, ConversionData& data)
 {
-    return ConvertPooling2d<Operand, OperandType>(operation, __func__, armnn::PoolingAlgorithm::Average, model, data);
+    return ConvertPooling2d<hal_1_0::HalPolicy>(operation, __func__, armnn::PoolingAlgorithm::Average, model, data);
 }
 
 bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& model, ConversionData& data)
@@ -158,12 +158,12 @@ bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& mo
     const std::size_t numInputTensors = operation.inputs.size() - 1;
 
     int32_t concatDim;
-    if (!GetInputScalar<Operand, OperandType>(operation, numInputTensors, OperandType::INT32, concatDim, model, data))
+    if (!GetInputScalar<hal_1_0::HalPolicy>(operation, numInputTensors, OperandType::INT32, concatDim, model, data))
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* const outputOperand = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* const outputOperand = GetOutputOperand<hal_1_0::HalPolicy>(operation, 0, model);
     if (!outputOperand)
     {
         return Fail("%s: Operation has no outputs", __func__);
@@ -199,14 +199,15 @@ bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& mo
 
     for (uint32_t i = 0; i < numInputTensors; ++i)
     {
-        const Operand* const operand = GetInputOperand<Operand>(operation, i, model);
+        const Operand* const operand = GetInputOperand<hal_1_0::HalPolicy>(operation, i, model);
         if (!operand)
         {
             return Fail("%s: Operation has invalid inputs", __func__);
         }
 
         armnn::TensorShape operandShape     = GetTensorShapeForOperand(*operand);
-        LayerInputHandle operandInputHandle = ConvertToLayerInputHandle<Operand>(operation, i, model, data);
+        LayerInputHandle operandInputHandle =
+            ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, i, model, data);
 
         if (operandShape.GetNumDimensions() == 0)
         {
@@ -274,7 +275,8 @@ bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& mo
     std::pair<armnn::PermutationVector, armnn::PermutationVector> permutationPair =
             std::make_pair(IdentityPermutation4D, IdentityPermutation4D);
 
-    bool needPermute = CreateConcatPermutationParameters(inputShapes[0].GetNumDimensions(), concatDim, permutationPair);
+    bool needPermute =
+        CreateConcatPermutationParameters(inputShapes[0].GetNumDimensions(), concatDim, permutationPair);
 
     if (needPermute)
     {
@@ -366,19 +368,19 @@ bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& mo
         );
     }
 
-    return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertDequantize(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
 
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid input", __func__);
     }
 
-    const Operand* const outputOperand = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* const outputOperand = GetOutputOperand<hal_1_0::HalPolicy>(operation, 0, model);
     if (!outputOperand)
     {
         return Fail("%s: Operation has invalid outputs", __func__);
@@ -397,18 +399,18 @@ bool HalPolicy::ConvertDequantize(const Operation& operation, const Model& model
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertFloor(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* const outputOperand = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* const outputOperand = GetOutputOperand<hal_1_0::HalPolicy>(operation, 0, model);
     if (!outputOperand)
     {
         return Fail("%s: Operation has invalid outputs", __func__);
@@ -427,18 +429,18 @@ bool HalPolicy::ConvertFloor(const Operation& operation, const Model& model, Con
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertFullyConnected(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* output = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* output = GetOutputOperand<hal_1_0::HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -448,8 +450,10 @@ bool HalPolicy::ConvertFullyConnected(const Operation& operation, const Model& m
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
     // ArmNN does not currently support non-fixed weights or bias
-    ConstTensorPin weightsPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 1, model, data); // 2D
-    ConstTensorPin biasPin    = ConvertOperationInputToConstTensorPin<Operand>(operation, 2, model, data);    // 1D
+    ConstTensorPin weightsPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation, 1, model, data); // 2D
+    ConstTensorPin biasPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation, 2, model, data); // 1D
 
     if (!weightsPin.IsValid() || !biasPin.IsValid())
     {
@@ -471,7 +475,7 @@ bool HalPolicy::ConvertFullyConnected(const Operation& operation, const Model& m
     SanitizeBiasQuantizationScale(bias.GetInfo(), weights.GetInfo(), reshapedInfo);
 
     ActivationFn activationFunction;
-    if (!GetInputActivationFunction<Operand, OperandType>(operation, 3, activationFunction, model, data))
+    if (!GetInputActivationFunction<hal_1_0::HalPolicy>(operation, 3, activationFunction, model, data))
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
@@ -514,7 +518,7 @@ bool HalPolicy::ConvertFullyConnected(const Operation& operation, const Model& m
             input.Connect(startLayer->GetInputSlot(0));
         }
 
-        return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *endLayer, model, data);
+        return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *endLayer, model, data);
     }
     else
     {
@@ -526,13 +530,13 @@ bool HalPolicy::ConvertLocalResponseNormalization(const Operation& operation,
                                                   const Model& model,
                                                   ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* output = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* output = GetOutputOperand<hal_1_0::HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -548,10 +552,10 @@ bool HalPolicy::ConvertLocalResponseNormalization(const Operation& operation,
     descriptor.m_NormMethodType = armnn::NormalizationAlgorithmMethod::LocalBrightness;
 
     if (!input.IsValid() ||
-        !GetInputScalar<Operand, OperandType>(operation, 1, OperandType::INT32, descriptor.m_NormSize, model, data) ||
-        !GetInputFloat32<Operand, OperandType>(operation, 2, descriptor.m_K, model, data) ||
-        !GetInputFloat32<Operand, OperandType>(operation, 3, descriptor.m_Alpha, model, data) ||
-        !GetInputFloat32<Operand, OperandType>(operation, 4, descriptor.m_Beta, model, data))
+        !GetInputScalar<hal_1_0::HalPolicy>(operation, 1, OperandType::INT32, descriptor.m_NormSize, model, data) ||
+        !GetInputFloat32<hal_1_0::HalPolicy>(operation, 2, descriptor.m_K, model, data) ||
+        !GetInputFloat32<hal_1_0::HalPolicy>(operation, 3, descriptor.m_Alpha, model, data) ||
+        !GetInputFloat32<hal_1_0::HalPolicy>(operation, 4, descriptor.m_Beta, model, data))
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
@@ -575,7 +579,7 @@ bool HalPolicy::ConvertLocalResponseNormalization(const Operation& operation,
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertLogistic(const Operation& operation, const Model& model, ConversionData& data)
@@ -583,7 +587,7 @@ bool HalPolicy::ConvertLogistic(const Operation& operation, const Model& model, 
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::Sigmoid;
 
-    return ConvertToActivation<Operand>(operation, __func__, desc, model, data);
+    return ConvertToActivation<hal_1_0::HalPolicy>(operation, __func__, desc, model, data);
 }
 
 bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, ConversionData& data)
@@ -591,19 +595,19 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
     // Inputs:
     // 00: The input: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, input_size], where
     //      “batch_size” corresponds to the batching dimension, and “input_size” is the size of the input.
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Could not read input 0: input", __func__);
     }
     // 18: The output state: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size].
-    LayerInputHandle outputStateIn = ConvertToLayerInputHandle<Operand>(operation, 18, model, data);
+    LayerInputHandle outputStateIn = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 18, model, data);
     if (!outputStateIn.IsValid())
     {
         return Fail("%s: Could not read input 18: outputStateIn", __func__);
     }
     // 19: The cell state: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units].
-    LayerInputHandle cellStateIn = ConvertToLayerInputHandle<Operand>(operation, 19, model, data);
+    LayerInputHandle cellStateIn = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 19, model, data);
     if (!cellStateIn.IsValid())
     {
         return Fail("%s: Could not read input 19: cellStateIn", __func__);
@@ -612,33 +616,37 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
     // Get the mandatory input tensors:
     // 02: The input-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, input_size].
-    const ConstTensorPin inputToForgetWeightsPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 2, model,
-            data);
-    // 03: The input-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units, input_size].
-    const ConstTensorPin inputToCellWeightsPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 3, model,
-            data);
+    const ConstTensorPin inputToForgetWeightsPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation, 2, model, data);
+    // 03: The input-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    // [num_units, input_size].
+    const ConstTensorPin inputToCellWeightsPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation, 3, model, data);
     // 04: The input-to-output weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, input_size].
-    const ConstTensorPin inputToOutputWeightsPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 4, model,
-            data);
+    const ConstTensorPin inputToOutputWeightsPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation, 4, model, data);
     // 06: The recurrent-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, output_size].
-    const ConstTensorPin recurrentToForgetWeightsPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 6,
-            model, data);
+    const ConstTensorPin recurrentToForgetWeightsPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation, 6, model, data);
     // 07: The recurrent-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, output_size].
-    const ConstTensorPin recurrentToCellWeightsPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 7, model,
-            data);
+    const ConstTensorPin recurrentToCellWeightsPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation, 7, model, data);
     // 08: The recurrent-to-output weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, output_size].
     const ConstTensorPin recurrentToOutputWeightsPin =
-            ConvertOperationInputToConstTensorPin<Operand>(operation, 8, model, data);
+            ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation, 8, model, data);
     // 13: The forget gate bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    const ConstTensorPin forgetGateBiasPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 13, model, data);
+    const ConstTensorPin forgetGateBiasPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation, 13, model, data);
     // 14: The cell bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    const ConstTensorPin cellBiasPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 14, model, data);
+    const ConstTensorPin cellBiasPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation, 14, model, data);
     // 15: The output gate bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    const ConstTensorPin outputGateBiasPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 15, model, data);
+    const ConstTensorPin outputGateBiasPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation, 15, model, data);
 
     if (!inputToForgetWeightsPin.IsValid() ||
         !inputToCellWeightsPin.IsValid() ||
@@ -656,32 +664,87 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
     // Get the optional input tensors:
     // 01: The input-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, input_size], where “num_units” corresponds to the number of cell units.
-    const ConstTensorPin inputToInputWeightsPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 1, model,
-            data, g_DontPermute, nullptr, true);
+    const ConstTensorPin inputToInputWeightsPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation,
+                                                                  1,
+                                                                  model,
+                                                                  data,
+                                                                  g_DontPermute,
+                                                                  nullptr,
+                                                                  true);
+
     // 05: The recurrent-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, output_size], where “output_size” corresponds to either the number of cell units (i.e.,
     //     “num_units”), or the second dimension of the “projection_weights”, if defined.
-    const ConstTensorPin recurrentToInputWeightsPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 5,
-            model, data, g_DontPermute, nullptr, true);
+    const ConstTensorPin recurrentToInputWeightsPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation,
+                                                                  5,
+                                                                  model,
+                                                                  data,
+                                                                  g_DontPermute,
+                                                                  nullptr,
+                                                                  true);
+
     // 09: The cell-to-input weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    const ConstTensorPin cellToInputWeightsPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 9, model,
-            data, g_DontPermute, nullptr, true);
+    const ConstTensorPin cellToInputWeightsPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation,
+                                                                  9,
+                                                                  model,
+                                                                  data,
+                                                                  g_DontPermute,
+                                                                  nullptr,
+                                                                  true);
+
     // 10: The cell-to-forget weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    const ConstTensorPin cellToForgetWeightsPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 10, model,
-            data, g_DontPermute, nullptr, true);
+    const ConstTensorPin cellToForgetWeightsPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation,
+                                                                  10,
+                                                                  model,
+                                                                  data,
+                                                                  g_DontPermute,
+                                                                  nullptr,
+                                                                  true);
+
     // 11: The cell-to-output weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    const ConstTensorPin cellToOutputWeightsPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 11, model,
-            data, g_DontPermute, nullptr, true);
+    const ConstTensorPin cellToOutputWeightsPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation,
+                                                                  11,
+                                                                  model,
+                                                                  data,
+                                                                  g_DontPermute,
+                                                                  nullptr,
+                                                                  true);
+
     // 12: The input gate bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    const ConstTensorPin inputGateBiasPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 12, model, data,
-            g_DontPermute, nullptr, true);
+    const ConstTensorPin inputGateBiasPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation,
+                                                                  12,
+                                                                  model,
+                                                                  data,
+                                                                  g_DontPermute,
+                                                                  nullptr,
+                                                                  true);
+
     // 16: The projection weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [output_size, num_units].
-    const ConstTensorPin projectionWeightsPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 16, model,
-            data, g_DontPermute, nullptr, true);
+    const ConstTensorPin projectionWeightsPin =
+        ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation,
+                                                                  16,
+                                                                  model,
+                                                                  data,
+                                                                  g_DontPermute,
+                                                                  nullptr,
+                                                                  true);
+
     // 17: The projection bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [output_size].
-    const ConstTensorPin projectionBiasPin = ConvertOperationInputToConstTensorPin<Operand>(operation, 17, model, data,
-            g_DontPermute, nullptr, true);
+    const ConstTensorPin projectionBiasPin =
+    ConvertOperationInputToConstTensorPin<hal_1_0::HalPolicy>(operation,
+                                                              17,
+                                                              model,
+                                                              data,
+                                                              g_DontPermute,
+                                                              nullptr,
+                                                              true);
 
     if ((!inputToInputWeightsPin.IsValid() && !inputToInputWeightsPin.IsOptional()) ||
         (!recurrentToInputWeightsPin.IsValid() && !recurrentToInputWeightsPin.IsOptional()) ||
@@ -705,36 +768,36 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
     ActivationFn activation;
     float cellClip;
     float projClip;
-    if (!GetInputActivationFunctionFromTensor<Operand, OperandType>(operation, 20, activation, model, data) ||
-        !GetInputScalar<Operand, OperandType>(operation, 21, OperandType::FLOAT32, cellClip, model, data) ||
-        !GetInputScalar<Operand, OperandType>(operation, 22, OperandType::FLOAT32, projClip, model, data))
+    if (!GetInputActivationFunctionFromTensor<hal_1_0::HalPolicy>(operation, 20, activation, model, data) ||
+        !GetInputScalar<hal_1_0::HalPolicy>(operation, 21, OperandType::FLOAT32, cellClip, model, data) ||
+        !GetInputScalar<hal_1_0::HalPolicy>(operation, 22, OperandType::FLOAT32, projClip, model, data))
     {
         return Fail("%s: Operation has invalid scalar inputs", __func__);
     }
 
     // Outputs:
-    // 00: The scratch buffer: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units * 4] with
-    //     CIFG, or [batch_size, num_units * 3] without CIFG.
-    const Operand* scratchBuffer = GetOutputOperand<Operand>(operation, 0, model);
+    // 00: The scratch buffer: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units * 4]
+    // with CIFG, or [batch_size, num_units * 3] without CIFG.
+    const Operand* scratchBuffer = GetOutputOperand<hal_1_0::HalPolicy>(operation, 0, model);
     if (!scratchBuffer)
     {
         return Fail("%s: Could not read output 0: scratchBuffer", __func__);
     }
     // 01: The output state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size].
-    const Operand* outputStateOut = GetOutputOperand<Operand>(operation, 1, model);
+    const Operand* outputStateOut = GetOutputOperand<hal_1_0::HalPolicy>(operation, 1, model);
     if (!outputStateOut)
     {
         return Fail("%s: Could not read output 1: outputStateOut", __func__);
     }
     // 02: The cell state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units].
-    const Operand* cellStateOut = GetOutputOperand<Operand>(operation, 2, model);
+    const Operand* cellStateOut = GetOutputOperand<hal_1_0::HalPolicy>(operation, 2, model);
     if (!cellStateOut)
     {
         return Fail("%s: Could not read output 2: cellStateOut", __func__);
     }
     // 03: The output: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size]. This is
     //     effectively the same as the current “output state (out)” value.
-    const Operand* output = GetOutputOperand<Operand>(operation, 3, model);
+    const Operand* output = GetOutputOperand<hal_1_0::HalPolicy>(operation, 3, model);
     if (!output)
     {
         return Fail("%s: Could not read output 3: output", __func__);
@@ -894,21 +957,21 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
     outputStateIn.Connect(layer->GetInputSlot(1));
     cellStateIn.Connect(layer->GetInputSlot(2));
 
-    return (SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, 0, model, data) &&
-            SetupAndTrackLayerOutputSlot<Operand>(operation, 1, *layer, 1, model, data) &&
-            SetupAndTrackLayerOutputSlot<Operand>(operation, 2, *layer, 2, model, data) &&
-            SetupAndTrackLayerOutputSlot<Operand>(operation, 3, *layer, 3, model, data));
+    return (SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, 0, model, data) &&
+            SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 1, *layer, 1, model, data) &&
+            SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 2, *layer, 2, model, data) &&
+            SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 3, *layer, 3, model, data));
 }
 
 bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* output = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* output = GetOutputOperand<hal_1_0::HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -934,23 +997,23 @@ bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& 
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertL2Pool2d(const Operation& operation, const Model& model, ConversionData& data)
 {
-    return ConvertPooling2d<Operand, OperandType>(operation, __func__, armnn::PoolingAlgorithm::L2, model, data);
+    return ConvertPooling2d<hal_1_0::HalPolicy>(operation, __func__, armnn::PoolingAlgorithm::L2, model, data);
 }
 
 bool HalPolicy::ConvertMaxPool2d(const Operation& operation, const Model& model, ConversionData& data)
 {
-    return ConvertPooling2d<Operand, OperandType>(operation, __func__, armnn::PoolingAlgorithm::Max, model, data);
+    return ConvertPooling2d<hal_1_0::HalPolicy>(operation, __func__, armnn::PoolingAlgorithm::Max, model, data);
 }
 
 bool HalPolicy::ConvertMul(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input0 = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
-    LayerInputHandle input1 = ConvertToLayerInputHandle<Operand>(operation, 1, model, data);
+    LayerInputHandle input0 = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
+    LayerInputHandle input1 = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 1, model, data);
 
     if (!input0.IsValid() || !input1.IsValid())
     {
@@ -960,12 +1023,12 @@ bool HalPolicy::ConvertMul(const Operation& operation, const Model& model, Conve
     // The FuseActivation parameter is always the input index 2
     // and it should be optional
     ActivationFn activationFunction;
-    if (!GetOptionalInputActivation<Operand, OperandType>(operation, 2, activationFunction, model, data))
+    if (!GetOptionalInputActivation<hal_1_0::HalPolicy>(operation, 2, activationFunction, model, data))
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* outputOperand = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* outputOperand = GetOutputOperand<hal_1_0::HalPolicy>(operation, 0, model);
 
     if (outputOperand == nullptr)
     {
@@ -993,7 +1056,7 @@ bool HalPolicy::ConvertMul(const Operation& operation, const Model& model, Conve
     if (endLayer != nullptr)
     {
         BroadcastTensor(input0, input1, startLayer, *data.m_Network);
-        return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *endLayer, model, data);
+        return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *endLayer, model, data);
     }
     else
     {
@@ -1006,7 +1069,7 @@ bool HalPolicy::ConvertReLu(const Operation& operation, const Model& model, Conv
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::ReLu;
 
-    return ConvertToActivation<Operand>(operation, __func__, desc, model, data);
+    return ConvertToActivation<hal_1_0::HalPolicy>(operation, __func__, desc, model, data);
 }
 
 bool HalPolicy::ConvertReLu1(const Operation& operation, const Model& model, ConversionData& data)
@@ -1016,7 +1079,7 @@ bool HalPolicy::ConvertReLu1(const Operation& operation, const Model& model, Con
     desc.m_A        = 1.0f;
     desc.m_B        = -1.0f;
 
-    return ConvertToActivation<Operand>(operation, __func__, desc, model, data);
+    return ConvertToActivation<hal_1_0::HalPolicy>(operation, __func__, desc, model, data);
 }
 
 bool HalPolicy::ConvertReLu6(const Operation& operation, const Model& model, ConversionData& data)
@@ -1025,18 +1088,18 @@ bool HalPolicy::ConvertReLu6(const Operation& operation, const Model& model, Con
     desc.m_Function = armnn::ActivationFunction::BoundedReLu;
     desc.m_A        = 6.0f;
 
-    return ConvertToActivation<Operand>(operation, __func__, desc, model, data);
+    return ConvertToActivation<hal_1_0::HalPolicy>(operation, __func__, desc, model, data);
 }
 
 bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* outputOperand = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* outputOperand = GetOutputOperand<hal_1_0::HalPolicy>(operation, 0, model);
     if (!outputOperand)
     {
         return Fail("%s: Operation has no outputs", __func__);
@@ -1045,7 +1108,7 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
     const armnn::TensorInfo outInfo = GetTensorInfoForOperand(*outputOperand);
 
     armnn::SoftmaxDescriptor desc;
-    if (!GetInputFloat32<Operand, OperandType>(operation, 1, desc.m_Beta, model, data))
+    if (!GetInputFloat32<hal_1_0::HalPolicy>(operation, 1, desc.m_Beta, model, data))
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
@@ -1064,7 +1127,7 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertTanH(const Operation& operation, const Model& model, ConversionData& data)
@@ -1074,14 +1137,14 @@ bool HalPolicy::ConvertTanH(const Operation& operation, const Model& model, Conv
     desc.m_A = 1.0f; // android nn does not support tanH parameters
     desc.m_B = 1.0f; // set to 1.0f for unity scaling
 
-    return ConvertToActivation<Operand>(operation, __func__, desc, model, data);
+    return ConvertToActivation<hal_1_0::HalPolicy>(operation, __func__, desc, model, data);
 }
 
 bool HalPolicy::ConvertReshape(const Operation& operation, const Model& model, ConversionData& data)
 {
-    const Operand* inputOperand = GetInputOperand<Operand>(operation, 0, model);
-    const Operand* requestedShapeOperand = GetInputOperand<Operand>(operation, 1, model);
-    const Operand* outputOperand = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* inputOperand = GetInputOperand<hal_1_0::HalPolicy>(operation, 0, model);
+    const Operand* requestedShapeOperand = GetInputOperand<hal_1_0::HalPolicy>(operation, 1, model);
+    const Operand* outputOperand = GetOutputOperand<hal_1_0::HalPolicy>(operation, 0, model);
 
     if (inputOperand == nullptr
         || requestedShapeOperand == nullptr
@@ -1098,7 +1161,7 @@ bool HalPolicy::ConvertReshape(const Operation& operation, const Model& model, C
     }
 
     std::vector<int32_t> targetDimensions;
-    if (!GetTensorInt32Values<Operand, OperandType>(*requestedShapeOperand, targetDimensions, model, data))
+    if (!GetTensorInt32Values<hal_1_0::HalPolicy>(*requestedShapeOperand, targetDimensions, model, data))
     {
         return Fail("%s: Could not read values of input 1", __func__);
     }
@@ -1119,7 +1182,7 @@ bool HalPolicy::ConvertReshape(const Operation& operation, const Model& model, C
         return Fail("%s: Shape of output operand does not match resolved requested shape", __func__);
     }
 
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Could not read input 0", __func__);
@@ -1142,18 +1205,18 @@ bool HalPolicy::ConvertReshape(const Operation& operation, const Model& model, C
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<Operand>(operation, 0, model, data);
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Could not read input 0", __func__);
     }
 
-    const Operand* output = GetOutputOperand<Operand>(operation, 0, model);
+    const Operand* output = GetOutputOperand<hal_1_0::HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -1175,8 +1238,8 @@ bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& m
     }
 
 
-    if (   !GetInputScalar<Operand, OperandType>(operation, 1, OperandType::INT32, desc.m_TargetHeight, model, data)
-        || !GetInputScalar<Operand, OperandType>(operation, 2, OperandType::INT32, desc.m_TargetWidth, model, data))
+    if (!GetInputScalar<hal_1_0::HalPolicy>(operation, 1, OperandType::INT32, desc.m_TargetHeight, model, data) ||
+        !GetInputScalar<hal_1_0::HalPolicy>(operation, 2, OperandType::INT32, desc.m_TargetWidth, model, data))
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
@@ -1188,7 +1251,7 @@ bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& m
     layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<Operand>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, model, data);
 
 }
 
