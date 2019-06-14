@@ -3,13 +3,19 @@
 // SPDX-License-Identifier: MIT
 //
 #include "DriverTestHelpers.hpp"
+
+#include "../1.0/HalPolicy.hpp"
+
 #include <boost/test/unit_test.hpp>
+
 #include <log/log.h>
 
 BOOST_AUTO_TEST_SUITE(ConcurrentDriverTests)
 
-using ArmnnDriver = armnn_driver::ArmnnDriver;
+using ArmnnDriver   = armnn_driver::ArmnnDriver;
 using DriverOptions = armnn_driver::DriverOptions;
+using HalPolicy     = armnn_driver::hal_1_0::HalPolicy;
+
 using namespace android::nn;
 using namespace android::hardware;
 using namespace driverTestHelpers;
@@ -24,22 +30,22 @@ BOOST_AUTO_TEST_CASE(ConcurrentExecute)
     ALOGI("ConcurrentExecute: entry");
 
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
-    V1_0::Model model = {};
+    HalPolicy::Model model = {};
 
     // add operands
     int32_t actValue      = 0;
     float   weightValue[] = {2, 4, 1};
     float   biasValue[]   = {4};
 
-    AddInputOperand(model, hidl_vec<uint32_t>{1, 3});
-    AddTensorOperand(model, hidl_vec<uint32_t>{1, 3}, weightValue);
-    AddTensorOperand(model, hidl_vec<uint32_t>{1}, biasValue);
-    AddIntOperand(model, actValue);
-    AddOutputOperand(model, hidl_vec<uint32_t>{1, 1});
+    AddInputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 3});
+    AddTensorOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 3}, weightValue);
+    AddTensorOperand<HalPolicy>(model, hidl_vec<uint32_t>{1}, biasValue);
+    AddIntOperand<HalPolicy>(model, actValue);
+    AddOutputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 1});
 
     // make the fully connected operation
     model.operations.resize(1);
-    model.operations[0].type = V1_0::OperationType::FULLY_CONNECTED;
+    model.operations[0].type    = HalPolicy::OperationType::FULLY_CONNECTED;
     model.operations[0].inputs  = hidl_vec<uint32_t>{0, 1, 2, 3};
     model.operations[0].outputs = hidl_vec<uint32_t>{4};
 

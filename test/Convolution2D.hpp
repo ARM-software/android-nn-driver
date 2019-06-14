@@ -57,14 +57,14 @@ void PaddingTestImpl(android::nn::PaddingScheme paddingScheme, bool fp16Enabled 
     float weightValue[] = {1.f, -1.f, 0.f, 1.f};
     float biasValue[]   = {0.f};
 
-    AddInputOperand(model, hidl_vec<uint32_t>{1, 2, 3, 1});
-    AddTensorOperand(model, hidl_vec<uint32_t>{1, 2, 2, 1}, weightValue);
-    AddTensorOperand(model, hidl_vec<uint32_t>{1}, biasValue);
-    AddIntOperand(model, (int32_t)paddingScheme); // padding
-    AddIntOperand(model, 2); // stride x
-    AddIntOperand(model, 2); // stride y
-    AddIntOperand(model, 0); // no activation
-    AddOutputOperand(model, hidl_vec<uint32_t>{1, 1, outSize, 1});
+    AddInputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 2, 3, 1});
+    AddTensorOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 2, 2, 1}, weightValue);
+    AddTensorOperand<HalPolicy>(model, hidl_vec<uint32_t>{1}, biasValue);
+    AddIntOperand<HalPolicy>(model, (int32_t)paddingScheme); // padding
+    AddIntOperand<HalPolicy>(model, 2); // stride x
+    AddIntOperand<HalPolicy>(model, 2); // stride y
+    AddIntOperand<HalPolicy>(model, 0); // no activation
+    AddOutputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 1, outSize, 1});
 
     // make the convolution operation
     model.operations.resize(1);

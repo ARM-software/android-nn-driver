@@ -5,6 +5,8 @@
 #include "DriverTestHelpers.hpp"
 #include "OperationsUtils.h"
 
+#include "../1.0/HalPolicy.hpp"
+
 #include <boost/array.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
@@ -15,8 +17,10 @@
 
 BOOST_AUTO_TEST_SUITE(LstmTests)
 
-using ArmnnDriver = armnn_driver::ArmnnDriver;
+using ArmnnDriver   = armnn_driver::ArmnnDriver;
 using DriverOptions = armnn_driver::DriverOptions;
+using HalPolicy     = armnn_driver::hal_1_0::HalPolicy;
+
 using namespace driverTestHelpers;
 using namespace android::hardware;
 
@@ -128,99 +132,130 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
                   armnn::Compute              compute)
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(compute));
-    V1_0::Model model = {};
+    HalPolicy::Model model = {};
 
     // Inputs:
     // 00: The input: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, input_size], where
     //     “batch_size” corresponds to the batching dimension, and “input_size” is the size of the input.
-    AddInputOperand(model, inputDimensions);
+    AddInputOperand<HalPolicy>(model, inputDimensions);
 
     // 01: The input-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, input_size], where “num_units” corresponds to the number of cell units.
-    AddTensorOperand(model, inputToInputWeightsDimensions, inputToInputWeightsValue, V1_0::OperandType::TENSOR_FLOAT32,
-                     CreateNoValueLifeTime(inputToInputWeightsDimensions));
+    AddTensorOperand<HalPolicy>(model,
+                                inputToInputWeightsDimensions,
+                                inputToInputWeightsValue,
+                                HalPolicy::OperandType::TENSOR_FLOAT32,
+                                CreateNoValueLifeTime(inputToInputWeightsDimensions));
     // 02: The input-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, input_size].
-    AddTensorOperand(model, inputToForgetWeightsDimensions, inputToForgetWeightsValue);
-    // 03: The input-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units, input_size].
-    AddTensorOperand(model, inputToCellWeightsDimensions, inputToCellWeightsValue);
+    AddTensorOperand<HalPolicy>(model, inputToForgetWeightsDimensions, inputToForgetWeightsValue);
+    // 03: The input-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    // [num_units, input_size].
+    AddTensorOperand<HalPolicy>(model, inputToCellWeightsDimensions, inputToCellWeightsValue);
     // 04: The input-to-output weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, input_size].
-    AddTensorOperand(model, inputToOutputWeightsDimensions, inputToOutputWeightsValue);
+    AddTensorOperand<HalPolicy>(model, inputToOutputWeightsDimensions, inputToOutputWeightsValue);
     // 05: The recurrent-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, output_size], where “output_size” corresponds to either the number of cell units (i.e.,
     //     “num_units”), or the second dimension of the “projection_weights”, if defined.
-    AddTensorOperand(model, recurrentToInputWeightsDimensions, recurrentToInputWeightsValue,
-                     V1_0::OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(recurrentToInputWeightsDimensions));
+    AddTensorOperand<HalPolicy>(model,
+                                recurrentToInputWeightsDimensions,
+                                recurrentToInputWeightsValue,
+                                HalPolicy::OperandType::TENSOR_FLOAT32,
+                                CreateNoValueLifeTime(recurrentToInputWeightsDimensions));
     // 06: The recurrent-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, output_size].
-    AddTensorOperand(model, recurrentToForgetWeightsDimensions, recurrentToForgetWeightsValue);
+    AddTensorOperand<HalPolicy>(model, recurrentToForgetWeightsDimensions, recurrentToForgetWeightsValue);
     // 07: The recurrent-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, output_size].
-    AddTensorOperand(model, recurrentToCellWeightsDimensions, recurrentToCellWeightsValue);
+    AddTensorOperand<HalPolicy>(model, recurrentToCellWeightsDimensions, recurrentToCellWeightsValue);
     // 08: The recurrent-to-output weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, output_size].
-    AddTensorOperand(model, recurrentToOutputWeightsDimensions, recurrentToOutputWeightsValue);
+    AddTensorOperand<HalPolicy>(model, recurrentToOutputWeightsDimensions, recurrentToOutputWeightsValue);
     // 09: The cell-to-input weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    AddTensorOperand(model, cellToInputWeightsDimensions, cellToInputWeightsValue,
-                     V1_0::OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(cellToInputWeightsDimensions));
+    AddTensorOperand<HalPolicy>(model,
+                                cellToInputWeightsDimensions,
+                                cellToInputWeightsValue,
+                                HalPolicy::OperandType::TENSOR_FLOAT32,
+                                CreateNoValueLifeTime(cellToInputWeightsDimensions));
     // 10: The cell-to-forget weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    AddTensorOperand(model, cellToForgetWeightsDimensions, cellToForgetWeightsValue,
-                     V1_0::OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(cellToForgetWeightsDimensions));
+    AddTensorOperand<HalPolicy>(model,
+                                cellToForgetWeightsDimensions,
+                                cellToForgetWeightsValue,
+                                HalPolicy::OperandType::TENSOR_FLOAT32,
+                                CreateNoValueLifeTime(cellToForgetWeightsDimensions));
     // 11: The cell-to-output weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    AddTensorOperand(model, cellToOutputWeightsDimensions, cellToOutputWeightsValue,
-                     V1_0::OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(cellToOutputWeightsDimensions));
+    AddTensorOperand<HalPolicy>(model,
+                                cellToOutputWeightsDimensions,
+                                cellToOutputWeightsValue,
+                                HalPolicy::OperandType::TENSOR_FLOAT32,
+                                CreateNoValueLifeTime(cellToOutputWeightsDimensions));
     // 12: The input gate bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    AddTensorOperand(model, inputGateBiasDimensions, inputGateBiasValue,
-                     V1_0::OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(inputGateBiasDimensions));
+    AddTensorOperand<HalPolicy>(model,
+                                inputGateBiasDimensions,
+                                inputGateBiasValue,
+                                HalPolicy::OperandType::TENSOR_FLOAT32,
+                                CreateNoValueLifeTime(inputGateBiasDimensions));
     // 13: The forget gate bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    AddTensorOperand(model, forgetGateBiasDimensions, forgetGateBiasValue);
+    AddTensorOperand<HalPolicy>(model, forgetGateBiasDimensions, forgetGateBiasValue);
     // 14: The cell bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    AddTensorOperand(model, cellBiasDimensions, cellBiasValue);
+    AddTensorOperand<HalPolicy>(model, cellBiasDimensions, cellBiasValue);
     // 15: The output gate bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
-    AddTensorOperand(model, outputGateBiasDimensions, outputGateBiasValue);
+    AddTensorOperand<HalPolicy>(model, outputGateBiasDimensions, outputGateBiasValue);
     // 16: The projection weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [output_size, num_units].
-    AddTensorOperand(model, projectionWeightsDimensions, projectionWeightsValue,
-                     V1_0::OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(projectionWeightsDimensions));
+    AddTensorOperand<HalPolicy>(model,
+                                projectionWeightsDimensions,
+                                projectionWeightsValue,
+                                HalPolicy::OperandType::TENSOR_FLOAT32,
+                                CreateNoValueLifeTime(projectionWeightsDimensions));
     // 17: The projection bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [output_size].
-    AddTensorOperand(model, projectionBiasDimensions, projectionBiasValue,
-                     V1_0::OperandType::TENSOR_FLOAT32, CreateNoValueLifeTime(projectionBiasDimensions));
+    AddTensorOperand<HalPolicy>(model,
+                                projectionBiasDimensions,
+                                projectionBiasValue,
+                                HalPolicy::OperandType::TENSOR_FLOAT32,
+                                CreateNoValueLifeTime(projectionBiasDimensions));
 
     // 18: The output state: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size].
-    AddInputOperand(model, outputStateInDimensions);
+    AddInputOperand<HalPolicy>(model, outputStateInDimensions);
     // 19: The cell state: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units].
-    AddInputOperand(model, cellStateInDimensions);
+    AddInputOperand<HalPolicy>(model, cellStateInDimensions);
 
     // Constant scalar values (the VTS test adds these as tensors of dim {})
     // 20: The activation function: A value indicating the activation function:
     //     0: None; 1: Relu; 3: Relu6; 4: Tanh; 6: Sigmoid.
-    AddTensorOperand(model, activationFunctionDimensions,
-                     activationFunctionValue, V1_0::OperandType::INT32);
+    AddTensorOperand<HalPolicy>(model,
+                                activationFunctionDimensions,
+                                activationFunctionValue,
+                                HalPolicy::OperandType::INT32);
     // 21: The clipping threshold: for the cell state, such that values are bound within [-cell_clip, cell_clip].
     //     If set to 0.0 then clipping is disabled.
-    AddTensorOperand(model, cellClippingThresholdDimensions,
-                     cellClippingThresholdValue, V1_0::OperandType::FLOAT32);
+    AddTensorOperand<HalPolicy>(model,
+                                cellClippingThresholdDimensions,
+                                cellClippingThresholdValue,
+                                HalPolicy::OperandType::FLOAT32);
     // 22: The clipping threshold: for the output from the projection layer, such that values are bound within
     //     [-proj_clip, proj_clip]. If set to 0.0 then clipping is disabled.
-    AddTensorOperand(model, projectionClippingThresholdDimensions,
-                     projectionClippingThresholdValue, V1_0::OperandType::FLOAT32);
+    AddTensorOperand<HalPolicy>(model,
+                                projectionClippingThresholdDimensions,
+                                projectionClippingThresholdValue,
+                                HalPolicy::OperandType::FLOAT32);
 
     // Outputs:
     //  0: The scratch buffer: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units * 4] with
     //     CIFG, or [batch_size, num_units * 3] without CIFG.
-    AddOutputOperand(model, scratchBufferDimensions);
+    AddOutputOperand<HalPolicy>(model, scratchBufferDimensions);
     //  1: The output state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size].
-    AddOutputOperand(model, outputStateOutDimensions);
+    AddOutputOperand<HalPolicy>(model, outputStateOutDimensions);
     //  2: The cell state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units].
-    AddOutputOperand(model, cellStateOutDimensions);
+    AddOutputOperand<HalPolicy>(model, cellStateOutDimensions);
     //  3: The output: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size]. This is
     //     effectively the same as the current “output state (out)” value.
-    AddOutputOperand(model, outputDimensions);
+    AddOutputOperand<HalPolicy>(model, outputDimensions);
 
     // make the lstm operation
     model.operations.resize(1);
-    model.operations[0].type = V1_0::OperationType::LSTM;
+    model.operations[0].type = HalPolicy::OperationType::LSTM;
     model.operations[0].inputs =
         hidl_vec<uint32_t> {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
     model.operations[0].outputs = hidl_vec<uint32_t> {23, 24, 25, 26};

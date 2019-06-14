@@ -6,6 +6,8 @@
 #include "../DriverTestHelpers.hpp"
 #include "../TestTensor.hpp"
 
+#include "../1.1/HalPolicy.hpp"
+
 #include <boost/array.hpp>
 #include <boost/test/data/test_case.hpp>
 
@@ -14,6 +16,8 @@ BOOST_AUTO_TEST_SUITE(MeanTests)
 using namespace android::hardware;
 using namespace driverTestHelpers;
 using namespace armnn_driver;
+
+using HalPolicy = hal_1_1::HalPolicy;
 
 namespace
 {
@@ -34,14 +38,21 @@ void MeanTestImpl(const TestTensor& input,
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(computeDevice, fp16Enabled));
 
-    V1_1::Model model = {};
-    AddInputOperand (model, input.GetDimensions());
-    AddTensorOperand(model, axisDimensions, const_cast<int32_t*>(axisValues), V1_0::OperandType::TENSOR_INT32);
-    AddIntOperand   (model, keepDims);
-    AddOutputOperand(model, expectedOutput.GetDimensions());
+    HalPolicy::Model model = {};
+
+    AddInputOperand<HalPolicy>(model, input.GetDimensions());
+
+    AddTensorOperand<HalPolicy>(model,
+                                axisDimensions,
+                                const_cast<int32_t*>(axisValues),
+                                HalPolicy::OperandType::TENSOR_INT32);
+
+    AddIntOperand<HalPolicy>(model, keepDims);
+
+    AddOutputOperand<HalPolicy>(model, expectedOutput.GetDimensions());
 
     model.operations.resize(1);
-    model.operations[0].type               = V1_1::OperationType::MEAN;
+    model.operations[0].type               = HalPolicy::OperationType::MEAN;
     model.operations[0].inputs             = hidl_vec<uint32_t>{ 0, 1, 2 };
     model.operations[0].outputs            = hidl_vec<uint32_t>{ 3 };
     model.relaxComputationFloat32toFloat16 = fp16Enabled;

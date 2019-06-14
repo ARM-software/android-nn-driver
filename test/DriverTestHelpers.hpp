@@ -73,28 +73,57 @@ android::sp<IMemory> AddPoolAndGetData(uint32_t size, Request& request);
 
 void AddPoolAndSetData(uint32_t size, Request& request, const float* data);
 
-template<typename HalModel>
-void AddOperand(HalModel& model, const V1_0::Operand& op)
+template<typename HalPolicy,
+         typename HalModel   = typename HalPolicy::Model,
+         typename HalOperand = typename HalPolicy::Operand>
+void AddOperand(HalModel& model, const HalOperand& op)
 {
     model.operands.resize(model.operands.size() + 1);
     model.operands[model.operands.size() - 1] = op;
 }
 
-template<typename HalModel>
+template<typename HalPolicy, typename HalModel = typename HalPolicy::Model>
 void AddIntOperand(HalModel& model, int32_t value)
 {
+    using HalOperand         = typename HalPolicy::Operand;
+    using HalOperandType     = typename HalPolicy::OperandType;
+    using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
+
     DataLocation location = {};
     location.offset = model.operandValues.size();
     location.length = sizeof(int32_t);
 
-    V1_0::Operand op    = {};
-    op.type             = V1_0::OperandType::INT32;
-    op.dimensions       = hidl_vec<uint32_t>{};
-    op.lifetime         = V1_0::OperandLifeTime::CONSTANT_COPY;
-    op.location         = location;
+    HalOperand op    = {};
+    op.type          = HalOperandType::INT32;
+    op.dimensions    = hidl_vec<uint32_t>{};
+    op.lifetime      = HalOperandLifeTime::CONSTANT_COPY;
+    op.location      = location;
 
     model.operandValues.resize(model.operandValues.size() + location.length);
     *reinterpret_cast<int32_t*>(&model.operandValues[location.offset]) = value;
+
+    AddOperand<HalPolicy>(model, op);
+}
+
+template<typename HalPolicy, typename HalModel = typename HalPolicy::Model>
+void AddBoolOperand(HalModel& model, bool value)
+{
+    using HalOperand         = typename HalPolicy::Operand;
+    using HalOperandType     = typename HalPolicy::OperandType;
+    using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
+
+    DataLocation location = {};
+    location.offset = model.operandValues.size();
+    location.length = sizeof(uint8_t);
+
+    HalOperand op    = {};
+    op.type          = HalOperandType::BOOL;
+    op.dimensions    = hidl_vec<uint32_t>{};
+    op.lifetime      = HalOperandLifeTime::CONSTANT_COPY;
+    op.location      = location;
+
+    model.operandValues.resize(model.operandValues.size() + location.length);
+    *reinterpret_cast<uint8_t*>(&model.operandValues[location.offset]) = static_cast<uint8_t>(value);
 
     AddOperand<HalModel>(model, op);
 }
@@ -108,13 +137,19 @@ OperandType TypeToOperandType<float>();
 template<>
 OperandType TypeToOperandType<int32_t>();
 
-template<typename HalModel, typename T>
+template<typename HalPolicy,
+         typename T,
+         typename HalModel           = typename HalPolicy::Model,
+         typename HalOperandType     = typename HalPolicy::OperandType,
+         typename HalOperandLifeTime = typename HalPolicy::OperandLifeTime>
 void AddTensorOperand(HalModel& model,
                       const hidl_vec<uint32_t>& dimensions,
                       const T* values,
-                      V1_0::OperandType operandType = V1_0::OperandType::TENSOR_FLOAT32,
-                      V1_0::OperandLifeTime operandLifeTime = V1_0::OperandLifeTime::CONSTANT_COPY)
+                      HalOperandType operandType = HalOperandType::TENSOR_FLOAT32,
+                      HalOperandLifeTime operandLifeTime = HalOperandLifeTime::CONSTANT_COPY)
 {
+    using HalOperand = typename HalPolicy::Operand;
+
     uint32_t totalElements = 1;
     for (uint32_t dim : dimensions)
     {
@@ -124,16 +159,16 @@ void AddTensorOperand(HalModel& model,
     DataLocation location = {};
     location.length = totalElements * sizeof(T);
 
-    if(operandLifeTime == V1_0::OperandLifeTime::CONSTANT_COPY)
+    if(operandLifeTime == HalOperandLifeTime::CONSTANT_COPY)
     {
         location.offset = model.operandValues.size();
     }
 
-    V1_0::Operand op    = {};
-    op.type             = operandType;
-    op.dimensions       = dimensions;
-    op.lifetime         = V1_0::OperandLifeTime::CONSTANT_COPY;
-    op.location         = location;
+    HalOperand op    = {};
+    op.type          = operandType;
+    op.dimensions    = dimensions;
+    op.lifetime      = HalOperandLifeTime::CONSTANT_COPY;
+    op.location      = location;
 
     model.operandValues.resize(model.operandValues.size() + location.length);
     for (uint32_t i = 0; i < totalElements; i++)
@@ -141,48 +176,62 @@ void AddTensorOperand(HalModel& model,
         *(reinterpret_cast<T*>(&model.operandValues[location.offset]) + i) = values[i];
     }
 
-    AddOperand<HalModel>(model, op);
+    AddOperand<HalPolicy>(model, op);
 }
 
-template<typename HalModel, typename T>
+template<typename HalPolicy,
+         typename T,
+         typename HalModel           = typename HalPolicy::Model,
+         typename HalOperandType     = typename HalPolicy::OperandType,
+         typename HalOperandLifeTime = typename HalPolicy::OperandLifeTime>
 void AddTensorOperand(HalModel& model,
                       const hidl_vec<uint32_t>& dimensions,
                       const std::vector<T>& values,
-                      V1_0::OperandType operandType = V1_0::OperandType::TENSOR_FLOAT32,
-                      V1_0::OperandLifeTime operandLifeTime = V1_0::OperandLifeTime::CONSTANT_COPY)
+                      HalOperandType operandType = HalPolicy::OperandType::TENSOR_FLOAT32,
+                      HalOperandLifeTime operandLifeTime = HalOperandLifeTime::CONSTANT_COPY)
 {
-    AddTensorOperand<HalModel, T>(model, dimensions, values.data(), operandType, operandLifeTime);
+    AddTensorOperand<HalPolicy, T>(model, dimensions, values.data(), operandType, operandLifeTime);
 }
 
-template<typename HalModel>
+template<typename HalPolicy,
+         typename HalModel       = typename HalPolicy::Model,
+         typename HalOperandType = typename HalPolicy::OperandType>
 void AddInputOperand(HalModel& model,
                      const hidl_vec<uint32_t>& dimensions,
-                     V1_0::OperandType operandType = V1_0::OperandType::TENSOR_FLOAT32)
+                     HalOperandType operandType = HalOperandType::TENSOR_FLOAT32)
 {
-    V1_0::Operand op    = {};
-    op.type             = operandType;
-    op.scale            = operandType == V1_0::OperandType::TENSOR_QUANT8_ASYMM ? 1.f / 255.f : 0.f;
-    op.dimensions       = dimensions;
-    op.lifetime         = V1_0::OperandLifeTime::MODEL_INPUT;
+    using HalOperand         = typename HalPolicy::Operand;
+    using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
 
-    AddOperand<HalModel>(model, op);
+    HalOperand op    = {};
+    op.type          = operandType;
+    op.scale         = operandType == HalOperandType::TENSOR_QUANT8_ASYMM ? 1.f / 255.f : 0.f;
+    op.dimensions    = dimensions;
+    op.lifetime      = HalOperandLifeTime::MODEL_INPUT;
+
+    AddOperand<HalPolicy>(model, op);
 
     model.inputIndexes.resize(model.inputIndexes.size() + 1);
     model.inputIndexes[model.inputIndexes.size() - 1] = model.operands.size() - 1;
 }
 
-template<typename HalModel>
+template<typename HalPolicy,
+         typename HalModel       = typename HalPolicy::Model,
+         typename HalOperandType = typename HalPolicy::OperandType>
 void AddOutputOperand(HalModel& model,
                       const hidl_vec<uint32_t>& dimensions,
-                      V1_0::OperandType operandType = V1_0::OperandType::TENSOR_FLOAT32)
+                      HalOperandType operandType = HalOperandType::TENSOR_FLOAT32)
 {
-    V1_0::Operand op    = {};
-    op.type             = operandType;
-    op.scale            = operandType == V1_0::OperandType::TENSOR_QUANT8_ASYMM ? 1.f / 255.f : 0.f;
-    op.dimensions       = dimensions;
-    op.lifetime         = V1_0::OperandLifeTime::MODEL_OUTPUT;
+    using HalOperand         = typename HalPolicy::Operand;
+    using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
 
-    AddOperand<HalModel>(model, op);
+    HalOperand op    = {};
+    op.type          = operandType;
+    op.scale         = operandType == HalOperandType::TENSOR_QUANT8_ASYMM ? 1.f / 255.f : 0.f;
+    op.dimensions    = dimensions;
+    op.lifetime      = HalOperandLifeTime::MODEL_OUTPUT;
+
+    AddOperand<HalPolicy>(model, op);
 
     model.outputIndexes.resize(model.outputIndexes.size() + 1);
     model.outputIndexes[model.outputIndexes.size() - 1] = model.operands.size() - 1;
@@ -204,7 +253,7 @@ android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_1::Model& mode
 
 template<typename HalModel>
 android::sp<V1_0::IPreparedModel> PrepareModel(const HalModel& model,
-                                         armnn_driver::ArmnnDriver& driver)
+                                               armnn_driver::ArmnnDriver& driver)
 {
     ErrorStatus prepareStatus = ErrorStatus::NONE;
     return PrepareModelWithStatus(model, driver, prepareStatus);

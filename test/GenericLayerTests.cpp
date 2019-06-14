@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: MIT
 //
 #include "DriverTestHelpers.hpp"
+
+#include "../1.0/HalPolicy.hpp"
+
 #include <boost/test/unit_test.hpp>
+
 #include <log/log.h>
 
 BOOST_AUTO_TEST_SUITE(GenericLayerTests)
@@ -11,6 +15,8 @@ BOOST_AUTO_TEST_SUITE(GenericLayerTests)
 using namespace android::hardware;
 using namespace driverTestHelpers;
 using namespace armnn_driver;
+
+using HalPolicy = hal_1_0::HalPolicy;
 
 BOOST_AUTO_TEST_CASE(GetSupportedOperations)
 {
@@ -25,23 +31,23 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
         supported = _supported;
     };
 
-    V1_0::Model model0 = {};
+    HalPolicy::Model model0 = {};
 
     // Add operands
     int32_t actValue      = 0;
     float   weightValue[] = {2, 4, 1};
     float   biasValue[]   = {4};
 
-    AddInputOperand (model0, hidl_vec<uint32_t>{1, 3});
-    AddTensorOperand(model0, hidl_vec<uint32_t>{1, 3}, weightValue);
-    AddTensorOperand(model0, hidl_vec<uint32_t>{1}, biasValue);
-    AddIntOperand   (model0, actValue);
-    AddOutputOperand(model0, hidl_vec<uint32_t>{1, 1});
+    AddInputOperand<HalPolicy>(model0, hidl_vec<uint32_t>{1, 3});
+    AddTensorOperand<HalPolicy>(model0, hidl_vec<uint32_t>{1, 3}, weightValue);
+    AddTensorOperand<HalPolicy>(model0, hidl_vec<uint32_t>{1}, biasValue);
+    AddIntOperand<HalPolicy>(model0, actValue);
+    AddOutputOperand<HalPolicy>(model0, hidl_vec<uint32_t>{1, 1});
 
     model0.operations.resize(1);
 
     // Make a correct fully connected operation
-    model0.operations[0].type    = V1_0::OperationType::FULLY_CONNECTED;
+    model0.operations[0].type    = HalPolicy::OperationType::FULLY_CONNECTED;
     model0.operations[0].inputs  = hidl_vec<uint32_t>{0, 1, 2, 3};
     model0.operations[0].outputs = hidl_vec<uint32_t>{4};
 
@@ -52,23 +58,24 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
 
     V1_0::Model model1 = {};
 
-    AddInputOperand (model1, hidl_vec<uint32_t>{1, 3});
-    AddTensorOperand(model1, hidl_vec<uint32_t>{1, 3}, weightValue);
-    AddTensorOperand(model1, hidl_vec<uint32_t>{1}, biasValue);
-    AddIntOperand   (model1, actValue);
-    AddOutputOperand(model1, hidl_vec<uint32_t>{1, 1});
+    AddInputOperand<HalPolicy>(model1, hidl_vec<uint32_t>{1, 3});
+    AddTensorOperand<HalPolicy>(model1, hidl_vec<uint32_t>{1, 3}, weightValue);
+    AddTensorOperand<HalPolicy>(model1, hidl_vec<uint32_t>{1}, biasValue);
+    AddIntOperand<HalPolicy>(model1, actValue);
+    AddOutputOperand<HalPolicy>(model1, hidl_vec<uint32_t>{1, 1});
 
     model1.operations.resize(2);
 
     // Make a correct fully connected operation
-    model1.operations[0].type    = V1_0::OperationType::FULLY_CONNECTED;
+    model1.operations[0].type    = HalPolicy::OperationType::FULLY_CONNECTED;
     model1.operations[0].inputs  = hidl_vec<uint32_t>{0, 1, 2, 3};
     model1.operations[0].outputs = hidl_vec<uint32_t>{4};
 
     // Add an incorrect fully connected operation
-    AddIntOperand   (model1, actValue);
-    AddOutputOperand(model1, hidl_vec<uint32_t>{1, 1});
-    model1.operations[1].type    = V1_0::OperationType::FULLY_CONNECTED;
+    AddIntOperand<HalPolicy>(model1, actValue);
+    AddOutputOperand<HalPolicy>(model1, hidl_vec<uint32_t>{1, 1});
+
+    model1.operations[1].type    = HalPolicy::OperationType::FULLY_CONNECTED;
     model1.operations[1].inputs  = hidl_vec<uint32_t>{4}; // Only 1 input operand, expected 4
     model1.operations[1].outputs = hidl_vec<uint32_t>{5};
 
@@ -89,21 +96,21 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
 #endif
 
     // Test Broadcast on add/mul operators
-    V1_0::Model model2 = {};
+    HalPolicy::Model model2 = {};
 
-    AddInputOperand (model2, hidl_vec<uint32_t>{1, 1, 3, 4});
-    AddInputOperand (model2, hidl_vec<uint32_t>{4});
-    AddIntOperand   (model2, actValue);
-    AddOutputOperand(model2, hidl_vec<uint32_t>{1, 1, 3, 4});
-    AddOutputOperand(model2, hidl_vec<uint32_t>{1, 1, 3, 4});
+    AddInputOperand<HalPolicy>(model2, hidl_vec<uint32_t>{1, 1, 3, 4});
+    AddInputOperand<HalPolicy>(model2, hidl_vec<uint32_t>{4});
+    AddIntOperand<HalPolicy>(model2, actValue);
+    AddOutputOperand<HalPolicy>(model2, hidl_vec<uint32_t>{1, 1, 3, 4});
+    AddOutputOperand<HalPolicy>(model2, hidl_vec<uint32_t>{1, 1, 3, 4});
 
     model2.operations.resize(2);
 
-    model2.operations[0].type    = V1_0::OperationType::ADD;
+    model2.operations[0].type    = HalPolicy::OperationType::ADD;
     model2.operations[0].inputs  = hidl_vec<uint32_t>{0, 1, 2};
     model2.operations[0].outputs = hidl_vec<uint32_t>{3};
 
-    model2.operations[1].type    = V1_0::OperationType::MUL;
+    model2.operations[1].type    = HalPolicy::OperationType::MUL;
     model2.operations[1].inputs  = hidl_vec<uint32_t>{0, 1, 2};
     model2.operations[1].outputs = hidl_vec<uint32_t>{4};
 
@@ -115,14 +122,14 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
 
     V1_0::Model model3 = {};
 
-    AddInputOperand (model3, hidl_vec<uint32_t>{1, 1, 1, 8});
-    AddIntOperand   (model3, 2);
-    AddOutputOperand(model3, hidl_vec<uint32_t>{1, 2, 2, 2});
+    AddInputOperand<HalPolicy>(model3, hidl_vec<uint32_t>{1, 1, 1, 8});
+    AddIntOperand<HalPolicy>(model3, 2);
+    AddOutputOperand<HalPolicy>(model3, hidl_vec<uint32_t>{1, 2, 2, 2});
 
     model3.operations.resize(1);
 
     // Add unsupported operation, should return no error but we don't support it
-    model3.operations[0].type    = V1_0::OperationType::DEPTH_TO_SPACE;
+    model3.operations[0].type    = HalPolicy::OperationType::DEPTH_TO_SPACE;
     model3.operations[0].inputs  = hidl_vec<uint32_t>{0, 1};
     model3.operations[0].outputs = hidl_vec<uint32_t>{2};
 
@@ -131,14 +138,14 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
     BOOST_TEST(supported.size() == (size_t)1);
     BOOST_TEST(supported[0] == false);
 
-    V1_0::Model model4 = {};
+    HalPolicy::Model model4 = {};
 
-    AddIntOperand(model4, 0);
+    AddIntOperand<HalPolicy>(model4, 0);
 
     model4.operations.resize(1);
 
     // Add invalid operation
-    model4.operations[0].type    = static_cast<V1_0::OperationType>(100);
+    model4.operations[0].type    = static_cast<HalPolicy::OperationType>(100);
     model4.operations[0].outputs = hidl_vec<uint32_t>{0};
 
     driver->getSupportedOperations(model4, cb);
@@ -162,7 +169,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedLayerContinueOnFailure)
         supported = _supported;
     };
 
-    V1_0::Model model = {};
+    HalPolicy::Model model = {};
 
     // Operands
     int32_t actValue      = 0;
@@ -170,36 +177,46 @@ BOOST_AUTO_TEST_CASE(UnsupportedLayerContinueOnFailure)
     float   biasValue[]   = {4};
 
     // HASHTABLE_LOOKUP is unsupported at the time of writing this test, but any unsupported layer will do
-    AddInputOperand (model, hidl_vec<uint32_t>{1, 1, 3, 4}, V1_0::OperandType::TENSOR_INT32);
-    AddInputOperand (model, hidl_vec<uint32_t>{4},          V1_0::OperandType::TENSOR_INT32);
-    AddInputOperand (model, hidl_vec<uint32_t>{1, 1, 3, 4});
-    AddOutputOperand(model, hidl_vec<uint32_t>{1, 1, 3, 4});
-    AddOutputOperand(model, hidl_vec<uint32_t>{1, 1, 3, 4}, V1_0::OperandType::TENSOR_QUANT8_ASYMM);
+    AddInputOperand<HalPolicy>(model,
+                               hidl_vec<uint32_t>{1, 1, 3, 4},
+                               HalPolicy::OperandType::TENSOR_INT32);
+    AddInputOperand<HalPolicy>(model,
+                               hidl_vec<uint32_t>{4},
+                               HalPolicy::OperandType::TENSOR_INT32);
+    AddInputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 1, 3, 4});
+
+    AddOutputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 1, 3, 4});
+    AddOutputOperand<HalPolicy>(model,
+                                hidl_vec<uint32_t>{1, 1, 3, 4},
+                                HalPolicy::OperandType::TENSOR_QUANT8_ASYMM);
 
     // Fully connected is supported
-    AddInputOperand (model, hidl_vec<uint32_t>{1, 3});
-    AddTensorOperand(model, hidl_vec<uint32_t>{1, 3}, weightValue);
-    AddTensorOperand(model, hidl_vec<uint32_t>{1}, biasValue);
-    AddIntOperand   (model, actValue);
-    AddOutputOperand(model, hidl_vec<uint32_t>{1, 1});
+    AddInputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 3});
+
+    AddTensorOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 3}, weightValue);
+    AddTensorOperand<HalPolicy>(model, hidl_vec<uint32_t>{1}, biasValue);
+
+    AddIntOperand<HalPolicy>(model, actValue);
+
+    AddOutputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 1});
 
     // EMBEDDING_LOOKUP is unsupported
-    AddOutputOperand(model, hidl_vec<uint32_t>{1, 1, 3, 4});
+    AddOutputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 1, 3, 4});
 
     model.operations.resize(3);
 
     // Unsupported
-    model.operations[0].type    = V1_0::OperationType::HASHTABLE_LOOKUP;
+    model.operations[0].type    = HalPolicy::OperationType::HASHTABLE_LOOKUP;
     model.operations[0].inputs  = hidl_vec<uint32_t>{0, 1, 2};
     model.operations[0].outputs = hidl_vec<uint32_t>{3, 4};
 
     // Supported
-    model.operations[1].type    = V1_0::OperationType::FULLY_CONNECTED;
+    model.operations[1].type    = HalPolicy::OperationType::FULLY_CONNECTED;
     model.operations[1].inputs  = hidl_vec<uint32_t>{5, 6, 7, 8};
     model.operations[1].outputs = hidl_vec<uint32_t>{9};
 
     // Unsupported
-    model.operations[2].type    = V1_0::OperationType::EMBEDDING_LOOKUP;
+    model.operations[2].type    = HalPolicy::OperationType::EMBEDDING_LOOKUP;
     model.operations[2].inputs  = hidl_vec<uint32_t>{1, 2};
     model.operations[2].outputs = hidl_vec<uint32_t>{10};
 
@@ -227,7 +244,7 @@ BOOST_AUTO_TEST_CASE(ModelToINetworkConverterMemPoolFail)
         supported = _supported;
     };
 
-    V1_0::Model model = {};
+    HalPolicy::Model model = {};
 
     model.pools = hidl_vec<hidl_memory>{hidl_memory("Unsuported hidl memory type", nullptr, 0)};
 

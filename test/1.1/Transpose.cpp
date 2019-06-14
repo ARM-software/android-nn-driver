@@ -2,13 +2,18 @@
 // Copyright © 2017 Arm Ltd. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
-#include "../DriverTestHelpers.hpp"
-#include <boost/test/unit_test.hpp>
-#include <boost/array.hpp>
-#include <log/log.h>
-#include "../TestTensor.hpp"
 #include "OperationsUtils.h"
+
+#include "../DriverTestHelpers.hpp"
+#include "../TestTensor.hpp"
+
+#include "../1.1/HalPolicy.hpp"
+
+#include <boost/array.hpp>
+#include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
+
+#include <log/log.h>
 
 #include <cmath>
 
@@ -17,6 +22,8 @@ BOOST_AUTO_TEST_SUITE(TransposeTests)
 using namespace android::hardware;
 using namespace driverTestHelpers;
 using namespace armnn_driver;
+
+using HalPolicy = hal_1_1::HalPolicy;
 
 namespace
 {
@@ -31,14 +38,19 @@ void TransposeTestImpl(const TestTensor & inputs, int32_t perm[],
                        const TestTensor & expectedOutputTensor, armnn::Compute computeDevice)
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(computeDevice));
-    V1_1::Model model = {};
+    HalPolicy::Model model = {};
 
-    AddInputOperand(model,inputs.GetDimensions());
-    AddTensorOperand(model, hidl_vec<uint32_t>{4}, perm, V1_0::OperandType::TENSOR_INT32);
-    AddOutputOperand(model, expectedOutputTensor.GetDimensions());
+    AddInputOperand<HalPolicy>(model,inputs.GetDimensions());
+
+    AddTensorOperand<HalPolicy>(model,
+                                hidl_vec<uint32_t>{4},
+                                perm,
+                                HalPolicy::OperandType::TENSOR_INT32);
+
+    AddOutputOperand<HalPolicy>(model, expectedOutputTensor.GetDimensions());
 
     model.operations.resize(1);
-    model.operations[0].type = V1_1::OperationType::TRANSPOSE;
+    model.operations[0].type = HalPolicy::OperationType::TRANSPOSE;
     model.operations[0].inputs  = hidl_vec<uint32_t>{0, 1};
     model.operations[0].outputs = hidl_vec<uint32_t>{2};
 
@@ -84,8 +96,8 @@ void TransposeTestImpl(const TestTensor & inputs, int32_t perm[],
     {
         BOOST_TEST(outdata[i] == expectedOutput[i]);
     }
-
 }
+
 } // namespace
 
 BOOST_DATA_TEST_CASE(Transpose , COMPUTE_DEVICES)

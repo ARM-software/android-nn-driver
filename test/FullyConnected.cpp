@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: MIT
 //
 #include "DriverTestHelpers.hpp"
+
+#include "../1.0/HalPolicy.hpp"
+
 #include <boost/test/unit_test.hpp>
+
 #include <log/log.h>
 
 BOOST_AUTO_TEST_SUITE(FullyConnectedTests)
@@ -12,6 +16,8 @@ using namespace android::hardware;
 using namespace driverTestHelpers;
 using namespace armnn_driver;
 
+using HalPolicy = hal_1_0::HalPolicy;
+
 // Add our own test here since we fail the fc tests which Google supplies (because of non-const weights)
 BOOST_AUTO_TEST_CASE(FullyConnected)
 {
@@ -19,22 +25,22 @@ BOOST_AUTO_TEST_CASE(FullyConnected)
     // but that uses slightly weird dimensions which I don't think we need to support for now
 
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
-    V1_0::Model model = {};
+    HalPolicy::Model model = {};
 
     // add operands
     int32_t actValue      = 0;
     float   weightValue[] = {2, 4, 1};
     float   biasValue[]   = {4};
 
-    AddInputOperand(model, hidl_vec<uint32_t>{1, 3});
-    AddTensorOperand(model, hidl_vec<uint32_t>{1, 3}, weightValue);
-    AddTensorOperand(model, hidl_vec<uint32_t>{1}, biasValue);
-    AddIntOperand(model, actValue);
-    AddOutputOperand(model, hidl_vec<uint32_t>{1, 1});
+    AddInputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 3});
+    AddTensorOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 3}, weightValue);
+    AddTensorOperand<HalPolicy>(model, hidl_vec<uint32_t>{1}, biasValue);
+    AddIntOperand<HalPolicy>(model, actValue);
+    AddOutputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 1});
 
     // make the fully connected operation
     model.operations.resize(1);
-    model.operations[0].type = V1_0::OperationType::FULLY_CONNECTED;
+    model.operations[0].type = HalPolicy::OperationType::FULLY_CONNECTED;
     model.operations[0].inputs  = hidl_vec<uint32_t>{0, 1, 2, 3};
     model.operations[0].outputs = hidl_vec<uint32_t>{4};
 
@@ -90,7 +96,7 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInput)
             sup = supported;
         };
 
-    V1_0::Model model = {};
+    HalPolicy::Model model = {};
 
     // operands
     int32_t actValue      = 0;
@@ -105,15 +111,15 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInput)
     float   biasValue[]   = {0, 0, 0, 0, 0, 0, 0, 0};
 
     // fully connected operation
-    AddInputOperand(model, hidl_vec<uint32_t>{1, 1, 1, 8});
-    AddTensorOperand(model, hidl_vec<uint32_t>{8, 8}, weightValue);
-    AddTensorOperand(model, hidl_vec<uint32_t>{8}, biasValue);
-    AddIntOperand(model, actValue);
-    AddOutputOperand(model, hidl_vec<uint32_t>{1, 8});
+    AddInputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 1, 1, 8});
+    AddTensorOperand<HalPolicy>(model, hidl_vec<uint32_t>{8, 8}, weightValue);
+    AddTensorOperand<HalPolicy>(model, hidl_vec<uint32_t>{8}, biasValue);
+    AddIntOperand<HalPolicy>(model, actValue);
+    AddOutputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 8});
 
     model.operations.resize(1);
 
-    model.operations[0].type = V1_0::OperationType::FULLY_CONNECTED;
+    model.operations[0].type = HalPolicy::OperationType::FULLY_CONNECTED;
     model.operations[0].inputs  = hidl_vec<uint32_t>{0,1,2,3};
     model.operations[0].outputs = hidl_vec<uint32_t>{4};
 
@@ -177,7 +183,7 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInputReshape)
             sup = supported;
         };
 
-    V1_0::Model model = {};
+    HalPolicy::Model model = {};
 
     // operands
     int32_t actValue      = 0;
@@ -192,15 +198,15 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInputReshape)
     float   biasValue[]   = {0, 0, 0, 0, 0, 0, 0, 0};
 
     // fully connected operation
-    AddInputOperand(model, hidl_vec<uint32_t>{1, 2, 2, 2});
-    AddTensorOperand(model, hidl_vec<uint32_t>{8, 8}, weightValue);
-    AddTensorOperand(model, hidl_vec<uint32_t>{8}, biasValue);
-    AddIntOperand(model, actValue);
-    AddOutputOperand(model, hidl_vec<uint32_t>{1, 8});
+    AddInputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 2, 2, 2});
+    AddTensorOperand<HalPolicy>(model, hidl_vec<uint32_t>{8, 8}, weightValue);
+    AddTensorOperand<HalPolicy>(model, hidl_vec<uint32_t>{8}, biasValue);
+    AddIntOperand<HalPolicy>(model, actValue);
+    AddOutputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 8});
 
     model.operations.resize(1);
 
-    model.operations[0].type = V1_0::OperationType::FULLY_CONNECTED;
+    model.operations[0].type = HalPolicy::OperationType::FULLY_CONNECTED;
     model.operations[0].inputs  = hidl_vec<uint32_t>{0,1,2,3};
     model.operations[0].outputs = hidl_vec<uint32_t>{4};
 

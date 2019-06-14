@@ -4,17 +4,22 @@
 //
 #include "DriverTestHelpers.hpp"
 #include "TestTensor.hpp"
+
+#include "../1.0/HalPolicy.hpp"
+
 #include <boost/array.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
-#include <log/log.h>
 
+#include <log/log.h>
 
 BOOST_AUTO_TEST_SUITE(ConcatTests)
 
 using namespace android::hardware;
 using namespace driverTestHelpers;
 using namespace armnn_driver;
+
+using HalPolicy = hal_1_0::HalPolicy;
 
 namespace
 {
@@ -34,31 +39,31 @@ ConcatTestImpl(const std::vector<const TestTensor*> & inputs,
                 ErrorStatus expectedExecStatus=ErrorStatus::NONE)
 {
     std::unique_ptr<ArmnnDriver> driver = std::make_unique<ArmnnDriver>(DriverOptions(computeDevice));
-    V1_0::Model model{};
+    HalPolicy::Model model{};
 
     hidl_vec<uint32_t> modelInputIds;
     modelInputIds.resize(inputs.size()+1);
     for (uint32_t i = 0; i<inputs.size(); ++i)
     {
         modelInputIds[i] = i;
-        AddInputOperand(model, inputs[i]->GetDimensions());
+        AddInputOperand<HalPolicy>(model, inputs[i]->GetDimensions());
     }
     modelInputIds[inputs.size()] = inputs.size(); // add an id for the axis too
-    AddIntOperand(model, concatAxis);
-    AddOutputOperand(model, expectedOutputTensor.GetDimensions());
+    AddIntOperand<HalPolicy>(model, concatAxis);
+    AddOutputOperand<HalPolicy>(model, expectedOutputTensor.GetDimensions());
 
     // make the concat operation
     model.operations.resize(1);
-    model.operations[0].type = V1_0::OperationType::CONCATENATION;
+    model.operations[0].type    = HalPolicy::OperationType::CONCATENATION;
     model.operations[0].inputs  = modelInputIds;
     model.operations[0].outputs = hidl_vec<uint32_t>{static_cast<uint32_t>(inputs.size()+1)};
 
     // make the prepared model
     ErrorStatus prepareStatus=ErrorStatus::NONE;
     android::sp<V1_0::IPreparedModel> preparedModel = PrepareModelWithStatus(model,
-                                                                       *driver,
-                                                                       prepareStatus,
-                                                                       expectedPrepareStatus);
+                                                                             *driver,
+                                                                             prepareStatus,
+                                                                             expectedPrepareStatus);
     BOOST_TEST(prepareStatus == expectedPrepareStatus);
     if (prepareStatus != ErrorStatus::NONE)
     {
