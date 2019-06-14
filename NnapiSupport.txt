@@ -1,7 +1,8 @@
 ------ ArmNN for Android NNAPI supported operations ------
 
 This release of ArmNN for Android supports use as a driver for the Android Neural Networks API. It implements the
-android.hardware.neuralnetworks@1.0 and android.hardware.neuralnetworks@1.1 HAL interfaces.
+android.hardware.neuralnetworks@1.0, android.hardware.neuralnetworks@1.1 HAL and android.hardware.neuralnetworks@1.2 HAL
+interfaces.
 
 For more information on the Android Neural Networks API, see https://developer.android.com/ndk/guides/neuralnetworks/index.html
 
@@ -57,4 +58,5 @@ RNN
 SPACE_TO_DEPTH
 SVDF
 
-Where operations are not supported by the ArmNN Android NN Driver, the driver indicates this to the framework appropriately and the framework implements those operations using a CPU implementation.
+Where operations are not supported by the ArmNN Android NN Driver, the driver indicates this to the framework
+appropriately and the framework implements those operations using a CPU implementation.
