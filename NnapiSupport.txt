@@ -1,8 +1,8 @@
 ------ ArmNN for Android NNAPI supported operations ------
 
 This release of ArmNN for Android supports use as a driver for the Android Neural Networks API. It implements the
-android.hardware.neuralnetworks@1.0, android.hardware.neuralnetworks@1.1 HAL and android.hardware.neuralnetworks@1.2 HAL
-interfaces.
+android.hardware.neuralnetworks@1.0, android.hardware.neuralnetworks@1.1 and android.hardware.neuralnetworks@1.2
+HAL interfaces.
 
 For more information on the Android Neural Networks API, see https://developer.android.com/ndk/guides/neuralnetworks/index.html
 
@@ -10,7 +10,7 @@ For integration and usage documentation, please see README.md.
 
 --- Support for Android Neural Networks HAL operations ---
 
-The following AndroidNN operations are currently supported.
+The following AndroidNN HAL 1.0 and 1.1 operations are currently supported:
 
 AndroidNN operator           Tensor type supported
 ADD                          (FLOAT32,QUANT8_ASYMM)
@@ -45,10 +45,14 @@ SUB                          (FLOAT32,QUANT8_ASYMM)
 TANH                         (FLOAT32,QUANT8_ASYMM)
 TRANSPOSE                    (FLOAT32,QUANT8_ASYMM)
 
+The following AndroidNN HAL 1.2 operations are currently supported:
+
+CONV_2D                      (FLOAT32,QUANT8_ASYMM)
+DEPTHWISE_CONV_2D            (FLOAT32,QUANT8_ASYMM)
 
 --- Unsupported operators ---
 
-The following AndroidNN 1.0 operations are currently not supported.
+The following AndroidNN HAL 1.0 operations are currently not supported:
 
 DEPTH_TO_SPACE
 EMBEDDING_LOOKUP
@@ -57,6 +61,19 @@ LSH_PROJECTION
 RNN
 SPACE_TO_DEPTH
 SVDF
+
+The following AndroidNN HAL 1.2 operations are currently not supported:
+
+CONCATENATION
+LSTM
+MINIMUM
+MAXIMUM
+PAD_V2
+QUANTIZE
+QUANTIZED_16BIT_LSTM
+PRELU
+RESIZE_NEAREST_NEIGHBOR
+TRANSPOSE_CONV_2D
 
 Where operations are not supported by the ArmNN Android NN Driver, the driver indicates this to the framework
 appropriately and the framework implements those operations using a CPU implementation.
