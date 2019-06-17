@@ -126,7 +126,7 @@ android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_0::Model& mode
     return cb->GetPreparedModel();
 }
 
-#ifdef ARMNN_ANDROID_NN_V1_1
+#if defined(ARMNN_ANDROID_NN_V1_1) || defined(ARMNN_ANDROID_NN_V1_2)
 
 android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_1::Model& model,
                                                          armnn_driver::ArmnnDriver& driver,

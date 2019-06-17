@@ -32,7 +32,7 @@ namespace driverTestHelpers
 
 void SetModelFp16Flag(V1_0::Model& model, bool fp16Enabled);
 
-#ifdef ARMNN_ANDROID_NN_V1_1
+#if defined(ARMNN_ANDROID_NN_V1_1) || defined(ARMNN_ANDROID_NN_V1_2)
 void SetModelFp16Flag(V1_1::Model& model, bool fp16Enabled);
 #endif
 
