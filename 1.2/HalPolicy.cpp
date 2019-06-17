@@ -131,13 +131,291 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
     switch (operation.type)
     {
         case V1_2::OperationType::CONV_2D:
-            return ConvertConv2d<hal_1_2::HalPolicy>(operation, model, data);
+            return ConvertConv2d(operation, model, data);
         case V1_2::OperationType::DEPTHWISE_CONV_2D:
-            return ConvertDepthwiseConv2d<hal_1_2::HalPolicy>(operation, model, data);
+            return ConvertDepthwiseConv2d(operation, model, data);
         default:
             return Fail("%s: Operation type %s not supported in ArmnnDriver",
                         __func__, toString(operation.type).c_str());
     }
+}
+
+bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data)
+{
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    // ArmNN does not currently support non-fixed weights or bias
+    const ConstTensorPin weightsPin =
+        ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 1, model, data);
+    const ConstTensorPin biasPin    =
+        ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 2, model, data);
+
+    if (!weightsPin.IsValid())
+    {
+        return Fail("%s: Operation has invalid weights", __func__);
+    }
+
+    if (!biasPin.IsValid())
+    {
+        return Fail("%s: Operation has invalid biases", __func__);
+    }
+
+    armnn::ConstTensor weights = weightsPin.GetConstTensor();
+    armnn::ConstTensor bias = biasPin.GetConstTensor();
+    SanitizeBiasQuantizationScale(bias.GetInfo(), weights.GetInfo(), inputInfo);
+
+    armnn::Convolution2dDescriptor desc;
+    desc.m_DataLayout = armnn::DataLayout::NHWC;
+    ActivationFn activation;
+
+    // Determine whether padding is implicit or explicit
+    bool implicitPadding = operation.inputs.size() == 7 ||
+        (operation.inputs.size() >= 8 &&
+        GetInputOperand<hal_1_2::HalPolicy>(operation, 7, model)->type == OperandType::BOOL);
+
+    if (implicitPadding)
+    {
+        android::nn::PaddingScheme paddingScheme;
+        if (!GetInputPaddingScheme<hal_1_2::HalPolicy>(operation, 3, paddingScheme, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 4, OperandType::INT32, desc.m_StrideX, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 5, OperandType::INT32, desc.m_StrideY, model, data) ||
+            !GetInputActivationFunction<hal_1_2::HalPolicy>(operation, 6, activation, model, data) ||
+            !GetOptionalConvolutionDilationParams<hal_1_2::HalPolicy>(operation, 8, desc, model, data))
+        {
+            return Fail("%s: Operation has invalid inputs (implicit padding)", __func__);
+        }
+
+        const uint32_t kernelX = weights.GetShape()[2];
+        const uint32_t kernelY = weights.GetShape()[1];
+        const uint32_t inputX  = inputInfo.GetShape()[2];
+        const uint32_t inputY  = inputInfo.GetShape()[1];
+
+        CalcPadding(inputX, kernelX, desc.m_StrideX, desc.m_PadLeft, desc.m_PadRight, paddingScheme);
+        CalcPadding(inputY, kernelY, desc.m_StrideY, desc.m_PadTop, desc.m_PadBottom, paddingScheme);
+
+        desc.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 7, model, data);
+    }
+    else if (operation.inputs.size() >= 10)
+    {
+        // explicit padding
+        if (!GetInputScalar<hal_1_2::HalPolicy>(operation, 3, OperandType::INT32, desc.m_PadLeft, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 4, OperandType::INT32, desc.m_PadRight, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 5, OperandType::INT32, desc.m_PadTop, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 6, OperandType::INT32, desc.m_PadBottom, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 7, OperandType::INT32, desc.m_StrideX, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 8, OperandType::INT32, desc.m_StrideY, model, data) ||
+            !GetInputActivationFunction<hal_1_2::HalPolicy>(operation, 9, activation, model, data) ||
+            !GetOptionalConvolutionDilationParams<hal_1_2::HalPolicy>(operation, 11, desc, model, data))
+        {
+            return Fail("%s: Operation has invalid inputs (explicit padding)", __func__);
+        }
+        desc.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 10, model, data);
+    }
+    else
+    {
+        return Fail("%s: Unsupported number of operation inputs", __func__);
+    }
+
+    desc.m_BiasEnabled = true;
+    armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
+
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsConvolution2dSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       desc,
+                                       weights.GetInfo(),
+                                       biases))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* startLayer =
+            data.m_Network->AddConvolution2dLayer(desc, weights, armnn::Optional<armnn::ConstTensor>(bias));
+
+    if (!startLayer)
+    {
+        return Fail("%s: AddConvolution2dLayer failed", __func__);
+    }
+
+    armnn::IConnectableLayer* endLayer = ProcessActivation(outputInfo, activation, startLayer, data);
+
+    if (!endLayer)
+    {
+        return Fail("%s: ProcessActivation failed", __func__);
+    }
+
+    input.Connect(startLayer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *endLayer, model, data);
+}
+
+bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data)
+{
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
+
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    // ArmNN does not currently support non-fixed weights or bias
+    // Find the shape of the weights tensor. In AndroidNN this will be [ 1, H, W, I * M ]
+    const Operand* weightsOperand = GetInputOperand<hal_1_2::HalPolicy>(operation, 1, model);
+
+    if (weightsOperand == nullptr)
+    {
+        return Fail("%s: Operand is invalid", __func__);
+    }
+    armnn::DepthwiseConvolution2dDescriptor desc;
+    desc.m_DataLayout = armnn::DataLayout::NHWC;
+
+    // Determine whether padding is implicit or explicit
+    bool implicitPadding = operation.inputs.size() == 8 ||
+        (operation.inputs.size() >= 9 &&
+        GetInputOperand<hal_1_2::HalPolicy>(operation, 8, model)->type == OperandType::BOOL);
+
+    // Look ahead to find the optional DataLayout, if present
+    const uint32_t dataLayoutFlagIndex = implicitPadding ? 8 : 11;
+    desc.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, dataLayoutFlagIndex, model, data);
+
+    armnnUtils::DataLayoutIndexed dataLayoutIndexed(desc.m_DataLayout);
+    unsigned int channelsIndex = dataLayoutIndexed.GetChannelsIndex();
+    unsigned int widthIndex = dataLayoutIndexed.GetWidthIndex();
+    unsigned int heightIndex = dataLayoutIndexed.GetHeightIndex();
+
+    // Reinterpret weight data as [ H, W, I, M ]
+    armnn::TensorShape weightsShape({ weightsOperand->dimensions[1],
+                                      weightsOperand->dimensions[2],
+                                      inputInfo.GetShape()[channelsIndex],
+                                      weightsOperand->dimensions[3] / inputInfo.GetShape()[channelsIndex] });
+
+    // Swizzle weight data [ H, W, I, M ] -> [ M, I, H, W ]
+    const armnn::PermutationVector HWIMToMIHW = { 2U, 3U, 1U, 0U };
+
+    const ConstTensorPin weightsPin =
+        ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation,
+                                                                  1,
+                                                                  model,
+                                                                  data,
+                                                                  HWIMToMIHW,
+                                                                  &weightsShape);
+
+    // Bias is a 1D tensor
+    const ConstTensorPin biasPin =
+        ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 2, model, data);
+
+    if (!weightsPin.IsValid())
+    {
+        return Fail("%s: Operation has invalid weights", __func__);
+    }
+
+    if (!biasPin.IsValid())
+    {
+        return Fail("%s: Operation has invalid biases", __func__);
+    }
+
+    armnn::ConstTensor weights = weightsPin.GetConstTensor();
+    armnn::ConstTensor bias = biasPin.GetConstTensor();
+    SanitizeBiasQuantizationScale(bias.GetInfo(), weights.GetInfo(), inputInfo);
+
+    ActivationFn activation;
+
+    if (implicitPadding)
+    {
+        android::nn::PaddingScheme paddingScheme;
+        if (!GetInputPaddingScheme<hal_1_2::HalPolicy>(operation, 3, paddingScheme, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 4, OperandType::INT32, desc.m_StrideX, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 5, OperandType::INT32, desc.m_StrideY, model, data) ||
+            !GetInputActivationFunction<hal_1_2::HalPolicy>(operation, 7, activation, model, data) ||
+            !GetOptionalConvolutionDilationParams<hal_1_2::HalPolicy>(operation, 9, desc, model, data))
+        {
+            return Fail("%s: Operation has invalid inputs (implicit padding)", __func__);
+        }
+
+        const uint32_t kernelX = weights.GetShape()[3];
+        const uint32_t kernelY = weights.GetShape()[2];
+        const uint32_t inputX  = inputInfo.GetShape()[widthIndex];
+        const uint32_t inputY  = inputInfo.GetShape()[heightIndex];
+
+        CalcPadding(inputX, kernelX, desc.m_StrideX, desc.m_PadLeft, desc.m_PadRight, paddingScheme);
+        CalcPadding(inputY, kernelY, desc.m_StrideY, desc.m_PadTop, desc.m_PadBottom, paddingScheme);
+    }
+    else if (operation.inputs.size() >= 11)
+    {
+        // explicit padding
+        if (!GetInputScalar<hal_1_2::HalPolicy>(operation, 3, OperandType::INT32, desc.m_PadLeft, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 4, OperandType::INT32, desc.m_PadRight, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 5, OperandType::INT32, desc.m_PadTop, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 6, OperandType::INT32, desc.m_PadBottom, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 7, OperandType::INT32, desc.m_StrideX, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 8, OperandType::INT32, desc.m_StrideY, model, data) ||
+            !GetInputActivationFunction<hal_1_2::HalPolicy>(operation,  10, activation, model, data) ||
+            !GetOptionalConvolutionDilationParams<hal_1_2::HalPolicy>(operation, 12, desc, model, data))
+        {
+            return Fail("%s: Operation has invalid inputs (explicit padding)", __func__);
+        }
+    }
+    else
+    {
+        return Fail("%s: Unsupported number of operation inputs", __func__);
+    }
+
+    desc.m_BiasEnabled = true;
+    armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
+
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsDepthwiseConvolutionSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       desc,
+                                       weights.GetInfo(),
+                                       biases))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* startLayer =
+        data.m_Network->AddDepthwiseConvolution2dLayer(desc, weights, armnn::Optional<armnn::ConstTensor>(bias));
+    if (!startLayer)
+    {
+        return Fail("%s: AddDepthwiseConvolution2dLayer failed", __func__);
+    }
+
+    armnn::IConnectableLayer* endLayer = ProcessActivation(outputInfo, activation, startLayer, data);
+    if (!endLayer)
+    {
+        return Fail("%s: ProcessActivation failed", __func__);
+    }
+
+    input.Connect(startLayer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *endLayer, model, data);
 }
 
 } // namespace hal_1_2

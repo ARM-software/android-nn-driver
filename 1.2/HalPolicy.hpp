@@ -27,6 +27,10 @@ public:
     using getSupportedOperations_cb = V1_2::IDevice::getSupportedOperations_1_2_cb;
 
     static bool ConvertOperation(const Operation& operation, const Model& model, ConversionData& data);
+
+private:
+    static bool ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data);
+    static bool ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data);
 };
 
 } // namespace hal_1_2
