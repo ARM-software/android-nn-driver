@@ -900,6 +900,7 @@ LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
                                            ConversionData& data)
 {
     using HalOperand         = typename HalPolicy::Operand;
+    using HalOperandType     = typename HalPolicy::OperandType;
     using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
 
     const HalOperand* operand = GetInputOperand<HalPolicy>(operation, inputIndex, model);
@@ -915,57 +916,66 @@ LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
         return LayerInputHandle();
     }
 
-    armnn::TensorInfo operandTensorInfo = GetTensorInfoForOperand(*operand);
-
-    switch (operand->lifetime)
+    try
     {
-        case HalOperandLifeTime::TEMPORARY_VARIABLE: // intentional fallthrough
-        case HalOperandLifeTime::MODEL_INPUT:
-        case HalOperandLifeTime::MODEL_OUTPUT:
-        {
-            // The tensor is either an operand internal to the model, or a model input.
-            // It can be associated with an ArmNN output slot for an existing layer.
+        armnn::TensorInfo operandTensorInfo = GetTensorInfoForOperand(*operand);
 
-            // m_OutputSlotForOperand[...] can be nullptr if the previous layer could not be converted
-            const uint32_t operandIndex = operation.inputs[inputIndex];
-            return LayerInputHandle(true, data.m_OutputSlotForOperand[operandIndex], operandTensorInfo);
-            break;
-        }
-        case HalOperandLifeTime::CONSTANT_COPY:
-        case HalOperandLifeTime::CONSTANT_REFERENCE:
+        switch (operand->lifetime)
         {
-            // The tensor has an already known constant value, and can be converted into an ArmNN Constant layer.
-            ConstTensorPin tensorPin = ConvertOperandToConstTensorPin<HalPolicy>(*operand, model, data);
-            if (tensorPin.IsValid())
+            case HalOperandLifeTime::TEMPORARY_VARIABLE: // intentional fallthrough
+            case HalOperandLifeTime::MODEL_INPUT:
+            case HalOperandLifeTime::MODEL_OUTPUT:
             {
-                if (!IsLayerSupportedForAnyBackend(__func__,
-                                                   armnn::IsConstantSupported,
-                                                   data.m_Backends,
-                                                   tensorPin.GetConstTensor().GetInfo()))
+                // The tensor is either an operand internal to the model, or a model input.
+                // It can be associated with an ArmNN output slot for an existing layer.
+
+                // m_OutputSlotForOperand[...] can be nullptr if the previous layer could not be converted
+                const uint32_t operandIndex = operation.inputs[inputIndex];
+                return LayerInputHandle(true, data.m_OutputSlotForOperand[operandIndex], operandTensorInfo);
+                break;
+            }
+            case HalOperandLifeTime::CONSTANT_COPY:
+            case HalOperandLifeTime::CONSTANT_REFERENCE:
+            {
+                // The tensor has an already known constant value, and can be converted into an ArmNN Constant layer.
+                ConstTensorPin tensorPin = ConvertOperandToConstTensorPin<HalPolicy>(*operand, model, data);
+                if (tensorPin.IsValid())
                 {
+                    if (!IsLayerSupportedForAnyBackend(__func__,
+                                                       armnn::IsConstantSupported,
+                                                       data.m_Backends,
+                                                       tensorPin.GetConstTensor().GetInfo()))
+                    {
+                        return LayerInputHandle();
+                    }
+
+                    armnn::IConnectableLayer* constantLayer =
+                                    data.m_Network->AddConstantLayer(tensorPin.GetConstTensor());
+                    armnn::IOutputSlot& outputSlot = constantLayer->GetOutputSlot(0);
+                    outputSlot.SetTensorInfo(tensorPin.GetConstTensor().GetInfo());
+
+                    return LayerInputHandle(true, &outputSlot, operandTensorInfo);
+                }
+                else
+                {
+                    Fail("%s: invalid operand tensor", __func__);
                     return LayerInputHandle();
                 }
-
-                armnn::IConnectableLayer* constantLayer = data.m_Network->AddConstantLayer(tensorPin.GetConstTensor());
-                armnn::IOutputSlot& outputSlot = constantLayer->GetOutputSlot(0);
-                outputSlot.SetTensorInfo(tensorPin.GetConstTensor().GetInfo());
-
-                return LayerInputHandle(true, &outputSlot, operandTensorInfo);
+                break;
             }
-            else
+            default:
             {
-                Fail("%s: invalid operand tensor", __func__);
+                // Unsupported lifetime for an input tensor
+                Fail("%s: unsupported lifetime for input tensor: %s",
+                     __func__, toString(operand->lifetime).c_str());
                 return LayerInputHandle();
             }
-            break;
         }
-        default:
-        {
-            // Unsupported lifetime for an input tensor
-            Fail("%s: unsupported lifetime for input tensor: %s",
-                 __func__, toString(operand->lifetime).c_str());
-            return LayerInputHandle();
-        }
+    }
+    catch (UnsupportedOperand<HalOperandType>& e)
+    {
+        Fail("%s: Operand type %s not supported in ArmnnDriver", __func__, toString(e.m_type).c_str());
+        return LayerInputHandle();
     }
 }
 

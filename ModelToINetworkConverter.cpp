@@ -36,9 +36,9 @@ ModelToINetworkConverter<HalPolicy>::ModelToINetworkConverter(const std::vector<
 template<typename HalPolicy>
 void ModelToINetworkConverter<HalPolicy>::Convert()
 {
-    using HalModel = typename HalPolicy::Model;
-    using Operand = typename HalPolicy::Operand;
-    using OperandType = typename HalPolicy::OperationType;
+    using HalModel       = typename HalPolicy::Model;
+    using HalOperand     = typename HalPolicy::Operand;
+    using HalOperandType = typename HalPolicy::OperandType;
 
     ALOGV("ModelToINetworkConverter::Convert(): %s", GetModelSummary<HalModel>(m_Model).c_str());
 
@@ -70,7 +70,7 @@ void ModelToINetworkConverter<HalPolicy>::Convert()
         {
             // inputs in android nn are represented by operands
             uint32_t inputIndex = m_Model.inputIndexes[i];
-            const Operand& operand = m_Model.operands[inputIndex];
+            const HalOperand& operand = m_Model.operands[inputIndex];
             const armnn::TensorInfo& tensor = GetTensorInfoForOperand(operand);
             armnn::IConnectableLayer* layer = m_Data.m_Network->AddInputLayer(i);
 
@@ -81,7 +81,7 @@ void ModelToINetworkConverter<HalPolicy>::Convert()
             m_Data.m_OutputSlotForOperand[inputIndex] = &outputSlot;
         }
     }
-    catch (UnsupportedOperand<OperandType>& e)
+    catch (UnsupportedOperand<HalOperandType>& e)
     {
         Fail("%s: Operand type %s not supported in ArmnnDriver", __func__, toString(e.m_type).c_str());
         m_ConversionResult = ConversionResult::UnsupportedFeature;
@@ -109,7 +109,7 @@ void ModelToINetworkConverter<HalPolicy>::Convert()
             {
                 ok = HalPolicy::ConvertOperation(operation, m_Model, m_Data);
             }
-            catch (UnsupportedOperand<OperandType>& e)
+            catch (UnsupportedOperand<HalOperandType>& e)
             {
                 Fail("%s: Operand type %s not supported in ArmnnDriver", __func__, toString(e.m_type).c_str());
                 ok = false;
@@ -139,7 +139,7 @@ void ModelToINetworkConverter<HalPolicy>::Convert()
             {
                 // outputs in android nn are represented by operands
                 uint32_t outputIndex = m_Model.outputIndexes[i];
-                const Operand& operand = m_Model.operands[outputIndex];
+                const HalOperand& operand = m_Model.operands[outputIndex];
                 const armnn::TensorInfo& tensor = GetTensorInfoForOperand(operand);
                 armnn::IConnectableLayer* layer = m_Data.m_Network->AddOutputLayer(i);
 
