@@ -18,7 +18,7 @@ ARMNN_DRIVER_HEADER_PATH := $(LOCAL_PATH)/..
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := armnn-driver-tests@1.0
-ifeq ($(PLATFORM_VERSION),Q)
+ifeq ($(Q_OR_LATER),1)
 # "eng" is deprecated in Android Q
 LOCAL_MODULE_TAGS := optional
 else
@@ -36,7 +36,7 @@ LOCAL_C_INCLUDES := \
         $(ARMNN_DRIVER_HEADER_PATH)
 
 LOCAL_CFLAGS := \
-        -std=c++14 \
+        -std=$(CPP_VERSION) \
         -fexceptions \
         -Werror \
         -O0 \
@@ -48,6 +48,11 @@ ifeq ($(P_OR_LATER),1)
 LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_P
 endif # PLATFORM_VERSION == 9
+
+ifeq ($(Q_OR_LATER),1)
+LOCAL_CFLAGS += \
+        -DBOOST_NO_AUTO_PTR
+endif # PLATFORM_VERSION == Q or later
 
 LOCAL_SRC_FILES := \
         1.0/Convolution2D.cpp \
@@ -118,7 +123,7 @@ ifeq ($(P_OR_LATER),1)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := armnn-driver-tests@1.1
-ifeq ($(PLATFORM_VERSION),Q)
+ifeq ($(Q_OR_LATER),1)
 # "eng" is deprecated in Android Q
 LOCAL_MODULE_TAGS := optional
 else
@@ -137,13 +142,18 @@ LOCAL_C_INCLUDES := \
         $(ARMNN_DRIVER_HEADER_PATH)
 
 LOCAL_CFLAGS := \
-        -std=c++14 \
+        -std=$(CPP_VERSION) \
         -fexceptions \
         -Werror \
         -O0 \
         -UNDEBUG \
         -DARMNN_ANDROID_P \
         -DARMNN_ANDROID_NN_V1_1
+
+ifeq ($(Q_OR_LATER),1)
+LOCAL_CFLAGS += \
+        -DBOOST_NO_AUTO_PTR
+endif # PLATFORM_VERSION == Q or later
 
 LOCAL_SRC_FILES := \
         1.0/Convolution2D.cpp \
@@ -227,13 +237,18 @@ LOCAL_C_INCLUDES := \
         $(ARMNN_DRIVER_HEADER_PATH)
 
 LOCAL_CFLAGS := \
-        -std=c++14 \
+        -std=$(CPP_VERSION) \
         -fexceptions \
         -Werror \
         -O0 \
         -UNDEBUG \
         -DARMNN_ANDROID_Q \
         -DARMNN_ANDROID_NN_V1_2
+
+ifeq ($(Q_OR_LATER),1)
+LOCAL_CFLAGS += \
+        -DBOOST_NO_AUTO_PTR
+endif # PLATFORM_VERSION == Q or later
 
 LOCAL_SRC_FILES := \
         1.0/Convolution2D.cpp \
