@@ -58,6 +58,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertReLu6(operation, model, data);
         case V1_0::OperationType::SOFTMAX:
             return ConvertSoftmax(operation, model, data);
+        case V1_0::OperationType::SPACE_TO_DEPTH:
+            return ConvertSpaceToDepth(operation, model, data);
         case V1_0::OperationType::TANH:
             return ConvertTanH(operation, model, data);
         case V1_0::OperationType::RESHAPE:
@@ -1124,6 +1126,57 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
     }
 
     armnn::IConnectableLayer* layer = data.m_Network->AddSoftmaxLayer(desc);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, model, data);
+}
+
+bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& model, ConversionData& data)
+{
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
+
+    if (!input.IsValid() )
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
+    unsigned int rank = inputInfo.GetNumDimensions();
+
+    if (rank != 4)
+    {
+        return Fail("%s: Only inputs with rank 4 are supported", __func__);
+    }
+
+    armnn::SpaceToDepthDescriptor desc;
+    bool dataLayoutCheck;
+
+    GetInputScalar<hal_1_0::HalPolicy>(operation, 1, OperandType::INT32, desc.m_BlockSize, model, data);
+
+    if (desc.m_BlockSize <= 1)
+    {
+        return Fail("%s: Block size must be at least 1 in all dimensions");
+    }
+
+    const Operand* output = GetOutputOperand<hal_1_0::HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsSpaceToDepthSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       desc))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddSpaceToDepthLayer(desc);
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 

@@ -72,6 +72,8 @@ private:
 
     static bool ConvertResizeBilinear(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertSpaceToDepth(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ValidateConv2dParameters(const Operation& operation);
 
     static bool ValidateDepthwiseConv2dParameters(const Operation& operation);

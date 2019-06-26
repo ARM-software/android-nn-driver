@@ -43,6 +43,8 @@ private:
                               const Model& model,
                               ConversionData& data,
                               armnn::ResizeMethod resizeMethod);
+
+    static bool ConvertSpaceToDepth(const Operation& operation, const Model& model, ConversionData& data);
 };
 
 } // namespace hal_1_2

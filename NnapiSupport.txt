@@ -39,6 +39,7 @@ RESHAPE                      (FLOAT32,QUANT8_ASYMM)
 RESIZE_BILINEAR              (FLOAT32,QUANT8_ASYMM)
 SOFTMAX                      (FLOAT32,QUANT8_ASYMM)
 SPACE_TO_BATCH_ND            (FLOAT32,QUANT8_ASYMM)
+SPACE_TO_DEPTH_ND            (FLOAT32,QUANT8_ASYMM)
 SQUEEZE                      (FLOAT32,QUANT8_ASYMM)
 STRIDED_SLICE                (FLOAT32,QUANT8_ASYMM)
 SUB                          (FLOAT32,QUANT8_ASYMM)
@@ -61,7 +62,6 @@ EMBEDDING_LOOKUP
 HASHTABLE_LOOKUP
 LSH_PROJECTION
 RNN
-SPACE_TO_DEPTH
 SVDF
 
 The following AndroidNN HAL 1.2 operations are currently not supported:

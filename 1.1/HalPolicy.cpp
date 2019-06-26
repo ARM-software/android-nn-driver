@@ -29,6 +29,7 @@ static std::vector<V1_0::OperationType> opsEquivalentInV10({
     V1_0::OperationType::RELU1,
     V1_0::OperationType::RELU6,
     V1_0::OperationType::SOFTMAX,
+    V1_0::OperationType::SPACE_TO_DEPTH,
     V1_0::OperationType::TANH,
     V1_0::OperationType::RESHAPE,
     V1_0::OperationType::RESIZE_BILINEAR,
