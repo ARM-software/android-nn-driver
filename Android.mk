@@ -327,15 +327,15 @@ LOCAL_SRC_FILES := \
         1.1/HalPolicy.cpp \
         1.2/ArmnnDriverImpl.cpp \
         1.2/HalPolicy.cpp \
-        ArmnnDriverImpl.cpp \
-        DriverOptions.cpp \
         ArmnnDevice.cpp \
+        ArmnnDriverImpl.cpp \
         ArmnnPreparedModel.cpp \
         ArmnnPreparedModel_1_2.cpp \
+        ConversionUtils.cpp \
+        DriverOptions.cpp \
         ModelToINetworkConverter.cpp \
         RequestThread.cpp \
-        Utils.cpp \
-        ConversionUtils.cpp
+        Utils.cpp
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \

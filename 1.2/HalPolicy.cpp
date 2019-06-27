@@ -121,19 +121,23 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
 
         return hal_1_0::HalPolicy::ConvertOperation(v10Operation, v10Model, data);
     }
-    else if (HandledByV1_1(operation) && compliantWithV1_1(model))
+
+    if (HandledByV1_1(operation) && compliantWithV1_1(model))
     {
         hal_1_1::HalPolicy::Operation v11Operation = ConvertToV1_1(operation);
         hal_1_1::HalPolicy::Model v11Model = convertToV1_1(model);
 
         return hal_1_1::HalPolicy::ConvertOperation(v11Operation, v11Model, data);
     }
+
     switch (operation.type)
     {
         case V1_2::OperationType::CONV_2D:
             return ConvertConv2d(operation, model, data);
         case V1_2::OperationType::DEPTHWISE_CONV_2D:
             return ConvertDepthwiseConv2d(operation, model, data);
+        case V1_2::OperationType::PRELU:
+            return ConvertPrelu(operation, model, data);
         default:
             return Fail("%s: Operation type %s not supported in ArmnnDriver",
                         __func__, toString(operation.type).c_str());
@@ -416,6 +420,50 @@ bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& 
     input.Connect(startLayer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *endLayer, model, data);
+}
+
+bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, ConversionData& data)
+{
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+    LayerInputHandle alpha = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 1, model, data);
+
+    if (!input.IsValid() || !alpha.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
+
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+    const armnn::TensorInfo& alphaInfo  = alpha.GetTensorInfo();
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsPreluSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       alphaInfo,
+                                       outputInfo))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddPreluLayer();
+
+    if (!layer)
+    {
+        return Fail("%s: AddPreluLayer failed", __func__);
+    }
+
+    input.Connect(layer->GetInputSlot(0));
+    alpha.Connect(layer->GetInputSlot(1));
+
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 } // namespace hal_1_2

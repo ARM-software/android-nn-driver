@@ -31,6 +31,7 @@ public:
 private:
     static bool ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data);
     static bool ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data);
+    static bool ConvertPrelu(const Operation& operation, const Model& model, ConversionData& data);
 };
 
 } // namespace hal_1_2
