@@ -1225,18 +1225,19 @@ bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& m
     const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    armnn::ResizeBilinearDescriptor desc;
+    armnn::ResizeDescriptor desc;
+    desc.m_Method     = armnn::ResizeMethod::Bilinear;
     desc.m_DataLayout = armnn::DataLayout::NHWC;
 
     if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsResizeBilinearSupported,
+                                       armnn::IsResizeSupported,
                                        data.m_Backends,
                                        inputInfo,
-                                       outputInfo))
+                                       outputInfo,
+                                       desc))
     {
         return false;
     }
-
 
     if (!GetInputScalar<hal_1_0::HalPolicy>(operation, 1, OperandType::INT32, desc.m_TargetHeight, model, data) ||
         !GetInputScalar<hal_1_0::HalPolicy>(operation, 2, OperandType::INT32, desc.m_TargetWidth, model, data))
@@ -1244,7 +1245,7 @@ bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& m
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    armnn::IConnectableLayer* layer = data.m_Network->AddResizeBilinearLayer(desc);
+    armnn::IConnectableLayer* layer = data.m_Network->AddResizeLayer(desc);
 
     assert(layer != nullptr);
 
