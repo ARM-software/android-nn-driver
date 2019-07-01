@@ -256,6 +256,7 @@ LOCAL_SRC_FILES := \
         1.1/Mean.cpp \
         1.1/Transpose.cpp \
         1.2/Dilation.cpp \
+        1.2/Capabilities.cpp \
         Tests.cpp \
         UtilsTests.cpp \
         Concurrent.cpp \

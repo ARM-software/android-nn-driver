@@ -13,7 +13,37 @@
 namespace
 {
 
-const char *g_RelaxedFloat32toFloat16PerformanceExecTime = "ArmNN.relaxedFloat32toFloat16Performance.execTime";
+const char *g_RelaxedFloat32toFloat16PerformanceExecTime    = "ArmNN.relaxedFloat32toFloat16Performance.execTime";
+
+const char *g_OperandTypeTensorFloat32PerformanceExecTime   = "Armnn.operandTypeTensorFloat32Performance.execTime";
+const char *g_OperandTypeTensorFloat32PerformancePowerUsage = "Armnn.operandTypeTensorFloat32Performance.powerUsage";
+
+const char *g_OperandTypeFloat32PerformanceExecTime         = "Armnn.operandTypeFloat32Performance.execTime";
+const char *g_OperandTypeFloat32PerformancePowerUsage       = "Armnn.operandTypeFloat32Performance.powerUsage";
+
+const char *g_OperandTypeTensorFloat16PerformanceExecTime   = "Armnn.operandTypeTensorFloat16Performance.execTime";
+const char *g_OperandTypeTensorFloat16PerformancePowerUsage = "Armnn.operandTypeTensorFloat16Performance.powerUsage";
+
+const char *g_OperandTypeFloat16PerformanceExecTime         = "Armnn.operandTypeFloat16Performance.execTime";
+const char *g_OperandTypeFloat16PerformancePowerUsage       = "Armnn.operandTypeFloat16Performance.powerUsage";
+
+const char *g_OperandTypeTensorQuant8AsymmPerformanceExecTime =
+        "Armnn.operandTypeTensorQuant8AsymmPerformance.execTime";
+const char *g_OperandTypeTensorQuant8AsymmPerformancePowerUsage =
+        "Armnn.operandTypeTensorQuant8AsymmPerformance.powerUsage";
+
+const char *g_OperandTypeTensorQuant16SymmPerformanceExecTime =
+        "Armnn.operandTypeTensorQuant16SymmPerformance.execTime";
+const char *g_OperandTypeTensorQuant16SymmPerformancePowerUsage =
+        "Armnn.operandTypeTensorQuant16SymmPerformance.powerUsage";
+
+const char *g_OperandTypeTensorInt32PerformanceExecTime     = "Armnn.operandTypeTensorInt32Performance.execTime";
+const char *g_OperandTypeTensorInt32PerformancePowerUsage   = "Armnn.operandTypeTensorInt32Performance.powerUsage";
+
+const char *g_OperandTypeInt32PerformanceExecTime           = "Armnn.operandTypeInt32Performance.execTime";
+const char *g_OperandTypeInt32PerformancePowerUsage         = "Armnn.operandTypeInt32Performance.powerUsage";
+
+
 void NotifyCallbackAndCheck(const sp<V1_2::IPreparedModelCallback>& callback,
                             ErrorStatus errorStatus,
                             const sp<V1_2::IPreparedModel>& preparedModelPtr)
@@ -181,13 +211,67 @@ Return<void> ArmnnDriverImpl::getCapabilities_1_2(const armnn::IRuntimePtr& runt
 
     V1_2::Capabilities capabilities;
 
+    float defaultValue = .1f;
+
     if (runtime)
     {
         capabilities.relaxedFloat32toFloat16PerformanceScalar.execTime =
-                ParseSystemProperty(g_RelaxedFloat32toFloat16PerformanceExecTime, .1f);
+                ParseSystemProperty(g_RelaxedFloat32toFloat16PerformanceExecTime, defaultValue);
 
         capabilities.relaxedFloat32toFloat16PerformanceTensor.execTime =
-                ParseSystemProperty(g_RelaxedFloat32toFloat16PerformanceExecTime, .1f);
+                ParseSystemProperty(g_RelaxedFloat32toFloat16PerformanceExecTime, defaultValue);
+
+        // Set the base value for all operand types
+        capabilities.operandPerformance = nonExtensionOperandPerformance({FLT_MAX, FLT_MAX});
+
+        // Load supported operand types
+        update(&capabilities.operandPerformance, OperandType::TENSOR_FLOAT32,
+                {
+                    .execTime = ParseSystemProperty(g_OperandTypeTensorFloat32PerformanceExecTime, defaultValue),
+                    .powerUsage = ParseSystemProperty(g_OperandTypeTensorFloat32PerformancePowerUsage, defaultValue)
+                });
+
+        update(&capabilities.operandPerformance, OperandType::FLOAT32,
+                {
+                    .execTime = ParseSystemProperty(g_OperandTypeFloat32PerformanceExecTime, defaultValue),
+                    .powerUsage = ParseSystemProperty(g_OperandTypeFloat32PerformancePowerUsage, defaultValue)
+                });
+
+        update(&capabilities.operandPerformance, OperandType::TENSOR_FLOAT16,
+                {
+                    .execTime = ParseSystemProperty(g_OperandTypeTensorFloat16PerformanceExecTime, defaultValue),
+                    .powerUsage = ParseSystemProperty(g_OperandTypeTensorFloat16PerformancePowerUsage, defaultValue)
+                });
+
+        update(&capabilities.operandPerformance, OperandType::FLOAT16,
+                {
+                    .execTime = ParseSystemProperty(g_OperandTypeFloat16PerformanceExecTime, defaultValue),
+                    .powerUsage = ParseSystemProperty(g_OperandTypeFloat16PerformancePowerUsage, defaultValue)
+                });
+
+        update(&capabilities.operandPerformance, OperandType::TENSOR_QUANT8_ASYMM,
+                {
+                    .execTime = ParseSystemProperty(g_OperandTypeTensorQuant8AsymmPerformanceExecTime, defaultValue),
+                    .powerUsage = ParseSystemProperty(g_OperandTypeTensorQuant8AsymmPerformancePowerUsage, defaultValue)
+                });
+
+        update(&capabilities.operandPerformance, OperandType::TENSOR_QUANT16_SYMM,
+                {
+                    .execTime = ParseSystemProperty(g_OperandTypeTensorQuant16SymmPerformanceExecTime, defaultValue),
+                    .powerUsage = ParseSystemProperty(g_OperandTypeTensorQuant16SymmPerformancePowerUsage, defaultValue)
+                });
+
+        update(&capabilities.operandPerformance, OperandType::TENSOR_INT32,
+                {
+                    .execTime = ParseSystemProperty(g_OperandTypeTensorInt32PerformanceExecTime, defaultValue),
+                    .powerUsage = ParseSystemProperty(g_OperandTypeTensorInt32PerformancePowerUsage, defaultValue)
+                });
+
+        update(&capabilities.operandPerformance, OperandType::INT32,
+                {
+                    .execTime = ParseSystemProperty(g_OperandTypeInt32PerformanceExecTime, defaultValue),
+                    .powerUsage = ParseSystemProperty(g_OperandTypeInt32PerformancePowerUsage, defaultValue)
+                });
 
         cb(ErrorStatus::NONE, capabilities);
     }
@@ -195,6 +279,9 @@ Return<void> ArmnnDriverImpl::getCapabilities_1_2(const armnn::IRuntimePtr& runt
     {
         capabilities.relaxedFloat32toFloat16PerformanceScalar.execTime = 0;
         capabilities.relaxedFloat32toFloat16PerformanceTensor.execTime = 0;
+
+        // Set the base value for all operand types
+        capabilities.operandPerformance = nonExtensionOperandPerformance({0.f, 0.0f});
 
         cb(ErrorStatus::DEVICE_UNAVAILABLE, capabilities);
     }
