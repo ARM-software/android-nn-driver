@@ -49,6 +49,7 @@ The following AndroidNN HAL 1.2 operations are currently supported:
 
 CONV_2D                      (FLOAT32,QUANT8_ASYMM)
 DEPTHWISE_CONV_2D            (FLOAT32,QUANT8_ASYMM)
+PRELU                        (FLOAT32,QUANT8_ASYMM)
 RESIZE_NEAREST_NEIGHBOR      (FLOAT32,QUANT8_ASYMM)
 
 --- Unsupported operators ---
@@ -72,7 +73,6 @@ MAXIMUM
 PAD_V2
 QUANTIZE
 QUANTIZED_16BIT_LSTM
-PRELU
 TRANSPOSE_CONV_2D
 
 Where operations are not supported by the ArmNN Android NN Driver, the driver indicates this to the framework

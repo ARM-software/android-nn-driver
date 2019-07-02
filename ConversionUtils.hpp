@@ -201,55 +201,91 @@ inline bool IsBool(V1_2::Operand operand)
 
 #endif
 
-void BroadcastTensor(LayerInputHandle& input0, LayerInputHandle& input1, armnn::IConnectableLayer* startLayer,
-                     armnn::INetwork& network)
+template<typename LayerHandleType>
+armnn::IConnectableLayer& AddReshapeLayer(armnn::INetwork& network, LayerHandleType& inputLayer,
+                                          armnn::TensorInfo reshapeInfo)
+{
+    armnn::ReshapeDescriptor reshapeDescriptor;
+    reshapeDescriptor.m_TargetShape = reshapeInfo.GetShape();
+
+    armnn::IConnectableLayer* reshapeLayer = network.AddReshapeLayer(reshapeDescriptor);
+    BOOST_ASSERT(reshapeLayer != nullptr);
+
+    // Attach the input layer to the reshape layer
+    inputLayer.Connect(reshapeLayer->GetInputSlot(0));
+    reshapeLayer->GetOutputSlot(0).SetTensorInfo(reshapeInfo);
+
+    return *reshapeLayer;
+}
+
+void BroadcastTensor(LayerInputHandle& input0, LayerInputHandle& input1,
+                     armnn::IConnectableLayer* startLayer, armnn::INetwork& network)
 {
     BOOST_ASSERT(startLayer != nullptr);
-    const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
-    const armnn::TensorInfo& inputTensorInfo1 = input1.GetTensorInfo();
 
-    if (inputTensorInfo0.GetNumDimensions() != inputTensorInfo1.GetNumDimensions())
+    const armnn::TensorInfo& inputInfo0 = input0.GetTensorInfo();
+    const armnn::TensorInfo& inputInfo1 = input1.GetTensorInfo();
+
+    unsigned int inputDimensions0 = inputInfo0.GetNumDimensions();
+    unsigned int inputDimensions1 = inputInfo1.GetNumDimensions();
+
+    if (inputDimensions0 == inputDimensions1)
     {
-        // If the number of dimensions do not match then we need to add degenerate dimensions
-        // to the "smaller" tensor using a reshape:
-        //   Small  Big
+        // The inputs have the same number of dimensions, simply connect them to the given layer as they are
+        input0.Connect(startLayer->GetInputSlot(0));
+        input1.Connect(startLayer->GetInputSlot(1));
+
+        return;
+    }
+
+    // Since the number of dimensions do not match then we need to add degenerate dimensions
+    // to the "smaller" tensor using a reshape, while keeping the order of the inputs.
+
+    unsigned int maxInputDimensions = std::max(inputDimensions0, inputDimensions1);
+    unsigned int sizeDifference = std::abs(boost::numeric_cast<int>(inputDimensions0) -
+                                           boost::numeric_cast<int>(inputDimensions1));
+
+    bool input0IsSmaller = inputDimensions0 < inputDimensions1;
+    LayerInputHandle& smallInputHandle = input0IsSmaller ? input0 : input1;
+    const armnn::TensorInfo& smallInfo = smallInputHandle.GetTensorInfo();
+
+    const armnn::TensorShape& smallShape = smallInfo.GetShape();
+    std::vector<unsigned int> reshapedDimensions(maxInputDimensions, 1);
+    for (unsigned int i = sizeDifference; i < maxInputDimensions; i++)
+    {
+        reshapedDimensions[i] = smallShape[i - sizeDifference];
+    }
+
+    armnn::TensorInfo reshapedInfo = smallInfo;
+    reshapedInfo.SetShape(armnn::TensorShape{ boost::numeric_cast<unsigned int>(reshapedDimensions.size()),
+                                              reshapedDimensions.data() });
+    armnn::IConnectableLayer& reshapeLayer = AddReshapeLayer(network, smallInputHandle, reshapedInfo);
+
+    if (input0IsSmaller)
+    {
+        // Input0 is the "smaller" tensor, connect the reshape layer as follows:
+        //
+        //  Input0 Input1
         //     |     |
         //  Reshape  |
         //      \   /
-        //       Add
-        bool input0IsBigger = inputTensorInfo0.GetNumDimensions() > inputTensorInfo1.GetNumDimensions();
+        //    StartLayer
 
-        LayerInputHandle& smallTensorHandle = input0IsBigger ? input1 : input0;
-        const armnn::TensorInfo& smallTensorDims = smallTensorHandle.GetTensorInfo();
-
-        LayerInputHandle& bigTensorHandle =  input0IsBigger ? input0 : input1;
-        const armnn::TensorInfo& bigTensorDims = bigTensorHandle.GetTensorInfo();
-
-        const unsigned int bigTensorDimsNumber = bigTensorDims.GetNumDimensions();
-        std::vector<unsigned int> reshapedDims(bigTensorDimsNumber, 1);
-        unsigned int sizeDifference = bigTensorDimsNumber - smallTensorDims.GetNumDimensions();
-        for (unsigned i = sizeDifference; i < bigTensorDimsNumber; ++i)
-        {
-            reshapedDims[i] = smallTensorDims.GetShape()[i-sizeDifference];
-        }
-        armnn::TensorInfo reshapedInfo = smallTensorDims;
-        reshapedInfo.SetShape(armnn::TensorShape{ static_cast<unsigned int>(reshapedDims.size()),
-                                                  reshapedDims.data() });
-
-        armnn::ReshapeDescriptor reshapeDesc;
-        reshapeDesc.m_TargetShape = reshapedInfo.GetShape();
-        armnn::IConnectableLayer* const reshapeLayer = network.AddReshapeLayer(reshapeDesc);
-        smallTensorHandle.Connect(reshapeLayer->GetInputSlot(0));
-        reshapeLayer->GetOutputSlot(0).SetTensorInfo(reshapedInfo);
-
-        // Connect the outputs from new reshape and original input layer
-        reshapeLayer->GetOutputSlot(0).Connect(startLayer->GetInputSlot(0));
-        bigTensorHandle.Connect(startLayer->GetInputSlot(1));
+        reshapeLayer.GetOutputSlot(0).Connect(startLayer->GetInputSlot(0));
+        input1.Connect(startLayer->GetInputSlot(1));
     }
     else
     {
+        // Input1 is the "smaller" tensor, connect the reshape layer as follows:
+        //
+        //  Input0 Input1
+        //     |     |
+        //     |  Reshape
+        //      \   /
+        //    StartLayer
+
         input0.Connect(startLayer->GetInputSlot(0));
-        input1.Connect(startLayer->GetInputSlot(1));
+        reshapeLayer.GetOutputSlot(0).Connect(startLayer->GetInputSlot(1));
     }
 }
 
@@ -400,23 +436,6 @@ bool ValidateConcatOutputShape(const std::vector<armnn::TensorShape> & inputShap
 bool RequiresReshape(armnn::TensorShape & inputShape)
 {
     return inputShape.GetNumDimensions() < 3;
-}
-
-template<typename OSlot>
-armnn::IConnectableLayer& AddReshapeLayer(armnn::INetwork& network, OSlot& inputLayer,
-                                          armnn::TensorInfo reshapeInfo)
-{
-    armnn::ReshapeDescriptor reshapeDescriptor;
-    reshapeDescriptor.m_TargetShape = reshapeInfo.GetShape();
-
-    armnn::IConnectableLayer* reshapeLayer = network.AddReshapeLayer(reshapeDescriptor);
-    BOOST_ASSERT(reshapeLayer != nullptr);
-
-    // Attach the input layer to the reshape layer
-    inputLayer.Connect(reshapeLayer->GetInputSlot(0));
-    reshapeLayer->GetOutputSlot(0).SetTensorInfo(reshapeInfo);
-
-    return *reshapeLayer;
 }
 
 void SwizzleInputs(armnn::INetwork& network,

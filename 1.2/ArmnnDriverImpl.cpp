@@ -80,7 +80,7 @@ Return<ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(const armnn::IRuntime
                                                            const sp<V1_2::IPreparedModelCallback>& cb,
                                                            bool float32ToFloat16)
 {
-    ALOGV("ArmnnDriverImpl::prepareModel()");
+    ALOGV("ArmnnDriverImpl::prepareArmnnModel_1_2()");
 
     if (cb.get() == nullptr)
     {

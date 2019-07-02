@@ -443,7 +443,7 @@ bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, Con
 
     if (!output)
     {
-        return Fail("%s: Could not read output 0", __func__);
+        return Fail("%s: Could not read output", __func__);
     }
 
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
@@ -467,8 +467,7 @@ bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, Con
         return Fail("%s: AddPreluLayer failed", __func__);
     }
 
-    input.Connect(layer->GetInputSlot(0));
-    alpha.Connect(layer->GetInputSlot(1));
+    BroadcastTensor(input, alpha, layer, *data.m_Network);
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
 }
