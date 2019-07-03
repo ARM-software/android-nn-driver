@@ -1239,8 +1239,8 @@ bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& m
         return false;
     }
 
-    if (!GetInputScalar<hal_1_0::HalPolicy>(operation, 1, OperandType::INT32, desc.m_TargetHeight, model, data) ||
-        !GetInputScalar<hal_1_0::HalPolicy>(operation, 2, OperandType::INT32, desc.m_TargetWidth, model, data))
+    if (!GetInputScalar<hal_1_0::HalPolicy>(operation, 1, OperandType::INT32, desc.m_TargetWidth, model, data) ||
+        !GetInputScalar<hal_1_0::HalPolicy>(operation, 2, OperandType::INT32, desc.m_TargetHeight, model, data))
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
