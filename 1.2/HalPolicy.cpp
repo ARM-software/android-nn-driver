@@ -8,6 +8,10 @@
 #include "../1.0/HalPolicy.hpp"
 #include "../1.1/HalPolicy.hpp"
 
+#include <DataLayoutIndexed.hpp>
+
+#include <cmath>
+
 namespace armnn_driver
 {
 namespace hal_1_2
@@ -138,6 +142,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertDepthwiseConv2d(operation, model, data);
         case V1_2::OperationType::PRELU:
             return ConvertPrelu(operation, model, data);
+        case V1_2::OperationType::RESIZE_NEAREST_NEIGHBOR:
+            return ConvertResizeNearestNeighbor(operation, model, data);
         default:
             return Fail("%s: Operation type %s not supported in ArmnnDriver",
                         __func__, toString(operation.type).c_str());
@@ -462,6 +468,109 @@ bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, Con
 
     input.Connect(layer->GetInputSlot(0));
     alpha.Connect(layer->GetInputSlot(1));
+
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
+}
+
+bool HalPolicy::ConvertResizeNearestNeighbor(const Operation& operation, const Model& model, ConversionData& data)
+{
+        LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Could not read input 0", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    armnn::ResizeDescriptor descriptor;
+    descriptor.m_Method     = armnn::ResizeMethod::NearestNeighbor;
+    descriptor.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 3, model, data);
+
+    OperandType operandType1;
+    OperandType operandType2;
+
+    if (!GetOperandType<hal_1_2::HalPolicy>(operation, 1, model, operandType1) ||
+        !GetOperandType<hal_1_2::HalPolicy>(operation, 2, model, operandType2))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    if (operandType1 != operandType2)
+    {
+        return Fail("%s: Operation has invalid inputs. Type of input 1 and 2 should be the same", __func__);
+    }
+
+    if (operandType1 == OperandType::INT32)
+    {
+        // Case 1: resizing by shape
+        int32_t targetWidth  = 0;
+        int32_t targetHeight = 0;
+
+        if (!GetInputInt32<hal_1_2::HalPolicy>(operation, 1, targetWidth, model, data) ||
+            !GetInputInt32<hal_1_2::HalPolicy>(operation, 2, targetHeight, model, data))
+        {
+            return Fail("%s: Operation has invalid inputs for resizing by shape", __func__);
+        }
+
+        if (targetWidth < 0 || targetHeight < 0)
+        {
+            return Fail("%s: Operation has invalid inputs for resizing by shape. "
+                        "Target width/height cannot be < 0", __func__);
+        }
+
+        descriptor.m_TargetWidth = static_cast<uint32_t>(targetWidth);
+        descriptor.m_TargetWidth = static_cast<uint32_t>(targetHeight);
+    }
+    else if (operandType1 == OperandType::FLOAT32)
+    {
+        // Case 2: resizing by scale
+        float widthScale  = 1.0f;
+        float heightScale = 1.0f;
+
+        if (!GetInputFloat32<hal_1_2::HalPolicy>(operation, 1, widthScale, model, data) ||
+            !GetInputFloat32<hal_1_2::HalPolicy>(operation, 2, heightScale, model, data))
+        {
+            return Fail("%s: Operation has invalid inputs for resizing by scale", __func__);
+        }
+
+        const armnn::TensorShape& inputShape = inputInfo.GetShape();
+        armnnUtils::DataLayoutIndexed dataLayoutIndexed(descriptor.m_DataLayout);
+
+        float width  = inputShape[dataLayoutIndexed.GetWidthIndex()];
+        float height = inputShape[dataLayoutIndexed.GetHeightIndex()];
+
+        descriptor.m_TargetWidth  = std::floor(width  * widthScale);
+        descriptor.m_TargetHeight = std::floor(height * heightScale);
+    }
+    else
+    {
+        // NOTE: FLOAT16 scales are not supported
+        return false;
+    }
+
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsResizeSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       descriptor))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* layer = data.m_Network->AddResizeLayer(descriptor);
+
+    assert(layer != nullptr);
+
+    layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
+    input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
 }

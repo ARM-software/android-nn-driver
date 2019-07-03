@@ -582,6 +582,27 @@ const void* GetOperandValueReadOnlyAddress(const HalOperand& operand,
 }
 
 template<typename HalPolicy,
+         typename HalOperation   = typename HalPolicy::Operation,
+         typename HalModel       = typename HalPolicy::Model,
+         typename HalOperandType = typename HalPolicy::OperandType>
+bool GetOperandType(const HalOperation& operation,
+                    uint32_t inputIndex,
+                    const HalModel& model,
+                    HalOperandType& type)
+{
+    using HalOperand = typename HalPolicy::Operand;
+
+    const HalOperand* operand = GetInputOperand<HalPolicy>(operation, inputIndex, model);
+    if (!operand)
+    {
+        return Fail("%s: invalid input operand at index %i", __func__, inputIndex);
+    }
+
+    type = operand->type;
+    return true;
+}
+
+template<typename HalPolicy,
          typename HalOperand   = typename HalPolicy::Operand,
          typename HalModel     = typename HalPolicy::Model>
 ConstTensorPin ConvertOperandToConstTensorPin(const HalOperand& operand,
