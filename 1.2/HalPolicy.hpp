@@ -9,6 +9,8 @@
 
 #include <HalInterfaces.h>
 
+#include <armnn/Types.hpp>
+
 namespace armnn_driver
 {
 namespace hal_1_2
@@ -30,9 +32,15 @@ public:
 
 private:
     static bool ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertPrelu(const Operation& operation, const Model& model, ConversionData& data);
-    static bool ConvertResizeNearestNeighbor(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertResize(const Operation& operation,
+                              const Model& model,
+                              ConversionData& data,
+                              armnn::ResizeMethod resizeMethod);
 };
 
 } // namespace hal_1_2

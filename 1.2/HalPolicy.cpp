@@ -42,7 +42,6 @@ bool HandledByV1_0(V1_2::OperationType operationType)
         case V1_0::OperationType::RELU1:
         case V1_0::OperationType::RELU6:
         case V1_0::OperationType::RESHAPE:
-        case V1_0::OperationType::RESIZE_BILINEAR:
         case V1_0::OperationType::RNN:
         case V1_0::OperationType::SOFTMAX:
         case V1_0::OperationType::SPACE_TO_DEPTH:
@@ -142,8 +141,10 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertDepthwiseConv2d(operation, model, data);
         case V1_2::OperationType::PRELU:
             return ConvertPrelu(operation, model, data);
+        case V1_2::OperationType::RESIZE_BILINEAR:
+            return ConvertResize(operation, model, data, armnn::ResizeMethod::Bilinear);
         case V1_2::OperationType::RESIZE_NEAREST_NEIGHBOR:
-            return ConvertResizeNearestNeighbor(operation, model, data);
+            return ConvertResize(operation, model, data, armnn::ResizeMethod::NearestNeighbor);
         default:
             return Fail("%s: Operation type %s not supported in ArmnnDriver",
                         __func__, toString(operation.type).c_str());
@@ -472,7 +473,10 @@ bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, Con
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
 }
 
-bool HalPolicy::ConvertResizeNearestNeighbor(const Operation& operation, const Model& model, ConversionData& data)
+bool HalPolicy::ConvertResize(const Operation& operation,
+                              const Model& model,
+                              ConversionData& data,
+                              armnn::ResizeMethod resizeMethod)
 {
         LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
@@ -490,7 +494,7 @@ bool HalPolicy::ConvertResizeNearestNeighbor(const Operation& operation, const M
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
     armnn::ResizeDescriptor descriptor;
-    descriptor.m_Method     = armnn::ResizeMethod::NearestNeighbor;
+    descriptor.m_Method     = resizeMethod;
     descriptor.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 3, model, data);
 
     OperandType operandType1;
