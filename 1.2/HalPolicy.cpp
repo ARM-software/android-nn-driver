@@ -9,6 +9,7 @@
 #include "../1.1/HalPolicy.hpp"
 
 #include <DataLayoutIndexed.hpp>
+#include <Half.hpp>
 
 #include <cmath>
 
@@ -139,6 +140,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertConv2d(operation, model, data);
         case V1_2::OperationType::DEPTHWISE_CONV_2D:
             return ConvertDepthwiseConv2d(operation, model, data);
+        case V1_2::OperationType::PAD_V2:
+            return ConvertPadV2(operation, model, data);
         case V1_2::OperationType::PRELU:
             return ConvertPrelu(operation, model, data);
         case V1_2::OperationType::RESIZE_BILINEAR:
@@ -427,6 +430,94 @@ bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& 
     input.Connect(startLayer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *endLayer, model, data);
+}
+
+bool HalPolicy::ConvertPadV2(const Operation& operation, const Model& model, ConversionData& data)
+{
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Could not read input 0", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+    unsigned int rank = inputInfo.GetNumDimensions();
+
+    armnn::PadDescriptor descriptor;
+    if (!ConvertPaddings<hal_1_2::HalPolicy>(operation, model, data, rank, descriptor))
+    {
+        return Fail("%s: Could not convert paddings", __func__);
+    }
+
+    // Determine type of padding value
+    OperandType operandType0;
+    OperandType operandType2;
+
+    if (!GetOperandType<hal_1_2::HalPolicy>(operation, 0, model, operandType0) ||
+        !GetOperandType<hal_1_2::HalPolicy>(operation, 2, model, operandType2))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    // Read value to use for padding
+    if (operandType0 == OperandType::TENSOR_FLOAT16 && operandType2 == OperandType::FLOAT16)
+    {
+        armnn::Half f16PadValue;
+        if (!GetInputScalar<hal_1_2::HalPolicy>(operation, 2, operandType2, f16PadValue, model, data))
+        {
+            return Fail("%s: Could not read input 2 (FLOAT16)", __func__);
+        }
+
+        descriptor.m_PadValue = f16PadValue;
+    }
+    else if (operandType0 == OperandType::TENSOR_FLOAT32 && operandType2 == OperandType::FLOAT32)
+    {
+        if (!GetInputFloat32<hal_1_2::HalPolicy>(operation, 2, descriptor.m_PadValue, model, data))
+        {
+            return Fail("%s: Could not read input 2 (FLOAT32)", __func__);
+        }
+    }
+    else if (operandType0 == OperandType::TENSOR_QUANT8_ASYMM && operandType2 == OperandType::INT32)
+    {
+        int32_t quantizedPadValue = 0;
+        if (!GetInputInt32<hal_1_2::HalPolicy>(operation, 2, quantizedPadValue, model, data))
+        {
+            return Fail("%s: Could not read input 2 (INT32)", __func__);
+        }
+
+        descriptor.m_PadValue = armnn::Dequantize(quantizedPadValue,
+                                                  inputInfo.GetQuantizationScale(),
+                                                  inputInfo.GetQuantizationOffset());
+    }
+    else
+    {
+        return Fail("%s: Operation has invalid inputs: type mismatch", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsPadSupported,
+                                       data.m_Backends,
+                                       inputInfo,
+                                       outputInfo,
+                                       descriptor))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddPadLayer(descriptor);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+    layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
+
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, ConversionData& data)

@@ -5,11 +5,12 @@
 
 #pragma once
 
+#include "Utils.hpp"
+
 #include <armnn/ArmNN.hpp>
 
 #include "armnn/src/armnnUtils/DataLayoutIndexed.hpp"
 #include "armnn/src/armnnUtils/Permute.hpp"
-#include "Utils.hpp"
 
 #include <ActivationFunctor.h>
 #include <CpuExecutor.h>
@@ -1134,6 +1135,49 @@ bool ConvertToActivation(const HalOperation& operation,
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+}
+
+template<typename HalPolicy,
+         typename HalOperation   = typename HalPolicy::Operation,
+         typename HalModel       = typename HalPolicy::Model>
+bool ConvertPaddings(const HalOperation& operation,
+                     const HalModel& model,
+                     ConversionData& data,
+                     unsigned int rank,
+                     armnn::PadDescriptor& padDescriptor)
+{
+    using HalOperand = typename HalPolicy::Operand;
+
+    const HalOperand* paddingsOperand = GetInputOperand<HalPolicy>(operation, 1, model);
+    if (!paddingsOperand)
+    {
+        return Fail("%s: Could not read paddings operand", __func__);
+    }
+
+    armnn::TensorShape paddingsOperandShape = GetTensorShapeForOperand(*paddingsOperand);
+    if (paddingsOperandShape.GetNumDimensions() != 2 || paddingsOperandShape.GetNumElements() != rank * 2)
+    {
+        return Fail("%s: Operation has invalid paddings operand: expected shape [%d, 2]",  __func__, rank);
+    }
+
+    std::vector<int32_t> paddings;
+    GetTensorInt32Values<HalPolicy>(*paddingsOperand, paddings, model, data);
+
+    // add padding for each dimension of input tensor.
+    for (unsigned int i = 0; i < paddings.size() - 1; i += 2)
+    {
+        int paddingBeforeInput = paddings[i];
+        int paddingAfterInput  = paddings[i + 1];
+
+        if (paddingBeforeInput < 0 || paddingAfterInput < 0)
+        {
+            return Fail("%s: Operation has invalid paddings operand, invalid padding values.",  __func__);
+        }
+
+        padDescriptor.m_PadList.emplace_back((unsigned int) paddingBeforeInput, (unsigned int) paddingAfterInput);
+    }
+
+    return true;
 }
 
 template<typename HalPolicy,

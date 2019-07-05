@@ -270,48 +270,24 @@ bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, Conv
 bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, ConversionData& data)
 {
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
-
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
-
-    const Operand* paddingsOperand = GetInputOperand<hal_1_1::HalPolicy>(operation, 1, model);
-
-    if (!paddingsOperand)
-    {
-        return Fail("%s: Could not read paddings operand", __func__);
-    }
-
     unsigned int rank = inputInfo.GetNumDimensions();
-    armnn::TensorShape paddingsOperandShape = GetTensorShapeForOperand(*paddingsOperand);
-    if (paddingsOperandShape.GetNumDimensions() != 2 || paddingsOperandShape.GetNumElements() != rank * 2)
-    {
-        return Fail("%s: Operation has invalid paddings operand: expected shape [%d, 2]",  __func__, rank);
-    }
 
-    std::vector<int32_t> paddings;
-    GetTensorInt32Values<hal_1_1::HalPolicy>(*paddingsOperand, paddings, model, data);
-
-    // add padding for each dimension of input tensor.
     armnn::PadDescriptor descriptor;
-    for (unsigned int i = 0; i < paddings.size() - 1; i += 2)
+    if (!ConvertPaddings<hal_1_1::HalPolicy>(operation, model, data, rank, descriptor))
     {
-        int paddingBeforeInput = paddings[i];
-        int paddingAfterInput = paddings[i + 1];
-        if (paddingBeforeInput < 0 || paddingAfterInput < 0)
-        {
-            return Fail("%s: Operation has invalid paddings operand, invalid padding values.",  __func__);
-        }
-        descriptor.m_PadList.emplace_back((unsigned int) paddingBeforeInput, (unsigned int) paddingAfterInput);
+        return Fail("%s: Could not convert paddings", __func__);
     }
 
     const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
     if (!output)
     {
-        return Fail("%s: Could not read output 0", __func__);
+        return Fail("%s: Could not read output", __func__);
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
@@ -723,7 +699,6 @@ bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& m
 
     return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *layer, model, data);
 }
-
 
 } // namespace hal_1_1
 } // namespace armnn_driver
