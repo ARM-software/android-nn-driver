@@ -8,6 +8,8 @@
 #include "Utils.hpp"
 
 #include <armnn/ArmNN.hpp>
+#include <armnn/ILayerSupport.hpp>
+#include <armnn/BackendHelper.hpp>
 
 #include "armnn/src/armnnUtils/DataLayoutIndexed.hpp"
 #include "armnn/src/armnnUtils/Permute.hpp"
@@ -118,48 +120,46 @@ static bool Fail(const char* formatStr, Args&&... args)
     return false;
 }
 
-// Convenience function to call an Is*Supported function and log caller name together with reason for lack of support.
-// Called as: IsLayerSupported(__func__, Is*Supported, a, b, c, d, e)
-template<typename IsLayerSupportedFunc, typename ... Args>
-bool IsLayerSupported(const char* funcName, IsLayerSupportedFunc f, Args&&... args)
-{
-    std::vector<char> unsupportedReason(1024+1);
-    bool isSupported = f(std::forward<Args>(args)..., unsupportedReason.data(), unsupportedReason.size()-1);
-    if(isSupported)
-    {
-        return true;
+// Convenience macro to call an Is*Supported function and log caller name together with reason for lack of support.
+// Called as: FORWARD_LAYER_SUPPORT_FUNC(__func__, Is*Supported, backends, a, b, c, d, e)
+#define FORWARD_LAYER_SUPPORT_FUNC(funcName, func, backends, supported, ...) \
+    std::string reasonIfUnsupported; \
+    try { \
+        for (auto&& backendId : backends) \
+        { \
+            auto layerSupportObject = armnn::GetILayerSupportByBackendId(backendId); \
+            if (layerSupportObject) \
+            { \
+                supported = \
+                    layerSupportObject->func(__VA_ARGS__, armnn::Optional<std::string&>(reasonIfUnsupported)); \
+                if (supported) \
+                { \
+                    break; \
+                } \
+                else \
+                { \
+                    if (reasonIfUnsupported.size() > 0) \
+                    { \
+                        ALOGD("%s: not supported by armnn: %s", funcName, reasonIfUnsupported.c_str()); \
+                    } \
+                    else \
+                    { \
+                        ALOGD("%s: not supported by armnn", funcName); \
+                    } \
+                } \
+            } \
+            else \
+            { \
+                ALOGD("%s: backend not registered: %s", funcName, backendId.Get().c_str()); \
+            } \
+        } \
+        if (!supported) \
+        { \
+            ALOGD("%s: not supported by any specified backend", funcName); \
+        } \
+    } catch (const armnn::InvalidArgumentException &e) { \
+        throw armnn::InvalidArgumentException(e, "Failed to check layer support", CHECK_LOCATION()); \
     }
-    else
-    {
-        std::string sUnsupportedReason(unsupportedReason.data());
-        if (sUnsupportedReason.size() > 0)
-        {
-            ALOGD("%s: not supported by armnn: %s", funcName, sUnsupportedReason.c_str());
-        } else
-        {
-            ALOGD("%s: not supported by armnn", funcName);
-        }
-        return false;
-    }
-}
-
-template<typename IsLayerSupportedFunc, typename ... Args>
-bool IsLayerSupportedForAnyBackend(const char* funcName,
-                                   IsLayerSupportedFunc f,
-                                   const std::vector<armnn::BackendId>& backends,
-                                   Args&&... args)
-{
-    for (auto&& backend : backends)
-    {
-        if (IsLayerSupported(funcName, f, backend, std::forward<Args>(args)...))
-        {
-            return true;
-        }
-    }
-
-    ALOGD("%s: not supported by any specified backend", funcName);
-    return false;
-}
 
 template<typename Operand>
 armnn::TensorShape GetTensorShapeForOperand(const Operand& operand)
@@ -996,10 +996,13 @@ LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
                 ConstTensorPin tensorPin = ConvertOperandToConstTensorPin<HalPolicy>(*operand, model, data);
                 if (tensorPin.IsValid())
                 {
-                    if (!IsLayerSupportedForAnyBackend(__func__,
-                                                       armnn::IsConstantSupported,
-                                                       data.m_Backends,
-                                                       tensorPin.GetConstTensor().GetInfo()))
+                    bool isSupported = false;
+                    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                               IsConstantSupported,
+                                               data.m_Backends,
+                                               isSupported,
+                                               tensorPin.GetConstTensor().GetInfo());
+                    if (isSupported)
                     {
                         return LayerInputHandle();
                     }
@@ -1150,12 +1153,16 @@ bool ConvertToActivation(const HalOperation& operation,
         return false;
     }
     const armnn::TensorInfo outInfo = GetTensorInfoForOperand(*outputOperand);
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsActivationSupported,
-                                       data.m_Backends,
-                                       input.GetTensorInfo(),
-                                       outInfo,
-                                       activationDesc))
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsActivationSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input.GetTensorInfo(),
+                               outInfo,
+                               activationDesc);
+    if (!isSupported)
     {
         return false;
     }
@@ -1281,12 +1288,15 @@ bool ConvertPooling2d(const HalOperation& operation,
         }
     }
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsPooling2dSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       desc))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsPooling2dSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               desc);
+    if (!isSupported)
     {
         return false;
     }
@@ -1393,14 +1403,17 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
     desc.m_BiasEnabled = true;
     armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsConvolution2dSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       desc,
-                                       weights.GetInfo(),
-                                       biases))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsConvolution2dSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               desc,
+                               weights.GetInfo(),
+                               biases);
+    if (!isSupported)
     {
         return false;
     }
@@ -1550,14 +1563,17 @@ bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model
     desc.m_BiasEnabled = true;
     armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsDepthwiseConvolutionSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       desc,
-                                       weights.GetInfo(),
-                                       biases))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsDepthwiseConvolutionSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               desc,
+                               weights.GetInfo(),
+                               biases);
+    if (!isSupported)
     {
         return false;
     }

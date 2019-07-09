@@ -272,14 +272,17 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
     desc.m_BiasEnabled = true;
     armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsConvolution2dSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       desc,
-                                       weights.GetInfo(),
-                                       biases))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsConvolution2dSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               desc,
+                               weights.GetInfo(),
+                               biases);
+    if (!isSupported)
     {
         return false;
     }
@@ -428,14 +431,17 @@ bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& 
     desc.m_BiasEnabled = true;
     armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsDepthwiseConvolutionSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       desc,
-                                       weights.GetInfo(),
-                                       biases))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsDepthwiseConvolutionSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               desc,
+                               weights.GetInfo(),
+                               biases);
+    if (!isSupported)
     {
         return false;
     }
@@ -578,12 +584,15 @@ bool HalPolicy::ConvertPadV2(const Operation& operation, const Model& model, Con
         return Fail("%s: Operation has invalid inputs: type mismatch", __func__);
     }
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsPadSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       descriptor))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsPadSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
     {
         return false;
     }
@@ -628,12 +637,15 @@ bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, Con
         outputInfo.SetShape(InferPreluOutputShape(inputInfo.GetShape(), alphaInfo.GetShape()));
     }
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsPreluSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       alphaInfo,
-                                       outputInfo))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsPreluSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               alphaInfo,
+                               outputInfo);
+    if (!isSupported)
     {
         return false;
     }
@@ -741,12 +753,15 @@ bool HalPolicy::ConvertResize(const Operation& operation,
         return false;
     }
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsResizeSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       descriptor))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsResizeSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
     {
         return false;
     }
@@ -796,12 +811,16 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsSpaceToDepthSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       desc))
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsSpaceToDepthSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               desc);
+    if (!isSupported)
     {
         return false;
     }

@@ -129,12 +129,15 @@ bool HalPolicy::ConvertDiv(const Operation& operation, const Model& model, Conve
 
     const armnn::TensorInfo& outInfo = GetTensorInfoForOperand(*outputOperand);
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsDivisionSupported,
-                                       data.m_Backends,
-                                       input0.GetTensorInfo(),
-                                       input1.GetTensorInfo(),
-                                       outInfo))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsDivisionSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input0.GetTensorInfo(),
+                               input1.GetTensorInfo(),
+                               outInfo);
+    if (!isSupported)
     {
         return false;
     }
@@ -185,12 +188,15 @@ bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, Conve
         outputInfo.SetShape(InferSubOutputShape(input0.GetTensorInfo().GetShape(), input1.GetTensorInfo().GetShape()));
     }
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsSubtractionSupported,
-                                       data.m_Backends,
-                                       input0.GetTensorInfo(),
-                                       input1.GetTensorInfo(),
-                                       outputInfo))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsSubtractionSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input0.GetTensorInfo(),
+                               input1.GetTensorInfo(),
+                               outputInfo);
+    if (!isSupported)
     {
         return false;
     }
@@ -263,12 +269,15 @@ bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, Conv
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsMeanSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       descriptor))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsMeanSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
     {
         return false;
     }
@@ -310,12 +319,15 @@ bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, Conve
         outputInfo.SetShape(InferPadOutputShape(inputInfo.GetShape(), descriptor.m_PadList));
     }
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsPadSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       descriptor))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsPadSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
     {
         return false;
     }
@@ -400,12 +412,16 @@ bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& m
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsSpaceToBatchNdSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       descriptor))
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsSpaceToBatchNdSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
     {
         return false;
     }
@@ -477,11 +493,14 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
         return Fail("%s: Could not read output 0", __func__);
     }
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsReshapeSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       reshapeDesc))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsReshapeSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               reshapeDesc);
+    if (!isSupported)
     {
         return false;
     }
@@ -566,12 +585,15 @@ bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& mod
     }
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsStridedSliceSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       descriptor))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsStridedSliceSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
     {
         return false;
     }
@@ -639,12 +661,15 @@ bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model,
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsPermuteSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       permuteDesc))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsPermuteSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               permuteDesc);
+    if (!isSupported)
     {
         return false;
     }
@@ -706,12 +731,15 @@ bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& m
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsBatchToSpaceNdSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       batchToSpaceNdDesc))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsBatchToSpaceNdSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               batchToSpaceNdDesc);
+    if (!isSupported)
     {
         return false;
     }

@@ -117,12 +117,15 @@ bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, Conve
 
     const armnn::TensorInfo outInfo = GetTensorInfoForOperand(*outputOperand);
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsAdditionSupported,
-                                       data.m_Backends,
-                                       input0.GetTensorInfo(),
-                                       input1.GetTensorInfo(),
-                                       outInfo))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsAdditionSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input0.GetTensorInfo(),
+                               input1.GetTensorInfo(),
+                               outInfo);
+    if (!isSupported)
     {
         return false;
     }
@@ -317,12 +320,16 @@ bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& mo
     std::vector<const armnn::TensorInfo*> inputTensorInfos;
     std::transform(inputHandles.begin(), inputHandles.end(), std::back_inserter(inputTensorInfos),
         [](const LayerInputHandle& h) -> const armnn::TensorInfo*{ return &h.GetTensorInfo(); });
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsConcatSupported,
-                                       data.m_Backends,
-                                       inputTensorInfos,
-                                       outputInfo,
-                                       concatDescriptor))
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsConcatSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputTensorInfos,
+                               outputInfo,
+                               concatDescriptor);
+    if (!isSupported)
     {
         return false;
     }
@@ -396,11 +403,14 @@ bool HalPolicy::ConvertDequantize(const Operation& operation, const Model& model
         outputInfo.SetShape(input.GetTensorInfo().GetShape());
     }
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsDequantizeSupported,
-                                       data.m_Backends,
-                                       input.GetTensorInfo(),
-                                       outputInfo))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsDequantizeSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input.GetTensorInfo(),
+                               GetTensorInfoForOperand(*outputOperand));
+    if (!isSupported)
     {
         return false;
     }
@@ -431,11 +441,14 @@ bool HalPolicy::ConvertFloor(const Operation& operation, const Model& model, Con
         return Fail("%s: Operation has invalid outputs", __func__);
     }
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsFloorSupported,
-                                       data.m_Backends,
-                                       input.GetTensorInfo(),
-                                       GetTensorInfoForOperand(*outputOperand)))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsFloorSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input.GetTensorInfo(),
+                               GetTensorInfoForOperand(*outputOperand));
+    if (!isSupported)
     {
         return false;
     }
@@ -499,14 +512,17 @@ bool HalPolicy::ConvertFullyConnected(const Operation& operation, const Model& m
     desc.m_TransposeWeightMatrix = true;
     desc.m_BiasEnabled           = true;
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsFullyConnectedSupported,
-                                       data.m_Backends,
-                                       reshapedInfo,
-                                       outputInfo,
-                                       weights.GetInfo(),
-                                       bias.GetInfo(),
-                                       desc))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsFullyConnectedSupported,
+                               data.m_Backends,
+                               isSupported,
+                               reshapedInfo,
+                               outputInfo,
+                               weights.GetInfo(),
+                               bias.GetInfo(),
+                               desc);
+    if (!isSupported)
     {
         return false;
     }
@@ -579,12 +595,15 @@ bool HalPolicy::ConvertLocalResponseNormalization(const Operation& operation,
     // window rather than the radius as in AndroidNN.
     descriptor.m_NormSize = 1 + (2 * descriptor.m_NormSize);
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsNormalizationSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       descriptor))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsNormalizationSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
     {
         return false;
     }
@@ -898,6 +917,7 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
     paramsInfo.m_CellBias                 = &(params.m_CellBias->GetInfo());
     paramsInfo.m_OutputGateBias           = &(params.m_OutputGateBias->GetInfo());
 
+    // Optional parameters
     if(!desc.m_CifgEnabled)
     {
         paramsInfo.m_InputToInputWeights = &(params.m_InputToInputWeights->GetInfo());
@@ -924,18 +944,21 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
         paramsInfo.m_CellToOutputWeights = &(params.m_CellToOutputWeights->GetInfo());
     }
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsLstmSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputStateInInfo,
-                                       cellStateInInfo,
-                                       scratchBufferInfo,
-                                       outputStateOutInfo,
-                                       cellStateOutInfo,
-                                       outputInfo,
-                                       desc,
-                                       paramsInfo))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsLstmSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputStateInInfo,
+                               cellStateInInfo,
+                               scratchBufferInfo,
+                               outputStateOutInfo,
+                               cellStateOutInfo,
+                               outputInfo,
+                               desc,
+                               paramsInfo);
+    if (!isSupported)
     {
         return false;
     }
@@ -979,12 +1002,15 @@ bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& 
     armnn::L2NormalizationDescriptor desc;
     desc.m_DataLayout = armnn::DataLayout::NHWC;
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsL2NormalizationSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       desc))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsL2NormalizationSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               desc);
+    if (!isSupported)
     {
         return false;
     }
@@ -1038,12 +1064,15 @@ bool HalPolicy::ConvertMul(const Operation& operation, const Model& model, Conve
 
     const armnn::TensorInfo& outInfo = GetTensorInfoForOperand(*outputOperand);
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsMultiplicationSupported,
-                                       data.m_Backends,
-                                       input0.GetTensorInfo(),
-                                       input1.GetTensorInfo(),
-                                       outInfo))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsMultiplicationSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input0.GetTensorInfo(),
+                               input1.GetTensorInfo(),
+                               outInfo);
+    if (!isSupported)
     {
         return false;
     }
@@ -1119,12 +1148,15 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsSoftmaxSupported,
-                                       data.m_Backends,
-                                       input.GetTensorInfo(),
-                                       outputInfo,
-                                       desc))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsSoftmaxSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input.GetTensorInfo(),
+                               outputInfo,
+                               desc);
+    if (!isSupported)
     {
         return false;
     }
@@ -1175,12 +1207,16 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsSpaceToDepthSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       desc))
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsSpaceToDepthSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               desc);
+    if (!isSupported)
     {
         return false;
     }
@@ -1254,11 +1290,14 @@ bool HalPolicy::ConvertReshape(const Operation& operation, const Model& model, C
     reshapeDescriptor.m_TargetShape = armnn::TensorShape(requestedShape.dimensions.size(),
                                                          requestedShape.dimensions.data());
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsReshapeSupported,
-                                       data.m_Backends,
-                                       input.GetTensorInfo(),
-                                       reshapeDescriptor))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsReshapeSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input.GetTensorInfo(),
+                               reshapeDescriptor);
+    if (!isSupported)
     {
         return false;
     }
@@ -1291,12 +1330,15 @@ bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& m
     desc.m_Method     = armnn::ResizeMethod::Bilinear;
     desc.m_DataLayout = armnn::DataLayout::NHWC;
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsResizeSupported,
-                                       data.m_Backends,
-                                       inputInfo,
-                                       outputInfo,
-                                       desc))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsResizeSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               desc);
+    if (!isSupported)
     {
         return false;
     }

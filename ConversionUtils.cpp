@@ -150,12 +150,15 @@ armnn::IConnectableLayer* ProcessActivation(const armnn::TensorInfo& tensorInfo,
             }
         }
 
-        if (!IsLayerSupportedForAnyBackend(__func__,
-                                           armnn::IsActivationSupported,
-                                           data.m_Backends,
-                                           prevLayer->GetOutputSlot(0).GetTensorInfo(),
-                                           tensorInfo,
-                                           activationDesc))
+        bool isSupported = false;
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsActivationSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   prevLayer->GetOutputSlot(0).GetTensorInfo(),
+                                   tensorInfo,
+                                   activationDesc);
+        if (!isSupported)
         {
             return nullptr;
         }
