@@ -5,6 +5,8 @@
 
 #include "HalPolicy.hpp"
 
+#include "OutputShapeUtils.hpp"
+
 #include "../1.0/HalPolicy.hpp"
 #include "../1.1/HalPolicy.hpp"
 
@@ -539,7 +541,13 @@ bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, Con
 
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     const armnn::TensorInfo& alphaInfo  = alpha.GetTensorInfo();
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
+    if (outputInfo.GetNumElements() == 0u)
+    {
+        ALOGD("Output shape not set, will infer from inputs");
+        outputInfo.SetShape(InferPreluOutputShape(inputInfo.GetShape(), alphaInfo.GetShape()));
+    }
 
     if (!IsLayerSupportedForAnyBackend(__func__,
                                        armnn::IsPreluSupported,
@@ -560,7 +568,12 @@ bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, Con
 
     BroadcastTensor(input, alpha, layer, *data.m_Network);
 
-    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation,
+                                                            0,
+                                                            *layer,
+                                                            model,
+                                                            data,
+                                                            armnn::Optional<armnn::TensorInfo>(outputInfo));
 }
 
 bool HalPolicy::ConvertResize(const Operation& operation,

@@ -334,6 +334,7 @@ LOCAL_SRC_FILES := \
         ConversionUtils.cpp \
         DriverOptions.cpp \
         ModelToINetworkConverter.cpp \
+        OutputShapeUtils.cpp \
         RequestThread.cpp \
         Utils.cpp
 
