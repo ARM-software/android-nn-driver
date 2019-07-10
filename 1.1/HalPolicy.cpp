@@ -5,6 +5,8 @@
 
 #include "HalPolicy.hpp"
 
+#include "OutputShapeUtils.hpp"
+
 #include "../1.0/HalPolicy.hpp"
 
 namespace
@@ -176,20 +178,24 @@ bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, Conve
         return false;
     }
 
-    const armnn::TensorInfo& outInfo = GetTensorInfoForOperand(*outputOperand);
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
+    if (IsDynamicOutput(outputInfo))
+    {
+        return Fail("%s: Dynamic output not supported", __func__);
+    }
 
     if (!IsLayerSupportedForAnyBackend(__func__,
                                        armnn::IsSubtractionSupported,
                                        data.m_Backends,
                                        input0.GetTensorInfo(),
                                        input1.GetTensorInfo(),
-                                       outInfo))
+                                       outputInfo))
     {
         return false;
     }
 
     armnn::IConnectableLayer* const startLayer = data.m_Network->AddSubtractionLayer();
-    armnn::IConnectableLayer* const endLayer = ProcessActivation(outInfo, activationFunction, startLayer, data);
+    armnn::IConnectableLayer* const endLayer = ProcessActivation(outputInfo, activationFunction, startLayer, data);
 
     const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
     const armnn::TensorInfo& inputTensorInfo1 = input1.GetTensorInfo();
@@ -292,6 +298,10 @@ bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, Conve
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicOutput(outputInfo))
+    {
+        return Fail("%s: Dynamic output not supported", __func__);
+    }
 
     if (!IsLayerSupportedForAnyBackend(__func__,
                                        armnn::IsPadSupported,

@@ -114,6 +114,7 @@ LOCAL_SRC_FILES := \
         ArmnnDevice.cpp \
         ArmnnPreparedModel.cpp \
         ModelToINetworkConverter.cpp \
+        OutputShapeUtils.cpp \
         RequestThread.cpp \
         Utils.cpp \
         ConversionUtils.cpp
@@ -227,6 +228,7 @@ LOCAL_SRC_FILES := \
         ArmnnDevice.cpp \
         ArmnnPreparedModel.cpp \
         ModelToINetworkConverter.cpp \
+        OutputShapeUtils.cpp \
         RequestThread.cpp \
         Utils.cpp \
         ConversionUtils.cpp

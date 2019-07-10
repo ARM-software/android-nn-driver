@@ -12,6 +12,11 @@ namespace armnn_driver
 
 using namespace armnn;
 
+bool IsDynamicOutput(const TensorInfo& outputInfo)
+{
+    return outputInfo.GetNumElements() == 0u;
+}
+
 TensorShape InferPreluOutputShape(const TensorShape& inputShape, const TensorShape& alphaShape)
 {
     // NOTE: The inferred PReLU output size will be the maximum size along each dimension

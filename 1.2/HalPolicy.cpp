@@ -173,6 +173,11 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
+    if (IsDynamicOutput(outputInfo))
+    {
+        return Fail("%s: Dynamic output not supported", __func__);
+    }
+
     // ArmNN does not currently support non-fixed weights or bias
     const ConstTensorPin weightsPin =
         ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 1, model, data);
@@ -442,6 +447,18 @@ bool HalPolicy::ConvertPadV2(const Operation& operation, const Model& model, Con
         return Fail("%s: Could not read input 0", __func__);
     }
 
+    const Operand* output = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicOutput(outputInfo))
+    {
+        return Fail("%s: Dynamic output not supported", __func__);
+    }
+
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     unsigned int rank = inputInfo.GetNumDimensions();
 
@@ -496,14 +513,6 @@ bool HalPolicy::ConvertPadV2(const Operation& operation, const Model& model, Con
         return Fail("%s: Operation has invalid inputs: type mismatch", __func__);
     }
 
-    const Operand* output = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
-    if (!output)
-    {
-        return Fail("%s: Could not read output", __func__);
-    }
-
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-
     if (!IsLayerSupportedForAnyBackend(__func__,
                                        armnn::IsPadSupported,
                                        data.m_Backends,
@@ -543,7 +552,7 @@ bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, Con
     const armnn::TensorInfo& alphaInfo  = alpha.GetTensorInfo();
 
     armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
-    if (outputInfo.GetNumElements() == 0u)
+    if (IsDynamicOutput(outputInfo))
     {
         ALOGD("Output shape not set, will infer from inputs");
         outputInfo.SetShape(InferPreluOutputShape(inputInfo.GetShape(), alphaInfo.GetShape()));

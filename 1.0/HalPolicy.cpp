@@ -8,6 +8,7 @@
 #include <armnn/Optional.hpp>
 
 #include "FullyConnected.hpp"
+#include "OutputShapeUtils.hpp"
 
 namespace armnn_driver
 {
@@ -388,11 +389,17 @@ bool HalPolicy::ConvertDequantize(const Operation& operation, const Model& model
         return Fail("%s: Operation has invalid outputs", __func__);
     }
 
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
+    if (IsDynamicOutput(outputInfo))
+    {
+        return Fail("%s: Dynamic output not supported", __func__);
+    }
+
     if (!IsLayerSupportedForAnyBackend(__func__,
                                        armnn::IsDequantizeSupported,
                                        data.m_Backends,
                                        input.GetTensorInfo(),
-                                       GetTensorInfoForOperand(*outputOperand)))
+                                       outputInfo))
     {
         return false;
     }
@@ -957,6 +964,11 @@ bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& 
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
+    if (IsDynamicOutput(outputInfo))
+    {
+        return Fail("%s: Dynamic output not supported", __func__);
+    }
+
     armnn::L2NormalizationDescriptor desc;
     desc.m_DataLayout = armnn::DataLayout::NHWC;
 
@@ -1082,7 +1094,11 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
         return Fail("%s: Operation has no outputs", __func__);
     }
 
-    const armnn::TensorInfo outInfo = GetTensorInfoForOperand(*outputOperand);
+    const armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*outputOperand);
+    if (IsDynamicOutput(outputInfo))
+    {
+        return Fail("%s: Dynamic output not supported", __func__);
+    }
 
     armnn::SoftmaxDescriptor desc;
     if (!GetInputFloat32<hal_1_0::HalPolicy>(operation, 1, desc.m_Beta, model, data))
@@ -1094,7 +1110,7 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
                                        armnn::IsSoftmaxSupported,
                                        data.m_Backends,
                                        input.GetTensorInfo(),
-                                       outInfo,
+                                       outputInfo,
                                        desc))
     {
         return false;
