@@ -178,11 +178,34 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
         return Fail("%s: Dynamic output not supported", __func__);
     }
 
+    armnn::Convolution2dDescriptor desc;
+    desc.m_DataLayout = armnn::DataLayout::NHWC;
+
+    // Determine whether padding is implicit or explicit
+    bool implicitPadding = operation.inputs.size() == 7 ||
+                           (operation.inputs.size() >= 8 &&
+                            GetInputOperand<hal_1_2::HalPolicy>(operation, 7, model)->type == OperandType::BOOL);
+
+    if (implicitPadding)
+    {
+        desc.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 7, model, data);
+    }
+    else if (operation.inputs.size() >= 10)
+    {
+        desc.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 10, model, data);
+    }
+
+    const armnn::PermutationVector OHWIToOIHW = {0, 2, 3, 1};
+
     // ArmNN does not currently support non-fixed weights or bias
-    const ConstTensorPin weightsPin =
-        ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 1, model, data);
+    // The NNAPI filter is always OHWI [depth_out, filter_height, filter_width, depth_in] but ArmNN expects the
+    // filter's height and width indices to match the input's height and width indices so we permute it to OIHW if
+    // the DataLayout is NCHW
+    const ConstTensorPin weightsPin = (desc.m_DataLayout == armnn::DataLayout::NCHW) ?
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 1, model, data, OHWIToOIHW) :
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 1, model, data);
     const ConstTensorPin biasPin    =
-        ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 2, model, data);
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 2, model, data);
 
     if (!weightsPin.IsValid())
     {
@@ -198,14 +221,7 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
     armnn::ConstTensor bias = biasPin.GetConstTensor();
     SanitizeBiasQuantizationScale(bias.GetInfo(), weights.GetInfo(), inputInfo);
 
-    armnn::Convolution2dDescriptor desc;
-    desc.m_DataLayout = armnn::DataLayout::NHWC;
     ActivationFn activation;
-
-    // Determine whether padding is implicit or explicit
-    bool implicitPadding = operation.inputs.size() == 7 ||
-        (operation.inputs.size() >= 8 &&
-        GetInputOperand<hal_1_2::HalPolicy>(operation, 7, model)->type == OperandType::BOOL);
 
     if (implicitPadding)
     {
@@ -219,15 +235,17 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
             return Fail("%s: Operation has invalid inputs (implicit padding)", __func__);
         }
 
-        const uint32_t kernelX = weights.GetShape()[2];
-        const uint32_t kernelY = weights.GetShape()[1];
-        const uint32_t inputX  = inputInfo.GetShape()[2];
-        const uint32_t inputY  = inputInfo.GetShape()[1];
+        armnnUtils::DataLayoutIndexed dataLayoutIndexed(desc.m_DataLayout);
+        unsigned int widthIndex = dataLayoutIndexed.GetWidthIndex();
+        unsigned int heightIndex = dataLayoutIndexed.GetHeightIndex();
+        const uint32_t kernelX = weights.GetShape()[widthIndex];
+        const uint32_t kernelY = weights.GetShape()[heightIndex];
+        const uint32_t inputX  = inputInfo.GetShape()[widthIndex];
+        const uint32_t inputY  = inputInfo.GetShape()[heightIndex];
 
         CalcPadding(inputX, kernelX, desc.m_StrideX, desc.m_PadLeft, desc.m_PadRight, paddingScheme);
         CalcPadding(inputY, kernelY, desc.m_StrideY, desc.m_PadTop, desc.m_PadBottom, paddingScheme);
 
-        desc.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 7, model, data);
     }
     else if (operation.inputs.size() >= 10)
     {
@@ -243,7 +261,6 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
         {
             return Fail("%s: Operation has invalid inputs (explicit padding)", __func__);
         }
-        desc.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 10, model, data);
     }
     else
     {
