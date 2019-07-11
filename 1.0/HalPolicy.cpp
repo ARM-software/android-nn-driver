@@ -389,10 +389,11 @@ bool HalPolicy::ConvertDequantize(const Operation& operation, const Model& model
         return Fail("%s: Operation has invalid outputs", __func__);
     }
 
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
+    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*outputOperand);
     if (IsDynamicOutput(outputInfo))
     {
-        return Fail("%s: Dynamic output not supported", __func__);
+        ALOGD("Output shape not set, will infer from input");
+        outputInfo.SetShape(input.GetTensorInfo().GetShape());
     }
 
     if (!IsLayerSupportedForAnyBackend(__func__,
@@ -408,7 +409,12 @@ bool HalPolicy::ConvertDequantize(const Operation& operation, const Model& model
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation,
+                                                            0,
+                                                            *layer,
+                                                            model,
+                                                            data,
+                                                            armnn::Optional<armnn::TensorInfo>(outputInfo));
 }
 
 bool HalPolicy::ConvertFloor(const Operation& operation, const Model& model, ConversionData& data)
