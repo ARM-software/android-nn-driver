@@ -1094,10 +1094,11 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
         return Fail("%s: Operation has no outputs", __func__);
     }
 
-    const armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*outputOperand);
+    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*outputOperand);
     if (IsDynamicOutput(outputInfo))
     {
-        return Fail("%s: Dynamic output not supported", __func__);
+        ALOGD("Output shape not set, will infer from input");
+        outputInfo.SetShape(input.GetTensorInfo().GetShape());
     }
 
     armnn::SoftmaxDescriptor desc;
@@ -1120,7 +1121,12 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation,
+                                                            0,
+                                                            *layer,
+                                                            model,
+                                                            data,
+                                                            armnn::Optional<armnn::TensorInfo>(outputInfo));
 }
 
 bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& model, ConversionData& data)
