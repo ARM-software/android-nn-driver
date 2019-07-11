@@ -297,10 +297,11 @@ bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, Conve
         return Fail("%s: Could not read output", __func__);
     }
 
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
     if (IsDynamicOutput(outputInfo))
     {
-        return Fail("%s: Dynamic output not supported", __func__);
+        ALOGD("Output shape not set, will infer from inputs");
+        outputInfo.SetShape(InferPadOutputShape(inputInfo.GetShape(), descriptor.m_PadList));
     }
 
     if (!IsLayerSupportedForAnyBackend(__func__,
@@ -318,7 +319,12 @@ bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, Conve
     input.Connect(layer->GetInputSlot(0));
     layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
 
-    return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation,
+                                                            0,
+                                                            *layer,
+                                                            model,
+                                                            data,
+                                                            armnn::Optional<armnn::TensorInfo>(outputInfo));
 }
 
 bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& model, ConversionData& data)

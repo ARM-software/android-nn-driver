@@ -453,12 +453,6 @@ bool HalPolicy::ConvertPadV2(const Operation& operation, const Model& model, Con
         return Fail("%s: Could not read output", __func__);
     }
 
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicOutput(outputInfo))
-    {
-        return Fail("%s: Dynamic output not supported", __func__);
-    }
-
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     unsigned int rank = inputInfo.GetNumDimensions();
 
@@ -466,6 +460,13 @@ bool HalPolicy::ConvertPadV2(const Operation& operation, const Model& model, Con
     if (!ConvertPaddings<hal_1_2::HalPolicy>(operation, model, data, rank, descriptor))
     {
         return Fail("%s: Could not convert paddings", __func__);
+    }
+
+    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicOutput(outputInfo))
+    {
+        ALOGD("Output shape not set, will infer from inputs");
+        outputInfo.SetShape(InferPadOutputShape(inputInfo.GetShape(), descriptor.m_PadList));
     }
 
     // Determine type of padding value
@@ -528,7 +529,12 @@ bool HalPolicy::ConvertPadV2(const Operation& operation, const Model& model, Con
     input.Connect(layer->GetInputSlot(0));
     layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
 
-    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation,
+                                                            0,
+                                                            *layer,
+                                                            model,
+                                                            data,
+                                                            armnn::Optional<armnn::TensorInfo>(outputInfo));
 }
 
 bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, ConversionData& data)

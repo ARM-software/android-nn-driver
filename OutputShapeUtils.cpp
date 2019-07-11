@@ -6,6 +6,7 @@
 #include "OutputShapeUtils.hpp"
 
 #include <algorithm>
+#include <vector>
 
 namespace armnn_driver
 {
@@ -15,6 +16,24 @@ using namespace armnn;
 bool IsDynamicOutput(const TensorInfo& outputInfo)
 {
     return outputInfo.GetNumElements() == 0u;
+}
+
+TensorShape InferPadOutputShape(const TensorShape& inputShape,
+                                const std::vector<std::pair<unsigned int, unsigned int>>& padList)
+{
+    const unsigned int numDims = inputShape.GetNumDimensions();
+
+    std::vector<unsigned int> outputDims;
+    TensorShape outputShape = TensorShape(numDims);
+    for (unsigned int dim = 0; dim < numDims; ++dim)
+    {
+        unsigned int dimSize = inputShape[dim];
+        const std::pair<unsigned int, unsigned int>& dimPadding = padList[dim];
+        dimSize += dimPadding.first;
+        dimSize += dimPadding.second;
+        outputShape[dim] = dimSize;
+    }
+    return outputShape;
 }
 
 TensorShape InferPreluOutputShape(const TensorShape& inputShape, const TensorShape& alphaShape)
