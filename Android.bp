@@ -50,6 +50,7 @@ cc_library_static {
                          "clframework/build/android-arm64v8a/src/core/CL",
                          "clframework/arm_compute/core/NEON/kernels/assembly",
                          "clframework/arm_compute/core/NEON/kernels/convolution/common",
+                         "clframework/arm_compute/core/NEON/kernels/convolution/depthwise",
                          "clframework/arm_compute/core/NEON/kernels/convolution/winograd"],
     export_include_dirs: ["clframework", "clframework/include"],
     srcs: [
@@ -246,6 +247,8 @@ cc_library_static {
         "clframework/src/core/NEON/kernels/convolution/depthwise/depthwise_3x3_3x3_2x2_fp32_fp32.cpp",
         "clframework/src/core/NEON/kernels/convolution/depthwise/depthwise_4x4_3x3_1x1_fp32_fp32.cpp",
         "clframework/src/core/NEON/kernels/convolution/depthwise/depthwise_4x4_3x3_2x2_fp32_fp32.cpp",
+        "clframework/src/core/NEON/kernels/convolution/depthwise/depthwise_dilated.cpp",
+        "clframework/src/core/NEON/kernels/convolution/depthwise/depthwise_dilated_qa8_qa8.cpp",
         "clframework/src/core/NEON/kernels/convolution/depthwise/depthwise_pack_parameters.cpp",
         "clframework/src/core/NEON/kernels/convolution/depthwise/depthwise_qa8_qa8.cpp",
         "clframework/src/core/NEON/kernels/convolution/winograd/padding.cpp",
