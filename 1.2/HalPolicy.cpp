@@ -144,6 +144,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertDepthwiseConv2d(operation, model, data);
         case V1_2::OperationType::MAXIMUM:
             return ConvertMaximum(operation, model, data);
+        case V1_2::OperationType::MINIMUM:
+            return ConvertMinimum(operation, model, data);
         case V1_2::OperationType::PAD_V2:
             return ConvertPadV2(operation, model, data);
         case V1_2::OperationType::PRELU:
@@ -549,6 +551,56 @@ bool HalPolicy::ConvertMaximum(const Operation& operation, const Model& model, C
                                                             model,
                                                             data,
                                                             armnn::Optional<armnn::TensorInfo>(outInfo));
+}
+
+bool HalPolicy::ConvertMinimum(const Operation& operation, const Model& model, ConversionData& data)
+{
+    LayerInputHandle input0 = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+    LayerInputHandle input1 = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 1, model, data);
+
+    if (!input0.IsValid() || !input1.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicOutput(outputInfo))
+    {
+        ALOGD("Output shape not set, will infer from inputs");
+        outputInfo.SetShape(InferMinimumOutputShape(input0.GetTensorInfo().GetShape(),
+                                                    input1.GetTensorInfo().GetShape()));
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsMinimumSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input0.GetTensorInfo(),
+                               input1.GetTensorInfo(),
+                               outputInfo);
+
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddMinimumLayer();
+    assert(layer != nullptr);
+    BroadcastTensor(input0, input1, layer, *data.m_Network);
+
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation,
+                                                            0,
+                                                            *layer,
+                                                            model,
+                                                            data,
+                                                            armnn::Optional<armnn::TensorInfo>(outputInfo));
 }
 
 bool HalPolicy::ConvertPadV2(const Operation& operation, const Model& model, ConversionData& data)

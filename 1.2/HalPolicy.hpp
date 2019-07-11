@@ -37,6 +37,8 @@ private:
 
     static bool ConvertMaximum(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertMinimum(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertPadV2(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertPrelu(const Operation& operation, const Model& model, ConversionData& data);

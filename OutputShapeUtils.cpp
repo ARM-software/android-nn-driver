@@ -121,6 +121,12 @@ TensorShape InferMaximumOutputShape(const armnn::TensorShape& input0Shape,
     return CalculateMaxShape(input0Shape, input1Shape);
 }
 
+TensorShape InferMinimumOutputShape(const armnn::TensorShape& input0Shape,
+                                    const armnn::TensorShape& input1Shape)
+{
+    return CalculateMaxShape(input0Shape, input1Shape);
+}
+
 TensorShape InferPadOutputShape(const TensorShape& inputShape,
                                 const std::vector<std::pair<unsigned int, unsigned int>>& padList)
 {

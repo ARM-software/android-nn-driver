@@ -23,6 +23,9 @@ armnn::TensorShape InferDepthwiseConvolution2dOutputShape(const armnn::TensorSha
 armnn::TensorShape InferMaximumOutputShape(const armnn::TensorShape& input0Shape,
                                            const armnn::TensorShape& input1Shape);
 
+armnn::TensorShape InferMinimumOutputShape(const armnn::TensorShape& input0Shape,
+                                           const armnn::TensorShape& input1Shape);
+
 armnn::TensorShape InferPadOutputShape(const armnn::TensorShape& inputShape,
                                        const std::vector<std::pair<unsigned int, unsigned int>>& padList);
 
