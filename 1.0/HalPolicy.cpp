@@ -968,11 +968,12 @@ bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& 
     }
 
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
 
     if (IsDynamicOutput(outputInfo))
     {
-        return Fail("%s: Dynamic output not supported", __func__);
+        ALOGD("Output shape not set, will infer from inputs");
+        outputInfo.SetShape(inputInfo.GetShape());
     }
 
     armnn::L2NormalizationDescriptor desc;
@@ -992,7 +993,12 @@ bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& 
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation,
+                                                            0,
+                                                            *layer,
+                                                            model,
+                                                            data,
+                                                            armnn::Optional<armnn::TensorInfo>(outputInfo));
 }
 
 bool HalPolicy::ConvertL2Pool2d(const Operation& operation, const Model& model, ConversionData& data)
