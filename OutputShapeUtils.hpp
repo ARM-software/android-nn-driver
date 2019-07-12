@@ -17,6 +17,8 @@ armnn::TensorShape InferPadOutputShape(const armnn::TensorShape& inputShape,
 
 armnn::TensorShape InferPreluOutputShape(const armnn::TensorShape& inputShape, const armnn::TensorShape& alphaShape);
 
+armnn::TensorShape InferSubOutputShape(const armnn::TensorShape& input0Shape, const armnn::TensorShape& input1Shape);
+
 } // namespace armnn_driver
 
 

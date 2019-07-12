@@ -178,10 +178,11 @@ bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, Conve
         return false;
     }
 
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
+    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*outputOperand);
     if (IsDynamicOutput(outputInfo))
     {
-        return Fail("%s: Dynamic output not supported", __func__);
+        ALOGD("Output shape not set, will infer from inputs");
+        outputInfo.SetShape(InferSubOutputShape(input0.GetTensorInfo().GetShape(), input1.GetTensorInfo().GetShape()));
     }
 
     if (!IsLayerSupportedForAnyBackend(__func__,
@@ -203,7 +204,12 @@ bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, Conve
     if (endLayer)
     {
         BroadcastTensor(input0, input1, startLayer, *data.m_Network);
-        return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *endLayer, model, data);
+        return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation,
+                                                                0,
+                                                                *endLayer,
+                                                                model,
+                                                                data,
+                                                                armnn::Optional<armnn::TensorInfo>(outputInfo));
     }
 
     return Fail("%s: ProcessActivation failed", __func__);
