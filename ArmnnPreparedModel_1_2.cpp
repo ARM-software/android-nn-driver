@@ -324,92 +324,6 @@ Return<void> ArmnnPreparedModel_1_2<HalVersion>::executeSynchronously(const Requ
 }
 
 template<typename HalVersion>
-class ArmnnBurstExecutorWithCache : public ExecutionBurstServer::IBurstExecutorWithCache
-{
-public:
-    ArmnnBurstExecutorWithCache(ArmnnPreparedModel_1_2<HalVersion>* preparedModel)
-        : m_PreparedModel(preparedModel)
-    {}
-
-    bool isCacheEntryPresent(int slot) const override
-    {
-        const auto it = m_MemoryCache.find(slot);
-        return (it != m_MemoryCache.end()) && it->second.valid();
-    }
-
-    void addCacheEntry(const hidl_memory& memory, int slot) override
-    {
-        m_MemoryCache[slot] = memory;
-    }
-
-    void removeCacheEntry(int slot) override
-    {
-        m_MemoryCache.erase(slot);
-    }
-
-    std::tuple<ErrorStatus, hidl_vec<OutputShape>, Timing> execute(
-            const Request& request, const std::vector<int>& slots,
-            MeasureTiming measure) override {
-        ALOGV("ArmnnPreparedModel_1_2::BurstExecutorWithCache::execute");
-        TimePoint driverStart, driverEnd, deviceStart, deviceEnd;
-
-        if (measure == MeasureTiming::YES)
-        {
-            driverStart = Now();
-        }
-        hidl_vec<hidl_memory> pools(slots.size());
-
-        for (int slot : slots)
-        {
-            if (!isCacheEntryPresent(slot))
-            {
-                ALOGE("ArmnnPreparedModel_1_2::BurstExecutorWithCache::no cache entry present");
-                return std::tuple<ErrorStatus, hidl_vec<OutputShape>, Timing>(ErrorStatus::INVALID_ARGUMENT,
-                                                                              {},
-                                                                              g_NoTiming);
-            }
-            pools[slot] = m_MemoryCache[slot];
-        }
-
-        Request fullRequest = request;
-        fullRequest.pools = std::move(pools);
-
-        // Setup callback
-        ErrorStatus returnedStatus = ErrorStatus::GENERAL_FAILURE;
-        hidl_vec<OutputShape> returnedOutputShapes;
-        Timing returnedTiming;
-
-        auto cb = [&returnedStatus, &returnedOutputShapes, &returnedTiming](ErrorStatus status,
-                                                                            const hidl_vec<OutputShape>& outputShapes,
-                                                                            const Timing& timing)
-        {
-            returnedStatus = status;
-            returnedOutputShapes = outputShapes;
-            returnedTiming = timing;
-        };
-
-        // Execute
-        ALOGV("ArmnnPreparedModel_1_2::BurstExecutorWithCache executing");
-        Return<void> ret = m_PreparedModel->executeSynchronously(fullRequest, measure, cb);
-
-        if (!ret.isOk() || returnedStatus != ErrorStatus::NONE)
-        {
-            ALOGE("ArmnnPreparedModel_1_2::BurstExecutorWithCache::error executing");
-            return std::tuple<ErrorStatus, hidl_vec<OutputShape>, Timing>(returnedStatus, {}, returnedTiming);
-        }
-
-        return std::tuple<ErrorStatus, hidl_vec<OutputShape>, Timing>(returnedStatus,
-                                                                      std::move(returnedOutputShapes),
-                                                                      returnedTiming);
-    }
-
-private:
-    Model m_Model;
-    ArmnnPreparedModel_1_2<HalVersion>* m_PreparedModel;
-    std::map<int, hidl_memory> m_MemoryCache;
-};
-
-template<typename HalVersion>
 Return<void> ArmnnPreparedModel_1_2<HalVersion>::configureExecutionBurst(
         const sp<V1_2::IBurstCallback>& callback,
         const MQDescriptorSync<V1_2::FmqRequestDatum>& requestChannel,
@@ -417,10 +331,7 @@ Return<void> ArmnnPreparedModel_1_2<HalVersion>::configureExecutionBurst(
         V1_2::IPreparedModel::configureExecutionBurst_cb cb)
 {
     ALOGV("ArmnnPreparedModel_1_2::configureExecutionBurst");
-    const std::shared_ptr<ArmnnBurstExecutorWithCache<HalVersion>> executorWithCache =
-            std::make_shared<ArmnnBurstExecutorWithCache<HalVersion>>(this);
-    const sp<V1_2::IBurstContext> burst = ExecutionBurstServer::create(
-            callback, requestChannel, resultChannel, executorWithCache);
+    const sp<V1_2::IBurstContext> burst = ExecutionBurstServer::create(callback, requestChannel, resultChannel, this);
 
     if (burst == nullptr)
     {
