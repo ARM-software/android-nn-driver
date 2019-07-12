@@ -300,6 +300,20 @@ void CalcPadding(uint32_t input, uint32_t kernel, uint32_t stride, uint32_t& out
     outPadTail = boost::numeric_cast<uint32_t>(padTail);
 }
 
+#ifdef ARMNN_ANDROID_NN_V1_2
+
+void CalcPadding(uint32_t input, uint32_t kernel, uint32_t stride, uint32_t dilation, uint32_t& outPadHead,
+                 uint32_t& outPadTail, android::nn::PaddingScheme scheme)
+{
+    int32_t padHead;
+    int32_t padTail;
+    calculateExplicitPadding(input, stride, dilation, kernel, scheme, &padHead, &padTail);
+    outPadHead = boost::numeric_cast<uint32_t>(padHead);
+    outPadTail = boost::numeric_cast<uint32_t>(padTail);
+}
+
+#endif
+
 Shape GetOperandShape(const V1_0::Operand& operand)
 {
     Shape shape;

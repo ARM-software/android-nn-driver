@@ -243,8 +243,8 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
         const uint32_t inputX  = inputInfo.GetShape()[widthIndex];
         const uint32_t inputY  = inputInfo.GetShape()[heightIndex];
 
-        CalcPadding(inputX, kernelX, desc.m_StrideX, desc.m_PadLeft, desc.m_PadRight, paddingScheme);
-        CalcPadding(inputY, kernelY, desc.m_StrideY, desc.m_PadTop, desc.m_PadBottom, paddingScheme);
+        CalcPadding(inputX, kernelX, desc.m_StrideX, desc.m_DilationX, desc.m_PadLeft, desc.m_PadRight, paddingScheme);
+        CalcPadding(inputY, kernelY, desc.m_StrideY, desc.m_DilationY, desc.m_PadTop, desc.m_PadBottom, paddingScheme);
 
     }
     else if (operation.inputs.size() >= 10)
@@ -400,8 +400,8 @@ bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& 
         const uint32_t inputX  = inputInfo.GetShape()[widthIndex];
         const uint32_t inputY  = inputInfo.GetShape()[heightIndex];
 
-        CalcPadding(inputX, kernelX, desc.m_StrideX, desc.m_PadLeft, desc.m_PadRight, paddingScheme);
-        CalcPadding(inputY, kernelY, desc.m_StrideY, desc.m_PadTop, desc.m_PadBottom, paddingScheme);
+        CalcPadding(inputX, kernelX, desc.m_StrideX, desc.m_DilationX, desc.m_PadLeft, desc.m_PadRight, paddingScheme);
+        CalcPadding(inputY, kernelY, desc.m_StrideY, desc.m_DilationY, desc.m_PadTop, desc.m_PadBottom, paddingScheme);
     }
     else if (operation.inputs.size() >= 11)
     {
