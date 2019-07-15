@@ -142,6 +142,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertConv2d(operation, model, data);
         case V1_2::OperationType::DEPTHWISE_CONV_2D:
             return ConvertDepthwiseConv2d(operation, model, data);
+        case V1_2::OperationType::MAXIMUM:
+            return ConvertMaximum(operation, model, data);
         case V1_2::OperationType::PAD_V2:
             return ConvertPadV2(operation, model, data);
         case V1_2::OperationType::PRELU:
@@ -454,6 +456,51 @@ bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& 
     input.Connect(startLayer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *endLayer, model, data);
+}
+
+bool HalPolicy::ConvertMaximum(const Operation& operation, const Model& model, ConversionData& data)
+{
+    LayerInputHandle input0 = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+    LayerInputHandle input1 = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 1, model, data);
+
+    if (!input0.IsValid() || !input1.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* outputOperand = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
+    if (!outputOperand)
+    {
+        return Fail("%s: Could not read output", __func__);
+    }
+
+    const armnn::TensorInfo& outInfo = GetTensorInfoForOperand(*outputOperand);
+    if (IsDynamicOutput(outInfo))
+    {
+        ALOGD("Output shape not set, will infer from inputs");
+        outInfo.SetShape(InferMaximumOutputShape(input0.GetTensorInfo().GetShape(), input1.GetTensorInfo().GetShape()));
+    }
+
+    if (!IsLayerSupportedForAnyBackend(__func__,
+                                       armnn::IsMaximumSupported,
+                                       data.m_Backends,
+                                       input0.GetTensorInfo(),
+                                       input1.GetTensorInfo(),
+                                       outInfo))
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* layer = data.m_Network->AddMaximumLayer();
+    assert(layer != nullptr);
+    BroadcastTensor(input0, input1, layer, *data.m_Network);
+
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation,
+                                                            0,
+                                                            *layer,
+                                                            model,
+                                                            data,
+                                                            armnn::Optional<armnn::TensorInfo>(outInfo));
 }
 
 bool HalPolicy::ConvertPadV2(const Operation& operation, const Model& model, ConversionData& data)

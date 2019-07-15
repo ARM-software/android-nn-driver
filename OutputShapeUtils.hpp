@@ -12,6 +12,9 @@ namespace armnn_driver
 
 bool IsDynamicOutput(const armnn::TensorInfo& outputInfo);
 
+armnn::TensorShape InferMaximumOutputShape(const armnn::TensorShape& input0Shape,
+                                           const armnn::TensorShape& input1Shape);
+
 armnn::TensorShape InferPadOutputShape(const armnn::TensorShape& inputShape,
                                        const std::vector<std::pair<unsigned int, unsigned int>>& padList);
 
