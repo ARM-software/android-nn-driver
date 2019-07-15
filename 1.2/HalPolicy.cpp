@@ -172,13 +172,8 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
         return Fail("%s: Could not read output 0", __func__);
     }
 
-    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-
-    if (IsDynamicOutput(outputInfo))
-    {
-        return Fail("%s: Dynamic output not supported", __func__);
-    }
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
+    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
 
     armnn::Convolution2dDescriptor desc;
     desc.m_DataLayout = armnn::DataLayout::NHWC;
@@ -272,6 +267,21 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
     desc.m_BiasEnabled = true;
     armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
 
+    if (IsDynamicOutput(outputInfo))
+    {
+        try
+        {
+            ALOGD("Output shape not set, will infer from inputs");
+            outputInfo.SetShape(InferConvolution2dOutputShape(inputInfo.GetShape(),
+                                                              weights.GetInfo().GetShape(),
+                                                              desc));
+        }
+        catch (armnn::Exception& e)
+        {
+            return Fail("%s: Could not infer dynamic output shape: %s", __func__, e.what());
+        }
+    }
+
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsConvolution2dSupported,
@@ -282,6 +292,7 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
                                desc,
                                weights.GetInfo(),
                                biases);
+
     if (!isSupported)
     {
         return false;
@@ -304,7 +315,12 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
 
     input.Connect(startLayer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *endLayer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation,
+                                                            0,
+                                                            *endLayer,
+                                                            model,
+                                                            data,
+                                                            armnn::Optional<armnn::TensorInfo>(outputInfo));
 }
 
 bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data)

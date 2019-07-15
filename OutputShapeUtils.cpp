@@ -5,6 +5,8 @@
 
 #include "OutputShapeUtils.hpp"
 
+#include <DataLayoutIndexed.hpp>
+
 #include <algorithm>
 #include <vector>
 
@@ -52,6 +54,48 @@ using namespace armnn;
 bool IsDynamicOutput(const TensorInfo& outputInfo)
 {
     return outputInfo.GetNumElements() == 0u;
+}
+
+TensorShape InferConvolution2dOutputShape(const TensorShape& inputShape,
+                                          const TensorShape& kernelShape,
+                                          const Convolution2dDescriptor& descriptor)
+{
+    if (inputShape.GetNumDimensions() != 4)
+    {
+        throw InvalidArgumentException("Input shape for Convolution2d must be 4D");
+    }
+
+    armnnUtils::DataLayoutIndexed dataLayoutIndex(descriptor.m_DataLayout);
+
+    const unsigned int cIndex = dataLayoutIndex.GetChannelsIndex();
+    const unsigned int wIndex = dataLayoutIndex.GetWidthIndex();
+    const unsigned int hIndex = dataLayoutIndex.GetHeightIndex();
+
+    const unsigned int wInput = inputShape[wIndex];
+    const unsigned int hInput = inputShape[hIndex];
+
+    const unsigned int wKernel  = kernelShape[wIndex];
+    const unsigned int wDilated = wKernel + (descriptor.m_DilationX - 1) * (wKernel - 1);
+
+    const unsigned int wRead   = (wInput + descriptor.m_PadLeft + descriptor.m_PadRight) - wDilated;
+    const unsigned int wOutput = 1 + (wRead / descriptor.m_StrideX);
+
+    const unsigned int hKernel  = kernelShape[hIndex];
+    const unsigned int hDilated = hKernel + (descriptor.m_DilationY - 1) * (hKernel - 1);
+
+    const unsigned int hRead   = (hInput + descriptor.m_PadTop + descriptor.m_PadBottom) - hDilated;
+    const unsigned int hOutput = 1 + (hRead / descriptor.m_StrideY);
+
+    const unsigned int batches  = inputShape[0];
+    const unsigned int channels = kernelShape[0];
+
+    TensorShape outputShape(4);
+    outputShape[0]      = batches;
+    outputShape[cIndex] = channels;
+    outputShape[wIndex] = wOutput;
+    outputShape[hIndex] = hOutput;
+
+    return outputShape;
 }
 
 TensorShape InferMaximumOutputShape(const armnn::TensorShape& input0Shape,

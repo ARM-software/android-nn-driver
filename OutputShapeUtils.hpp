@@ -12,6 +12,10 @@ namespace armnn_driver
 
 bool IsDynamicOutput(const armnn::TensorInfo& outputInfo);
 
+armnn::TensorShape InferConvolution2dOutputShape(const armnn::TensorShape& inputShape,
+                                                 const armnn::TensorShape& kernelShape,
+                                                 const armnn::Convolution2dDescriptor& descriptor);
+
 armnn::TensorShape InferMaximumOutputShape(const armnn::TensorShape& input0Shape,
                                            const armnn::TensorShape& input1Shape);
 
