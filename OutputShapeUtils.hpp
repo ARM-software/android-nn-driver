@@ -16,6 +16,10 @@ armnn::TensorShape InferConvolution2dOutputShape(const armnn::TensorShape& input
                                                  const armnn::TensorShape& kernelShape,
                                                  const armnn::Convolution2dDescriptor& descriptor);
 
+armnn::TensorShape InferDepthwiseConvolution2dOutputShape(const armnn::TensorShape& inputShape,
+                                                          const armnn::TensorShape& kernelShape,
+                                                          const armnn::DepthwiseConvolution2dDescriptor& descriptor);
+
 armnn::TensorShape InferMaximumOutputShape(const armnn::TensorShape& input0Shape,
                                            const armnn::TensorShape& input1Shape);
 
