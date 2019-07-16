@@ -475,7 +475,13 @@ bool HalPolicy::ConvertFullyConnected(const Operation& operation, const Model& m
     }
 
     const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
+
+    if (IsDynamicOutput(outputInfo))
+    {
+        ALOGD("Output shape not set, will infer from inputs");
+        outputInfo.SetShape(inputInfo.GetShape());
+    }
 
     // ArmNN does not currently support non-fixed weights or bias
     ConstTensorPin weightsPin =
@@ -549,7 +555,12 @@ bool HalPolicy::ConvertFullyConnected(const Operation& operation, const Model& m
             input.Connect(startLayer->GetInputSlot(0));
         }
 
-        return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *endLayer, model, data);
+        return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation,
+                                                                0,
+                                                                *endLayer,
+                                                                model,
+                                                                data,
+                                                                armnn::Optional<armnn::TensorInfo>(outputInfo));
     }
     else
     {
