@@ -727,7 +727,7 @@ bool HalPolicy::ConvertResize(const Operation& operation,
     }
 
     const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
 
     armnn::ResizeDescriptor descriptor;
     descriptor.m_Method     = resizeMethod;
@@ -795,6 +795,19 @@ bool HalPolicy::ConvertResize(const Operation& operation,
         return false;
     }
 
+    if (IsDynamicOutput(outputInfo))
+    {
+        try
+        {
+            ALOGD("Output shape not set, will infer from inputs");
+            outputInfo.SetShape(InferResizeOutputShape(inputInfo.GetShape(), descriptor));
+        }
+        catch (armnn::Exception& e)
+        {
+            return Fail("%s: Could not infer dynamic output shape: %s", __func__, e.what());
+        }
+    }
+
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsResizeSupported,
@@ -803,6 +816,7 @@ bool HalPolicy::ConvertResize(const Operation& operation,
                                inputInfo,
                                outputInfo,
                                descriptor);
+
     if (!isSupported)
     {
         return false;
@@ -815,7 +829,12 @@ bool HalPolicy::ConvertResize(const Operation& operation,
     layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation,
+                                                            0,
+                                                            *layer,
+                                                            model,
+                                                            data,
+                                                            armnn::Optional<armnn::TensorInfo>(outputInfo));
 }
 
 bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& model, ConversionData& data)
