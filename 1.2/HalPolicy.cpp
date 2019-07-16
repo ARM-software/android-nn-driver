@@ -480,19 +480,23 @@ bool HalPolicy::ConvertMaximum(const Operation& operation, const Model& model, C
         return Fail("%s: Could not read output", __func__);
     }
 
-    const armnn::TensorInfo& outInfo = GetTensorInfoForOperand(*outputOperand);
+    armnn::TensorInfo outInfo = GetTensorInfoForOperand(*outputOperand);
     if (IsDynamicOutput(outInfo))
     {
         ALOGD("Output shape not set, will infer from inputs");
         outInfo.SetShape(InferMaximumOutputShape(input0.GetTensorInfo().GetShape(), input1.GetTensorInfo().GetShape()));
     }
 
-    if (!IsLayerSupportedForAnyBackend(__func__,
-                                       armnn::IsMaximumSupported,
-                                       data.m_Backends,
-                                       input0.GetTensorInfo(),
-                                       input1.GetTensorInfo(),
-                                       outInfo))
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsMaximumSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input0.GetTensorInfo(),
+                               input1.GetTensorInfo(),
+                               outInfo);
+
+    if (!isSupported)
     {
         return false;
     }
