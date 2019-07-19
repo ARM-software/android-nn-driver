@@ -818,7 +818,7 @@ bool HalPolicy::ConvertResize(const Operation& operation,
         }
 
         descriptor.m_TargetWidth = static_cast<uint32_t>(targetWidth);
-        descriptor.m_TargetWidth = static_cast<uint32_t>(targetHeight);
+        descriptor.m_TargetHeight = static_cast<uint32_t>(targetHeight);
     }
     else if (operandType1 == OperandType::FLOAT32)
     {
