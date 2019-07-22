@@ -48,6 +48,8 @@ private:
                               ConversionData& data,
                               armnn::ResizeMethod resizeMethod);
 
+    static bool ConvertSoftmax(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertSpaceToDepth(const Operation& operation, const Model& model, ConversionData& data);
 };
 

@@ -46,7 +46,6 @@ bool HandledByV1_0(V1_2::OperationType operationType)
         case V1_0::OperationType::RELU6:
         case V1_0::OperationType::RESHAPE:
         case V1_0::OperationType::RNN:
-        case V1_0::OperationType::SOFTMAX:
         case V1_0::OperationType::SPACE_TO_DEPTH:
         case V1_0::OperationType::SVDF:
         case V1_0::OperationType::TANH:
@@ -154,6 +153,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertResize(operation, model, data, armnn::ResizeMethod::Bilinear);
         case V1_2::OperationType::RESIZE_NEAREST_NEIGHBOR:
             return ConvertResize(operation, model, data, armnn::ResizeMethod::NearestNeighbor);
+        case V1_2::OperationType::SOFTMAX:
+            return ConvertSoftmax(operation, model, data);
         default:
             return Fail("%s: Operation type %s not supported in ArmnnDriver",
                         __func__, toString(operation.type).c_str());
@@ -943,6 +944,68 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
+}
+
+bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, ConversionData& data)
+{
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* outputOperand = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
+    if (!outputOperand)
+    {
+        return Fail("%s: Operation has no outputs", __func__);
+    }
+
+    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*outputOperand);
+    if (IsDynamicOutput(outputInfo))
+    {
+        ALOGD("Output shape not set, will infer from input");
+        outputInfo.SetShape(input.GetTensorInfo().GetShape());
+    }
+
+    armnn::SoftmaxDescriptor desc;
+    if (!GetInputFloat32<hal_1_2::HalPolicy>(operation, 1, desc.m_Beta, model, data))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    if (operation.inputs.size() > 2 && !GetInputScalar<hal_1_2::HalPolicy>(operation,
+                                                                           2,
+                                                                           HalPolicy::OperandType::INT32,
+                                                                           desc.m_Axis,
+                                                                           model,
+                                                                           data))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsSoftmaxSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input.GetTensorInfo(),
+                               outputInfo,
+                               desc);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* layer = data.m_Network->AddSoftmaxLayer(desc);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation,
+                                                            0,
+                                                            *layer,
+                                                            model,
+                                                            data,
+                                                            armnn::Optional<armnn::TensorInfo>(outputInfo));
 }
 
 } // namespace hal_1_2

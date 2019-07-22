@@ -54,6 +54,7 @@ MAXIMUM                      (FLOAT32,QUANT8_ASYMM)
 MINIMUM                      (FLOAT32,QUANT8_ASYMM)
 PRELU                        (FLOAT32,QUANT8_ASYMM)
 RESIZE_NEAREST_NEIGHBOR      (FLOAT32,QUANT8_ASYMM)
+SOFTMAX                      (FLOAT32,QUANT8_ASYMM)
 
 --- Unsupported operators ---
 
