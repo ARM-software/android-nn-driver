@@ -21,15 +21,15 @@ using namespace android;
 namespace armnn_driver
 {
 
-template <template <typename HalVersion> class PreparedModel, typename HalVersion>
-RequestThread<PreparedModel, HalVersion>::RequestThread()
+template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename Callback>
+RequestThread<PreparedModel, HalVersion, Callback>::RequestThread()
 {
     ALOGV("RequestThread::RequestThread()");
     m_Thread = std::make_unique<std::thread>(&RequestThread::Process, this);
 }
 
-template <template <typename HalVersion> class PreparedModel, typename HalVersion>
-RequestThread<PreparedModel, HalVersion>::~RequestThread()
+template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename Callback>
+RequestThread<PreparedModel, HalVersion, Callback>::~RequestThread()
 {
     ALOGV("RequestThread::~RequestThread()");
 
@@ -54,12 +54,12 @@ RequestThread<PreparedModel, HalVersion>::~RequestThread()
     catch (const std::exception&) { } // Swallow any exception.
 }
 
-template <template <typename HalVersion> class PreparedModel, typename HalVersion>
-void RequestThread<PreparedModel, HalVersion>::PostMsg(PreparedModel<HalVersion>* model,
+template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename Callback>
+void RequestThread<PreparedModel, HalVersion, Callback>::PostMsg(PreparedModel<HalVersion>* model,
         std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& memPools,
         std::shared_ptr<armnn::InputTensors>& inputTensors,
         std::shared_ptr<armnn::OutputTensors>& outputTensors,
-        const ::android::sp<V1_0::IExecutionCallback>& callback)
+        Callback callback)
 {
     ALOGV("RequestThread::PostMsg(...)");
     auto data = std::make_shared<AsyncExecuteData>(model,
@@ -71,8 +71,8 @@ void RequestThread<PreparedModel, HalVersion>::PostMsg(PreparedModel<HalVersion>
     PostMsg(pMsg);
 }
 
-template <template <typename HalVersion> class PreparedModel, typename HalVersion>
-void RequestThread<PreparedModel, HalVersion>::PostMsg(std::shared_ptr<ThreadMsg>& pMsg)
+template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename Callback>
+void RequestThread<PreparedModel, HalVersion, Callback>::PostMsg(std::shared_ptr<ThreadMsg>& pMsg)
 {
     ALOGV("RequestThread::PostMsg(pMsg)");
     // Add a message to the queue and notify the request thread
@@ -81,8 +81,8 @@ void RequestThread<PreparedModel, HalVersion>::PostMsg(std::shared_ptr<ThreadMsg
     m_Cv.notify_one();
 }
 
-template <template <typename HalVersion> class PreparedModel, typename HalVersion>
-void RequestThread<PreparedModel, HalVersion>::Process()
+template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename Callback>
+void RequestThread<PreparedModel, HalVersion, Callback>::Process()
 {
     ALOGV("RequestThread::Process()");
     while (true)
@@ -111,7 +111,7 @@ void RequestThread<PreparedModel, HalVersion>::Process()
                 model->ExecuteGraph(pMsg->data->m_MemPools,
                                     pMsg->data->m_InputTensors,
                                     pMsg->data->m_OutputTensors,
-                                    pMsg->data->m_callback);
+                                    pMsg->data->m_Callback);
                 break;
             }
 
@@ -139,16 +139,16 @@ void RequestThread<PreparedModel, HalVersion>::Process()
 /// Class template specializations
 ///
 
-template class RequestThread<ArmnnPreparedModel, hal_1_0::HalPolicy>;
+template class RequestThread<ArmnnPreparedModel, hal_1_0::HalPolicy, ArmnnCallback_1_0>;
 
 #ifdef ARMNN_ANDROID_NN_V1_1
-template class RequestThread<armnn_driver::ArmnnPreparedModel, hal_1_1::HalPolicy>;
+template class RequestThread<armnn_driver::ArmnnPreparedModel, hal_1_1::HalPolicy, ArmnnCallback_1_0>;
 #endif
 
 #ifdef ARMNN_ANDROID_NN_V1_2
-template class RequestThread<ArmnnPreparedModel, hal_1_1::HalPolicy>;
-template class RequestThread<ArmnnPreparedModel, hal_1_2::HalPolicy>;
-template class RequestThread<ArmnnPreparedModel_1_2, hal_1_2::HalPolicy>;
+template class RequestThread<ArmnnPreparedModel, hal_1_1::HalPolicy, ArmnnCallback_1_0>;
+template class RequestThread<ArmnnPreparedModel, hal_1_2::HalPolicy, ArmnnCallback_1_0>;
+template class RequestThread<ArmnnPreparedModel_1_2, hal_1_2::HalPolicy, ArmnnCallback_1_2>;
 #endif
 
 } // namespace armnn_driver

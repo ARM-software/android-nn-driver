@@ -18,8 +18,10 @@
 
 namespace armnn_driver
 {
+using TimePoint = std::chrono::steady_clock::time_point;
+static const TimePoint g_Min = std::chrono::steady_clock::time_point::min();
 
-template<template <typename HalVersion> class PreparedModel, typename HalVersion>
+template<template <typename HalVersion> class PreparedModel, typename HalVersion, typename Callback>
 class RequestThread
 {
 public:
@@ -39,7 +41,7 @@ public:
                  std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& memPools,
                  std::shared_ptr<armnn::InputTensors>& inputTensors,
                  std::shared_ptr<armnn::OutputTensors>& outputTensors,
-                 const ::android::sp<V1_0::IExecutionCallback>& callback);
+                 Callback callback);
 
 private:
     RequestThread(const RequestThread&) = delete;
@@ -52,12 +54,12 @@ private:
                          std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& memPools,
                          std::shared_ptr<armnn::InputTensors>& inputTensors,
                          std::shared_ptr<armnn::OutputTensors>& outputTensors,
-                         const ::android::sp<V1_0::IExecutionCallback>& cb)
+                         Callback callback)
             : m_Model(model)
             , m_MemPools(memPools)
             , m_InputTensors(inputTensors)
             , m_OutputTensors(outputTensors)
-            , m_callback(cb)
+            , m_Callback(callback)
         {
         }
 
@@ -65,7 +67,7 @@ private:
         std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>> m_MemPools;
         std::shared_ptr<armnn::InputTensors> m_InputTensors;
         std::shared_ptr<armnn::OutputTensors> m_OutputTensors;
-        const ::android::sp<V1_0::IExecutionCallback> m_callback;
+        Callback m_Callback;
     };
 
     enum class ThreadMsgType
