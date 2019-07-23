@@ -6,6 +6,7 @@
 #include "HalPolicy.hpp"
 
 #include "OutputShapeUtils.hpp"
+#include "Utils.hpp"
 
 #include "../1.0/HalPolicy.hpp"
 #include "../1.1/HalPolicy.hpp"
@@ -270,7 +271,7 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
     desc.m_BiasEnabled = true;
     armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
 
-    if (IsDynamicOutput(outputInfo))
+    if (IsDynamicTensor(outputInfo))
     {
         try
         {
@@ -450,7 +451,7 @@ bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& 
     armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
 
     armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicOutput(outputInfo))
+    if (IsDynamicTensor(outputInfo))
     {
         try
         {
@@ -522,7 +523,7 @@ bool HalPolicy::ConvertMaximum(const Operation& operation, const Model& model, C
     }
 
     armnn::TensorInfo outInfo = GetTensorInfoForOperand(*outputOperand);
-    if (IsDynamicOutput(outInfo))
+    if (IsDynamicTensor(outInfo))
     {
         ALOGD("Output shape not set, will infer from inputs");
         outInfo.SetShape(InferMaximumOutputShape(input0.GetTensorInfo().GetShape(), input1.GetTensorInfo().GetShape()));
@@ -571,7 +572,7 @@ bool HalPolicy::ConvertMinimum(const Operation& operation, const Model& model, C
     }
 
     armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicOutput(outputInfo))
+    if (IsDynamicTensor(outputInfo))
     {
         ALOGD("Output shape not set, will infer from inputs");
         outputInfo.SetShape(InferMinimumOutputShape(input0.GetTensorInfo().GetShape(),
@@ -628,7 +629,7 @@ bool HalPolicy::ConvertPadV2(const Operation& operation, const Model& model, Con
     }
 
     armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicOutput(outputInfo))
+    if (IsDynamicTensor(outputInfo))
     {
         ALOGD("Output shape not set, will infer from inputs");
         outputInfo.SetShape(InferPadOutputShape(inputInfo.GetShape(), descriptor.m_PadList));
@@ -726,7 +727,7 @@ bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, Con
     const armnn::TensorInfo& alphaInfo  = alpha.GetTensorInfo();
 
     armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicOutput(outputInfo))
+    if (IsDynamicTensor(outputInfo))
     {
         ALOGD("Output shape not set, will infer from inputs");
         outputInfo.SetShape(InferPreluOutputShape(inputInfo.GetShape(), alphaInfo.GetShape()));
@@ -848,7 +849,7 @@ bool HalPolicy::ConvertResize(const Operation& operation,
         return false;
     }
 
-    if (IsDynamicOutput(outputInfo))
+    if (IsDynamicTensor(outputInfo))
     {
         try
         {
@@ -961,7 +962,7 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
     }
 
     armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*outputOperand);
-    if (IsDynamicOutput(outputInfo))
+    if (IsDynamicTensor(outputInfo))
     {
         ALOGD("Output shape not set, will infer from input");
         outputInfo.SetShape(input.GetTensorInfo().GetShape());

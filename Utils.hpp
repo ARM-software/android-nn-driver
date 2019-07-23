@@ -144,4 +144,7 @@ void ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimizedNetwor
     }
 }
 
+/// Checks if a tensor info represents a dynamic tensor
+bool IsDynamicTensor(const armnn::TensorInfo& outputInfo);
+
 } // namespace armnn_driver

@@ -328,4 +328,10 @@ void DumpJsonProfilingIfRequired(bool gpuProfilingEnabled,
     profiler->Print(fileStream);
 }
 
+bool IsDynamicTensor(const armnn::TensorInfo& outputInfo)
+{
+    // Dynamic tensors have at least one 0-sized dimension
+    return outputInfo.GetNumElements() == 0u;
+}
+
 } // namespace armnn_driver

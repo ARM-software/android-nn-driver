@@ -6,6 +6,7 @@
 #include "HalPolicy.hpp"
 
 #include "OutputShapeUtils.hpp"
+#include "Utils.hpp"
 
 #include "../1.0/HalPolicy.hpp"
 
@@ -182,7 +183,7 @@ bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, Conve
     }
 
     armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*outputOperand);
-    if (IsDynamicOutput(outputInfo))
+    if (IsDynamicTensor(outputInfo))
     {
         ALOGD("Output shape not set, will infer from inputs");
         outputInfo.SetShape(InferSubOutputShape(input0.GetTensorInfo().GetShape(), input1.GetTensorInfo().GetShape()));
@@ -313,7 +314,7 @@ bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, Conve
     }
 
     armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicOutput(outputInfo))
+    if (IsDynamicTensor(outputInfo))
     {
         ALOGD("Output shape not set, will infer from inputs");
         outputInfo.SetShape(InferPadOutputShape(inputInfo.GetShape(), descriptor.m_PadList));

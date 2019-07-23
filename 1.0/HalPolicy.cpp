@@ -9,6 +9,7 @@
 
 #include "FullyConnected.hpp"
 #include "OutputShapeUtils.hpp"
+#include "Utils.hpp"
 
 namespace armnn_driver
 {
@@ -397,7 +398,7 @@ bool HalPolicy::ConvertDequantize(const Operation& operation, const Model& model
     }
 
     armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*outputOperand);
-    if (IsDynamicOutput(outputInfo))
+    if (IsDynamicTensor(outputInfo))
     {
         ALOGD("Output shape not set, will infer from input");
         outputInfo.SetShape(input.GetTensorInfo().GetShape());
@@ -477,7 +478,7 @@ bool HalPolicy::ConvertFullyConnected(const Operation& operation, const Model& m
     const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
     armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
 
-    if (IsDynamicOutput(outputInfo))
+    if (IsDynamicTensor(outputInfo))
     {
         ALOGD("Output shape not set, will infer from inputs");
         outputInfo.SetShape(inputInfo.GetShape());
@@ -1004,7 +1005,7 @@ bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& 
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
 
-    if (IsDynamicOutput(outputInfo))
+    if (IsDynamicTensor(outputInfo))
     {
         ALOGD("Output shape not set, will infer from inputs");
         outputInfo.SetShape(inputInfo.GetShape());
@@ -1147,7 +1148,7 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
     }
 
     armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*outputOperand);
-    if (IsDynamicOutput(outputInfo))
+    if (IsDynamicTensor(outputInfo))
     {
         ALOGD("Output shape not set, will infer from input");
         outputInfo.SetShape(input.GetTensorInfo().GetShape());

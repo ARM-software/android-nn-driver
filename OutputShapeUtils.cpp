@@ -96,11 +96,6 @@ namespace armnn_driver
 
 using namespace armnn;
 
-bool IsDynamicOutput(const TensorInfo& outputInfo)
-{
-    return outputInfo.GetNumElements() == 0u;
-}
-
 TensorShape InferConvolution2dOutputShape(const TensorShape& inputShape,
                                           const TensorShape& kernelShape,
                                           const Convolution2dDescriptor& descriptor)

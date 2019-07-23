@@ -974,6 +974,11 @@ LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
     try
     {
         armnn::TensorInfo operandTensorInfo = GetTensorInfoForOperand(*operand);
+        if (IsDynamicTensor(operandTensorInfo))
+        {
+            Fail("%s: dynamic input tensors are not supported", __func__);
+            return LayerInputHandle();
+        }
 
         switch (operand->lifetime)
         {
