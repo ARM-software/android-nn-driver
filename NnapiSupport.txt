@@ -55,6 +55,7 @@ MINIMUM                      (FLOAT32,QUANT8_ASYMM)
 PAD_V2                       (FLOAT32,QUANT8_ASYMM)
 PRELU                        (FLOAT32,QUANT8_ASYMM)
 QUANTIZE                     (FLOAT32,QUANT8_ASYMM)
+QUANTIZED_16BIT_LSTM         (QUANT8_ASYMM)
 RESIZE_NEAREST_NEIGHBOR      (FLOAT32,QUANT8_ASYMM)
 SOFTMAX                      (FLOAT32,QUANT8_ASYMM)
 TRANSPOSE_CONV_2D            (FLOAT32,QUANT8_ASYMM)
@@ -74,7 +75,6 @@ The following AndroidNN HAL 1.2 operations are currently not supported:
 
 CONCATENATION
 LSTM
-QUANTIZED_16BIT_LSTM
 
 Where operations are not supported by the ArmNN Android NN Driver, the driver indicates this to the framework
 appropriately and the framework implements those operations using a CPU implementation.

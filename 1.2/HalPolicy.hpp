@@ -57,6 +57,8 @@ private:
 
     static bool ConvertQuantize(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertQuantizedLstm(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertReLu(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertReLu1(const Operation& operation, const Model& model, ConversionData& data);

@@ -149,6 +149,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertPrelu(operation, model, data);
         case V1_2::OperationType::QUANTIZE:
             return ConvertQuantize(operation, model, data);
+        case V1_2::OperationType::QUANTIZED_16BIT_LSTM:
+            return ConvertQuantizedLstm(operation, model, data);
         case V1_2::OperationType::RELU:
             return ConvertReLu(operation, model, data);
         case V1_2::OperationType::RELU1:
@@ -809,6 +811,214 @@ bool HalPolicy::ConvertQuantize(const Operation& operation, const Model& model, 
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
+}
+
+bool HalPolicy::ConvertQuantizedLstm(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertQuantizedLstm()");
+
+    //Inputs:
+    // 0: The input: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape [numBatches, inputSize]
+    //    specifying the input to the LSTM cell. Tensor is quantized with a fixed quantization range of -1, 127/128.
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Could not read input 0: input", __func__);
+    }
+
+    //13: The previous cell state: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT16_SYMM and shape
+    //    [numBatches, outputSize] specifying the cell state from the previous time step of the LSTM cell.
+    //    It is quantized using a quantization range of -2^4, 2^4 * 32767/32768.
+    LayerInputHandle previousCellStateIn = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 13, model, data);
+    if (!previousCellStateIn.IsValid())
+    {
+        return Fail("%s: Could not read input 13: previousCellStateIn", __func__);
+    }
+
+    // 14: The previous output state: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //     [numBathes, outputSize] specifying the output of the LSTM cell from previous time-step. Tensor
+    //     is quantized with a fixed quantization range of -1, 127/128.
+    LayerInputHandle previousOutputIn = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 14, model, data);
+    if (!previousOutputIn.IsValid())
+    {
+        return Fail("%s: Could not read input 14: previousOutputIn", __func__);
+    }
+
+    // Get the input tensors:
+    // 1: The input-to-input weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, inputSize] specifying input-to-input part of weights for fully-connected layer inside the
+    //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    const ConstTensorPin inputToInputWeightsPin =
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 0, model, data);
+
+    // 2: The input-to-forget weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, inputSize] specifying input-to-forget part of weights for fully-connected layer inside the
+    //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    const ConstTensorPin inputToForgetWeightsPin =
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 1, model, data);
+
+    // 3: The input-to-cell weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, inputSize] specifying input-to-cell part of weights for fully-connected layer inside the
+    //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    const ConstTensorPin inputToCellWeightsPin =
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 2, model, data);
+
+    // 4: The input-to-output weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, inputSize] specifying input-to-output part of weights for fully-connected layer inside the
+    //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    const ConstTensorPin inputToOutputWeightsPin =
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 3, model, data);
+
+    // 5: The recurrent-to-input weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, outputSize] specifying recurrent-to-input part of weights for fully-connected layer inside
+    //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    const ConstTensorPin recurrentToInputWeightsPin =
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 4, model, data);
+
+    // 6: The recurrent-to-forget weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, outputSize] specifying recurrent-to-forget part of weights for fully-connected layer inside
+    //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    const ConstTensorPin recurrentToForgetWeightsPin =
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 5, model, data);
+
+    // 7: The recurrent-to-cell weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, outputSize] specifying recurrent-to-cell part of weights for fully-connected layer inside
+    //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    const ConstTensorPin recurrentToCellWeightsPin =
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 6, model, data);
+
+    // 8: The recurrent-to-output weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, outputSize] specifying recurrent-to-output part of weights for fully-connected layer inside
+    //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    const ConstTensorPin recurrentToOutputWeightsPin =
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 7, model, data);
+
+    // 9: The input gate bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying the
+    //    bias for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product
+    //    of input and weights scales and zeroPoint equal to 0.
+    const ConstTensorPin inputGateBiasPin =
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 8, model, data);
+
+    // 10: The forget gate bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying
+    //     the bias for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product
+    //     of input and weights scales and zeroPoint equal to 0.
+    const ConstTensorPin forgetGateBiasPin =
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 9, model, data);
+
+    // 11:The cell bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying the bias
+    //    for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product of input
+    //    and weights scales and zeroPoint equal to 0.
+    const ConstTensorPin cellBiasPin =
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 10, model, data);
+
+    // 12:The output gate bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying
+    //    the bias for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product
+    //    of input and weights scales and zeroPoint equal to 0.
+    const ConstTensorPin outputGateBiasPin =
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 11, model, data);
+
+    if (!inputToInputWeightsPin.IsValid() ||
+        !inputToForgetWeightsPin.IsValid() ||
+        !inputToCellWeightsPin.IsValid() ||
+        !inputToOutputWeightsPin.IsValid() ||
+        !recurrentToInputWeightsPin.IsValid() ||
+        !recurrentToForgetWeightsPin.IsValid() ||
+        !recurrentToCellWeightsPin.IsValid() ||
+        !recurrentToOutputWeightsPin.IsValid() ||
+        !inputGateBiasPin.IsValid() ||
+        !forgetGateBiasPin.IsValid() ||
+        !cellBiasPin.IsValid() ||
+        !outputGateBiasPin.IsValid())
+    {
+        return Fail("%s: Operation has invalid tensor inputs", __func__);
+    }
+
+    // Outputs:
+    // 0: The cell state: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT16_SYMM and shape [numBatches, outputSize]
+    //    which contains a cell state from the current time step. Tensor is quantized using a quantization range
+    //    of -2^4, 2^4 * 32767/32768.
+    const Operand* cellStateOut = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
+    if (!cellStateOut)
+    {
+        return Fail("%s: Could not read output 0: cellStateOut", __func__);
+    }
+
+    // 1: The output: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape [numBathes, outputSize] which
+    //      contains the output value. Tensor is quantized with a fixed quantization range of -1, 127/128.
+    const Operand* output = GetOutputOperand<hal_1_2::HalPolicy>(operation, 1, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 1: output", __func__);
+    }
+
+    // Inputs
+    const armnn::TensorInfo& inputInfo               = input.GetTensorInfo();
+    const armnn::TensorInfo& previousCellStateInInfo = previousCellStateIn.GetTensorInfo();
+    const armnn::TensorInfo& previousOutputInInfo    = previousOutputIn.GetTensorInfo();
+
+    // Outputs
+    const armnn::TensorInfo& cellStateOutInfo = GetTensorInfoForOperand(*cellStateOut);
+    const armnn::TensorInfo& outputInfo       = GetTensorInfoForOperand(*output);
+
+    // Dynamic tensors currently not supported
+    if (IsDynamicTensor(cellStateOutInfo) || IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    armnn::QuantizedLstmInputParams params;
+
+    params.m_InputToInputWeights      = inputToInputWeightsPin.GetConstTensorPtr();
+    params.m_InputToForgetWeights     = inputToForgetWeightsPin.GetConstTensorPtr();
+    params.m_InputToCellWeights       = inputToCellWeightsPin.GetConstTensorPtr();
+    params.m_InputToOutputWeights     = inputToOutputWeightsPin.GetConstTensorPtr();
+    params.m_RecurrentToInputWeights  = recurrentToInputWeightsPin.GetConstTensorPtr();
+    params.m_RecurrentToForgetWeights = recurrentToForgetWeightsPin.GetConstTensorPtr();
+    params.m_RecurrentToCellWeights   = recurrentToCellWeightsPin.GetConstTensorPtr();
+    params.m_RecurrentToOutputWeights = recurrentToOutputWeightsPin.GetConstTensorPtr();
+    params.m_InputGateBias            = inputGateBiasPin.GetConstTensorPtr();
+    params.m_ForgetGateBias           = forgetGateBiasPin.GetConstTensorPtr();
+    params.m_CellBias                 = cellBiasPin.GetConstTensorPtr();
+    params.m_OutputGateBias           = outputGateBiasPin.GetConstTensorPtr();
+
+    armnn::QuantizedLstmInputParamsInfo paramsInfo;
+    paramsInfo.m_InputToInputWeights      = &(params.m_InputToInputWeights->GetInfo());
+    paramsInfo.m_InputToForgetWeights     = &(params.m_InputToForgetWeights->GetInfo());
+    paramsInfo.m_InputToCellWeights       = &(params.m_InputToCellWeights->GetInfo());
+    paramsInfo.m_InputToOutputWeights     = &(params.m_InputToOutputWeights->GetInfo());
+    paramsInfo.m_RecurrentToInputWeights  = &(params.m_RecurrentToInputWeights->GetInfo());
+    paramsInfo.m_RecurrentToForgetWeights = &(params.m_RecurrentToForgetWeights->GetInfo());
+    paramsInfo.m_RecurrentToCellWeights   = &(params.m_RecurrentToCellWeights->GetInfo());
+    paramsInfo.m_RecurrentToOutputWeights = &(params.m_RecurrentToOutputWeights->GetInfo());
+    paramsInfo.m_InputGateBias            = &(params.m_InputGateBias->GetInfo());
+    paramsInfo.m_ForgetGateBias           = &(params.m_ForgetGateBias->GetInfo());
+    paramsInfo.m_CellBias                 = &(params.m_CellBias->GetInfo());
+    paramsInfo.m_OutputGateBias           = &(params.m_OutputGateBias->GetInfo());
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsQuantizedLstmSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               previousCellStateInInfo,
+                               previousOutputInInfo,
+                               cellStateOutInfo,
+                               outputInfo,
+                               paramsInfo);
+
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddQuantizedLstmLayer(params, "QuantizedLstm");
+    input.Connect(layer->GetInputSlot(0));
+    previousOutputIn.Connect(layer->GetInputSlot(1));
+    previousCellStateIn.Connect(layer->GetInputSlot(2));
+
+    return (SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, 0, model, data) &&
+            SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 1, *layer, 1, model, data));
 }
 
 bool HalPolicy::ConvertReLu(const Operation& operation, const Model& model, ConversionData& data)
