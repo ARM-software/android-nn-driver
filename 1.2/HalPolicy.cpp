@@ -164,6 +164,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
 
 bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_2::HalPolicy::ConvertConv2d()");
+
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
@@ -329,6 +331,8 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
 
 bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_2::HalPolicy::ConvertDepthwiseConv2d()");
+
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
 
     if (!input.IsValid())
@@ -508,6 +512,8 @@ bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& 
 
 bool HalPolicy::ConvertMaximum(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_2::HalPolicy::ConvertMaximum()");
+
     LayerInputHandle input0 = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
     LayerInputHandle input1 = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 1, model, data);
 
@@ -557,6 +563,8 @@ bool HalPolicy::ConvertMaximum(const Operation& operation, const Model& model, C
 
 bool HalPolicy::ConvertMinimum(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_2::HalPolicy::ConvertMinimum()");
+
     LayerInputHandle input0 = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
     LayerInputHandle input1 = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 1, model, data);
 
@@ -607,6 +615,8 @@ bool HalPolicy::ConvertMinimum(const Operation& operation, const Model& model, C
 
 bool HalPolicy::ConvertPadV2(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_2::HalPolicy::ConvertPadV2()");
+
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
@@ -708,6 +718,8 @@ bool HalPolicy::ConvertPadV2(const Operation& operation, const Model& model, Con
 
 bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_2::HalPolicy::ConvertPrelu()");
+
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
     LayerInputHandle alpha = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 1, model, data);
 
@@ -768,7 +780,9 @@ bool HalPolicy::ConvertResize(const Operation& operation,
                               ConversionData& data,
                               armnn::ResizeMethod resizeMethod)
 {
-        LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+    ALOGV("hal_1_2::HalPolicy::ConvertResize()");
+
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Could not read input 0", __func__);
@@ -893,8 +907,9 @@ bool HalPolicy::ConvertResize(const Operation& operation,
 
 bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+    ALOGV("hal_1_2::HalPolicy::ConvertSpaceToDepth()");
 
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid() )
     {
         return Fail("%s: Operation has invalid inputs", __func__);
@@ -949,6 +964,8 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
 
 bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_2::HalPolicy::ConvertSoftmax()");
+
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {

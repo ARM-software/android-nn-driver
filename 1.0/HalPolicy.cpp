@@ -27,11 +27,9 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
         case V1_0::OperationType::CONCATENATION:
             return ConvertConcatenation(operation, model, data);
         case V1_0::OperationType::CONV_2D:
-            return ValidateConv2dParameters(operation) &&
-                   ConvertConv2d<hal_1_0::HalPolicy>(operation, model, data);
+            return ConvertConv2d(operation, model, data);
         case V1_0::OperationType::DEPTHWISE_CONV_2D:
-            return ValidateDepthwiseConv2dParameters(operation) &&
-                   ConvertDepthwiseConv2d<hal_1_0::HalPolicy>(operation, model, data);
+            return ConvertDepthwiseConv2d(operation, model, data);
         case V1_0::OperationType::DEQUANTIZE:
             return ConvertDequantize(operation, model, data);
         case V1_0::OperationType::FLOOR:
@@ -94,6 +92,8 @@ bool HalPolicy::ValidateDepthwiseConv2dParameters(const Operation &operation)
 
 bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertAdd()");
+
     LayerInputHandle input0 = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     LayerInputHandle input1 = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 1, model, data);
 
@@ -150,11 +150,14 @@ bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, Conve
 
 bool HalPolicy::ConvertAveragePool2d(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertAveragePool2d()");
     return ConvertPooling2d<hal_1_0::HalPolicy>(operation, __func__, armnn::PoolingAlgorithm::Average, model, data);
 }
 
 bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertConcatenation()");
+
     // The first N (0..N-1) inputs are tensors. The Nth input is the concatenation axis.
     if (operation.inputs.size() <= 1)
     {
@@ -382,10 +385,24 @@ bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& mo
     return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, model, data);
 }
 
+bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_0::HalPolicy::ConvertConv2d()");
+    return ValidateConv2dParameters(operation) && ::ConvertConv2d<hal_1_0::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_0::HalPolicy::ConvertDepthwiseConv2d()");
+    return ValidateDepthwiseConv2dParameters(operation) &&
+        ::ConvertDepthwiseConv2d<hal_1_0::HalPolicy>(operation, model, data);
+}
+
 bool HalPolicy::ConvertDequantize(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
+    ALOGV("hal_1_0::HalPolicy::ConvertDequantize()");
 
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid input", __func__);
@@ -430,6 +447,8 @@ bool HalPolicy::ConvertDequantize(const Operation& operation, const Model& model
 
 bool HalPolicy::ConvertFloor(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertFloor()");
+
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
@@ -463,6 +482,8 @@ bool HalPolicy::ConvertFloor(const Operation& operation, const Model& model, Con
 
 bool HalPolicy::ConvertFullyConnected(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertFullyConnected()");
+
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
@@ -573,6 +594,8 @@ bool HalPolicy::ConvertLocalResponseNormalization(const Operation& operation,
                                                   const Model& model,
                                                   ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertLocalResponseNormalization()");
+
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
@@ -630,6 +653,8 @@ bool HalPolicy::ConvertLocalResponseNormalization(const Operation& operation,
 
 bool HalPolicy::ConvertLogistic(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertLogistic()");
+
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::Sigmoid;
 
@@ -638,6 +663,8 @@ bool HalPolicy::ConvertLogistic(const Operation& operation, const Model& model, 
 
 bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertLstm()");
+
     // Inputs:
     // 00: The input: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, input_size], where
     //      “batch_size” corresponds to the batching dimension, and “input_size” is the size of the input.
@@ -990,6 +1017,8 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
 
 bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertL2Normalization()");
+
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
@@ -1041,16 +1070,20 @@ bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& 
 
 bool HalPolicy::ConvertL2Pool2d(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertL2Pool2d()");
     return ConvertPooling2d<hal_1_0::HalPolicy>(operation, __func__, armnn::PoolingAlgorithm::L2, model, data);
 }
 
 bool HalPolicy::ConvertMaxPool2d(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertMaxPool2d()");
     return ConvertPooling2d<hal_1_0::HalPolicy>(operation, __func__, armnn::PoolingAlgorithm::Max, model, data);
 }
 
 bool HalPolicy::ConvertMul(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertMul()");
+
     LayerInputHandle input0 = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     LayerInputHandle input1 = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 1, model, data);
 
@@ -1108,6 +1141,8 @@ bool HalPolicy::ConvertMul(const Operation& operation, const Model& model, Conve
 
 bool HalPolicy::ConvertReLu(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertReLu()");
+
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::ReLu;
 
@@ -1116,6 +1151,8 @@ bool HalPolicy::ConvertReLu(const Operation& operation, const Model& model, Conv
 
 bool HalPolicy::ConvertReLu1(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertReLu1()");
+
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::BoundedReLu;
     desc.m_A        = 1.0f;
@@ -1126,6 +1163,8 @@ bool HalPolicy::ConvertReLu1(const Operation& operation, const Model& model, Con
 
 bool HalPolicy::ConvertReLu6(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertReLu6()");
+
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::BoundedReLu;
     desc.m_A        = 6.0f;
@@ -1135,6 +1174,8 @@ bool HalPolicy::ConvertReLu6(const Operation& operation, const Model& model, Con
 
 bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertSoftmax()");
+
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
@@ -1187,8 +1228,9 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
 
 bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
+    ALOGV("hal_1_0::HalPolicy::ConvertSpaceToDepth()");
 
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid() )
     {
         return Fail("%s: Operation has invalid inputs", __func__);
@@ -1242,6 +1284,8 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
 
 bool HalPolicy::ConvertTanH(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertTanH()");
+
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::TanH;
     desc.m_A = 1.0f; // android nn does not support tanH parameters
@@ -1252,6 +1296,8 @@ bool HalPolicy::ConvertTanH(const Operation& operation, const Model& model, Conv
 
 bool HalPolicy::ConvertReshape(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertReshape()");
+
     const Operand* inputOperand = GetInputOperand<hal_1_0::HalPolicy>(operation, 0, model);
     const Operand* requestedShapeOperand = GetInputOperand<hal_1_0::HalPolicy>(operation, 1, model);
     const Operand* outputOperand = GetOutputOperand<hal_1_0::HalPolicy>(operation, 0, model);
@@ -1323,6 +1369,8 @@ bool HalPolicy::ConvertReshape(const Operation& operation, const Model& model, C
 
 bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_0::HalPolicy::ConvertResizeBilinear()");
+
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_0::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {

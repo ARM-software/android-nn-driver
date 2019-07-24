@@ -36,6 +36,10 @@ private:
 
     static bool ConvertConcatenation(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertDequantize(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertFloor(const Operation& operation, const Model& model, ConversionData& data);

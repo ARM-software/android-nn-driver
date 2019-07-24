@@ -106,6 +106,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
 
 bool HalPolicy::ConvertDiv(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_1::HalPolicy::ConvertDiv()");
+
     LayerInputHandle input0 = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
     LayerInputHandle input1 = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 1, model, data);
 
@@ -160,6 +162,8 @@ bool HalPolicy::ConvertDiv(const Operation& operation, const Model& model, Conve
 
 bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_1::HalPolicy::ConvertSub()");
+
     LayerInputHandle input0 = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
     LayerInputHandle input1 = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 1, model, data);
 
@@ -224,6 +228,8 @@ bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, Conve
 
 bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_1::HalPolicy::ConvertMean()");
+
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
@@ -292,6 +298,8 @@ bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, Conv
 
 bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_1::HalPolicy::ConvertPad()");
+
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
@@ -348,8 +356,9 @@ bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, Conve
 
 bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
+    ALOGV("hal_1_1::HalPolicy::ConvertSpaceToBatchNd()");
 
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
@@ -436,8 +445,9 @@ bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& m
 
 bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
+    ALOGV("hal_1_1::HalPolicy::ConvertSqueeze()");
 
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
@@ -515,13 +525,15 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
 
 bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_1::HalPolicy::ConvertStridedSlice()");
+
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
-    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
 
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
     unsigned int rank = inputInfo.GetNumDimensions();
     if (rank > 4)
     {
@@ -608,15 +620,15 @@ bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& mod
 
 bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model, ConversionData& data)
 {
-    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
+    ALOGV("hal_1_1::HalPolicy::ConvertTranspose()");
 
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
-
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
     unsigned int rank = inputInfo.GetNumDimensions();
     if (rank > 4)
     {
@@ -684,6 +696,8 @@ bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model,
 
 bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_1::HalPolicy::ConvertBatchToSpaceNd()");
+
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
