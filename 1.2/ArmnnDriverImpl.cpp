@@ -14,6 +14,7 @@ namespace
 {
 
 const char *g_RelaxedFloat32toFloat16PerformanceExecTime    = "ArmNN.relaxedFloat32toFloat16Performance.execTime";
+const char *g_RelaxedFloat32toFloat16PerformancePowerUsage  = "ArmNN.relaxedFloat32toFloat16Performance.powerUsage";
 
 const char *g_OperandTypeTensorFloat32PerformanceExecTime   = "Armnn.operandTypeTensorFloat32Performance.execTime";
 const char *g_OperandTypeTensorFloat32PerformancePowerUsage = "Armnn.operandTypeTensorFloat32Performance.powerUsage";
@@ -218,8 +219,8 @@ Return<void> ArmnnDriverImpl::getCapabilities_1_2(const armnn::IRuntimePtr& runt
         capabilities.relaxedFloat32toFloat16PerformanceScalar.execTime =
                 ParseSystemProperty(g_RelaxedFloat32toFloat16PerformanceExecTime, defaultValue);
 
-        capabilities.relaxedFloat32toFloat16PerformanceTensor.execTime =
-                ParseSystemProperty(g_RelaxedFloat32toFloat16PerformanceExecTime, defaultValue);
+        capabilities.relaxedFloat32toFloat16PerformanceTensor.powerUsage =
+                ParseSystemProperty(g_RelaxedFloat32toFloat16PerformancePowerUsage, defaultValue);
 
         // Set the base value for all operand types
         capabilities.operandPerformance = nonExtensionOperandPerformance({FLT_MAX, FLT_MAX});
