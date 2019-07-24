@@ -116,26 +116,30 @@ bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, Conve
         return false;
     }
 
-    const armnn::TensorInfo outInfo = GetTensorInfoForOperand(*outputOperand);
+    const armnn::TensorInfo& inputInfo0 = input0.GetTensorInfo();
+    const armnn::TensorInfo& inputInfo1 = input1.GetTensorInfo();
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output shapes are not supported in this HAL version", __func__);
+    }
 
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsAdditionSupported,
                                data.m_Backends,
                                isSupported,
-                               input0.GetTensorInfo(),
-                               input1.GetTensorInfo(),
-                               outInfo);
+                               inputInfo0,
+                               inputInfo1,
+                               outputInfo);
     if (!isSupported)
     {
         return false;
     }
 
     armnn::IConnectableLayer* const startLayer = data.m_Network->AddAdditionLayer();
-    armnn::IConnectableLayer* const endLayer   = ProcessActivation(outInfo, activationFunction, startLayer, data);
-
-    const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
-    const armnn::TensorInfo& inputTensorInfo1 = input1.GetTensorInfo();
+    armnn::IConnectableLayer* const endLayer   = ProcessActivation(outputInfo, activationFunction, startLayer, data);
 
     if (endLayer != nullptr)
     {
