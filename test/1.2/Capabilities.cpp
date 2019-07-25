@@ -20,6 +20,18 @@ struct CapabilitiesFixture
 {
     CapabilitiesFixture()
     {
+        // CleanUp before the execution of each test
+        CleanUp();
+    }
+
+    ~CapabilitiesFixture()
+    {
+        // CleanUp after the execution of each test
+        CleanUp();
+    }
+
+    void CleanUp()
+    {
         const char* nullStr = "";
 
         __system_property_set("Armnn.operandTypeTensorFloat32Performance.execTime", nullStr);
@@ -39,8 +51,6 @@ struct CapabilitiesFixture
         __system_property_set("Armnn.operandTypeInt32Performance.execTime", nullStr);
         __system_property_set("Armnn.operandTypeInt32Performance.powerUsage", nullStr);
     }
-
-    ~CapabilitiesFixture(){}
 };
 
 void CheckOperandType(const V1_2::Capabilities& capabilities, OperandType type, float execTime, float powerUsage)
@@ -50,7 +60,7 @@ void CheckOperandType(const V1_2::Capabilities& capabilities, OperandType type, 
     BOOST_ASSERT(perfInfo.powerUsage == powerUsage);
 }
 
-BOOST_AUTO_TEST_SUITE(CapabilitiesTests)
+BOOST_FIXTURE_TEST_SUITE(CapabilitiesTests, CapabilitiesFixture)
 
 BOOST_AUTO_TEST_CASE(PerformanceCapabilitiesWithRuntime)
 {
