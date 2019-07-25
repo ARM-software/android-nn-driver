@@ -57,6 +57,7 @@ endif # PLATFORM_VERSION == Q or later
 LOCAL_SRC_FILES := \
         1.0/Convolution2D.cpp \
         1.0/FullyConnectedReshape.cpp \
+        1.0/Lstm.cpp \
         Tests.cpp \
         UtilsTests.cpp \
         Concurrent.cpp \
@@ -64,7 +65,6 @@ LOCAL_SRC_FILES := \
         GenericLayerTests.cpp \
         DriverTestHelpers.cpp \
         SystemProperties.cpp \
-        Lstm.cpp \
         Concat.cpp \
         TestTensor.cpp
 
@@ -160,6 +160,8 @@ LOCAL_SRC_FILES := \
         1.1/Convolution2D.cpp \
         1.1/Mean.cpp \
         1.1/Transpose.cpp \
+        1.0/Lstm.cpp \
+        1.1/Lstm.cpp \
         Tests.cpp \
         UtilsTests.cpp \
         Concurrent.cpp \
@@ -167,7 +169,6 @@ LOCAL_SRC_FILES := \
         GenericLayerTests.cpp \
         DriverTestHelpers.cpp \
         SystemProperties.cpp \
-        Lstm.cpp \
         Concat.cpp \
         TestTensor.cpp
 
@@ -257,6 +258,9 @@ LOCAL_SRC_FILES := \
         1.1/Transpose.cpp \
         1.2/Dilation.cpp \
         1.2/Capabilities.cpp \
+        1.0/Lstm.cpp \
+        1.1/Lstm.cpp \
+        1.2/Lstm.cpp \
         Tests.cpp \
         UtilsTests.cpp \
         Concurrent.cpp \
@@ -264,7 +268,6 @@ LOCAL_SRC_FILES := \
         GenericLayerTests.cpp \
         DriverTestHelpers.cpp \
         SystemProperties.cpp \
-        Lstm.cpp \
         Concat.cpp \
         TestTensor.cpp
 

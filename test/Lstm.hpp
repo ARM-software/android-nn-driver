@@ -2,24 +2,16 @@
 // Copyright © 2017 Arm Ltd. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
-#include "DriverTestHelpers.hpp"
-#include "OperationsUtils.h"
 
-#include "../1.0/HalPolicy.hpp"
+#pragma once
+
+#include "DriverTestHelpers.hpp"
 
 #include <boost/array.hpp>
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
 #include <boost/math/special_functions/relative_difference.hpp>
-#include <log/log.h>
-
-#include <cmath>
-
-BOOST_AUTO_TEST_SUITE(LstmTests)
 
 using ArmnnDriver   = armnn_driver::ArmnnDriver;
 using DriverOptions = armnn_driver::DriverOptions;
-using HalPolicy     = armnn_driver::hal_1_0::HalPolicy;
 
 using namespace driverTestHelpers;
 using namespace android::hardware;
@@ -71,10 +63,43 @@ OperandLifeTime CreateNoValueLifeTime(const hidl_vec<uint32_t>& dimensions)
     }
     return OperandLifeTime::CONSTANT_COPY;
 }
+
+template<typename HalModel>
+void ExecuteModel(const HalModel& model, armnn_driver::ArmnnDriver& driver, const Request& request)
+{
+    android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, driver);
+    if (preparedModel.get() != nullptr)
+    {
+        Execute(preparedModel, request);
+    }
+}
+
+#ifdef ARMNN_ANDROID_NN_V1_2
+
+template<>
+void ExecuteModel<armnn_driver::hal_1_2::HalPolicy::Model>(const armnn_driver::hal_1_2::HalPolicy::Model& model,
+                                                           armnn_driver::ArmnnDriver& driver,
+                                                           const Request& request)
+{
+    android::sp<V1_2::IPreparedModel> preparedModel = PrepareModel_1_2(model, driver);
+    if (preparedModel.get() != nullptr)
+    {
+        Execute(preparedModel, request);
+    }
+}
+
+#endif
+
 } // anonymous namespace
 
-// Add our own tests here since we fail the lstm tests which Google supplies (because of non-const weights)
+#ifndef ARMCOMPUTECL_ENABLED
+static const boost::array<armnn::Compute, 1> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef }};
+#else
+static const boost::array<armnn::Compute, 2> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef, armnn::Compute::GpuAcc }};
+#endif
 
+// Add our own tests here since we fail the lstm tests which Google supplies (because of non-const weights)
+template <typename HalPolicy>
 void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
                   const std::vector<float>&   inputValue,
                   const hidl_vec<uint32_t>&   inputToInputWeightsDimensions,
@@ -121,6 +146,14 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
                   const std::vector<float>&   cellClippingThresholdValue,
                   const hidl_vec<uint32_t>&   projectionClippingThresholdDimensions,
                   const std::vector<float>&   projectionClippingThresholdValue,
+                  const hidl_vec<uint32_t>&   inputLayerNormWeightsDimensions,
+                  const std::vector<float>&   inputLayerNormWeightsValue,
+                  const hidl_vec<uint32_t>&   forgetLayerNormWeightsDimensions,
+                  const std::vector<float>&   forgetLayerNormWeightsValue,
+                  const hidl_vec<uint32_t>&   cellLayerNormWeightsDimensions,
+                  const std::vector<float>&   cellLayerNormWeightsValue,
+                  const hidl_vec<uint32_t>&   outputLayerNormWeightsDimensions,
+                  const std::vector<float>&   outputLayerNormWeightsValue,
                   const hidl_vec<uint32_t>&   scratchBufferDimensions,
                   const std::vector<float>&   scratchBufferValue,
                   const hidl_vec<uint32_t>&   outputStateOutDimensions,
@@ -132,7 +165,8 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
                   armnn::Compute              compute)
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(compute));
-    HalPolicy::Model model = {};
+    using Model = typename HalPolicy::Model;
+    Model model = {};
 
     // Inputs:
     // 00: The input: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, input_size], where
@@ -241,6 +275,47 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
                                 projectionClippingThresholdValue,
                                 HalPolicy::OperandType::FLOAT32);
 
+    bool normalizationEnabled = false;
+
+    // If any of the tensors have a value all normalization tensors are set
+    if (!inputLayerNormWeightsValue.empty()  ||
+        !forgetLayerNormWeightsValue.empty() ||
+        !cellLayerNormWeightsValue.empty()   ||
+        !outputLayerNormWeightsValue.empty())
+    {
+        // Normalization:
+        // 23:The input layer normalization weights. A 1-D tensor of shape [num_units].
+        //    Used to rescale normalized inputs to activation at input gate.
+        AddTensorOperand<HalPolicy>(model,
+                                    inputLayerNormWeightsDimensions,
+                                    inputLayerNormWeightsValue,
+                                    HalPolicy::OperandType::TENSOR_FLOAT32,
+                                    CreateNoValueLifeTime(inputLayerNormWeightsDimensions));
+        // 24:The forget layer normalization weights. A 1-D tensor of shape [num_units].
+        //    Used to rescale normalized inputs to activation at forget gate.
+        AddTensorOperand<HalPolicy>(model,
+                                    forgetLayerNormWeightsDimensions,
+                                    forgetLayerNormWeightsValue,
+                                    HalPolicy::OperandType::TENSOR_FLOAT32,
+                                    CreateNoValueLifeTime(forgetLayerNormWeightsDimensions));
+        // 25:The cell layer normalization weights. A 1-D tensor of shape [num_units].
+        //    Used to rescale normalized inputs to activation at cell gate.
+        AddTensorOperand<HalPolicy>(model,
+                                    cellLayerNormWeightsDimensions,
+                                    cellLayerNormWeightsValue,
+                                    HalPolicy::OperandType::TENSOR_FLOAT32,
+                                    CreateNoValueLifeTime(cellLayerNormWeightsDimensions));
+        // 26:The output layer normalization weights. A 1-D tensor of shape [num_units].
+        //    Used to rescale normalized inputs to activation at output gate.
+        AddTensorOperand<HalPolicy>(model,
+                                    outputLayerNormWeightsDimensions,
+                                    outputLayerNormWeightsValue,
+                                    HalPolicy::OperandType::TENSOR_FLOAT32,
+                                    CreateNoValueLifeTime(outputLayerNormWeightsDimensions));
+
+        normalizationEnabled = true;
+    }
+
     // Outputs:
     //  0: The scratch buffer: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units * 4] with
     //     CIFG, or [batch_size, num_units * 3] without CIFG.
@@ -256,9 +331,19 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
     // make the lstm operation
     model.operations.resize(1);
     model.operations[0].type = HalPolicy::OperationType::LSTM;
-    model.operations[0].inputs =
-        hidl_vec<uint32_t> {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
-    model.operations[0].outputs = hidl_vec<uint32_t> {23, 24, 25, 26};
+
+    if (normalizationEnabled)
+    {
+        model.operations[0].inputs = hidl_vec<uint32_t> { 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13,
+                                                         14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26};
+        model.operations[0].outputs = hidl_vec<uint32_t> {27, 28, 29, 30};
+    }
+    else
+    {
+        model.operations[0].inputs = hidl_vec<uint32_t> { 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11,
+                                                         12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
+        model.operations[0].outputs = hidl_vec<uint32_t> {23, 24, 25, 26};
+    }
 
     // define the input values
     hidl_vec<RequestArgument> inputArguments;
@@ -296,11 +381,7 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
     float* outputData = static_cast<float*>(static_cast<void*>(outputMemory->getPointer()));
 
     // make the prepared model and run the execution
-    android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, *driver);
-    if (preparedModel.get() != nullptr)
-    {
-        Execute(preparedModel, request);
-    }
+    ExecuteModel(model, *driver, request);
 
     // check the results
     for (size_t i = 0; i < outputStateOutValue.size(); ++i)
@@ -320,6 +401,7 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
     }
 }
 
+template <typename HalPolicy>
 void LstmNoCifgNoPeepholeNoProjection(armnn::Compute compute)
 {
     // This replicates android/frameworks/ml/nn/runtime/test/generated/vts_models/lstm.model.cpp
@@ -443,6 +525,24 @@ void LstmNoCifgNoPeepholeNoProjection(armnn::Compute compute)
     hidl_vec<uint32_t> projectionClippingThresholdDimensions{};
     std::vector<float> projectionClippingThresholdValue{0.0f};
 
+    // Normalization:
+    // 23:The input layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at input gate.
+    hidl_vec<uint32_t> inputLayerNormWeightsDimensions{0};
+    std::vector<float> inputLayerNormWeightsValue;
+    // 24:The forget layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at forget gate.
+    hidl_vec<uint32_t> forgetLayerNormWeightsDimensions{0};
+    std::vector<float> forgetLayerNormWeightsValue;
+    // 25:The cell layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at cell gate.
+    hidl_vec<uint32_t> cellLayerNormWeightsDimensions{0};
+    std::vector<float> cellLayerNormWeightsValue;
+    // 26:The output layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at output gate.
+    hidl_vec<uint32_t> outputLayerNormWeightsDimensions{0};
+    std::vector<float> outputLayerNormWeightsValue;
+
     // Outputs:
     //  0: The scratch buffer: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units * 4] with
     //     CIFG, or [batch_size, num_units * 3] without CIFG.
@@ -463,36 +563,41 @@ void LstmNoCifgNoPeepholeNoProjection(armnn::Compute compute)
     hidl_vec<uint32_t> outputDimensions{batchSize, outputSize};
     std::vector<float> outputValue {-0.02973187f, 0.1229473f, 0.20885126f, -0.15358765f};
 
-    LstmTestImpl(inputDimensions,                       inputValue,
-                 inputToInputWeightsDimensions,         inputToInputWeightsValue,
-                 inputToForgetWeightsDimensions,        inputToForgetWeightsValue,
-                 inputToCellWeightsDimensions,          inputToCellWeightsValue,
-                 inputToOutputWeightsDimensions,        inputToOutputWeightsValue,
-                 recurrentToInputWeightsDimensions,     recurrentToInputWeightsValue,
-                 recurrentToForgetWeightsDimensions,    recurrentToForgetWeightsValue,
-                 recurrentToCellWeightsDimensions,      recurrentToCellWeightsValue,
-                 recurrentToOutputWeightsDimensions,    recurrentToOutputWeightsValue,
-                 cellToInputWeightsDimensions,          cellToInputWeightsValue,
-                 cellToForgetWeightsDimensions,         cellToForgetWeightsValue,
-                 cellToOutputWeightsDimensions,         cellToOutputWeightsValue,
-                 inputGateBiasDimensions,               inputGateBiasValue,
-                 forgetGateBiasDimensions,              forgetGateBiasValue,
-                 cellBiasDimensions,                    cellBiasValue,
-                 outputGateBiasDimensions,              outputGateBiasValue,
-                 projectionWeightsDimensions,           projectionWeightsValue,
-                 projectionBiasDimensions,              projectionBiasValue,
-                 outputStateInDimensions,               outputStateInValue,
-                 cellStateInDimensions,                 cellStateInValue,
-                 activationFunctionDimensions,          activationFunctionValue,
-                 cellClippingThresholdDimensions,       cellClippingThresholdValue,
-                 projectionClippingThresholdDimensions, projectionClippingThresholdValue,
-                 scratchBufferDimensions,               scratchBufferValue,
-                 outputStateOutDimensions,              outputStateOutValue,
-                 cellStateOutDimensions,                cellStateOutValue,
-                 outputDimensions,                      outputValue,
-                 compute);
+    LstmTestImpl<HalPolicy>(inputDimensions,                       inputValue,
+                            inputToInputWeightsDimensions,         inputToInputWeightsValue,
+                            inputToForgetWeightsDimensions,        inputToForgetWeightsValue,
+                            inputToCellWeightsDimensions,          inputToCellWeightsValue,
+                            inputToOutputWeightsDimensions,        inputToOutputWeightsValue,
+                            recurrentToInputWeightsDimensions,     recurrentToInputWeightsValue,
+                            recurrentToForgetWeightsDimensions,    recurrentToForgetWeightsValue,
+                            recurrentToCellWeightsDimensions,      recurrentToCellWeightsValue,
+                            recurrentToOutputWeightsDimensions,    recurrentToOutputWeightsValue,
+                            cellToInputWeightsDimensions,          cellToInputWeightsValue,
+                            cellToForgetWeightsDimensions,         cellToForgetWeightsValue,
+                            cellToOutputWeightsDimensions,         cellToOutputWeightsValue,
+                            inputGateBiasDimensions,               inputGateBiasValue,
+                            forgetGateBiasDimensions,              forgetGateBiasValue,
+                            cellBiasDimensions,                    cellBiasValue,
+                            outputGateBiasDimensions,              outputGateBiasValue,
+                            projectionWeightsDimensions,           projectionWeightsValue,
+                            projectionBiasDimensions,              projectionBiasValue,
+                            outputStateInDimensions,               outputStateInValue,
+                            cellStateInDimensions,                 cellStateInValue,
+                            activationFunctionDimensions,          activationFunctionValue,
+                            cellClippingThresholdDimensions,       cellClippingThresholdValue,
+                            projectionClippingThresholdDimensions, projectionClippingThresholdValue,
+                            inputLayerNormWeightsDimensions,       inputLayerNormWeightsValue,
+                            forgetLayerNormWeightsDimensions,      forgetLayerNormWeightsValue,
+                            cellLayerNormWeightsDimensions,        cellLayerNormWeightsValue,
+                            outputLayerNormWeightsDimensions,      outputLayerNormWeightsValue,
+                            scratchBufferDimensions,               scratchBufferValue,
+                            outputStateOutDimensions,              outputStateOutValue,
+                            cellStateOutDimensions,                cellStateOutValue,
+                            outputDimensions,                      outputValue,
+                            compute);
 }
 
+template <typename HalPolicy>
 void LstmCifgPeepholeNoProjection(armnn::Compute compute)
 {
     // This replicates android/frameworks/ml/nn/runtime/test/generated/vts_models/lstm2.model.cpp
@@ -610,6 +715,24 @@ void LstmCifgPeepholeNoProjection(armnn::Compute compute)
     hidl_vec<uint32_t> projectionClippingThresholdDimensions{};
     std::vector<float> projectionClippingThresholdValue{0.0f};
 
+    // Normalization:
+    // 23:The input layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at input gate.
+    hidl_vec<uint32_t> inputLayerNormWeightsDimensions{0};
+    std::vector<float> inputLayerNormWeightsValue;
+    // 24:The forget layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at forget gate.
+    hidl_vec<uint32_t> forgetLayerNormWeightsDimensions{0};
+    std::vector<float> forgetLayerNormWeightsValue;
+    // 25:The cell layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at cell gate.
+    hidl_vec<uint32_t> cellLayerNormWeightsDimensions{0};
+    std::vector<float> cellLayerNormWeightsValue;
+    // 26:The output layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at output gate.
+    hidl_vec<uint32_t> outputLayerNormWeightsDimensions{0};
+    std::vector<float> outputLayerNormWeightsValue;
+
     // Outputs:
     //  0: The scratch buffer: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units * 4] with
     //     CIFG, or [batch_size, num_units * 3] without CIFG.
@@ -630,36 +753,41 @@ void LstmCifgPeepholeNoProjection(armnn::Compute compute)
     hidl_vec<uint32_t> outputDimensions{batchSize, outputSize};
     std::vector<float> outputValue{-0.36444446f, -0.00352185f, 0.12886585f, -0.05163646f};
 
-    LstmTestImpl(inputDimensions,                       inputValue,
-                 inputToInputWeightsDimensions,         inputToInputWeightsValue,
-                 inputToForgetWeightsDimensions,        inputToForgetWeightsValue,
-                 inputToCellWeightsDimensions,          inputToCellWeightsValue,
-                 inputToOutputWeightsDimensions,        inputToOutputWeightsValue,
-                 recurrentToInputWeightsDimensions,     recurrentToInputWeightsValue,
-                 recurrentToForgetWeightsDimensions,    recurrentToForgetWeightsValue,
-                 recurrentToCellWeightsDimensions,      recurrentToCellWeightsValue,
-                 recurrentToOutputWeightsDimensions,    recurrentToOutputWeightsValue,
-                 cellToInputWeightsDimensions,          cellToInputWeightsValue,
-                 cellToForgetWeightsDimensions,         cellToForgetWeightsValue,
-                 cellToOutputWeightsDimensions,         cellToOutputWeightsValue,
-                 inputGateBiasDimensions,               inputGateBiasValue,
-                 forgetGateBiasDimensions,              forgetGateBiasValue,
-                 cellBiasDimensions,                    cellBiasValue,
-                 outputGateBiasDimensions,              outputGateBiasValue,
-                 projectionWeightsDimensions,           projectionWeightsValue,
-                 projectionBiasDimensions,              projectionBiasValue,
-                 outputStateInDimensions,               outputStateInValue,
-                 cellStateInDimensions,                 cellStateInValue,
-                 activationFunctionDimensions,          activationFunctionValue,
-                 cellClippingThresholdDimensions,       cellClippingThresholdValue,
-                 projectionClippingThresholdDimensions, projectionClippingThresholdValue,
-                 scratchBufferDimensions,               scratchBufferValue,
-                 outputStateOutDimensions,              outputStateOutValue,
-                 cellStateOutDimensions,                cellStateOutValue,
-                 outputDimensions,                      outputValue,
-                 compute);
+    LstmTestImpl<HalPolicy>(inputDimensions,                       inputValue,
+                            inputToInputWeightsDimensions,         inputToInputWeightsValue,
+                            inputToForgetWeightsDimensions,        inputToForgetWeightsValue,
+                            inputToCellWeightsDimensions,          inputToCellWeightsValue,
+                            inputToOutputWeightsDimensions,        inputToOutputWeightsValue,
+                            recurrentToInputWeightsDimensions,     recurrentToInputWeightsValue,
+                            recurrentToForgetWeightsDimensions,    recurrentToForgetWeightsValue,
+                            recurrentToCellWeightsDimensions,      recurrentToCellWeightsValue,
+                            recurrentToOutputWeightsDimensions,    recurrentToOutputWeightsValue,
+                            cellToInputWeightsDimensions,          cellToInputWeightsValue,
+                            cellToForgetWeightsDimensions,         cellToForgetWeightsValue,
+                            cellToOutputWeightsDimensions,         cellToOutputWeightsValue,
+                            inputGateBiasDimensions,               inputGateBiasValue,
+                            forgetGateBiasDimensions,              forgetGateBiasValue,
+                            cellBiasDimensions,                    cellBiasValue,
+                            outputGateBiasDimensions,              outputGateBiasValue,
+                            projectionWeightsDimensions,           projectionWeightsValue,
+                            projectionBiasDimensions,              projectionBiasValue,
+                            outputStateInDimensions,               outputStateInValue,
+                            cellStateInDimensions,                 cellStateInValue,
+                            activationFunctionDimensions,          activationFunctionValue,
+                            cellClippingThresholdDimensions,       cellClippingThresholdValue,
+                            projectionClippingThresholdDimensions, projectionClippingThresholdValue,
+                            inputLayerNormWeightsDimensions,       inputLayerNormWeightsValue,
+                            forgetLayerNormWeightsDimensions,      forgetLayerNormWeightsValue,
+                            cellLayerNormWeightsDimensions,        cellLayerNormWeightsValue,
+                            outputLayerNormWeightsDimensions,      outputLayerNormWeightsValue,
+                            scratchBufferDimensions,               scratchBufferValue,
+                            outputStateOutDimensions,              outputStateOutValue,
+                            cellStateOutDimensions,                cellStateOutValue,
+                            outputDimensions,                      outputValue,
+                            compute);
 }
 
+template <typename HalPolicy>
 void LstmNoCifgPeepholeProjection(armnn::Compute compute)
 {
     // This replicates android/frameworks/ml/nn/runtime/test/generated/vts_models/lstm3.model.cpp
@@ -1284,6 +1412,24 @@ void LstmNoCifgPeepholeProjection(armnn::Compute compute)
     hidl_vec<uint32_t> projectionClippingThresholdDimensions{};
     std::vector<float> projectionClippingThresholdValue{0.0f};
 
+    // Normalization:
+    // 23:The input layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at input gate.
+    hidl_vec<uint32_t> inputLayerNormWeightsDimensions{0};
+    std::vector<float> inputLayerNormWeightsValue;
+    // 24:The forget layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at forget gate.
+    hidl_vec<uint32_t> forgetLayerNormWeightsDimensions{0};
+    std::vector<float> forgetLayerNormWeightsValue;
+    // 25:The cell layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at cell gate.
+    hidl_vec<uint32_t> cellLayerNormWeightsDimensions{0};
+    std::vector<float> cellLayerNormWeightsValue;
+    // 26:The output layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at output gate.
+    hidl_vec<uint32_t> outputLayerNormWeightsDimensions{0};
+    std::vector<float> outputLayerNormWeightsValue;
+
     // Outputs:
     //  0: The scratch buffer: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units * 4] with
     //     CIFG, or [batch_size, num_units * 3] without CIFG.
@@ -1326,36 +1472,41 @@ void LstmNoCifgPeepholeProjection(armnn::Compute compute)
          0.00422612f, -0.0345232f, 0.00223253f, -0.00957321f, 0.0210624f, 0.013331f, 0.0150954f, 0.02168f
     };
 
-    LstmTestImpl(inputDimensions,                       inputValue,
-                 inputToInputWeightsDimensions,         inputToInputWeightsValue,
-                 inputToForgetWeightsDimensions,        inputToForgetWeightsValue,
-                 inputToCellWeightsDimensions,          inputToCellWeightsValue,
-                 inputToOutputWeightsDimensions,        inputToOutputWeightsValue,
-                 recurrentToInputWeightsDimensions,     recurrentToInputWeightsValue,
-                 recurrentToForgetWeightsDimensions,    recurrentToForgetWeightsValue,
-                 recurrentToCellWeightsDimensions,      recurrentToCellWeightsValue,
-                 recurrentToOutputWeightsDimensions,    recurrentToOutputWeightsValue,
-                 cellToInputWeightsDimensions,          cellToInputWeightsValue,
-                 cellToForgetWeightsDimensions,         cellToForgetWeightsValue,
-                 cellToOutputWeightsDimensions,         cellToOutputWeightsValue,
-                 inputGateBiasDimensions,               inputGateBiasValue,
-                 forgetGateBiasDimensions,              forgetGateBiasValue,
-                 cellBiasDimensions,                    cellBiasValue,
-                 outputGateBiasDimensions,              outputGateBiasValue,
-                 projectionWeightsDimensions,           projectionWeightsValue,
-                 projectionBiasDimensions,              projectionBiasValue,
-                 outputStateInDimensions,               outputStateInValue,
-                 cellStateInDimensions,                 cellStateInValue,
-                 activationFunctionDimensions,          activationFunctionValue,
-                 cellClippingThresholdDimensions,       cellClippingThresholdValue,
-                 projectionClippingThresholdDimensions, projectionClippingThresholdValue,
-                 scratchBufferDimensions,               scratchBufferValue,
-                 outputStateOutDimensions,              outputStateOutValue,
-                 cellStateOutDimensions,                cellStateOutValue,
-                 outputDimensions,                      outputValue,
-                 compute);
+    LstmTestImpl<HalPolicy>(inputDimensions,                       inputValue,
+                            inputToInputWeightsDimensions,         inputToInputWeightsValue,
+                            inputToForgetWeightsDimensions,        inputToForgetWeightsValue,
+                            inputToCellWeightsDimensions,          inputToCellWeightsValue,
+                            inputToOutputWeightsDimensions,        inputToOutputWeightsValue,
+                            recurrentToInputWeightsDimensions,     recurrentToInputWeightsValue,
+                            recurrentToForgetWeightsDimensions,    recurrentToForgetWeightsValue,
+                            recurrentToCellWeightsDimensions,      recurrentToCellWeightsValue,
+                            recurrentToOutputWeightsDimensions,    recurrentToOutputWeightsValue,
+                            cellToInputWeightsDimensions,          cellToInputWeightsValue,
+                            cellToForgetWeightsDimensions,         cellToForgetWeightsValue,
+                            cellToOutputWeightsDimensions,         cellToOutputWeightsValue,
+                            inputGateBiasDimensions,               inputGateBiasValue,
+                            forgetGateBiasDimensions,              forgetGateBiasValue,
+                            cellBiasDimensions,                    cellBiasValue,
+                            outputGateBiasDimensions,              outputGateBiasValue,
+                            projectionWeightsDimensions,           projectionWeightsValue,
+                            projectionBiasDimensions,              projectionBiasValue,
+                            outputStateInDimensions,               outputStateInValue,
+                            cellStateInDimensions,                 cellStateInValue,
+                            activationFunctionDimensions,          activationFunctionValue,
+                            cellClippingThresholdDimensions,       cellClippingThresholdValue,
+                            projectionClippingThresholdDimensions, projectionClippingThresholdValue,
+                            inputLayerNormWeightsDimensions,       inputLayerNormWeightsValue,
+                            forgetLayerNormWeightsDimensions,      forgetLayerNormWeightsValue,
+                            cellLayerNormWeightsDimensions,        cellLayerNormWeightsValue,
+                            outputLayerNormWeightsDimensions,      outputLayerNormWeightsValue,
+                            scratchBufferDimensions,               scratchBufferValue,
+                            outputStateOutDimensions,              outputStateOutValue,
+                            cellStateOutDimensions,                cellStateOutValue,
+                            outputDimensions,                      outputValue,
+                            compute);
 }
 
+template <typename HalPolicy>
 void LstmCifgPeepholeNoProjectionBatch2(armnn::Compute compute)
 {
     // This replicates android/frameworks/ml/nn/runtime/test/generated/vts_models/lstm2.model.cpp
@@ -1474,6 +1625,24 @@ void LstmCifgPeepholeNoProjectionBatch2(armnn::Compute compute)
     hidl_vec<uint32_t> projectionClippingThresholdDimensions{};
     std::vector<float> projectionClippingThresholdValue{0.0f};
 
+    // Normalization:
+    // 23:The input layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at input gate.
+    hidl_vec<uint32_t> inputLayerNormWeightsDimensions{0};
+    std::vector<float> inputLayerNormWeightsValue;
+    // 24:The forget layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at forget gate.
+    hidl_vec<uint32_t> forgetLayerNormWeightsDimensions{0};
+    std::vector<float> forgetLayerNormWeightsValue;
+    // 25:The cell layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at cell gate.
+    hidl_vec<uint32_t> cellLayerNormWeightsDimensions{0};
+    std::vector<float> cellLayerNormWeightsValue;
+    // 26:The output layer normalization weights. A 1-D tensor of shape [num_units].
+    //    Used to rescale normalized inputs to activation at output gate.
+    hidl_vec<uint32_t> outputLayerNormWeightsDimensions{0};
+    std::vector<float> outputLayerNormWeightsValue;
+
     // Outputs:
     //  0: The scratch buffer: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units * 4] with
     //     CIFG, or [batch_size, num_units * 3] without CIFG.
@@ -1497,59 +1666,434 @@ void LstmCifgPeepholeNoProjectionBatch2(armnn::Compute compute)
     std::vector<float> outputValue{-0.36444446f, -0.00352185f, 0.12886585f, -0.05163646f,
                                    -0.42734814f, -0.00478661f, 0.13455015f, -0.03560682f};
 
-    LstmTestImpl(inputDimensions,                       inputValue,
-                 inputToInputWeightsDimensions,         inputToInputWeightsValue,
-                 inputToForgetWeightsDimensions,        inputToForgetWeightsValue,
-                 inputToCellWeightsDimensions,          inputToCellWeightsValue,
-                 inputToOutputWeightsDimensions,        inputToOutputWeightsValue,
-                 recurrentToInputWeightsDimensions,     recurrentToInputWeightsValue,
-                 recurrentToForgetWeightsDimensions,    recurrentToForgetWeightsValue,
-                 recurrentToCellWeightsDimensions,      recurrentToCellWeightsValue,
-                 recurrentToOutputWeightsDimensions,    recurrentToOutputWeightsValue,
-                 cellToInputWeightsDimensions,          cellToInputWeightsValue,
-                 cellToForgetWeightsDimensions,         cellToForgetWeightsValue,
-                 cellToOutputWeightsDimensions,         cellToOutputWeightsValue,
-                 inputGateBiasDimensions,               inputGateBiasValue,
-                 forgetGateBiasDimensions,              forgetGateBiasValue,
-                 cellBiasDimensions,                    cellBiasValue,
-                 outputGateBiasDimensions,              outputGateBiasValue,
-                 projectionWeightsDimensions,           projectionWeightsValue,
-                 projectionBiasDimensions,              projectionBiasValue,
-                 outputStateInDimensions,               outputStateInValue,
-                 cellStateInDimensions,                 cellStateInValue,
-                 activationFunctionDimensions,          activationFunctionValue,
-                 cellClippingThresholdDimensions,       cellClippingThresholdValue,
-                 projectionClippingThresholdDimensions, projectionClippingThresholdValue,
-                 scratchBufferDimensions,               scratchBufferValue,
-                 outputStateOutDimensions,              outputStateOutValue,
-                 cellStateOutDimensions,                cellStateOutValue,
-                 outputDimensions,                      outputValue,
-                 compute);
+    LstmTestImpl<HalPolicy>(inputDimensions,                       inputValue,
+                            inputToInputWeightsDimensions,         inputToInputWeightsValue,
+                            inputToForgetWeightsDimensions,        inputToForgetWeightsValue,
+                            inputToCellWeightsDimensions,          inputToCellWeightsValue,
+                            inputToOutputWeightsDimensions,        inputToOutputWeightsValue,
+                            recurrentToInputWeightsDimensions,     recurrentToInputWeightsValue,
+                            recurrentToForgetWeightsDimensions,    recurrentToForgetWeightsValue,
+                            recurrentToCellWeightsDimensions,      recurrentToCellWeightsValue,
+                            recurrentToOutputWeightsDimensions,    recurrentToOutputWeightsValue,
+                            cellToInputWeightsDimensions,          cellToInputWeightsValue,
+                            cellToForgetWeightsDimensions,         cellToForgetWeightsValue,
+                            cellToOutputWeightsDimensions,         cellToOutputWeightsValue,
+                            inputGateBiasDimensions,               inputGateBiasValue,
+                            forgetGateBiasDimensions,              forgetGateBiasValue,
+                            cellBiasDimensions,                    cellBiasValue,
+                            outputGateBiasDimensions,              outputGateBiasValue,
+                            projectionWeightsDimensions,           projectionWeightsValue,
+                            projectionBiasDimensions,              projectionBiasValue,
+                            outputStateInDimensions,               outputStateInValue,
+                            cellStateInDimensions,                 cellStateInValue,
+                            activationFunctionDimensions,          activationFunctionValue,
+                            cellClippingThresholdDimensions,       cellClippingThresholdValue,
+                            projectionClippingThresholdDimensions, projectionClippingThresholdValue,
+                            inputLayerNormWeightsDimensions,       inputLayerNormWeightsValue,
+                            forgetLayerNormWeightsDimensions,      forgetLayerNormWeightsValue,
+                            cellLayerNormWeightsDimensions,        cellLayerNormWeightsValue,
+                            outputLayerNormWeightsDimensions,      outputLayerNormWeightsValue,
+                            scratchBufferDimensions,               scratchBufferValue,
+                            outputStateOutDimensions,              outputStateOutValue,
+                            cellStateOutDimensions,                cellStateOutValue,
+                            outputDimensions,                      outputValue,
+                            compute);
 }
-#ifndef ARMCOMPUTECL_ENABLED
-    static const boost::array<armnn::Compute, 1> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef }};
-#else
-    static const boost::array<armnn::Compute, 2> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef, armnn::Compute::GpuAcc }};
-#endif
 
-BOOST_DATA_TEST_CASE(LstmNoCifgNoPeepholeNoProjectionTest, COMPUTE_DEVICES)
+template <typename HalPolicy>
+void LstmNoCifgPeepholeProjectionNoClippingLayerNorm(armnn::Compute compute)
 {
-    LstmNoCifgNoPeepholeNoProjection(sample);
+    // This replicates android/frameworks/ml/nn/runtime/test/generated/vts_models/layer_norm_lstm.model.cpp
+    // with values from android/frameworks/ml/nn/runtime/test/generated/examples/layer_norm_lstm.example.cpp
+    // and weights, biases and scalars passed as CONSTANT_COPY tensors (instead of MODEL_INPUT tensors).
+
+    uint32_t batchSize = 2;
+    uint32_t inputSize = 5;
+    uint32_t numUnits = 4;
+    uint32_t outputSize = 3;
+
+    // Inputs:
+    // 00: The input: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, input_size], where
+    //     “batch_size” corresponds to the batching dimension, and “input_size” is the size of the input.
+    hidl_vec<uint32_t> inputDimensions{batchSize, inputSize};
+    std::vector<float> inputValue{ 0.7f,  0.8f,  0.1f,  0.2f,  0.3f,  // batch 0
+                                   0.3f,  0.2f,  0.9f,  0.8f,  0.1f}; // batch 1
+
+    // 01: The input-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, input_size], where “num_units” corresponds to the number of cell units.
+    hidl_vec<uint32_t> inputToInputWeightsDimensions{numUnits, inputSize};
+    std::vector<float> inputToInputWeightsValue{ 0.5,  0.6,  0.7, -0.8, -0.9,
+                                                 0.1,  0.2,  0.3, -0.4,  0.5,
+                                                -0.8,  0.7, -0.6,  0.5, -0.4,
+                                                -0.5, -0.4, -0.3, -0.2, -0.1};
+    // 02: The input-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, input_size].
+    hidl_vec<uint32_t> inputToForgetWeightsDimensions{numUnits, inputSize};
+    std::vector<float> inputToForgetWeightsValue{-0.6, -0.1,  0.3,  0.2,  0.9,
+                                                 -0.5, -0.2, -0.4,  0.3, -0.8,
+                                                 -0.4,  0.3, -0.5, -0.4, -0.6,
+                                                  0.3, -0.4, -0.6, -0.5, -0.5};
+    // 03: The input-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units, input_size].
+    hidl_vec<uint32_t> inputToCellWeightsDimensions{numUnits, inputSize};
+    std::vector<float> inputToCellWeightsValue{-0.4, -0.3, -0.2, -0.1, -0.5,
+                                                0.5, -0.2, -0.3, -0.2, -0.6,
+                                                0.6, -0.1, -0.4, -0.3, -0.7,
+                                                0.7, -0.9, -0.5,  0.8,  0.6};
+    // 04: The input-to-output weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, input_size].
+    hidl_vec<uint32_t> inputToOutputWeightsDimensions{numUnits, inputSize};
+    std::vector<float> inputToOutputWeightsValue{-0.8, -0.4, -0.2, -0.9, -0.1,
+                                                 -0.7,  0.3, -0.3, -0.8, -0.2,
+                                                  0.6, -0.2,  0.4, -0.7, -0.3,
+                                                 -0.5,  0.1,  0.5, -0.6, -0.4};
+    // 05: The recurrent-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, output_size], where “output_size” corresponds to either the number of cell units (i.e.,
+    //     “num_units”), or the second dimension of the “projection_weights”, if defined.
+    hidl_vec<uint32_t> recurrentToInputWeightsDimensions{numUnits, outputSize};
+    std::vector<float> recurrentToInputWeightsValue{-0.2, -0.3,  0.4,
+                                                     0.1, -0.5,  0.9,
+                                                    -0.2, -0.3, -0.7,
+                                                    0.05, -0.2, -0.6};
+    // 06: The recurrent-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, output_size].
+    hidl_vec<uint32_t> recurrentToForgetWeightsDimensions{numUnits, outputSize};
+    std::vector<float> recurrentToForgetWeightsValue{-0.5, -0.3, -0.5,
+                                                     -0.2,  0.6,  0.4,
+                                                      0.9,  0.3, -0.1,
+                                                      0.2,  0.5,  0.2};
+    // 07: The recurrent-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, output_size].
+    hidl_vec<uint32_t> recurrentToCellWeightsDimensions{numUnits, outputSize};
+    std::vector<float> recurrentToCellWeightsValue{-0.3,  0.2,  0.1,
+                                                   -0.3,  0.8,-0.08,
+                                                   -0.2,  0.3,  0.8,
+                                                   -0.6, -0.1,  0.2};
+    // 08: The recurrent-to-output weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, output_size].
+    hidl_vec<uint32_t> recurrentToOutputWeightsDimensions{numUnits, outputSize};
+    std::vector<float> recurrentToOutputWeightsValue{ 0.3, -0.1,  0.1,
+                                                     -0.2, -0.5, -0.7,
+                                                     -0.2, -0.6, -0.1,
+                                                     -0.4, -0.7, -0.2};
+    // 09: The cell-to-input weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    hidl_vec<uint32_t> cellToInputWeightsDimensions{numUnits};
+    std::vector<float> cellToInputWeightsValue{0.05, 0.1, 0.25, 0.15};
+    // 10: The cell-to-forget weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    hidl_vec<uint32_t> cellToForgetWeightsDimensions{numUnits};
+    std::vector<float> cellToForgetWeightsValue{-0.02, -0.15, -0.25, -0.03};
+    // 11: The cell-to-output weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    hidl_vec<uint32_t> cellToOutputWeightsDimensions{numUnits};
+    std::vector<float> cellToOutputWeightsValue{0.1, -0.1, -0.5, 0.05};
+    // 12: The input gate bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    hidl_vec<uint32_t> inputGateBiasDimensions{numUnits};
+    std::vector<float> inputGateBiasValue{0.03, 0.15, 0.22, 0.38};
+    // 13: The forget gate bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    hidl_vec<uint32_t> forgetGateBiasDimensions{numUnits};
+    std::vector<float> forgetGateBiasValue{0.1, -0.3, -0.2, 0.1};
+    // 14: The cell bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    hidl_vec<uint32_t> cellBiasDimensions{numUnits};
+    std::vector<float> cellBiasValue{-0.05, 0.72, 0.25, 0.08};
+    // 15: The output gate bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    hidl_vec<uint32_t> outputGateBiasDimensions{numUnits};
+    std::vector<float> outputGateBiasValue{0.05, -0.01, 0.2, 0.1};
+    // 16: The projection weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [output_size, num_units].
+    hidl_vec<uint32_t> projectionWeightsDimensions{numUnits, outputSize};
+    std::vector<float> projectionWeightsValue{-0.1,  0.2, 0.01,
+                                              -0.2,  0.1,  0.5,
+                                               0.3, 0.08, 0.07,
+                                               0.2, -0.4,  0.2};
+    // 17: The projection bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [output_size].
+    hidl_vec<uint32_t> projectionBiasDimensions{outputSize};
+    std::vector<float> projectionBiasValue(outputSize, 0.0f);
+    // 18: The output state: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size].
+    hidl_vec<uint32_t> outputStateInDimensions{batchSize, outputSize};
+    std::vector<float> outputStateInValue(batchSize * outputSize, 0.0f);
+    // 19: The cell state: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units].
+    hidl_vec<uint32_t> cellStateInDimensions{batchSize, numUnits};
+    std::vector<float> cellStateInValue(batchSize * numUnits, 0.0f);
+
+    // Constant scalar values (the VTS test adds these as tensors of dim {})
+    // 20: The activation function: A value indicating the activation function:
+    //     0: None; 1: Relu; 3: Relu6; 4: Tanh; 6: Sigmoid.
+    hidl_vec<uint32_t> activationFunctionDimensions{};
+    std::vector<int32_t> activationFunctionValue{4};
+    // 21: The clipping threshold: for the cell state, such that values are bound within [-cell_clip, cell_clip].
+    //     If set to 0.0 then clipping is disabled.
+    hidl_vec<uint32_t> cellClippingThresholdDimensions{};
+    std::vector<float> cellClippingThresholdValue{0.0f};
+    // 22: The clipping threshold: for the output from the projection layer, such that values are bound within
+    //     [-proj_clip, proj_clip]. If set to 0.0 then clipping is disabled.
+    hidl_vec<uint32_t> projectionClippingThresholdDimensions{};
+    std::vector<float> projectionClippingThresholdValue{0.0f};
+
+    // Normalization:
+    // 23: The input layer normalization weights. A 1-D tensor of shape [num_units].
+    //     Used to rescale normalized inputs to activation at input gate.
+    hidl_vec<uint32_t> inputLayerNormWeightsDimensions{numUnits};
+    std::vector<float> inputLayerNormWeightsValue{0.1, 0.2, 0.3, 0.5};
+    // 24: The forget layer normalization weights. A 1-D tensor of shape [num_units].
+    //     Used to rescale normalized inputs to activation at forget gate.
+    hidl_vec<uint32_t> forgetLayerNormWeightsDimensions{numUnits};
+    std::vector<float> forgetLayerNormWeightsValue{0.2, 0.2, 0.4, 0.3};
+    // 25: The cell layer normalization weights. A 1-D tensor of shape [num_units].
+    //     Used to rescale normalized inputs to activation at cell gate.
+    hidl_vec<uint32_t> cellLayerNormWeightsDimensions{numUnits};
+    std::vector<float> cellLayerNormWeightsValue{0.7, 0.2, 0.3, 0.8};
+    // 26: The output layer normalization weights. A 1-D tensor of shape [num_units].
+    //     Used to rescale normalized inputs to activation at output gate.
+    hidl_vec<uint32_t> outputLayerNormWeightsDimensions{numUnits};
+    std::vector<float> outputLayerNormWeightsValue{0.6, 0.2, 0.2, 0.5};
+
+    // Outputs:
+    //  0: The scratch buffer: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units * 4] with
+    //     CIFG, or [batch_size, num_units * 3] without CIFG.
+    // HOWEVER, by looking at the code, seems that it's the opposite: (cifg ? 3 : 4) * numUnits
+    // Refer to: android/frameworks/ml/nn/common/operations/LSTM.cpp:319
+    //           android/frameworks/ml/nn/common/operations/LSTMTest.cpp:114
+    //           tensorflow/tensorflow/contrib/lite/kernels/lstm.cc:332
+    hidl_vec<uint32_t> scratchBufferDimensions{batchSize, numUnits * 4};
+    std::vector<float> scratchBufferValue(batchSize * numUnits * 4, 0.0f);
+    //  1: The output state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size].
+    hidl_vec<uint32_t> outputStateOutDimensions{batchSize, outputSize};
+    std::vector<float> outputStateOutValue { 0.02440767f,  0.12802738f, -0.00170918f,
+                                            -0.00692428f,  0.08487406f,  0.06344498f};
+    //  2: The cell state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units].
+    hidl_vec<uint32_t> cellStateOutDimensions{batchSize, numUnits};
+    std::vector<float> cellStateOutValue {-0.45177122f,  0.37691566f,  0.22542511f,  0.23240635f,
+                                          -0.25258583f,  0.33042118f,  0.01730525f,  0.36660123f};
+    //  3: The output: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size]. This is
+    //     effectively the same as the current “output state (out)” value.
+    hidl_vec<uint32_t> outputDimensions{batchSize, outputSize};
+    std::vector<float> outputValue{ 0.02440767f, 0.12802738f, -0.00170918f,
+                                   -0.00692428f, 0.08487406f,  0.06344498f};
+
+   LstmTestImpl<HalPolicy>(inputDimensions,                       inputValue,
+                           inputToInputWeightsDimensions,         inputToInputWeightsValue,
+                           inputToForgetWeightsDimensions,        inputToForgetWeightsValue,
+                           inputToCellWeightsDimensions,          inputToCellWeightsValue,
+                           inputToOutputWeightsDimensions,        inputToOutputWeightsValue,
+                           recurrentToInputWeightsDimensions,     recurrentToInputWeightsValue,
+                           recurrentToForgetWeightsDimensions,    recurrentToForgetWeightsValue,
+                           recurrentToCellWeightsDimensions,      recurrentToCellWeightsValue,
+                           recurrentToOutputWeightsDimensions,    recurrentToOutputWeightsValue,
+                           cellToInputWeightsDimensions,          cellToInputWeightsValue,
+                           cellToForgetWeightsDimensions,         cellToForgetWeightsValue,
+                           cellToOutputWeightsDimensions,         cellToOutputWeightsValue,
+                           inputGateBiasDimensions,               inputGateBiasValue,
+                           forgetGateBiasDimensions,              forgetGateBiasValue,
+                           cellBiasDimensions,                    cellBiasValue,
+                           outputGateBiasDimensions,              outputGateBiasValue,
+                           projectionWeightsDimensions,           projectionWeightsValue,
+                           projectionBiasDimensions,              projectionBiasValue,
+                           outputStateInDimensions,               outputStateInValue,
+                           cellStateInDimensions,                 cellStateInValue,
+                           activationFunctionDimensions,          activationFunctionValue,
+                           cellClippingThresholdDimensions,       cellClippingThresholdValue,
+                           projectionClippingThresholdDimensions, projectionClippingThresholdValue,
+                           inputLayerNormWeightsDimensions,       inputLayerNormWeightsValue,
+                           forgetLayerNormWeightsDimensions,      forgetLayerNormWeightsValue,
+                           cellLayerNormWeightsDimensions,        cellLayerNormWeightsValue,
+                           outputLayerNormWeightsDimensions,      outputLayerNormWeightsValue,
+                           scratchBufferDimensions,               scratchBufferValue,
+                           outputStateOutDimensions,              outputStateOutValue,
+                           cellStateOutDimensions,                cellStateOutValue,
+                           outputDimensions,                      outputValue,
+                           compute);
 }
 
-BOOST_DATA_TEST_CASE(LstmCifgPeepholeNoProjectionTest, COMPUTE_DEVICES)
+template <typename HalPolicy>
+void LstmCifgPeepholeProjectionNoClippingLayerNorm(armnn::Compute compute)
 {
-    LstmCifgPeepholeNoProjection(sample);
-}
+    // This replicates android/frameworks/ml/nn/runtime/test/generated/vts_models/layer_norm_lstm.model.cpp
+    // with values from android/frameworks/ml/nn/runtime/test/generated/examples/layer_norm_lstm.example.cpp
+    // and weights, biases and scalars passed as CONSTANT_COPY tensors (instead of MODEL_INPUT tensors).
 
-BOOST_DATA_TEST_CASE(LstmNoCifgPeepholeProjectionTest, COMPUTE_DEVICES)
-{
-    LstmNoCifgPeepholeProjection(sample);
-}
+    uint32_t batchSize = 2;
+    uint32_t inputSize = 5;
+    uint32_t numUnits = 4;
+    uint32_t outputSize = 3;
 
-BOOST_DATA_TEST_CASE(LstmCifgPeepholeNoProjectionBatch2Test, COMPUTE_DEVICES)
-{
-    LstmCifgPeepholeNoProjectionBatch2(sample);
-}
+    // Inputs:
+    // 00: The input: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, input_size], where
+    //     “batch_size” corresponds to the batching dimension, and “input_size” is the size of the input.
+    hidl_vec<uint32_t> inputDimensions{batchSize, inputSize};
+    std::vector<float> inputValue{ 0.7f, 0.8f, 0.1f, 0.2f, 0.3f,  // batch 0
+                                   0.3f, 0.2f, 0.9f, 0.8f, 0.1f}; // batch 1
 
-BOOST_AUTO_TEST_SUITE_END()
+    // 01: The input-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, input_size], where “num_units” corresponds to the number of cell units.
+    hidl_vec<uint32_t> inputToInputWeightsDimensions{0};
+    std::vector<float> inputToInputWeightsValue;
+    // 02: The input-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, input_size].
+    hidl_vec<uint32_t> inputToForgetWeightsDimensions{numUnits, inputSize};
+    std::vector<float> inputToForgetWeightsValue{-0.6, -0.1,  0.3,  0.2,  0.9,
+                                                 -0.5, -0.2, -0.4,  0.3, -0.8,
+                                                 -0.4,  0.3, -0.5, -0.4, -0.6,
+                                                  0.3, -0.4, -0.6, -0.5, -0.5};
+    // 03: The input-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units, input_size].
+    hidl_vec<uint32_t> inputToCellWeightsDimensions{numUnits, inputSize};
+    std::vector<float> inputToCellWeightsValue{-0.4, -0.3, -0.2, -0.1, -0.5,
+                                                0.5, -0.2, -0.3, -0.2, -0.6,
+                                                0.6, -0.1, -0.4, -0.3, -0.7,
+                                                0.7, -0.9, -0.5,  0.8,  0.6};
+    // 04: The input-to-output weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, input_size].
+    hidl_vec<uint32_t> inputToOutputWeightsDimensions{numUnits, inputSize};
+    std::vector<float> inputToOutputWeightsValue{-0.8, -0.4, -0.2, -0.9, -0.1,
+                                                 -0.7,  0.3, -0.3, -0.8, -0.2,
+                                                  0.6, -0.2,  0.4, -0.7, -0.3,
+                                                 -0.5,  0.1,  0.5, -0.6, -0.4};
+    // 05: The recurrent-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, output_size], where “output_size” corresponds to either the number of cell units (i.e.,
+    //     “num_units”), or the second dimension of the “projection_weights”, if defined.
+    hidl_vec<uint32_t> recurrentToInputWeightsDimensions{0};
+    std::vector<float> recurrentToInputWeightsValue;
+    // 06: The recurrent-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, output_size].
+    hidl_vec<uint32_t> recurrentToForgetWeightsDimensions{numUnits, outputSize};
+    std::vector<float> recurrentToForgetWeightsValue{-0.5, -0.3, -0.5,
+                                                     -0.2,  0.6,  0.4,
+                                                      0.9,  0.3, -0.1,
+                                                      0.2,  0.5,  0.2};
+    // 07: The recurrent-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, output_size].
+    hidl_vec<uint32_t> recurrentToCellWeightsDimensions{numUnits, outputSize};
+    std::vector<float> recurrentToCellWeightsValue{-0.3,  0.2,  0.1,
+                                                   -0.3,  0.8,-0.08,
+                                                   -0.2,  0.3,  0.8,
+                                                   -0.6, -0.1,  0.2};
+    // 08: The recurrent-to-output weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, output_size].
+    hidl_vec<uint32_t> recurrentToOutputWeightsDimensions{numUnits, outputSize};
+    std::vector<float> recurrentToOutputWeightsValue{  0.3, -0.1,  0.1,
+                                                      -0.2, -0.5, -0.7,
+                                                      -0.2, -0.6, -0.1,
+                                                      -0.4, -0.7, -0.2};
+    // 09: The cell-to-input weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    hidl_vec<uint32_t> cellToInputWeightsDimensions{0};
+    std::vector<float> cellToInputWeightsValue;
+    // 10: The cell-to-forget weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    hidl_vec<uint32_t> cellToForgetWeightsDimensions{numUnits};
+    std::vector<float> cellToForgetWeightsValue{-0.02, -0.15, -0.25, -0.03};
+    // 11: The cell-to-output weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    hidl_vec<uint32_t> cellToOutputWeightsDimensions{numUnits};
+    std::vector<float> cellToOutputWeightsValue{0.1, -0.1, -0.5, 0.05};
+    // 12: The input gate bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    hidl_vec<uint32_t> inputGateBiasDimensions{0};
+    std::vector<float> inputGateBiasValue;
+    // 13: The forget gate bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    hidl_vec<uint32_t> forgetGateBiasDimensions{numUnits};
+    std::vector<float> forgetGateBiasValue{0.1, -0.3, -0.2, 0.1};
+    // 14: The cell bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    hidl_vec<uint32_t> cellBiasDimensions{numUnits};
+    std::vector<float> cellBiasValue{-0.05, 0.72, 0.25, 0.08};
+    // 15: The output gate bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
+    hidl_vec<uint32_t> outputGateBiasDimensions{numUnits};
+    std::vector<float> outputGateBiasValue{0.05, -0.01, 0.2, 0.1};
+    // 16: The projection weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [output_size, num_units].
+    hidl_vec<uint32_t> projectionWeightsDimensions{numUnits, outputSize};
+    std::vector<float> projectionWeightsValue{-0.1,  0.2, 0.01,
+                                              -0.2,  0.1,  0.5,
+                                               0.3, 0.08, 0.07,
+                                               0.2, -0.4,  0.2};
+    // 17: The projection bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [output_size].
+    hidl_vec<uint32_t> projectionBiasDimensions{outputSize};
+    std::vector<float> projectionBiasValue(outputSize, 0.0f);
+    // 18: The output state: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size].
+    hidl_vec<uint32_t> outputStateInDimensions{batchSize, outputSize};
+    std::vector<float> outputStateInValue(batchSize * outputSize, 0.0f);
+    // 19: The cell state: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units].
+    hidl_vec<uint32_t> cellStateInDimensions{batchSize, numUnits};
+    std::vector<float> cellStateInValue(batchSize * numUnits, 0.0f);
+
+    // Constant scalar values (the VTS test adds these as tensors of dim {})
+    // 20: The activation function: A value indicating the activation function:
+    //     0: None; 1: Relu; 3: Relu6; 4: Tanh; 6: Sigmoid.
+    hidl_vec<uint32_t> activationFunctionDimensions{};
+    std::vector<int32_t> activationFunctionValue{4};
+    // 21: The clipping threshold: for the cell state, such that values are bound within [-cell_clip, cell_clip].
+    //     If set to 0.0 then clipping is disabled.
+    hidl_vec<uint32_t> cellClippingThresholdDimensions{};
+    std::vector<float> cellClippingThresholdValue{0.0f};
+    // 22: The clipping threshold: for the output from the projection layer, such that values are bound within
+    //     [-proj_clip, proj_clip]. If set to 0.0 then clipping is disabled.
+    hidl_vec<uint32_t> projectionClippingThresholdDimensions{};
+    std::vector<float> projectionClippingThresholdValue{0.0f};
+
+    // Normalization:
+    // 23: The input layer normalization weights. A 1-D tensor of shape [num_units].
+    //     Used to rescale normalized inputs to activation at input gate.
+    hidl_vec<uint32_t> inputLayerNormWeightsDimensions{numUnits};
+    std::vector<float> inputLayerNormWeightsValue{0.1, 0.2, 0.3, 0.5};
+    // 24: The forget layer normalization weights. A 1-D tensor of shape [num_units].
+    //     Used to rescale normalized inputs to activation at forget gate.
+    hidl_vec<uint32_t> forgetLayerNormWeightsDimensions{numUnits};
+    std::vector<float> forgetLayerNormWeightsValue{0.2, 0.2, 0.4, 0.3};
+    // 25: The cell layer normalization weights. A 1-D tensor of shape [num_units].
+    //     Used to rescale normalized inputs to activation at cell gate.
+    hidl_vec<uint32_t> cellLayerNormWeightsDimensions{numUnits};
+    std::vector<float> cellLayerNormWeightsValue{0.7, 0.2, 0.3, 0.8};
+    // 26: The output layer normalization weights. A 1-D tensor of shape [num_units].
+    //     Used to rescale normalized inputs to activation at output gate.
+    hidl_vec<uint32_t> outputLayerNormWeightsDimensions{numUnits};
+    std::vector<float> outputLayerNormWeightsValue{0.6, 0.2, 0.2, 0.5};
+
+    // Outputs:
+    //  0: The scratch buffer: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units * 4] with
+    //     CIFG, or [batch_size, num_units * 3] without CIFG.
+    // HOWEVER, by looking at the code, seems that it's the opposite: (cifg ? 3 : 4) * numUnits
+    // Refer to: android/frameworks/ml/nn/common/operations/LSTM.cpp:319
+    //           android/frameworks/ml/nn/common/operations/LSTMTest.cpp:114
+    //           tensorflow/tensorflow/contrib/lite/kernels/lstm.cc:332
+    hidl_vec<uint32_t> scratchBufferDimensions{batchSize, numUnits * 3};
+    std::vector<float> scratchBufferValue(batchSize * numUnits * 3, 0.0f);
+    //  1: The output state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size].
+    hidl_vec<uint32_t> outputStateOutDimensions{batchSize, outputSize};
+    std::vector<float> outputStateOutValue { 0.02129706f,  0.14081624f,  0.01127331f,
+                                            -0.02263505f,  0.09169482f,  0.07691758f};
+    //  2: The cell state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, num_units].
+    hidl_vec<uint32_t> cellStateOutDimensions{batchSize, numUnits};
+    std::vector<float> cellStateOutValue{-0.35102980f,  0.42610350f,  0.21463650f,  0.27716520f,
+                                         -0.18855170f,  0.32522000f,  0.02036650f,  0.48967660f};
+    //  3: The output: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, output_size]. This is
+    //     effectively the same as the current “output state (out)” value.
+    hidl_vec<uint32_t> outputDimensions{batchSize, outputSize};
+    std::vector<float> outputValue{ 0.02129706f,  0.14081624f,  0.01127331f,
+                                   -0.02263505f,  0.09169482f,  0.07691758f};
+
+    LstmTestImpl<HalPolicy>(inputDimensions,                       inputValue,
+                            inputToInputWeightsDimensions,         inputToInputWeightsValue,
+                            inputToForgetWeightsDimensions,        inputToForgetWeightsValue,
+                            inputToCellWeightsDimensions,          inputToCellWeightsValue,
+                            inputToOutputWeightsDimensions,        inputToOutputWeightsValue,
+                            recurrentToInputWeightsDimensions,     recurrentToInputWeightsValue,
+                            recurrentToForgetWeightsDimensions,    recurrentToForgetWeightsValue,
+                            recurrentToCellWeightsDimensions,      recurrentToCellWeightsValue,
+                            recurrentToOutputWeightsDimensions,    recurrentToOutputWeightsValue,
+                            cellToInputWeightsDimensions,          cellToInputWeightsValue,
+                            cellToForgetWeightsDimensions,         cellToForgetWeightsValue,
+                            cellToOutputWeightsDimensions,         cellToOutputWeightsValue,
+                            inputGateBiasDimensions,               inputGateBiasValue,
+                            forgetGateBiasDimensions,              forgetGateBiasValue,
+                            cellBiasDimensions,                    cellBiasValue,
+                            outputGateBiasDimensions,              outputGateBiasValue,
+                            projectionWeightsDimensions,           projectionWeightsValue,
+                            projectionBiasDimensions,              projectionBiasValue,
+                            outputStateInDimensions,               outputStateInValue,
+                            cellStateInDimensions,                 cellStateInValue,
+                            activationFunctionDimensions,          activationFunctionValue,
+                            cellClippingThresholdDimensions,       cellClippingThresholdValue,
+                            projectionClippingThresholdDimensions, projectionClippingThresholdValue,
+                            inputLayerNormWeightsDimensions,       inputLayerNormWeightsValue,
+                            forgetLayerNormWeightsDimensions,      forgetLayerNormWeightsValue,
+                            cellLayerNormWeightsDimensions,        cellLayerNormWeightsValue,
+                            outputLayerNormWeightsDimensions,      outputLayerNormWeightsValue,
+                            scratchBufferDimensions,               scratchBufferValue,
+                            outputStateOutDimensions,              outputStateOutValue,
+                            cellStateOutDimensions,                cellStateOutValue,
+                            outputDimensions,                      outputValue,
+                            compute);
+}

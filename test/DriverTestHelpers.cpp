@@ -61,6 +61,26 @@ Return<void> PreparedModelCallback::notify(ErrorStatus status,
     return Void();
 }
 
+#ifdef ARMNN_ANDROID_NN_V1_2
+
+Return<void> PreparedModelCallback_1_2::notify(ErrorStatus status,
+                                               const android::sp<V1_0::IPreparedModel>& preparedModel)
+{
+    m_ErrorStatus = status;
+    m_PreparedModel = preparedModel;
+    return Void();
+}
+
+Return<void> PreparedModelCallback_1_2::notify_1_2(ErrorStatus status,
+                                                   const android::sp<V1_2::IPreparedModel>& preparedModel)
+{
+    m_ErrorStatus = status;
+    m_PreparedModel_1_2 = preparedModel;
+    return Void();
+}
+
+#endif
+
 // lifted from common/Utils.cpp
 hidl_memory allocateSharedMemory(int64_t size)
 {
@@ -143,6 +163,32 @@ android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_1::Model& mode
         BOOST_TEST((cb->GetPreparedModel() != nullptr));
     }
     return cb->GetPreparedModel();
+}
+
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_2
+
+android::sp<V1_2::IPreparedModel> PrepareModelWithStatus_1_2(const armnn_driver::hal_1_2::HalPolicy::Model& model,
+                                                             armnn_driver::ArmnnDriver& driver,
+                                                             ErrorStatus& prepareStatus,
+                                                             ErrorStatus expectedStatus)
+{
+    android::sp<PreparedModelCallback_1_2> cb(new PreparedModelCallback_1_2());
+
+    android::hardware::hidl_vec<android::hardware::hidl_handle> emptyHandle1;
+    android::hardware::hidl_vec<android::hardware::hidl_handle> emptyHandle2;
+    armnn_driver::ArmnnDriver::HidlToken emptyToken;
+
+    driver.prepareModel_1_2(model, V1_1::ExecutionPreference::LOW_POWER, emptyHandle1, emptyHandle2, emptyToken, cb);
+
+    prepareStatus = cb->GetErrorStatus();
+    BOOST_TEST(prepareStatus == expectedStatus);
+    if (expectedStatus == ErrorStatus::NONE)
+    {
+        BOOST_TEST((cb->GetPreparedModel_1_2() != nullptr));
+    }
+    return cb->GetPreparedModel_1_2();
 }
 
 #endif

@@ -49,7 +49,7 @@ void NotifyCallbackAndCheck(const sp<V1_2::IPreparedModelCallback>& callback,
                             ErrorStatus errorStatus,
                             const sp<V1_2::IPreparedModel>& preparedModelPtr)
 {
-    Return<void> returned = callback->notify(errorStatus, preparedModelPtr);
+    Return<void> returned = callback->notify_1_2(errorStatus, preparedModelPtr);
     // This check is required, if the callback fails and it isn't checked it will bring down the service
     if (!returned.isOk())
     {

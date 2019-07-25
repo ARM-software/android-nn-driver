@@ -67,6 +67,36 @@ private:
     android::sp<V1_0::IPreparedModel>  m_PreparedModel;
 };
 
+#ifdef ARMNN_ANDROID_NN_V1_2
+
+class PreparedModelCallback_1_2 : public V1_2::IPreparedModelCallback
+{
+public:
+    PreparedModelCallback_1_2()
+            : m_ErrorStatus(ErrorStatus::NONE)
+            , m_PreparedModel()
+            , m_PreparedModel_1_2()
+    { }
+    ~PreparedModelCallback_1_2() override { }
+
+    Return<void> notify(ErrorStatus status, const android::sp<V1_0::IPreparedModel>& preparedModel) override;
+
+    Return<void> notify_1_2(ErrorStatus status, const android::sp<V1_2::IPreparedModel>& preparedModel) override;
+
+    ErrorStatus GetErrorStatus() { return m_ErrorStatus; }
+
+    android::sp<V1_0::IPreparedModel> GetPreparedModel() { return m_PreparedModel; }
+
+    android::sp<V1_2::IPreparedModel> GetPreparedModel_1_2() { return m_PreparedModel_1_2; }
+
+private:
+    ErrorStatus                        m_ErrorStatus;
+    android::sp<V1_0::IPreparedModel>  m_PreparedModel;
+    android::sp<V1_2::IPreparedModel>  m_PreparedModel_1_2;
+};
+
+#endif
+
 hidl_memory allocateSharedMemory(int64_t size);
 
 android::sp<IMemory> AddPoolAndGetData(uint32_t size, Request& request);
@@ -258,6 +288,24 @@ android::sp<V1_0::IPreparedModel> PrepareModel(const HalModel& model,
     ErrorStatus prepareStatus = ErrorStatus::NONE;
     return PrepareModelWithStatus(model, driver, prepareStatus);
 }
+
+#ifdef ARMNN_ANDROID_NN_V1_2
+
+android::sp<V1_2::IPreparedModel> PrepareModelWithStatus_1_2(const armnn_driver::hal_1_2::HalPolicy::Model& model,
+                                                            armnn_driver::ArmnnDriver& driver,
+                                                            ErrorStatus& prepareStatus,
+                                                            ErrorStatus expectedStatus = ErrorStatus::NONE);
+
+template<typename HalModel>
+android::sp<V1_2::IPreparedModel> PrepareModel_1_2(const HalModel& model,
+                                                   armnn_driver::ArmnnDriver& driver)
+{
+    ErrorStatus prepareStatus = ErrorStatus::NONE;
+    return PrepareModelWithStatus_1_2(model, driver, prepareStatus);
+}
+
+#endif
+
 
 ErrorStatus Execute(android::sp<V1_0::IPreparedModel> preparedModel,
                     const Request& request,
