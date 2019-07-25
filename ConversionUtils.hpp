@@ -1651,4 +1651,74 @@ bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model
                                                    armnn::Optional<armnn::TensorInfo>(outputInfo));
 }
 
+template<typename HalPolicy,
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalOperand   = typename HalPolicy::Operand,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertPad(HalOperation& operation, const HalModel& model, ConversionData& data)
+{
+    ALOGV("hal_1_1::HalPolicy::ConvertPad()");
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
+    unsigned int rank = inputInfo.GetNumDimensions();
+
+    armnn::PadDescriptor descriptor;
+    if (!ConvertPaddings<HalPolicy>(operation, model, data, rank, descriptor))
+    {
+        return Fail("%s: Could not convert paddings", __func__);
+    }
+
+    // Before Android Q, the pad value for ANEURALNETWORKS_TENSOR_QUANT8_ASYMM was undefined. Since Android Q the pad
+    // value must be "logical zero" we set it to be equal to the QuantizationOffset so effectively it ends up as
+    // (QuantizationOffset - QuantizationOffset) * scale = 0.
+    if (inputInfo.GetDataType() == armnn::DataType::QuantisedAsymm8)
+    {
+        descriptor.m_PadValue = inputInfo.GetQuantizationOffset();
+    }
+
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output", __func__);
+    }
+
+    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        ALOGD("Output shape not set, will infer from inputs");
+        outputInfo.SetShape(InferPadOutputShape(inputInfo.GetShape(), descriptor.m_PadList));
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsPadSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddPadLayer(descriptor);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+    layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation,
+                                                   0,
+                                                   *layer,
+                                                   model,
+                                                   data,
+                                                   armnn::Optional<armnn::TensorInfo>(outputInfo));
+}
+
 } // namespace armnn_driver

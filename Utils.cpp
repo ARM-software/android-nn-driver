@@ -7,6 +7,7 @@
 
 #include "Utils.hpp"
 
+#include <Half.hpp>
 #include <Permute.hpp>
 
 #include <cassert>
@@ -42,6 +43,9 @@ void SwizzleAndroidNn4dTensorToArmNn(const armnn::TensorInfo& tensor, const void
 
     switch(tensor.GetDataType())
     {
+    case armnn::DataType::Float16:
+        SwizzleAndroidNn4dTensorToArmNn<armnn::Half>(tensor.GetShape(), input, output, mappings);
+        break;
     case armnn::DataType::Float32:
         SwizzleAndroidNn4dTensorToArmNn<float>(tensor.GetShape(), input, output, mappings);
         break;
@@ -111,6 +115,9 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_2::Operand& operand)
     {
         case V1_2::OperandType::TENSOR_FLOAT32:
             type = armnn::DataType::Float32;
+            break;
+        case V1_2::OperandType::TENSOR_FLOAT16:
+            type = armnn::DataType::Float16;
             break;
         case V1_2::OperandType::TENSOR_QUANT8_ASYMM:
             type = armnn::DataType::QuantisedAsymm8;

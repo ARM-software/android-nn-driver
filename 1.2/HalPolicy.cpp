@@ -68,7 +68,6 @@ bool HandledByV1_1(V1_2::OperationType operationType)
         case V1_1::OperationType::BATCH_TO_SPACE_ND:
         case V1_1::OperationType::DIV:
         case V1_1::OperationType::MEAN:
-        case V1_1::OperationType::PAD:
         case V1_1::OperationType::SPACE_TO_BATCH_ND:
         case V1_1::OperationType::SQUEEZE:
         case V1_1::OperationType::STRIDED_SLICE:
@@ -146,6 +145,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertMaximum(operation, model, data);
         case V1_2::OperationType::MINIMUM:
             return ConvertMinimum(operation, model, data);
+        case V1_2::OperationType::PAD:
+            return ConvertPad<hal_1_2::HalPolicy>(operation, model, data);
         case V1_2::OperationType::PAD_V2:
             return ConvertPadV2(operation, model, data);
         case V1_2::OperationType::PRELU:
@@ -675,15 +676,12 @@ bool HalPolicy::ConvertPadV2(const Operation& operation, const Model& model, Con
     }
     else if (operandType0 == OperandType::TENSOR_QUANT8_ASYMM && operandType2 == OperandType::INT32)
     {
-        int32_t quantizedPadValue = 0;
-        if (!GetInputInt32<hal_1_2::HalPolicy>(operation, 2, quantizedPadValue, model, data))
+        int32_t intPadValue = 0;
+        if (!GetInputInt32<hal_1_2::HalPolicy>(operation, 2, intPadValue, model, data))
         {
             return Fail("%s: Could not read input 2 (INT32)", __func__);
         }
-
-        descriptor.m_PadValue = armnn::Dequantize(quantizedPadValue,
-                                                  inputInfo.GetQuantizationScale(),
-                                                  inputInfo.GetQuantizationOffset());
+        descriptor.m_PadValue = intPadValue;
     }
     else
     {

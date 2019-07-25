@@ -86,7 +86,7 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             case V1_1::OperationType::MEAN:
                 return ConvertMean(operation, model, data);
             case V1_1::OperationType::PAD:
-                return ConvertPad(operation, model, data);
+                return ConvertPad<hal_1_1::HalPolicy>(operation, model, data);
             case V1_1::OperationType::SPACE_TO_BATCH_ND:
                 return ConvertSpaceToBatchNd(operation, model, data);
             case V1_1::OperationType::SQUEEZE:
@@ -294,64 +294,6 @@ bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, Conv
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *layer, model, data);
-}
-
-bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, ConversionData& data)
-{
-    ALOGV("hal_1_1::HalPolicy::ConvertPad()");
-
-    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
-    if (!input.IsValid())
-    {
-        return Fail("%s: Operation has invalid inputs", __func__);
-    }
-
-    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
-    unsigned int rank = inputInfo.GetNumDimensions();
-
-    armnn::PadDescriptor descriptor;
-    if (!ConvertPaddings<hal_1_1::HalPolicy>(operation, model, data, rank, descriptor))
-    {
-        return Fail("%s: Could not convert paddings", __func__);
-    }
-
-    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
-    if (!output)
-    {
-        return Fail("%s: Could not read output", __func__);
-    }
-
-    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicTensor(outputInfo))
-    {
-        ALOGD("Output shape not set, will infer from inputs");
-        outputInfo.SetShape(InferPadOutputShape(inputInfo.GetShape(), descriptor.m_PadList));
-    }
-
-    bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsPadSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               outputInfo,
-                               descriptor);
-    if (!isSupported)
-    {
-        return false;
-    }
-
-    armnn::IConnectableLayer* const layer = data.m_Network->AddPadLayer(descriptor);
-    assert(layer != nullptr);
-    input.Connect(layer->GetInputSlot(0));
-    layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
-
-    return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation,
-                                                            0,
-                                                            *layer,
-                                                            model,
-                                                            data,
-                                                            armnn::Optional<armnn::TensorInfo>(outputInfo));
 }
 
 bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& model, ConversionData& data)
