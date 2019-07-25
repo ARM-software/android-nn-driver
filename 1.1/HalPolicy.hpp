@@ -31,6 +31,7 @@ private:
     static bool ConvertDiv(const Operation& operation, const Model& model, ConversionData& data);
     static bool ConvertSub(const Operation& operation, const Model& model, ConversionData& data);
     static bool ConvertMean(const Operation& operation, const Model& model, ConversionData& data);
+    static bool ConvertPad(const Operation& operation, const Model& model, ConversionData& data);
     static bool ConvertSpaceToBatchNd(const Operation& operation, const Model& model, ConversionData& data);
     static bool ConvertSqueeze(const Operation& operation, const Model& model, ConversionData& data);
     static bool ConvertStridedSlice(const Operation& operation, const Model& model, ConversionData& data);

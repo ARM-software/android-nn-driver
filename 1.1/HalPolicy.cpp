@@ -86,7 +86,7 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             case V1_1::OperationType::MEAN:
                 return ConvertMean(operation, model, data);
             case V1_1::OperationType::PAD:
-                return ConvertPad<hal_1_1::HalPolicy>(operation, model, data);
+                return ConvertPad(operation, model, data);
             case V1_1::OperationType::SPACE_TO_BATCH_ND:
                 return ConvertSpaceToBatchNd(operation, model, data);
             case V1_1::OperationType::SQUEEZE:
@@ -294,6 +294,12 @@ bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, Conv
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *layer, model, data);
+}
+
+bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_1::HalPolicy::ConvertPad()");
+    return ::ConvertPad<hal_1_1::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& model, ConversionData& data)

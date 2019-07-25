@@ -146,7 +146,7 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
         case V1_2::OperationType::MINIMUM:
             return ConvertMinimum(operation, model, data);
         case V1_2::OperationType::PAD:
-            return ConvertPad<hal_1_2::HalPolicy>(operation, model, data);
+            return ConvertPad(operation, model, data);
         case V1_2::OperationType::PAD_V2:
             return ConvertPadV2(operation, model, data);
         case V1_2::OperationType::PRELU:
@@ -612,6 +612,12 @@ bool HalPolicy::ConvertMinimum(const Operation& operation, const Model& model, C
                                                             model,
                                                             data,
                                                             armnn::Optional<armnn::TensorInfo>(outputInfo));
+}
+
+bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertPad()");
+    return ::ConvertPad<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertPadV2(const Operation& operation, const Model& model, ConversionData& data)

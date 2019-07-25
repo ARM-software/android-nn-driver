@@ -1657,8 +1657,6 @@ template<typename HalPolicy,
          typename HalModel     = typename HalPolicy::Model>
 bool ConvertPad(HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    ALOGV("hal_1_1::HalPolicy::ConvertPad()");
-
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
