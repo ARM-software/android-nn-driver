@@ -994,8 +994,26 @@ LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
 
         switch (operand->lifetime)
         {
-            case HalOperandLifeTime::TEMPORARY_VARIABLE: // intentional fallthrough
             case HalOperandLifeTime::MODEL_INPUT:
+            {
+                // NOTE: We must check whether we can support the input tensor on at least one
+                // of the provided backends; otherwise we cannot convert the operation
+                bool isInputSupported = false;
+                FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                           IsInputSupported,
+                                           data.m_Backends,
+                                           isInputSupported,
+                                           operandTensorInfo);
+
+                if (!isInputSupported)
+                {
+                    Fail("%s: unsupported input tensor", __func__);
+                    return LayerInputHandle();
+                }
+
+                BOOST_FALLTHROUGH; // intentional fallthrough
+            }
+            case HalOperandLifeTime::TEMPORARY_VARIABLE: // intentional fallthrough
             case HalOperandLifeTime::MODEL_OUTPUT:
             {
                 // The tensor is either an operand internal to the model, or a model input.
@@ -1004,9 +1022,8 @@ LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
                 // m_OutputSlotForOperand[...] can be nullptr if the previous layer could not be converted
                 const uint32_t operandIndex = operation.inputs[inputIndex];
                 return LayerInputHandle(true, data.m_OutputSlotForOperand[operandIndex], operandTensorInfo);
-                break;
             }
-            case HalOperandLifeTime::CONSTANT_COPY:
+            case HalOperandLifeTime::CONSTANT_COPY: // intentional fallthrough
             case HalOperandLifeTime::CONSTANT_REFERENCE:
             {
                 // The tensor has an already known constant value, and can be converted into an ArmNN Constant layer.
