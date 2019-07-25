@@ -42,14 +42,10 @@ bool HandledByV1_0(V1_2::OperationType operationType)
         case V1_0::OperationType::LSTM:
         case V1_0::OperationType::MAX_POOL_2D:
         case V1_0::OperationType::MUL:
-        case V1_0::OperationType::RELU:
-        case V1_0::OperationType::RELU1:
-        case V1_0::OperationType::RELU6:
         case V1_0::OperationType::RESHAPE:
         case V1_0::OperationType::RNN:
         case V1_0::OperationType::SPACE_TO_DEPTH:
         case V1_0::OperationType::SVDF:
-        case V1_0::OperationType::TANH:
         case V1_0::OperationType::OEM_OPERATION:
             return true;
         default:
@@ -151,12 +147,20 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertPadV2(operation, model, data);
         case V1_2::OperationType::PRELU:
             return ConvertPrelu(operation, model, data);
+        case V1_2::OperationType::RELU:
+            return ConvertReLu(operation, model, data);
+        case V1_2::OperationType::RELU1:
+            return ConvertReLu1(operation, model, data);
+        case V1_2::OperationType::RELU6:
+            return ConvertReLu6(operation, model, data);
         case V1_2::OperationType::RESIZE_BILINEAR:
             return ConvertResize(operation, model, data, armnn::ResizeMethod::Bilinear);
         case V1_2::OperationType::RESIZE_NEAREST_NEIGHBOR:
             return ConvertResize(operation, model, data, armnn::ResizeMethod::NearestNeighbor);
         case V1_2::OperationType::SOFTMAX:
             return ConvertSoftmax(operation, model, data);
+        case V1_2::OperationType::TANH:
+            return ConvertTanH(operation, model, data);
         default:
             return Fail("%s: Operation type %s not supported in ArmnnDriver",
                         __func__, toString(operation.type).c_str());
@@ -779,6 +783,24 @@ bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, Con
                                                             armnn::Optional<armnn::TensorInfo>(outputInfo));
 }
 
+bool HalPolicy::ConvertReLu(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertReLu()");
+    return ::ConvertReLu<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertReLu1(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertReLu1()");
+    return ::ConvertReLu1<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertReLu6(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertReLu6()");
+    return ::ConvertReLu6<hal_1_2::HalPolicy>(operation, model, data);
+}
+
 bool HalPolicy::ConvertResize(const Operation& operation,
                               const Model& model,
                               ConversionData& data,
@@ -1028,6 +1050,12 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
                                                             model,
                                                             data,
                                                             armnn::Optional<armnn::TensorInfo>(outputInfo));
+}
+
+bool HalPolicy::ConvertTanH(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertTanH()");
+    return ::ConvertTanH<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 } // namespace hal_1_2

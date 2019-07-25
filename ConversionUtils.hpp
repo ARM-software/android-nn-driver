@@ -194,11 +194,22 @@ inline bool IsBool(V1_0::Operand)
     return false;
 }
 
+inline bool Is12Operand(V1_0::Operand)
+{
+    return false;
+}
+
 #ifdef ARMNN_ANDROID_NN_V1_2
 
 inline bool IsBool(V1_2::Operand operand)
 {
     return operand.type == V1_2::OperandType::BOOL;
+}
+
+/// Checks if a operand is 1_2 Operand
+inline bool Is12Operand(V1_2::Operand)
+{
+    return true;
 }
 
 #endif
@@ -1161,8 +1172,15 @@ bool ConvertToActivation(const HalOperation& operation,
     armnn::TensorInfo outInfo = GetTensorInfoForOperand(*outputOperand);
     if (IsDynamicTensor(outInfo))
     {
-        ALOGD("Output shape not set, will infer from input");
-        outInfo.SetShape(input.GetTensorInfo().GetShape());
+        if (Is12Operand(*outputOperand))
+        {
+            ALOGD("Output shape not set, will infer from input");
+            outInfo.SetShape(input.GetTensorInfo().GetShape());
+        }
+        else
+        {
+            return Fail("%s: Dynamic OutputShapes are not supported in this HAL version", __func__);
+        }
     }
 
     bool isSupported = false;
@@ -1187,6 +1205,55 @@ bool ConvertToActivation(const HalOperation& operation,
                                                    *layer,
                                                    model,
                                                    data,armnn::Optional<armnn::TensorInfo>(outInfo));
+}
+
+template<typename HalPolicy,
+    typename HalOperation = typename HalPolicy::Operation,
+    typename HalModel     = typename HalPolicy::Model>
+bool ConvertReLu(const HalOperation& operation, const HalModel& model, ConversionData& data)
+{
+    armnn::ActivationDescriptor desc;
+    desc.m_Function = armnn::ActivationFunction::ReLu;
+
+    return ConvertToActivation<HalPolicy>(operation, __func__, desc, model, data);
+}
+
+template<typename HalPolicy,
+    typename HalOperation = typename HalPolicy::Operation,
+    typename HalModel     = typename HalPolicy::Model>
+bool ConvertReLu1(const HalOperation& operation, const HalModel& model, ConversionData& data)
+{
+    armnn::ActivationDescriptor desc;
+    desc.m_Function = armnn::ActivationFunction::BoundedReLu;
+    desc.m_A        = 1.0f;
+    desc.m_B        = -1.0f;
+
+    return ConvertToActivation<HalPolicy>(operation, __func__, desc, model, data);
+}
+
+template<typename HalPolicy,
+    typename HalOperation = typename HalPolicy::Operation,
+    typename HalModel     = typename HalPolicy::Model>
+bool ConvertReLu6(const HalOperation& operation, const HalModel& model, ConversionData& data)
+{
+    armnn::ActivationDescriptor desc;
+    desc.m_Function = armnn::ActivationFunction::BoundedReLu;
+    desc.m_A        = 6.0f;
+
+    return ConvertToActivation<HalPolicy>(operation, __func__, desc, model, data);
+}
+
+template<typename HalPolicy,
+    typename HalOperation = typename HalPolicy::Operation,
+    typename HalModel     = typename HalPolicy::Model>
+bool ConvertTanH(const HalOperation& operation, const HalModel& model, ConversionData& data)
+{
+    armnn::ActivationDescriptor desc;
+    desc.m_Function = armnn::ActivationFunction::TanH;
+    desc.m_A = 1.0f; // android nn does not support tanH parameters
+    desc.m_B = 1.0f; // set to 1.0f for unity scaling
+
+    return ConvertToActivation<HalPolicy>(operation, __func__, desc, model, data);
 }
 
 template<typename HalPolicy,
@@ -1420,17 +1487,7 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
 
     if (IsDynamicTensor(outputInfo))
     {
-        try
-        {
-            ALOGD("Output shape not set, will infer from inputs");
-            outputInfo.SetShape(InferConvolution2dOutputShape(inputInfo.GetShape(),
-                                                              weights.GetInfo().GetShape(),
-                                                              desc));
-        }
-        catch (armnn::Exception& e)
-        {
-            return Fail("%s: Could not infer dynamic output shape: %s", __func__, e.what());
-        }
+        return Fail("%s: Dynamic OutputShapes are not supported", __func__);
     }
 
     bool isSupported = false;
@@ -1600,17 +1657,7 @@ bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model
 
     if (IsDynamicTensor(outputInfo))
     {
-        try
-        {
-            ALOGD("Output shape not set, will infer from inputs");
-            outputInfo.SetShape(InferDepthwiseConvolution2dOutputShape(inputInfo.GetShape(),
-                                                                       weights.GetInfo().GetShape(),
-                                                                       desc));
-        }
-        catch (armnn::Exception& e)
-        {
-            return Fail("%s: Could not infer dynamic output shape: %s", __func__, e.what());
-        }
+        return Fail("%s: Dynamic OutputShapes are not supported", __func__);
     }
 
     bool isSupported = false;

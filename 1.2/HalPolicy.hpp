@@ -45,6 +45,12 @@ private:
 
     static bool ConvertPrelu(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertReLu(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertReLu1(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertReLu6(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertResize(const Operation& operation,
                               const Model& model,
                               ConversionData& data,
@@ -53,6 +59,8 @@ private:
     static bool ConvertSoftmax(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertSpaceToDepth(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertTanH(const Operation& operation, const Model& model, ConversionData& data);
 };
 
 } // namespace hal_1_2

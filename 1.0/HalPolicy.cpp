@@ -1142,34 +1142,19 @@ bool HalPolicy::ConvertMul(const Operation& operation, const Model& model, Conve
 bool HalPolicy::ConvertReLu(const Operation& operation, const Model& model, ConversionData& data)
 {
     ALOGV("hal_1_0::HalPolicy::ConvertReLu()");
-
-    armnn::ActivationDescriptor desc;
-    desc.m_Function = armnn::ActivationFunction::ReLu;
-
-    return ConvertToActivation<hal_1_0::HalPolicy>(operation, __func__, desc, model, data);
+    return ::ConvertReLu<hal_1_0::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertReLu1(const Operation& operation, const Model& model, ConversionData& data)
 {
     ALOGV("hal_1_0::HalPolicy::ConvertReLu1()");
-
-    armnn::ActivationDescriptor desc;
-    desc.m_Function = armnn::ActivationFunction::BoundedReLu;
-    desc.m_A        = 1.0f;
-    desc.m_B        = -1.0f;
-
-    return ConvertToActivation<hal_1_0::HalPolicy>(operation, __func__, desc, model, data);
+    return ::ConvertReLu1<hal_1_0::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertReLu6(const Operation& operation, const Model& model, ConversionData& data)
 {
     ALOGV("hal_1_0::HalPolicy::ConvertReLu6()");
-
-    armnn::ActivationDescriptor desc;
-    desc.m_Function = armnn::ActivationFunction::BoundedReLu;
-    desc.m_A        = 6.0f;
-
-    return ConvertToActivation<hal_1_0::HalPolicy>(operation, __func__, desc, model, data);
+    return ::ConvertReLu6<hal_1_0::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, ConversionData& data)
@@ -1285,13 +1270,7 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
 bool HalPolicy::ConvertTanH(const Operation& operation, const Model& model, ConversionData& data)
 {
     ALOGV("hal_1_0::HalPolicy::ConvertTanH()");
-
-    armnn::ActivationDescriptor desc;
-    desc.m_Function = armnn::ActivationFunction::TanH;
-    desc.m_A = 1.0f; // android nn does not support tanH parameters
-    desc.m_B = 1.0f; // set to 1.0f for unity scaling
-
-    return ConvertToActivation<hal_1_0::HalPolicy>(operation, __func__, desc, model, data);
+    return ::ConvertTanH<hal_1_0::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertReshape(const Operation& operation, const Model& model, ConversionData& data)

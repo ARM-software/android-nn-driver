@@ -70,13 +70,13 @@ private:
 
     static bool ConvertSoftmax(const Operation& operation, const Model& model, ConversionData& data);
 
-    static bool ConvertTanH(const Operation& operation, const Model& model, ConversionData& data);
-
     static bool ConvertReshape(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertResizeBilinear(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertSpaceToDepth(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertTanH(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ValidateConv2dParameters(const Operation& operation);
 
