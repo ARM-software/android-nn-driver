@@ -44,7 +44,6 @@ bool HandledByV1_0(V1_2::OperationType operationType)
         case V1_0::OperationType::MUL:
         case V1_0::OperationType::RESHAPE:
         case V1_0::OperationType::RNN:
-        case V1_0::OperationType::SPACE_TO_DEPTH:
         case V1_0::OperationType::SVDF:
         case V1_0::OperationType::OEM_OPERATION:
             return true;
@@ -159,6 +158,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertResize(operation, model, data, armnn::ResizeMethod::NearestNeighbor);
         case V1_2::OperationType::SOFTMAX:
             return ConvertSoftmax(operation, model, data);
+        case V1_2::OperationType::SPACE_TO_DEPTH:
+            return ConvertSpaceToDepth(operation, model, data);
         case V1_2::OperationType::TANH:
             return ConvertTanH(operation, model, data);
         default:
@@ -966,7 +967,19 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
         return Fail("%s: Could not read output 0", __func__);
     }
 
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        try
+        {
+            ALOGD("Output shape not set, will infer from inputs");
+            outputInfo.SetShape(InferSpaceToDepthOutputShape(inputInfo.GetShape(), desc));
+        }
+        catch (armnn::Exception& e)
+        {
+            return Fail("%s: Could not infer dynamic output shape: %s", __func__, e.what());
+        }
+    }
 
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
@@ -985,7 +998,12 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation,
+                                                            0,
+                                                            *layer,
+                                                            model,
+                                                            data,
+                                                            armnn::Optional<armnn::TensorInfo>(outputInfo));
 }
 
 bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, ConversionData& data)

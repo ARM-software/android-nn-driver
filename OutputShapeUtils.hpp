@@ -32,6 +32,9 @@ armnn::TensorShape InferPreluOutputShape(const armnn::TensorShape& inputShape, c
 armnn::TensorShape InferResizeOutputShape(const armnn::TensorShape& inputShape,
                                           const armnn::ResizeDescriptor& descriptor);
 
+armnn::TensorShape InferSpaceToDepthOutputShape(const armnn::TensorShape& inputShape,
+                                                const armnn::SpaceToDepthDescriptor& descriptor);
+
 armnn::TensorShape InferSubOutputShape(const armnn::TensorShape& input0Shape, const armnn::TensorShape& input1Shape);
 
 } // namespace armnn_driver

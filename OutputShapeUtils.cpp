@@ -8,6 +8,7 @@
 #include <DataLayoutIndexed.hpp>
 
 #include <algorithm>
+#include <numeric>
 #include <vector>
 
 namespace
@@ -163,6 +164,29 @@ TensorShape InferResizeOutputShape(const TensorShape& inputShape, const ResizeDe
     outputShape[cIndex] = inputShape[cIndex];
     outputShape[wIndex] = descriptor.m_TargetWidth;
     outputShape[hIndex] = descriptor.m_TargetHeight;
+
+    return outputShape;
+}
+
+TensorShape InferSpaceToDepthOutputShape(const TensorShape& inputShape, const SpaceToDepthDescriptor& descriptor)
+{
+    TensorShape outputShape(inputShape);
+
+    armnnUtils::DataLayoutIndexed dataLayoutIndexed(descriptor.m_DataLayout);
+
+    const unsigned int cIndex = dataLayoutIndexed.GetChannelsIndex();
+    const unsigned int wIndex = dataLayoutIndexed.GetWidthIndex();
+    const unsigned int hIndex = dataLayoutIndexed.GetHeightIndex();
+
+    if (descriptor.m_BlockSize == 0)
+    {
+        throw InvalidArgumentException("Block size must be greater than zero");
+    }
+
+    outputShape[cIndex] = inputShape[cIndex] * descriptor.m_BlockSize * descriptor.m_BlockSize;
+
+    outputShape[hIndex] = inputShape[hIndex] / descriptor.m_BlockSize;
+    outputShape[wIndex] = inputShape[wIndex] / descriptor.m_BlockSize;
 
     return outputShape;
 }
