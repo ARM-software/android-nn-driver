@@ -25,7 +25,6 @@ bool HandledByV1_0(V1_2::OperationType operationType)
     switch (static_cast<V1_0::OperationType>(operationType))
     {
         case V1_0::OperationType::ADD:
-        case V1_0::OperationType::AVERAGE_POOL_2D:
         case V1_0::OperationType::CONCATENATION:
         case V1_0::OperationType::DEPTH_TO_SPACE:
         case V1_0::OperationType::DEQUANTIZE:
@@ -34,12 +33,10 @@ bool HandledByV1_0(V1_2::OperationType operationType)
         case V1_0::OperationType::FULLY_CONNECTED:
         case V1_0::OperationType::HASHTABLE_LOOKUP:
         case V1_0::OperationType::L2_NORMALIZATION:
-        case V1_0::OperationType::L2_POOL_2D:
         case V1_0::OperationType::LOCAL_RESPONSE_NORMALIZATION:
         case V1_0::OperationType::LOGISTIC:
         case V1_0::OperationType::LSH_PROJECTION:
         case V1_0::OperationType::LSTM:
-        case V1_0::OperationType::MAX_POOL_2D:
         case V1_0::OperationType::MUL:
         case V1_0::OperationType::RESHAPE:
         case V1_0::OperationType::RNN:
@@ -131,10 +128,16 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
 
     switch (operation.type)
     {
+        case V1_2::OperationType::AVERAGE_POOL_2D:
+            return ConvertAveragePool2d(operation, model, data);
         case V1_2::OperationType::CONV_2D:
             return ConvertConv2d(operation, model, data);
         case V1_2::OperationType::DEPTHWISE_CONV_2D:
             return ConvertDepthwiseConv2d(operation, model, data);
+        case V1_2::OperationType::L2_POOL_2D:
+            return ConvertL2Pool2d(operation, model, data);
+        case V1_2::OperationType::MAX_POOL_2D:
+            return ConvertMaxPool2d(operation, model, data);
         case V1_2::OperationType::MAXIMUM:
             return ConvertMaximum(operation, model, data);
         case V1_2::OperationType::MINIMUM:
@@ -165,6 +168,12 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return Fail("%s: Operation type %s not supported in ArmnnDriver",
                         __func__, toString(operation.type).c_str());
     }
+}
+
+bool HalPolicy::ConvertAveragePool2d(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertAveragePool2d()");
+    return ConvertPooling2d<hal_1_2::HalPolicy>(operation, __func__, armnn::PoolingAlgorithm::Average, model, data);
 }
 
 bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data)
@@ -483,6 +492,18 @@ bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& 
     input.Connect(startLayer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *endLayer, model, data);
+}
+
+bool HalPolicy::ConvertL2Pool2d(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertL2Pool2d()");
+    return ConvertPooling2d<hal_1_2::HalPolicy>(operation, __func__, armnn::PoolingAlgorithm::L2, model, data);
+}
+
+bool HalPolicy::ConvertMaxPool2d(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertMaxPool2d()");
+    return ConvertPooling2d<hal_1_2::HalPolicy>(operation, __func__, armnn::PoolingAlgorithm::Max, model, data);
 }
 
 bool HalPolicy::ConvertMaximum(const Operation& operation, const Model& model, ConversionData& data)

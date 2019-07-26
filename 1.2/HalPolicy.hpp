@@ -31,9 +31,15 @@ public:
     static bool ConvertOperation(const Operation& operation, const Model& model, ConversionData& data);
 
 private:
+    static bool ConvertAveragePool2d(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertL2Pool2d(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertMaxPool2d(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertMaximum(const Operation& operation, const Model& model, ConversionData& data);
 
