@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "OutputShapeUtils.hpp"
 #include "Utils.hpp"
 
 #include <armnn/ArmNN.hpp>
@@ -1079,8 +1078,7 @@ bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
                                   armnn::IConnectableLayer& layer,
                                   uint32_t layerOutputIndex,
                                   const HalModel& model,
-                                  ConversionData& data,
-                                  const armnn::Optional<armnn::TensorInfo>& outputInfo = armnn::EmptyOptional())
+                                  ConversionData& data)
 {
     using HalOperand = typename HalPolicy::Operand;
 
@@ -1095,15 +1093,7 @@ bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
     const uint32_t operandIndex = operation.outputs[operationOutputIndex];
     data.m_OutputSlotForOperand[operandIndex] = &outputSlot;
 
-    if (outputInfo.has_value())
-    {
-        outputSlot.SetTensorInfo(outputInfo.value());
-        ALOGD("Output info overwritten");
-    }
-    else
-    {
-        outputSlot.SetTensorInfo(GetTensorInfoForOperand(*outputOperand));
-    }
+    outputSlot.SetTensorInfo(GetTensorInfoForOperand(*outputOperand));
 
     return true;
 }
@@ -1152,16 +1142,14 @@ bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
                                   uint32_t outputIndex,
                                   armnn::IConnectableLayer& layer,
                                   const HalModel& model,
-                                  ConversionData& data,
-                                  const armnn::Optional<armnn::TensorInfo>& outputInfo = armnn::EmptyOptional())
+                                  ConversionData& data)
 {
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation,
                                                    outputIndex,
                                                    layer,
                                                    outputIndex,
                                                    model,
-                                                   data,
-                                                   outputInfo);
+                                                   data);
 }
 
 template<typename HalPolicy,
@@ -1186,18 +1174,11 @@ bool ConvertToActivation(const HalOperation& operation,
     {
         return false;
     }
-    armnn::TensorInfo outInfo = GetTensorInfoForOperand(*outputOperand);
+
+    const armnn::TensorInfo& outInfo = GetTensorInfoForOperand(*outputOperand);
     if (IsDynamicTensor(outInfo))
     {
-        if (Is12Operand(*outputOperand))
-        {
-            ALOGD("Output shape not set, will infer from input");
-            outInfo.SetShape(input.GetTensorInfo().GetShape());
-        }
-        else
-        {
-            return Fail("%s: Dynamic OutputShapes are not supported in this HAL version", __func__);
-        }
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
     }
 
     bool isSupported = false;
@@ -1217,11 +1198,7 @@ bool ConvertToActivation(const HalOperation& operation,
     BOOST_ASSERT(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation,
-                                                   0,
-                                                   *layer,
-                                                   model,
-                                                   data,armnn::Optional<armnn::TensorInfo>(outInfo));
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
 }
 
 template<typename HalPolicy,
@@ -1343,6 +1320,11 @@ bool ConvertPooling2d(const HalOperation& operation,
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
     armnn::Pooling2dDescriptor desc;
     desc.m_PoolType = poolType;
     desc.m_OutputShapeRounding = armnn::OutputShapeRounding::Floor;
@@ -1438,7 +1420,7 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
     }
 
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
-    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
     // ArmNN does not currently support non-fixed weights or bias
     const ConstTensorPin weightsPin = ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 1, model, data);
@@ -1504,7 +1486,7 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
 
     if (IsDynamicTensor(outputInfo))
     {
-        return Fail("%s: Dynamic OutputShapes are not supported", __func__);
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
     }
 
     bool isSupported = false;
@@ -1539,12 +1521,7 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
 
     input.Connect(startLayer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation,
-                                                   0,
-                                                   *endLayer,
-                                                   model,
-                                                   data,
-                                                   armnn::Optional<armnn::TensorInfo>(outputInfo));
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
 }
 
 template<typename HalPolicy,
@@ -1570,7 +1547,7 @@ bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model
     }
 
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
-    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
     // ArmNN does not currently support non-fixed weights or bias
 
@@ -1674,7 +1651,7 @@ bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model
 
     if (IsDynamicTensor(outputInfo))
     {
-        return Fail("%s: Dynamic OutputShapes are not supported", __func__);
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
     }
 
     bool isSupported = false;
@@ -1707,12 +1684,7 @@ bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model
 
     input.Connect(startLayer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation,
-                                                   0,
-                                                   *endLayer,
-                                                   model,
-                                                   data,
-                                                   armnn::Optional<armnn::TensorInfo>(outputInfo));
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
 }
 
 template<typename HalPolicy,
@@ -1750,11 +1722,10 @@ bool ConvertPad(HalOperation& operation, const HalModel& model, ConversionData& 
         return Fail("%s: Could not read output", __func__);
     }
 
-    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*output);
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
     if (IsDynamicTensor(outputInfo))
     {
-        ALOGD("Output shape not set, will infer from inputs");
-        outputInfo.SetShape(InferPadOutputShape(inputInfo.GetShape(), descriptor.m_PadList));
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
     }
 
     bool isSupported = false;
@@ -1775,12 +1746,7 @@ bool ConvertPad(HalOperation& operation, const HalModel& model, ConversionData& 
     input.Connect(layer->GetInputSlot(0));
     layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation,
-                                                   0,
-                                                   *layer,
-                                                   model,
-                                                   data,
-                                                   armnn::Optional<armnn::TensorInfo>(outputInfo));
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
 }
 
 } // namespace armnn_driver

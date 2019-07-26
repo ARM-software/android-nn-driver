@@ -5,7 +5,6 @@
 
 #include "HalPolicy.hpp"
 
-#include "OutputShapeUtils.hpp"
 #include "Utils.hpp"
 
 #include "../1.0/HalPolicy.hpp"
@@ -124,13 +123,17 @@ bool HalPolicy::ConvertDiv(const Operation& operation, const Model& model, Conve
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* outputOperand = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
-    if (!outputOperand)
+    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
+    if (!output)
     {
-        return false;
+        return Fail("%s: Could not read output 0", __func__);
     }
 
-    const armnn::TensorInfo& outInfo = GetTensorInfoForOperand(*outputOperand);
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
 
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
@@ -139,14 +142,14 @@ bool HalPolicy::ConvertDiv(const Operation& operation, const Model& model, Conve
                                isSupported,
                                input0.GetTensorInfo(),
                                input1.GetTensorInfo(),
-                               outInfo);
+                               outputInfo);
     if (!isSupported)
     {
         return false;
     }
 
     armnn::IConnectableLayer* const startLayer = data.m_Network->AddDivisionLayer();
-    armnn::IConnectableLayer* const endLayer = ProcessActivation(outInfo, activationFunction, startLayer, data);
+    armnn::IConnectableLayer* const endLayer   = ProcessActivation(outputInfo, activationFunction, startLayer, data);
 
     const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
     const armnn::TensorInfo& inputTensorInfo1 = input1.GetTensorInfo();
@@ -180,17 +183,16 @@ bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, Conve
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* outputOperand = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
-    if (!outputOperand)
+    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
+    if (!output)
     {
-        return false;
+        return Fail("%s: Could not read output 0", __func__);
     }
 
-    armnn::TensorInfo outputInfo = GetTensorInfoForOperand(*outputOperand);
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
     if (IsDynamicTensor(outputInfo))
     {
-        ALOGD("Output shape not set, will infer from inputs");
-        outputInfo.SetShape(InferSubOutputShape(input0.GetTensorInfo().GetShape(), input1.GetTensorInfo().GetShape()));
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
     }
 
     bool isSupported = false;
@@ -215,12 +217,7 @@ bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, Conve
     if (endLayer)
     {
         BroadcastTensor(input0, input1, startLayer, *data.m_Network);
-        return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation,
-                                                                0,
-                                                                *endLayer,
-                                                                model,
-                                                                data,
-                                                                armnn::Optional<armnn::TensorInfo>(outputInfo));
+        return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *endLayer, model, data);
     }
 
     return Fail("%s: ProcessActivation failed", __func__);
@@ -234,6 +231,18 @@ bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, Conv
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
     }
 
     const Operand* axisOperand = GetInputOperand<hal_1_1::HalPolicy>(operation, 1, model);
@@ -267,14 +276,6 @@ bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, Conv
     armnn::MeanDescriptor descriptor;
     descriptor.m_Axis.assign(uniqueAxis.begin(), uniqueAxis.end());
     descriptor.m_KeepDims = keepDims > 0;
-
-    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
-    if (!output)
-    {
-        return Fail("%s: Could not read output 0", __func__);
-    }
-
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
@@ -321,6 +322,18 @@ bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& m
         Fail("%s: Only inputs with rank 4 are supported", __func__);
     }
 
+    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
     const Operand* blockShapeOperand = GetInputOperand<hal_1_1::HalPolicy>(operation, 1, model);
     const Operand* paddingsOperand   = GetInputOperand<hal_1_1::HalPolicy>(operation, 2, model);
 
@@ -363,14 +376,6 @@ bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& m
     descriptor.m_BlockShape.assign(blockShape.cbegin(), blockShape.cend());
     descriptor.m_PadList.assign(paddingList.cbegin(), paddingList.cend());
 
-    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
-    if (!output)
-    {
-        return Fail("%s: Could not read output 0", __func__);
-    }
-
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsSpaceToBatchNdSupported,
@@ -402,11 +407,21 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
     }
 
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
-
     unsigned int rank = inputInfo.GetNumDimensions();
     if (rank > 4)
     {
         Fail("%s: Inputs with rank greater than 4 are not supported", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    if (IsDynamicTensor(GetTensorInfoForOperand(*output)))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
     }
 
     // NOTE: Axis is an optional parameter to SQUEEZE, therefore we do not want to generate a failure
@@ -446,12 +461,6 @@ bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, C
     armnn::ReshapeDescriptor reshapeDesc;
     reshapeDesc.m_TargetShape = outputInfo.GetShape();
 
-    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
-    if (!output)
-    {
-        return Fail("%s: Could not read output 0", __func__);
-    }
-
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsReshapeSupported,
@@ -486,6 +495,18 @@ bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& mod
     if (rank > 4)
     {
         Fail("%s: Inputs with rank greater than 4 are not supported", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
     }
 
     const Operand* beginOperand   = GetInputOperand<hal_1_1::HalPolicy>(operation, 1, model);
@@ -538,13 +559,6 @@ bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& mod
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
-
-    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
-    if (!output)
-    {
-        return Fail("%s: Could not read output 0", __func__);
-    }
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
@@ -652,6 +666,18 @@ bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& m
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
+    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
     const Operand* blockOperand = GetInputOperand<hal_1_1::HalPolicy>(operation, 1, model);
     if (!blockOperand)
     {
@@ -685,14 +711,6 @@ bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& m
 
     // Setting crops to 0,0 0,0 as it is not supported in Android NN API
     batchToSpaceNdDesc.m_Crops = {{0, 0}, {0, 0}};
-
-    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
-    if (!output)
-    {
-        return Fail("%s: Could not read output 0", __func__);
-    }
-
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
