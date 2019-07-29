@@ -71,24 +71,6 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
     }
 }
 
-bool HalPolicy::ValidateConv2dParameters(const Operation &operation)
-{
-    if (operation.inputs.size() != 10 && operation.inputs.size() != 7)
-    {
-        return Fail("%s: Unsupported number of operation inputs", __func__);
-    }
-    return true;
-}
-
-bool HalPolicy::ValidateDepthwiseConv2dParameters(const Operation &operation)
-{
-    if (operation.inputs.size() != 11 && operation.inputs.size() != 8)
-    {
-        return Fail("%s: Unsupported number of operation inputs", __func__);
-    }
-    return true;
-}
-
 bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, ConversionData& data)
 {
     ALOGV("hal_1_0::HalPolicy::ConvertAdd()");
@@ -391,14 +373,13 @@ bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& mo
 bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data)
 {
     ALOGV("hal_1_0::HalPolicy::ConvertConv2d()");
-    return ValidateConv2dParameters(operation) && ::ConvertConv2d<hal_1_0::HalPolicy>(operation, model, data);
+    return ::ConvertConv2d<hal_1_0::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data)
 {
     ALOGV("hal_1_0::HalPolicy::ConvertDepthwiseConv2d()");
-    return ValidateDepthwiseConv2dParameters(operation) &&
-        ::ConvertDepthwiseConv2d<hal_1_0::HalPolicy>(operation, model, data);
+    return ::ConvertDepthwiseConv2d<hal_1_0::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertDequantize(const Operation& operation, const Model& model, ConversionData& data)
