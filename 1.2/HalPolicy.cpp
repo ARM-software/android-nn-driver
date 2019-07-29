@@ -61,7 +61,6 @@ bool HandledByV1_1(V1_2::OperationType operationType)
         case V1_1::OperationType::SPACE_TO_BATCH_ND:
         case V1_1::OperationType::SQUEEZE:
         case V1_1::OperationType::STRIDED_SLICE:
-        case V1_1::OperationType::SUB:
         case V1_1::OperationType::TRANSPOSE:
             return true;
         default:
@@ -161,6 +160,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertSoftmax(operation, model, data);
         case V1_2::OperationType::SPACE_TO_DEPTH:
             return ConvertSpaceToDepth(operation, model, data);
+        case V1_2::OperationType::SUB:
+            return ConvertSub(operation, model, data);
         case V1_2::OperationType::TANH:
             return ConvertTanH(operation, model, data);
         case V1_2::OperationType::LSTM:
@@ -1001,6 +1002,12 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
+}
+
+bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertSub()");
+    return ::ConvertSub<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertTanH(const Operation& operation, const Model& model, ConversionData& data)

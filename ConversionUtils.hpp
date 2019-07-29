@@ -1738,4 +1738,67 @@ bool ConvertPad(HalOperation& operation, const HalModel& model, ConversionData& 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
 }
 
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Operand   = typename HalPolicy::Operand,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertSub(const Operation& operation, const Model& model, ConversionData& data)
+{
+    LayerInputHandle input0 = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    LayerInputHandle input1 = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
+
+    if (!input0.IsValid() || !input1.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    // The FuseActivation parameter is always the input index 2
+    // and it should be optional
+    ActivationFn activationFunction;
+    if (!GetOptionalInputActivation<HalPolicy>(operation, 2, activationFunction, model, data))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsSubtractionSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input0.GetTensorInfo(),
+                               input1.GetTensorInfo(),
+                               outputInfo);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const startLayer = data.m_Network->AddSubtractionLayer();
+    armnn::IConnectableLayer* const endLayer = ProcessActivation(outputInfo, activationFunction, startLayer, data);
+
+    const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
+    const armnn::TensorInfo& inputTensorInfo1 = input1.GetTensorInfo();
+
+    if (endLayer)
+    {
+        BroadcastTensor(input0, input1, startLayer, *data.m_Network);
+        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
+    }
+
+    return Fail("%s: ProcessActivation failed", __func__);
+}
+
+
 } // namespace armnn_driver

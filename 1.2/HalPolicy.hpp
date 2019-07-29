@@ -66,6 +66,8 @@ private:
 
     static bool ConvertSpaceToDepth(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertSub(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertTanH(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertLstm(const Operation& operation, const Model& model, ConversionData& data);
