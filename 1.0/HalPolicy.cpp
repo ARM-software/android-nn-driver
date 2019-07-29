@@ -605,14 +605,18 @@ bool HalPolicy::ConvertLocalResponseNormalization(const Operation& operation,
         return Fail("%s: Could not read output 0", __func__);
     }
 
-    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    armnn::NormalizationDescriptor descriptor;
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
 
-    descriptor.m_DataLayout = armnn::DataLayout::NHWC;
+    armnn::NormalizationDescriptor descriptor;
+    descriptor.m_DataLayout      = armnn::DataLayout::NHWC;
     descriptor.m_NormChannelType = armnn::NormalizationAlgorithmChannel::Across;
-    descriptor.m_NormMethodType = armnn::NormalizationAlgorithmMethod::LocalBrightness;
+    descriptor.m_NormMethodType  = armnn::NormalizationAlgorithmMethod::LocalBrightness;
 
     if (!input.IsValid() ||
         !GetInputScalar<hal_1_0::HalPolicy>(operation, 1, OperandType::INT32, descriptor.m_NormSize, model, data) ||
@@ -1098,7 +1102,11 @@ bool HalPolicy::ConvertMul(const Operation& operation, const Model& model, Conve
         return false;
     }
 
-    const armnn::TensorInfo& outInfo = GetTensorInfoForOperand(*outputOperand);
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
 
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
@@ -1107,14 +1115,14 @@ bool HalPolicy::ConvertMul(const Operation& operation, const Model& model, Conve
                                isSupported,
                                input0.GetTensorInfo(),
                                input1.GetTensorInfo(),
-                               outInfo);
+                               outputInfo);
     if (!isSupported)
     {
         return false;
     }
 
     armnn::IConnectableLayer* const startLayer = data.m_Network->AddMultiplicationLayer();
-    armnn::IConnectableLayer* const endLayer = ProcessActivation(outInfo, activationFunction, startLayer, data);
+    armnn::IConnectableLayer* const endLayer   = ProcessActivation(outputInfo, activationFunction, startLayer, data);
 
     const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
     const armnn::TensorInfo& inputTensorInfo1 = input1.GetTensorInfo();
@@ -1231,6 +1239,10 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
 
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
@@ -1347,8 +1359,13 @@ bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& m
         return Fail("%s: Could not read output 0", __func__);
     }
 
-    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
 
     armnn::ResizeDescriptor desc;
     desc.m_Method     = armnn::ResizeMethod::Bilinear;
