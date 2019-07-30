@@ -68,6 +68,8 @@ private:
 
     static bool ConvertSoftmax(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertSpaceToBatchNd(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertSpaceToDepth(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertSub(const Operation& operation, const Model& model, ConversionData& data);

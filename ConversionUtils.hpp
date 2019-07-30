@@ -1885,4 +1885,104 @@ bool ConvertBatchToSpaceNd(const HalOperation& operation,
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
 }
 
+template<typename HalPolicy,
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalOperand   = typename HalPolicy::Operand,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertSpaceToBatchNd(const HalOperation& operation, const HalModel& model, ConversionData& data)
+{
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
+    unsigned int rank = inputInfo.GetNumDimensions();
+    unsigned int spatialDim = rank - 2;
+
+    if (rank != 4)
+    {
+        Fail("%s: Only inputs with rank 4 are supported", __func__);
+    }
+
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    const HalOperand* blockShapeOperand = GetInputOperand<HalPolicy>(operation, 1, model);
+    const HalOperand* paddingsOperand   = GetInputOperand<HalPolicy>(operation, 2, model);
+
+    armnn::TensorShape blockShapeOperandShape = GetTensorShapeForOperand(*blockShapeOperand);
+    if (blockShapeOperandShape.GetNumDimensions() != 1 || blockShapeOperandShape.GetNumElements() != spatialDim)
+    {
+        return Fail("%s: Operation has invalid block shape operand: expected shape [%d]", __func__, spatialDim);
+    }
+
+    std::vector<int32_t> blockShape;
+    GetTensorInt32Values<HalPolicy>(*blockShapeOperand, blockShape, model, data);
+    if (std::any_of(blockShape.cbegin(), blockShape.cend(), [](int32_t i){ return i < 1; }))
+    {
+        return Fail("%s: Block shape must be at least 1 in all dimensions.", __func__);
+    }
+
+    armnn::TensorShape paddingsOperandShape = GetTensorShapeForOperand(*paddingsOperand);
+    if (paddingsOperandShape.GetNumDimensions() != 2 || paddingsOperandShape.GetNumElements() != 2 * spatialDim)
+    {
+        return Fail("%s: Operation has invalid paddings operand: expected shape [%d, 2]", __func__, spatialDim);
+    }
+
+    std::vector<std::pair<unsigned int, unsigned int>> paddingList;
+    std::vector<int32_t> paddings;
+    GetTensorInt32Values<HalPolicy>(*paddingsOperand, paddings, model, data);
+    for (unsigned int i = 0; i < paddings.size() - 1; i += 2)
+    {
+        int paddingBeforeInput = paddings[i];
+        int paddingAfterInput = paddings[i + 1];
+        if (paddingBeforeInput < 0 || paddingAfterInput < 0)
+        {
+            return Fail("%s: Operation has invalid paddings operand, invalid padding values.", __func__);
+        }
+
+        paddingList.emplace_back((unsigned int) paddingBeforeInput, (unsigned int) paddingAfterInput);
+    }
+
+    armnn::SpaceToBatchNdDescriptor descriptor;
+    descriptor.m_DataLayout = armnn::DataLayout::NHWC;
+    descriptor.m_BlockShape.assign(blockShape.cbegin(), blockShape.cend());
+    descriptor.m_PadList.assign(paddingList.cbegin(), paddingList.cend());
+
+    if (Is12Operand(*output))
+    {
+        descriptor.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 3, model, data);
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsSpaceToBatchNdSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddSpaceToBatchNdLayer(descriptor);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+}
+
 } // namespace armnn_driver
