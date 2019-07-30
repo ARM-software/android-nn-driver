@@ -1405,6 +1405,14 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
     const armnn::TensorInfo& cellStateOutInfo   = GetTensorInfoForOperand(*cellStateOut);
     const armnn::TensorInfo& outputInfo         = GetTensorInfoForOperand(*output);
 
+    if (IsDynamicTensor(scratchBufferInfo)  ||
+        IsDynamicTensor(outputStateOutInfo) ||
+        IsDynamicTensor(cellStateOutInfo)   ||
+        IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
     // Basic parameters
     armnn::LstmInputParamsInfo paramsInfo;
     paramsInfo.m_InputToForgetWeights     = &(params.m_InputToForgetWeights->GetInfo());
