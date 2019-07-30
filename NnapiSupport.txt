@@ -52,7 +52,9 @@ CONV_2D                      (FLOAT32,QUANT8_ASYMM)
 DEPTHWISE_CONV_2D            (FLOAT32,QUANT8_ASYMM)
 MAXIMUM                      (FLOAT32,QUANT8_ASYMM)
 MINIMUM                      (FLOAT32,QUANT8_ASYMM)
+PAD_V2                       (FLOAT32,QUANT8_ASYMM)
 PRELU                        (FLOAT32,QUANT8_ASYMM)
+QUANTIZE                     (FLOAT32,QUANT8_ASYMM)
 RESIZE_NEAREST_NEIGHBOR      (FLOAT32,QUANT8_ASYMM)
 SOFTMAX                      (FLOAT32,QUANT8_ASYMM)
 
@@ -71,8 +73,6 @@ The following AndroidNN HAL 1.2 operations are currently not supported:
 
 CONCATENATION
 LSTM
-PAD_V2
-QUANTIZE
 QUANTIZED_16BIT_LSTM
 TRANSPOSE_CONV_2D
 

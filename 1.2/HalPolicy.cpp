@@ -146,6 +146,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertPadV2(operation, model, data);
         case V1_2::OperationType::PRELU:
             return ConvertPrelu(operation, model, data);
+        case V1_2::OperationType::QUANTIZE:
+            return ConvertQuantize(operation, model, data);
         case V1_2::OperationType::RELU:
             return ConvertReLu(operation, model, data);
         case V1_2::OperationType::RELU1:
@@ -747,6 +749,47 @@ bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, Con
     }
 
     BroadcastTensor(input, alpha, layer, *data.m_Network);
+
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
+}
+
+bool HalPolicy::ConvertQuantize(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertQuantize()");
+
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid input", __func__);
+    }
+
+    const Operand* const outputOperand = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
+    if (!outputOperand)
+    {
+        return Fail("%s: Operation has invalid outputs", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsQuantizeSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input.GetTensorInfo(),
+                               outputInfo);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddQuantizeLayer();
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
 }
