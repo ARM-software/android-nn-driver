@@ -605,77 +605,7 @@ bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model,
 bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& model, ConversionData& data)
 {
     ALOGV("hal_1_1::HalPolicy::ConvertBatchToSpaceNd()");
-
-    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_1::HalPolicy>(operation, 0, model, data);
-    if (!input.IsValid())
-    {
-        return Fail("%s: Operation has invalid inputs", __func__);
-    }
-
-    const Operand* output = GetOutputOperand<hal_1_1::HalPolicy>(operation, 0, model);
-    if (!output)
-    {
-        return Fail("%s: Could not read output 0", __func__);
-    }
-
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
-
-    const Operand* blockOperand = GetInputOperand<hal_1_1::HalPolicy>(operation, 1, model);
-    if (!blockOperand)
-    {
-        return Fail("%s: Could not read input 1", __func__);
-    }
-
-    // Convert the block operand to int32
-    std::vector<int32_t> block;
-    if (!GetTensorInt32Values<hal_1_1::HalPolicy>(*blockOperand, block, model, data))
-    {
-        return Fail("%s: Input 1 has invalid values", __func__);
-    }
-
-    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
-
-    unsigned int rank = inputInfo.GetNumDimensions();
-    if (rank != 4)
-    {
-        Fail("%s: Only inputs with rank equal to 4 are supported", __func__);
-    }
-
-    if (std::any_of(block.cbegin(), block.cend(), [](int32_t i){ return i < 1; }))
-    {
-        return Fail("%s: Block sizes for each spatial dimension of the input tensor must be"
-                    " greater than or equal to 1", __func__);
-    }
-
-    armnn::BatchToSpaceNdDescriptor batchToSpaceNdDesc;
-    batchToSpaceNdDesc.m_BlockShape.assign(block.cbegin(), block.cend());
-    batchToSpaceNdDesc.m_DataLayout = armnn::DataLayout::NHWC;
-
-    // Setting crops to 0,0 0,0 as it is not supported in Android NN API
-    batchToSpaceNdDesc.m_Crops = {{0, 0}, {0, 0}};
-
-    bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsBatchToSpaceNdSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               outputInfo,
-                               batchToSpaceNdDesc);
-    if (!isSupported)
-    {
-        return false;
-    }
-
-    armnn::IConnectableLayer* const layer = data.m_Network->AddBatchToSpaceNdLayer(batchToSpaceNdDesc);
-    assert(layer != nullptr);
-    input.Connect(layer->GetInputSlot(0));
-
-    return SetupAndTrackLayerOutputSlot<hal_1_1::HalPolicy>(operation, 0, *layer, model, data);
+    return ::ConvertBatchToSpaceNd<hal_1_1::HalPolicy>(operation, model, data);
 }
 
 } // namespace hal_1_1

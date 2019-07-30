@@ -55,7 +55,6 @@ bool HandledByV1_1(V1_2::OperationType operationType)
     }
     switch (static_cast<V1_1::OperationType>(operationType))
     {
-        case V1_1::OperationType::BATCH_TO_SPACE_ND:
         case V1_1::OperationType::DIV:
         case V1_1::OperationType::MEAN:
         case V1_1::OperationType::SPACE_TO_BATCH_ND:
@@ -128,6 +127,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
     {
         case V1_2::OperationType::AVERAGE_POOL_2D:
             return ConvertAveragePool2d(operation, model, data);
+        case V1_2::OperationType::BATCH_TO_SPACE_ND:
+            return ConvertBatchToSpaceNd(operation, model, data);
         case V1_2::OperationType::CONV_2D:
             return ConvertConv2d(operation, model, data);
         case V1_2::OperationType::DEPTHWISE_CONV_2D:
@@ -180,6 +181,12 @@ bool HalPolicy::ConvertAveragePool2d(const Operation& operation, const Model& mo
 {
     ALOGV("hal_1_2::HalPolicy::ConvertAveragePool2d()");
     return ConvertPooling2d<hal_1_2::HalPolicy>(operation, __func__, armnn::PoolingAlgorithm::Average, model, data);
+}
+
+bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertBatchToSpaceNd()");
+    return ::ConvertBatchToSpaceNd<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data)
