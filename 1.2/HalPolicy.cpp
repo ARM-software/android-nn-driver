@@ -25,7 +25,6 @@ bool HandledByV1_0(V1_2::OperationType operationType)
     switch (static_cast<V1_0::OperationType>(operationType))
     {
         case V1_0::OperationType::ADD:
-        case V1_0::OperationType::CONCATENATION:
         case V1_0::OperationType::DEPTH_TO_SPACE:
         case V1_0::OperationType::DEQUANTIZE:
         case V1_0::OperationType::EMBEDDING_LOOKUP:
@@ -128,6 +127,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertAveragePool2d(operation, model, data);
         case V1_2::OperationType::BATCH_TO_SPACE_ND:
             return ConvertBatchToSpaceNd(operation, model, data);
+        case V1_2::OperationType::CONCATENATION:
+            return ConvertConcatenation(operation, model, data);
         case V1_2::OperationType::CONV_2D:
             return ConvertConv2d(operation, model, data);
         case V1_2::OperationType::DEPTHWISE_CONV_2D:
@@ -188,6 +189,12 @@ bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& m
 {
     ALOGV("hal_1_2::HalPolicy::ConvertBatchToSpaceNd()");
     return ::ConvertBatchToSpaceNd<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertConcatenation()");
+    return ::ConvertConcatenation<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data)
