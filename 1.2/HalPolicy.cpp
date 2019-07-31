@@ -160,7 +160,7 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
         case V1_2::OperationType::RESIZE_NEAREST_NEIGHBOR:
             return ConvertResize(operation, model, data, armnn::ResizeMethod::NearestNeighbor);
         case V1_2::OperationType::TRANSPOSE_CONV_2D:
-            return ConvertTransposeConvolution2d(operation, model, data);
+            return ConvertTransposeConv2d(operation, model, data);
         case V1_2::OperationType::SOFTMAX:
             return ConvertSoftmax(operation, model, data);
         case V1_2::OperationType::SPACE_TO_DEPTH:
@@ -1502,7 +1502,7 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
             SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 3, *layer, 3, model, data));
 }
 
-bool HalPolicy::ConvertTransposeConvolution2d(const Operation& operation, const Model& model, ConversionData& data)
+bool HalPolicy::ConvertTransposeConv2d(const Operation& operation, const Model& model, ConversionData& data)
 {
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
 
