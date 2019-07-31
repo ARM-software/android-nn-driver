@@ -1802,13 +1802,12 @@ bool ConvertSub(const Operation& operation, const Model& model, ConversionData& 
 
 template<typename HalPolicy,
          typename HalOperation   = typename HalPolicy::Operation,
+         typename HalOperand     = typename HalPolicy::Operand,
          typename HalModel       = typename HalPolicy::Model>
 bool ConvertBatchToSpaceNd(const HalOperation& operation,
                            const HalModel& model,
                            ConversionData& data)
 {
-    using HalOperand     = typename HalPolicy::Operand;
-    using HalOperandType = typename HalPolicy::OperandType;
 
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
@@ -1861,7 +1860,7 @@ bool ConvertBatchToSpaceNd(const HalOperation& operation,
 
     if (Is12Operand(*output))
     {
-        batchToSpaceNdDesc.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 3, model, data);
+        batchToSpaceNdDesc.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 2, model, data);
     }
     // Setting crops to 0,0 0,0 as it is not supported in Android NN API
     batchToSpaceNdDesc.m_Crops = {{0, 0}, {0, 0}};
