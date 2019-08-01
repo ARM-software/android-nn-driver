@@ -1607,11 +1607,28 @@ bool HalPolicy::ConvertTransposeConv2d(const Operation& operation, const Model& 
 
         const uint32_t kernelX = weights.GetShape()[widthIndex];
         const uint32_t kernelY = weights.GetShape()[heightIndex];
-        const uint32_t inputX  = inputInfo.GetShape()[widthIndex];
-        const uint32_t inputY  = inputInfo.GetShape()[heightIndex];
+        const uint32_t outputX  = outputInfo.GetShape()[widthIndex];
+        const uint32_t outputY  = outputInfo.GetShape()[heightIndex];
 
-        CalcPadding(inputX, kernelX, desc.m_StrideX, desc.m_PadLeft, desc.m_PadRight, paddingScheme);
-        CalcPadding(inputY, kernelY, desc.m_StrideY, desc.m_PadTop, desc.m_PadBottom, paddingScheme);
+        int32_t padLeft{0};
+        int32_t padRight{0};
+        int32_t padTop{0};
+        int32_t padBottom{0};
+
+        CalcPaddingTransposeConv(outputX, kernelX, desc.m_StrideX, padLeft, padRight, paddingScheme);
+        CalcPaddingTransposeConv(outputY, kernelY, desc.m_StrideY, padTop, padBottom, paddingScheme);
+
+        // NOTE: The Android NN API allows for negative padding values in TransposeConv2d,
+        // but Arm NN only supports values >= 0
+        if (padLeft < 0 || padRight < 0 || padTop < 0 || padBottom < 0)
+        {
+            return Fail("%s: Negative padding values are not supported", __func__);
+        }
+
+        desc.m_PadLeft   = boost::numeric_cast<uint32_t>(padLeft);
+        desc.m_PadRight  = boost::numeric_cast<uint32_t>(padRight);
+        desc.m_PadTop    = boost::numeric_cast<uint32_t>(padTop);
+        desc.m_PadBottom = boost::numeric_cast<uint32_t>(padBottom);
     }
     else if (operation.inputs.size() == 11)
     {
