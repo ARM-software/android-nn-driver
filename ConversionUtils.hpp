@@ -337,8 +337,8 @@ Shape GetOperandShape(const V1_0::Operand& operand)
 
 // ArmNN requires the bias scale to be equal to the product of the weight and input scales, which is also
 // what AndroidNN requires. However for some of the AndroidNN tests the values don't exactly match so
-// we accept some tolerance. We don't want to ArmNN itself to accept these inconsistencies as it is up to the user
-// (us, in this case) to ensure they match.
+// we accept some tolerance. We don't want ArmNN itself to accept these inconsistencies as it is up to the
+// user (us, in this case) to ensure they match.
 void SanitizeBiasQuantizationScale(armnn::TensorInfo& biasInfo,
                                    const armnn::TensorInfo& weightInfo, const armnn::TensorInfo& inputInfo)
 {
