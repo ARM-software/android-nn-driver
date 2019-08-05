@@ -41,4 +41,9 @@ BOOST_DATA_TEST_CASE(LstmCifgPeepholeProjectionNoClippingLayerNormTest, COMPUTE_
     LstmCifgPeepholeProjectionNoClippingLayerNorm<hal_1_2::HalPolicy>(sample);
 }
 
+BOOST_DATA_TEST_CASE(QuantizedLstmTest, COMPUTE_DEVICES)
+{
+    QuantizedLstm<hal_1_2::HalPolicy>(sample);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

@@ -402,6 +402,276 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
 }
 
 template <typename HalPolicy>
+void QuantizedLstmTestImpl(const hidl_vec<uint32_t>&    inputDimensions,
+                           const std::vector<uint8_t>&  inputValue,
+                           const hidl_vec<uint32_t>&    inputToInputWeightsDimensions,
+                           const std::vector<uint8_t>&  inputToInputWeightsValue,
+                           const hidl_vec<uint32_t>&    inputToForgetWeightsDimensions,
+                           const std::vector<uint8_t>&  inputToForgetWeightsValue,
+                           const hidl_vec<uint32_t>&    inputToCellWeightsDimensions,
+                           const std::vector<uint8_t>&  inputToCellWeightsValue,
+                           const hidl_vec<uint32_t>&    inputToOutputWeightsDimensions,
+                           const std::vector<uint8_t>&  inputToOutputWeightsValue,
+                           const hidl_vec<uint32_t>&    recurrentToInputWeightsDimensions,
+                           const std::vector<uint8_t>&  recurrentToInputWeightsValue,
+                           const hidl_vec<uint32_t>&    recurrentToForgetWeightsDimensions,
+                           const std::vector<uint8_t>&  recurrentToForgetWeightsValue,
+                           const hidl_vec<uint32_t>&    recurrentToCellWeightsDimensions,
+                           const std::vector<uint8_t>&  recurrentToCellWeightsValue,
+                           const hidl_vec<uint32_t>&    recurrentToOutputWeightsDimensions,
+                           const std::vector<uint8_t>&  recurrentToOutputWeightsValue,
+                           const hidl_vec<uint32_t>&    inputGateBiasDimensions,
+                           const std::vector<int32_t>&  inputGateBiasValue,
+                           const hidl_vec<uint32_t>&    forgetGateBiasDimensions,
+                           const std::vector<int32_t>&  forgetGateBiasValue,
+                           const hidl_vec<uint32_t>&    cellBiasDimensions,
+                           const std::vector<int32_t>&  cellBiasValue,
+                           const hidl_vec<uint32_t>&    outputGateBiasDimensions,
+                           const std::vector<int32_t>&  outputGateBiasValue,
+                           const hidl_vec<uint32_t>&    previousOutputInDimensions,
+                           const std::vector<uint8_t>&  previousOutputInValue,
+                           const hidl_vec<uint32_t>&    previousCellStateInDimensions,
+                           const std::vector<int16_t>&  previousCellStateInValue,
+                           const hidl_vec<uint32_t>&    cellStateOutDimensions,
+                           const std::vector<int16_t>&  cellStateOutValue,
+                           const hidl_vec<uint32_t>&    outputDimensions,
+                           const std::vector<uint8_t>&  outputValue)
+{
+    auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::GpuAcc));
+    using Model = typename HalPolicy::Model;
+    Model model = {};
+
+    float inputOutputScale = 0.0078125f;
+    int32_t inputOutputOffset = 128;
+
+    float cellStateScale = 0.00048828125f;
+    int32_t cellStateOffset = 0;
+
+    float weightsScale = 0.00408021f;
+    int32_t weightsOffset = 100;
+
+    float biasScale = 3.1876640625e-05f;
+    int32_t biasOffset = 0;
+
+    // Inputs:
+    // 0: The input: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape [numBatches, inputSize]
+    //    specifying the input to the LSTM cell. Tensor is quantized with a fixed quantization range of -1, 127/128.
+    AddInputOperand<HalPolicy>(model,
+                               inputDimensions,
+                               HalPolicy::OperandType::TENSOR_QUANT8_ASYMM,
+                               inputOutputScale,
+                               inputOutputOffset);
+
+    // 1: The input-to-input weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, inputSize] specifying input-to-input part of weights for fully-connected layer inside the
+    //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    AddTensorOperand<HalPolicy>(model,
+                                inputToInputWeightsDimensions,
+                                inputToInputWeightsValue,
+                                HalPolicy::OperandType::TENSOR_QUANT8_ASYMM,
+                                CreateNoValueLifeTime(inputToInputWeightsDimensions),
+                                weightsScale,
+                                weightsOffset);
+    // 2: The input-to-forget weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, inputSize] specifying input-to-forget part of weights for fully-connected layer inside the
+    //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    AddTensorOperand<HalPolicy>(model,
+                                inputToForgetWeightsDimensions,
+                                inputToForgetWeightsValue,
+                                HalPolicy::OperandType::TENSOR_QUANT8_ASYMM,
+                                CreateNoValueLifeTime(inputToForgetWeightsDimensions),
+                                weightsScale,
+                                weightsOffset);
+    // 3: The input-to-cell weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, inputSize] specifying input-to-cell part of weights for fully-connected layer inside the
+    //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    AddTensorOperand<HalPolicy>(model,
+                                inputToCellWeightsDimensions,
+                                inputToCellWeightsValue,
+                                HalPolicy::OperandType::TENSOR_QUANT8_ASYMM,
+                                CreateNoValueLifeTime(inputToCellWeightsDimensions),
+                                weightsScale,
+                                weightsOffset);
+    // 4: The input-to-output weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, inputSize] specifying input-to-output part of weights for fully-connected layer inside the
+    //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    AddTensorOperand<HalPolicy>(model,
+                                inputToOutputWeightsDimensions,
+                                inputToOutputWeightsValue,
+                                HalPolicy::OperandType::TENSOR_QUANT8_ASYMM,
+                                CreateNoValueLifeTime(inputToOutputWeightsDimensions),
+                                weightsScale,
+                                weightsOffset);
+    // 5: The recurrent-to-input weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, outputSize] specifying recurrent-to-input part of weights for fully-connected layer inside
+    //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    AddTensorOperand<HalPolicy>(model,
+                                recurrentToInputWeightsDimensions,
+                                recurrentToInputWeightsValue,
+                                HalPolicy::OperandType::TENSOR_QUANT8_ASYMM,
+                                CreateNoValueLifeTime(recurrentToInputWeightsDimensions),
+                                weightsScale,
+                                weightsOffset);
+    // 6: The recurrent-to-forget weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, outputSize] specifying recurrent-to-forget part of weights for fully-connected layer inside
+    //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    AddTensorOperand<HalPolicy>(model,
+                                recurrentToForgetWeightsDimensions,
+                                recurrentToForgetWeightsValue,
+                                HalPolicy::OperandType::TENSOR_QUANT8_ASYMM,
+                                CreateNoValueLifeTime(recurrentToForgetWeightsDimensions),
+                                weightsScale,
+                                weightsOffset);
+    // 7: The recurrent-to-cell weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, outputSize] specifying recurrent-to-cell part of weights for fully-connected layer inside
+    //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    AddTensorOperand<HalPolicy>(model,
+                                recurrentToCellWeightsDimensions,
+                                recurrentToCellWeightsValue,
+                                HalPolicy::OperandType::TENSOR_QUANT8_ASYMM,
+                                CreateNoValueLifeTime(recurrentToCellWeightsDimensions),
+                                weightsScale,
+                                weightsOffset);
+    // 8: The recurrent-to-output weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, outputSize] specifying recurrent-to-output part of weights for fully-connected layer inside
+    //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    AddTensorOperand<HalPolicy>(model,
+                                recurrentToOutputWeightsDimensions,
+                                recurrentToOutputWeightsValue,
+                                HalPolicy::OperandType::TENSOR_QUANT8_ASYMM,
+                                CreateNoValueLifeTime(recurrentToOutputWeightsDimensions),
+                                weightsScale,
+                                weightsOffset);
+    // 9: The input gate bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying the
+    //    bias for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product
+    //    of input and weights scales and zeroPoint equal to 0.
+    AddTensorOperand<HalPolicy>(model,
+                                inputGateBiasDimensions,
+                                inputGateBiasValue,
+                                HalPolicy::OperandType::TENSOR_INT32,
+                                CreateNoValueLifeTime(inputGateBiasDimensions),
+                                biasScale,
+                                biasOffset);
+    // 10: The forget gate bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying
+    //     the bias for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product
+    //     of input and weights scales and zeroPoint equal to 0.
+    AddTensorOperand<HalPolicy>(model,
+                                forgetGateBiasDimensions,
+                                forgetGateBiasValue,
+                                HalPolicy::OperandType::TENSOR_INT32,
+                                CreateNoValueLifeTime(forgetGateBiasDimensions),
+                                biasScale,
+                                biasOffset);
+    // 11: The cell bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying the bias
+    //     for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product of input
+    //     and weights scales and zeroPoint equal to 0.
+    AddTensorOperand<HalPolicy>(model,
+                                cellBiasDimensions,
+                                cellBiasValue,
+                                HalPolicy::OperandType::TENSOR_INT32,
+                                CreateNoValueLifeTime(cellBiasDimensions),
+                                biasScale,
+                                biasOffset);
+    // 12: The output gate bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying
+    //     the bias for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product
+    //     of input and weights scales and zeroPoint equal to 0.
+    AddTensorOperand<HalPolicy>(model,
+                                outputGateBiasDimensions,
+                                outputGateBiasValue,
+                                HalPolicy::OperandType::TENSOR_INT32,
+                                CreateNoValueLifeTime(outputGateBiasDimensions),
+                                biasScale,
+                                biasOffset);
+
+    //13: The previous cell state: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT16_SYMM and shape
+    //    [numBatches, outputSize] specifying the cell state from the previous time step of the LSTM cell.
+    //    It is quantized using a quantization range of -2^4, 2^4 * 32767/32768.
+    AddInputOperand<HalPolicy>(model,
+                               previousCellStateInDimensions,
+                               HalPolicy::OperandType::TENSOR_QUANT16_SYMM,
+                               cellStateScale,
+                               cellStateOffset);
+    // 14: The previous output state: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //     [numBathes, outputSize] specifying the output of the LSTM cell from previous time-step. Tensor
+    //     is quantized with a fixed quantization range of -1, 127/128.
+    AddInputOperand<HalPolicy>(model,
+                               previousOutputInDimensions,
+                               HalPolicy::OperandType::TENSOR_QUANT8_ASYMM,
+                               inputOutputScale,
+                               inputOutputOffset);
+
+    // Outputs:
+    // 0: The cell state: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT16_SYMM and shape [numBatches, outputSize]
+    //    which contains a cell state from the current time step. Tensor is quantized using a quantization range
+    //    of -2^4, 2^4 * 32767/32768.
+    AddOutputOperand<HalPolicy>(model,
+                                cellStateOutDimensions,
+                                HalPolicy::OperandType::TENSOR_QUANT16_SYMM,
+                                cellStateScale,
+                                cellStateOffset);
+    // 1: The output: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape [numBathes, outputSize] which
+    //      contains the output value. Tensor is quantized with a fixed quantization range of -1, 127/128.
+    AddOutputOperand<HalPolicy>(model,
+                                outputDimensions,
+                                HalPolicy::OperandType::TENSOR_QUANT8_ASYMM,
+                                inputOutputScale,
+                                inputOutputOffset);
+
+    // make the lstm operation
+    model.operations.resize(1);
+    model.operations[0].type = HalPolicy::OperationType::QUANTIZED_16BIT_LSTM;
+
+    model.operations[0].inputs = hidl_vec<uint32_t> { 0,  1,  2,  3,  4,  5,  6,  7,
+                                                      8,  9,  10, 11, 12, 13, 14};
+    model.operations[0].outputs = hidl_vec<uint32_t> {15, 16};
+
+    // define the input values
+    hidl_vec<RequestArgument> inputArguments;
+    inputArguments.resize(3);
+
+    inputArguments[0] = CreateRequestArgument<uint8_t>(inputValue, 0);
+    inputArguments[1] = CreateRequestArgument<int16_t>(previousCellStateInValue, 1);
+    inputArguments[2] = CreateRequestArgument<uint8_t>(previousOutputInValue, 2);
+
+    // define the expected output values
+    hidl_vec<RequestArgument> outputArguments;
+    outputArguments.resize(2);
+
+    outputArguments[0] = CreateRequestArgument<int16_t>(cellStateOutValue, 3);
+    outputArguments[1] = CreateRequestArgument<uint8_t>(outputValue, 4);
+
+    Request request = {};
+    request.inputs  = inputArguments;
+    request.outputs = outputArguments;
+
+    // set the input data
+    AddPoolAndSetData(inputValue.size(), request, inputValue.data());
+    AddPoolAndSetData(previousCellStateInValue.size(), request, previousCellStateInValue.data());
+    AddPoolAndSetData(previousOutputInValue.size(), request, previousOutputInValue.data());
+
+    // add memory for the outputs
+    android::sp<IMemory> cellStateOutMemory = AddPoolAndGetData<int16_t>(cellStateOutValue.size(), request);
+    int16_t* cellStateOutData = static_cast<int16_t*>(static_cast<void*>(cellStateOutMemory->getPointer()));
+    android::sp<IMemory> outputMemory = AddPoolAndGetData<uint8_t>(outputValue.size(), request);
+    uint8_t* outputData = static_cast<uint8_t*>(static_cast<void*>(outputMemory->getPointer()));
+
+    // make the prepared model and run the execution
+    ExecuteModel(model, *driver, request);
+
+    // check the results
+    for (size_t i = 0; i < cellStateOutValue.size(); ++i)
+    {
+        BOOST_TEST(TolerantCompareEqual(cellStateOutValue[i], cellStateOutData[i], 1.0f),
+                   "cellStateOut[" << i << "]: " << cellStateOutValue[i] << " != " << cellStateOutData[i]);
+    }
+    for (size_t i = 0; i < outputValue.size(); ++i)
+    {
+        BOOST_TEST(TolerantCompareEqual(outputValue[i], outputData[i], 1.0f),
+                   "output[" << i << "]: " << outputValue[i] << " != " << outputData[i]);
+    }
+}
+
+template <typename HalPolicy>
 void LstmNoCifgNoPeepholeNoProjection(armnn::Compute compute)
 {
     // This replicates android/frameworks/ml/nn/runtime/test/generated/vts_models/lstm.model.cpp
@@ -2096,4 +2366,128 @@ void LstmCifgPeepholeProjectionNoClippingLayerNorm(armnn::Compute compute)
                             cellStateOutDimensions,                cellStateOutValue,
                             outputDimensions,                      outputValue,
                             compute);
+}
+
+template <typename HalPolicy>
+void QuantizedLstm(armnn::Compute compute)
+{
+    boost::ignore_unused(compute);
+    // This replicates android/frameworks/ml/nn/runtime/test/generated/vts_models/quantized_lstm.model.cpp
+    // with values from android/frameworks/ml/nn/runtime/test/generated/examples/quantized_lstm.example.cpp
+    // and weights, biases and scalars passed as CONSTANT_COPY tensors (instead of MODEL_INPUT tensors).
+
+    uint32_t batchSize = 2;
+    uint32_t inputSize = 2;
+    uint32_t outputSize = 4;
+
+    // Inputs:
+    // 0: The input: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape [numBatches, inputSize]
+    //    specifying the input to the LSTM cell. Tensor is quantized with a fixed quantization range of -1, 127/128.
+    hidl_vec<uint32_t> inputDimensions{batchSize, inputSize};
+    std::vector<uint8_t> inputValue{166, 179, 50, 150};
+
+    // 1: The input-to-input weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, inputSize] specifying input-to-input part of weights for fully-connected layer inside the
+    //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    hidl_vec<uint32_t> inputToInputWeightsDimensions{outputSize, inputSize};
+    std::vector<uint8_t> inputToInputWeightsValue{146, 250, 235, 171, 10, 218, 171, 108};
+    // 2: The input-to-forget weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, inputSize] specifying input-to-forget part of weights for fully-connected layer inside the
+    //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    hidl_vec<uint32_t> inputToForgetWeightsDimensions{outputSize, inputSize};
+    std::vector<uint8_t> inputToForgetWeightsValue{24, 50, 132, 179, 158, 110, 3, 169};
+    // 3: The input-to-cell weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, inputSize] specifying input-to-cell part of weights for fully-connected layer inside the
+    //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    hidl_vec<uint32_t> inputToCellWeightsDimensions{outputSize, inputSize};
+    std::vector<uint8_t> inputToCellWeightsValue{133, 34, 29, 49, 206, 109, 54, 183};
+    // 4: The input-to-output weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, inputSize] specifying input-to-output part of weights for fully-connected layer inside the
+    //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    hidl_vec<uint32_t> inputToOutputWeightsDimensions{outputSize, inputSize};
+    std::vector<uint8_t> inputToOutputWeightsValue{195, 187, 11, 99, 109, 10, 218, 48};
+    // 5: The recurrent-to-input weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, outputSize] specifying recurrent-to-input part of weights for fully-connected layer inside
+    //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    hidl_vec<uint32_t> recurrentToInputWeightsDimensions{outputSize, outputSize};
+    std::vector<uint8_t> recurrentToInputWeightsValue{254, 206, 77,  168, 71, 20,  215, 6,
+                                                      223, 7,   118, 225, 59, 130, 174, 26};
+    // 6: The recurrent-to-forget weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, outputSize] specifying recurrent-to-forget part of weights for fully-connected layer inside
+    //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    hidl_vec<uint32_t> recurrentToForgetWeightsDimensions{outputSize, outputSize};
+    std::vector<uint8_t> recurrentToForgetWeightsValue{137, 240, 103, 52, 68, 51, 237, 112,
+                                                       0,   220, 89,  23, 69, 4,  207, 253};
+    // 7: The recurrent-to-cell weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, outputSize] specifying recurrent-to-cell part of weights for fully-connected layer inside
+    //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    hidl_vec<uint32_t> recurrentToCellWeightsDimensions{outputSize, outputSize};
+    std::vector<uint8_t> recurrentToCellWeightsValue{172, 60,  205, 65, 14,  0,  140, 168,
+                                                     240, 223, 133, 56, 142, 64, 246, 216};
+    // 8: The recurrent-to-output weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //    [outputSize, outputSize] specifying recurrent-to-output part of weights for fully-connected layer inside
+    //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
+    hidl_vec<uint32_t> recurrentToOutputWeightsDimensions{outputSize, outputSize};
+    std::vector<uint8_t> recurrentToOutputWeightsValue{106, 214, 67, 23,  59,  158, 45, 3,
+                                                       119, 132, 49, 205, 129, 218, 11, 98};
+    // 9: The input gate bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying the
+    //    bias for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product
+    //    of input and weights scales and zeroPoint equal to 0.
+    hidl_vec<uint32_t> inputGateBiasDimensions{outputSize};
+    std::vector<int32_t> inputGateBiasValue{-7876, 13488, -726, 32839};
+    // 10: The forget gate bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying
+    //     the bias for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product
+    //     of input and weights scales and zeroPoint equal to 0.
+    hidl_vec<uint32_t> forgetGateBiasDimensions{outputSize};
+    std::vector<int32_t> forgetGateBiasValue{9206, -46884, -11693, -38724};
+    // 11:The cell bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying the bias
+    //    for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product of input
+    //    and weights scales and zeroPoint equal to 0.
+    hidl_vec<uint32_t> cellBiasDimensions{outputSize};
+    std::vector<int32_t> cellBiasValue{39481, 48624, 48976, -21419};
+    // 12:The output gate bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying
+    //    the bias for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product
+    //    of input and weights scales and zeroPoint equal to 0.
+    hidl_vec<uint32_t> outputGateBiasDimensions{outputSize};
+    std::vector<int32_t> outputGateBiasValue{-58999, -17050, -41852, -40538};
+
+    //13: The previous cell state: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT16_SYMM and shape
+    //    [numBatches, outputSize] specifying the cell state from the previous time step of the LSTM cell.
+    //    It is quantized using a quantization range of -2^4, 2^4 * 32767/32768.
+    hidl_vec<uint32_t> previousCellStateInDimensions{batchSize, outputSize};
+    std::vector<int16_t> previousCellStateInValue{876, 1034, 955, -909, 761, 1029, 796, -1036};
+    // 14: The previous output state: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
+    //     [numBathes, outputSize] specifying the output of the LSTM cell from previous time-step. Tensor
+    //     is quantized with a fixed quantization range of -1, 127/128.
+    hidl_vec<uint32_t> previousOutputInDimensions{batchSize, outputSize};
+    std::vector<uint8_t> previousOutputInValue{136, 150, 140, 115, 135, 152, 138, 112};
+
+    // 0: The cell state: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT16_SYMM and shape [numBatches, outputSize]
+    //    which contains a cell state from the current time step. Tensor is quantized using a quantization range
+    //    of -2^4, 2^4 * 32767/32768.
+    hidl_vec<uint32_t> cellStateOutDimensions{batchSize, outputSize};
+    std::vector<int16_t> cellStateOutValue {1485, 1177, 1373, -1023, 1019, 1355, 1097, -1235};
+    // 1: The output: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape [numBathes, outputSize] which
+    //      contains the output value. Tensor is quantized with a fixed quantization range of -1, 127/128.
+    hidl_vec<uint32_t> outputDimensions{batchSize, outputSize};
+    std::vector<uint8_t> outputValue {140, 151, 146, 112, 136, 156, 142, 112};
+
+
+    QuantizedLstmTestImpl<HalPolicy>(inputDimensions,                       inputValue,
+                                     inputToInputWeightsDimensions,         inputToInputWeightsValue,
+                                     inputToForgetWeightsDimensions,        inputToForgetWeightsValue,
+                                     inputToCellWeightsDimensions,          inputToCellWeightsValue,
+                                     inputToOutputWeightsDimensions,        inputToOutputWeightsValue,
+                                     recurrentToInputWeightsDimensions,     recurrentToInputWeightsValue,
+                                     recurrentToForgetWeightsDimensions,    recurrentToForgetWeightsValue,
+                                     recurrentToCellWeightsDimensions,      recurrentToCellWeightsValue,
+                                     recurrentToOutputWeightsDimensions,    recurrentToOutputWeightsValue,
+                                     inputGateBiasDimensions,               inputGateBiasValue,
+                                     forgetGateBiasDimensions,              forgetGateBiasValue,
+                                     cellBiasDimensions,                    cellBiasValue,
+                                     outputGateBiasDimensions,              outputGateBiasValue,
+                                     previousOutputInDimensions,            previousOutputInValue,
+                                     previousCellStateInDimensions,         previousCellStateInValue,
+                                     cellStateOutDimensions,                cellStateOutValue,
+                                     outputDimensions,                      outputValue);
 }

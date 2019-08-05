@@ -126,7 +126,6 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInput)
     // make the prepared model
     android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, *driver);
 
-
     // construct the request
     DataLocation inloc = {};
     inloc.poolIndex = 0;
@@ -212,7 +211,6 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInputReshape)
 
     // make the prepared model
     android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, *driver);
-
 
     // construct the request
     DataLocation inloc = {};

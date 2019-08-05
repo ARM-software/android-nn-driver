@@ -849,73 +849,73 @@ bool HalPolicy::ConvertQuantizedLstm(const Operation& operation, const Model& mo
     //    [outputSize, inputSize] specifying input-to-input part of weights for fully-connected layer inside the
     //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
     const ConstTensorPin inputToInputWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 0, model, data);
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 1, model, data);
 
     // 2: The input-to-forget weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
     //    [outputSize, inputSize] specifying input-to-forget part of weights for fully-connected layer inside the
     //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
     const ConstTensorPin inputToForgetWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 1, model, data);
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 2, model, data);
 
     // 3: The input-to-cell weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
     //    [outputSize, inputSize] specifying input-to-cell part of weights for fully-connected layer inside the
     //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
     const ConstTensorPin inputToCellWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 2, model, data);
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 3, model, data);
 
     // 4: The input-to-output weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
     //    [outputSize, inputSize] specifying input-to-output part of weights for fully-connected layer inside the
     //    LSTM cell. Quantization zero point and scale must be the same across all the weights.
     const ConstTensorPin inputToOutputWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 3, model, data);
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 4, model, data);
 
     // 5: The recurrent-to-input weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
     //    [outputSize, outputSize] specifying recurrent-to-input part of weights for fully-connected layer inside
     //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
     const ConstTensorPin recurrentToInputWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 4, model, data);
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 5, model, data);
 
     // 6: The recurrent-to-forget weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
     //    [outputSize, outputSize] specifying recurrent-to-forget part of weights for fully-connected layer inside
     //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
     const ConstTensorPin recurrentToForgetWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 5, model, data);
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 6, model, data);
 
     // 7: The recurrent-to-cell weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
     //    [outputSize, outputSize] specifying recurrent-to-cell part of weights for fully-connected layer inside
     //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
     const ConstTensorPin recurrentToCellWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 6, model, data);
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 7, model, data);
 
     // 8: The recurrent-to-output weights. A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape
     //    [outputSize, outputSize] specifying recurrent-to-output part of weights for fully-connected layer inside
     //    the LSTM cell. Quantization zero point and scale must be the same across all the weights.
     const ConstTensorPin recurrentToOutputWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 7, model, data);
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 8, model, data);
 
     // 9: The input gate bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying the
     //    bias for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product
     //    of input and weights scales and zeroPoint equal to 0.
     const ConstTensorPin inputGateBiasPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 8, model, data);
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 9, model, data);
 
     // 10: The forget gate bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying
     //     the bias for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product
     //     of input and weights scales and zeroPoint equal to 0.
     const ConstTensorPin forgetGateBiasPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 9, model, data);
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 10, model, data);
 
     // 11:The cell bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying the bias
     //    for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product of input
     //    and weights scales and zeroPoint equal to 0.
     const ConstTensorPin cellBiasPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 10, model, data);
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 11, model, data);
 
     // 12:The output gate bias. A 1-D tensor of type ANEURALNETWORKS_TENSOR_INT32 and shape [outputSize] specifying
     //    the bias for the fully-connected layer inside the LSTM cell. Bias is quantized with scale being a product
     //    of input and weights scales and zeroPoint equal to 0.
     const ConstTensorPin outputGateBiasPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 11, model, data);
+            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 12, model, data);
 
     if (!inputToInputWeightsPin.IsValid() ||
         !inputToForgetWeightsPin.IsValid() ||
@@ -1014,8 +1014,8 @@ bool HalPolicy::ConvertQuantizedLstm(const Operation& operation, const Model& mo
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddQuantizedLstmLayer(params, "QuantizedLstm");
     input.Connect(layer->GetInputSlot(0));
-    previousOutputIn.Connect(layer->GetInputSlot(1));
-    previousCellStateIn.Connect(layer->GetInputSlot(2));
+    previousCellStateIn.Connect(layer->GetInputSlot(1));
+    previousOutputIn.Connect(layer->GetInputSlot(2));
 
     return (SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, 0, model, data) &&
             SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 1, *layer, 1, model, data));
