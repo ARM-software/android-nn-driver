@@ -1260,6 +1260,13 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
+    if (input.GetTensorInfo().GetNumDimensions() > 2 ||
+        !(desc.m_Axis == 1 ||
+          (desc.m_Axis < 0 && static_cast<int>(input.GetTensorInfo().GetNumDimensions()) + desc.m_Axis == 1)))
+    {
+        return Fail("%s: Unsupported input greater than 2D or axis != 1", __func__);
+    }
+
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsSoftmaxSupported,
