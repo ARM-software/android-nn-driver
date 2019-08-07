@@ -124,6 +124,7 @@ LOCAL_STATIC_LIBRARIES := \
         libboost_program_options \
         libboost_system \
         libboost_thread \
+        libboost_filesystem \
         armnn-arm_compute
 
 LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
@@ -237,6 +238,7 @@ LOCAL_STATIC_LIBRARIES := \
         libboost_program_options \
         libboost_system \
         libboost_thread \
+        libboost_filesystem \
         armnn-arm_compute
 
 LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
@@ -343,6 +345,7 @@ LOCAL_STATIC_LIBRARIES := \
         libboost_program_options \
         libboost_system \
         libboost_thread \
+        libboost_filesystem \
         armnn-arm_compute
 
 LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
@@ -418,6 +421,7 @@ LOCAL_STATIC_LIBRARIES := \
         libboost_program_options \
         libboost_system \
         libboost_thread \
+        libboost_filesystem \
         armnn-arm_compute
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -508,6 +512,7 @@ LOCAL_STATIC_LIBRARIES := \
         libboost_program_options \
         libboost_system \
         libboost_thread \
+        libboost_filesystem \
         armnn-arm_compute
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -586,6 +591,7 @@ LOCAL_STATIC_LIBRARIES := \
         libboost_program_options \
         libboost_system \
         libboost_thread \
+        libboost_filesystem \
         armnn-arm_compute
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \

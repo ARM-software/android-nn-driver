@@ -74,6 +74,7 @@ LOCAL_STATIC_LIBRARIES := \
         libboost_system \
         libboost_unit_test_framework \
         libboost_thread \
+        libboost_filesystem \
         armnn-arm_compute
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -178,6 +179,7 @@ LOCAL_STATIC_LIBRARIES := \
         libboost_system \
         libboost_unit_test_framework \
         libboost_thread \
+        libboost_filesystem \
         armnn-arm_compute
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -277,6 +279,7 @@ LOCAL_STATIC_LIBRARIES := \
         libboost_system \
         libboost_unit_test_framework \
         libboost_thread \
+        libboost_filesystem \
         armnn-arm_compute
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \

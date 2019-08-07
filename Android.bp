@@ -907,6 +907,21 @@ cc_library_static {
     ],
 }
 
+cc_library_static {
+    name: "libboost_filesystem",
+    defaults: ["libboost-defaults"],
+    srcs: [
+        "boost_1_64_0/libs/filesystem/src/codecvt_error_category.cpp",
+        "boost_1_64_0/libs/filesystem/src/operations.cpp",
+        "boost_1_64_0/libs/filesystem/src/path.cpp",
+        "boost_1_64_0/libs/filesystem/src/path_traits.cpp",
+        "boost_1_64_0/libs/filesystem/src/portability.cpp",
+        "boost_1_64_0/libs/filesystem/src/unique_path.cpp",
+        "boost_1_64_0/libs/filesystem/src/utf8_codecvt_facet.cpp",
+        "boost_1_64_0/libs/filesystem/src/windows_file_codecvt.cpp",
+    ],
+}
+
 subdirs = [
     "armnn",
 ]
