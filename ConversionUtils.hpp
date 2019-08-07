@@ -1041,7 +1041,7 @@ LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
                                                data.m_Backends,
                                                isSupported,
                                                tensorPin.GetConstTensor().GetInfo());
-                    if (isSupported)
+                    if (!isSupported)
                     {
                         return LayerInputHandle();
                     }
