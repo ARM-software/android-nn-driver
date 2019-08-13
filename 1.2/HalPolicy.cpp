@@ -1813,10 +1813,17 @@ bool HalPolicy::ConvertTransposeConv2d(const Operation& operation, const Model& 
 
     if (implicitPadding)
     {
+        int32_t strideX{0};
+        int32_t strideY{0};
+        int32_t padLeft{0};
+        int32_t padRight{0};
+        int32_t padTop{0};
+        int32_t padBottom{0};
+
         android::nn::PaddingScheme paddingScheme;
         if (!GetInputPaddingScheme<hal_1_2::HalPolicy>(operation, 4, paddingScheme, model, data) ||
-            !GetInputScalar<hal_1_2::HalPolicy>(operation, 5, OperandType::INT32, desc.m_StrideX, model, data) ||
-            !GetInputScalar<hal_1_2::HalPolicy>(operation, 6, OperandType::INT32, desc.m_StrideY, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 5, OperandType::INT32, strideX, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 6, OperandType::INT32, strideY, model, data) ||
             !GetInputActivationFunction<hal_1_2::HalPolicy>(operation, 7, activation, model, data))
         {
             return Fail("%s: Operation has invalid inputs (implicit padding)", __func__);
@@ -1826,11 +1833,6 @@ bool HalPolicy::ConvertTransposeConv2d(const Operation& operation, const Model& 
         const uint32_t kernelY = weights.GetShape()[heightIndex];
         const uint32_t outputX  = outputInfo.GetShape()[widthIndex];
         const uint32_t outputY  = outputInfo.GetShape()[heightIndex];
-
-        int32_t padLeft{0};
-        int32_t padRight{0};
-        int32_t padTop{0};
-        int32_t padBottom{0};
 
         CalcPaddingTransposeConv(outputX, kernelX, desc.m_StrideX, padLeft, padRight, paddingScheme);
         CalcPaddingTransposeConv(outputY, kernelY, desc.m_StrideY, padTop, padBottom, paddingScheme);
@@ -1842,6 +1844,8 @@ bool HalPolicy::ConvertTransposeConv2d(const Operation& operation, const Model& 
             return Fail("%s: Negative padding values are not supported", __func__);
         }
 
+        desc.m_StrideX   = boost::numeric_cast<uint32_t>(strideX);
+        desc.m_StrideY   = boost::numeric_cast<uint32_t>(strideY);
         desc.m_PadLeft   = boost::numeric_cast<uint32_t>(padLeft);
         desc.m_PadRight  = boost::numeric_cast<uint32_t>(padRight);
         desc.m_PadTop    = boost::numeric_cast<uint32_t>(padTop);
