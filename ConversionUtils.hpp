@@ -14,6 +14,8 @@
 #include "armnn/src/armnnUtils/DataLayoutIndexed.hpp"
 #include "armnn/src/armnnUtils/Permute.hpp"
 
+#include "1.0/FullyConnected.hpp"
+
 #include <ActivationFunctor.h>
 #include <CpuExecutor.h>
 #include <OperationsUtils.h>
@@ -340,6 +342,20 @@ Shape GetOperandShape(const V1_0::Operand& operand)
     shape.offset = operand.zeroPoint;
     return shape;
 }
+
+#ifdef ARMNN_ANDROID_NN_V1_2
+
+Shape GetOperandShape(const V1_2::Operand& operand)
+{
+    Shape shape;
+    shape.type = OperandType(operand.type);
+    shape.dimensions = operand.dimensions;
+    shape.scale = operand.scale;
+    shape.offset = operand.zeroPoint;
+    return shape;
+}
+
+#endif
 
 // ArmNN requires the bias scale to be equal to the product of the weight and input scales, which is also
 // what AndroidNN requires. However for some of the AndroidNN tests the values don't exactly match so
@@ -1420,6 +1436,71 @@ bool ConvertPooling2d(const HalOperation& operation,
 template<typename HalPolicy,
          typename Operation = typename HalPolicy::Operation,
          typename Model     = typename HalPolicy::Model>
+bool ConvertAdd(const Operation& operation, const Model& model, ConversionData& data)
+{
+    using Operand = typename HalPolicy::Operand;
+
+    LayerInputHandle input0 = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    LayerInputHandle input1 = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
+
+    if (!input0.IsValid() || !input1.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    // The FuseActivation parameter is always the input index 2
+    // and it should be optional
+    ActivationFn activationFunction;
+    if (!GetOptionalInputActivation<HalPolicy>(operation, 2, activationFunction, model, data))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!outputOperand)
+    {
+        return false;
+    }
+
+    const armnn::TensorInfo& inputInfo0 = input0.GetTensorInfo();
+    const armnn::TensorInfo& inputInfo1 = input1.GetTensorInfo();
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsAdditionSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo0,
+                               inputInfo1,
+                               outputInfo);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const startLayer = data.m_Network->AddAdditionLayer();
+    armnn::IConnectableLayer* const endLayer   = ProcessActivation(outputInfo, activationFunction, startLayer, data);
+
+    if (endLayer != nullptr)
+    {
+        BroadcastTensor(input0, input1, startLayer, *data.m_Network);
+        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
+    }
+    else
+    {
+        return Fail("%s: ProcessActivation failed", __func__);
+    }
+}
+
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
 bool ConvertConcatenation(const Operation& operation, const Model& model, ConversionData& data)
 {
     using HalOperand = typename HalPolicy::Operand;
@@ -1918,11 +1999,549 @@ bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model
 }
 
 template<typename HalPolicy,
-         typename HalOperation = typename HalPolicy::Operation,
-         typename HalOperand   = typename HalPolicy::Operand,
-         typename HalModel     = typename HalPolicy::Model>
-bool ConvertPad(HalOperation& operation, const HalModel& model, ConversionData& data)
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertDequantize(const Operation& operation, const Model& model, ConversionData& data)
 {
+    using Operand = typename HalPolicy::Operand;
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid input", __func__);
+    }
+
+    const Operand* const outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!outputOperand)
+    {
+        return Fail("%s: Operation has invalid outputs", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsDequantizeSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input.GetTensorInfo(),
+                               GetTensorInfoForOperand(*outputOperand));
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddDequantizeLayer();
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+}
+
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertDiv(const Operation& operation, const Model& model, ConversionData& data)
+{
+    using Operand = typename HalPolicy::Operand;
+
+    LayerInputHandle input0 = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    LayerInputHandle input1 = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
+
+    if (!input0.IsValid() || !input1.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    // The FuseActivation parameter is always the input index 2
+    // and it should be optional
+    ActivationFn activationFunction;
+    if (!GetOptionalInputActivation<HalPolicy>(operation, 2, activationFunction, model, data))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsDivisionSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input0.GetTensorInfo(),
+                               input1.GetTensorInfo(),
+                               outputInfo);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const startLayer = data.m_Network->AddDivisionLayer();
+    armnn::IConnectableLayer* const endLayer   = ProcessActivation(outputInfo, activationFunction, startLayer, data);
+
+    if (endLayer)
+    {
+        BroadcastTensor(input0, input1, startLayer, *data.m_Network);
+        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
+    }
+    return Fail("%s: ProcessActivation failed", __func__);
+}
+
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertFloor(const Operation& operation, const Model& model, ConversionData& data)
+{
+    using Operand = typename HalPolicy::Operand;
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* const outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!outputOperand)
+    {
+        return Fail("%s: Operation has invalid outputs", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsFloorSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input.GetTensorInfo(),
+                               outputInfo);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* layer = data.m_Network->AddFloorLayer();
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+}
+
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertFullyConnected(const Operation& operation, const Model& model, ConversionData& data)
+{
+    using Operand = typename HalPolicy::Operand;
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    // ArmNN does not currently support non-fixed weights or bias
+    ConstTensorPin weightsPin =
+            ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 1, model, data); // 2D
+    ConstTensorPin biasPin =
+            ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 2, model, data); // 1D
+
+    if (!weightsPin.IsValid() || !biasPin.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    armnn::ConstTensor weights = weightsPin.GetConstTensor();
+    armnn::ConstTensor bias    = biasPin.GetConstTensor();
+    armnn::TensorInfo reshapedInfo = inputInfo;
+
+    try
+    {
+        reshapedInfo.SetShape(FlattenFullyConnectedInput(inputInfo.GetShape(), weights.GetInfo().GetShape()));
+    } catch (const std::exception &e) {
+        return Fail("%s: %s", __func__, e.what());
+    }
+
+    // ensuring that the bias value is within 1% of the weights input (small float differences can exist)
+    SanitizeBiasQuantizationScale(bias.GetInfo(), weights.GetInfo(), reshapedInfo);
+
+    ActivationFn activationFunction;
+    if (!GetInputActivationFunction<HalPolicy>(operation, 3, activationFunction, model, data))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    armnn::FullyConnectedDescriptor desc;
+    desc.m_TransposeWeightMatrix = true;
+    desc.m_BiasEnabled           = true;
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsFullyConnectedSupported,
+                               data.m_Backends,
+                               isSupported,
+                               reshapedInfo,
+                               outputInfo,
+                               weights.GetInfo(),
+                               bias.GetInfo(),
+                               desc);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* startLayer =
+            data.m_Network->AddFullyConnectedLayer(desc, weights, armnn::Optional<armnn::ConstTensor>(bias));
+    armnn::IConnectableLayer* endLayer = ProcessActivation(outputInfo, activationFunction, startLayer, data);
+
+    if (endLayer != nullptr)
+    {
+        if (inputInfo.GetNumDimensions() > 2U)
+        {
+            armnn::ReshapeDescriptor reshapeDescriptor;
+            reshapeDescriptor.m_TargetShape = reshapedInfo.GetShape();
+
+            armnn::IConnectableLayer* reshapeLayer = data.m_Network->AddReshapeLayer(reshapeDescriptor);
+            assert(reshapeLayer != nullptr);
+            input.Connect(reshapeLayer->GetInputSlot(0));
+            reshapeLayer->GetOutputSlot(0).SetTensorInfo(reshapedInfo);
+            reshapeLayer->GetOutputSlot(0).Connect(startLayer->GetInputSlot(0));
+        }
+        else
+        {
+            input.Connect(startLayer->GetInputSlot(0));
+        }
+
+        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
+    }
+    else
+    {
+        return Fail("%s: ProcessActivation failed", __func__);
+    }
+}
+
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertL2Normalization(const Operation& operation, const Model& model, ConversionData& data)
+{
+    using Operand = typename HalPolicy::Operand;
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+    if (outputInfo.GetNumDimensions() != 4u)
+    {
+        return Fail("%s: Tensor Rank other than 4 is not supported", __func__);
+    }
+
+    armnn::L2NormalizationDescriptor desc;
+    desc.m_DataLayout = armnn::DataLayout::NHWC;
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsL2NormalizationSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               desc);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* layer = data.m_Network->AddL2NormalizationLayer(desc);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+}
+
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertLocalResponseNormalization(const Operation& operation,
+                                       const Model& model,
+                                       ConversionData& data)
+{
+    using Operand     = typename HalPolicy::Operand;
+    using OperandType = typename HalPolicy::OperandType;
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+    if (outputInfo.GetNumDimensions() != 4u)
+    {
+        return Fail("%s: Tensor Rank other than 4 is not supported", __func__);
+    }
+
+    armnn::NormalizationDescriptor descriptor;
+    descriptor.m_DataLayout      = armnn::DataLayout::NHWC;
+    descriptor.m_NormChannelType = armnn::NormalizationAlgorithmChannel::Across;
+    descriptor.m_NormMethodType  = armnn::NormalizationAlgorithmMethod::LocalBrightness;
+
+    if (!input.IsValid() ||
+        !GetInputScalar<HalPolicy>(operation, 1, OperandType::INT32, descriptor.m_NormSize, model, data) ||
+        !GetInputFloat32<HalPolicy>(operation, 2, descriptor.m_K, model, data) ||
+        !GetInputFloat32<HalPolicy>(operation, 3, descriptor.m_Alpha, model, data) ||
+        !GetInputFloat32<HalPolicy>(operation, 4, descriptor.m_Beta, model, data))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    // ArmNN expects normSize to be the full size of the normalization
+    // window rather than the radius as in AndroidNN.
+    descriptor.m_NormSize = 1 + (2 * descriptor.m_NormSize);
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsNormalizationSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+
+    armnn::IConnectableLayer* layer = data.m_Network->AddNormalizationLayer(descriptor);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+}
+
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertLogistic(const Operation& operation, const Model& model, ConversionData& data)
+{
+    using Operand = typename HalPolicy::Operand;
+
+    armnn::ActivationDescriptor desc;
+    desc.m_Function = armnn::ActivationFunction::Sigmoid;
+
+    return ConvertToActivation<HalPolicy>(operation, __func__, desc, model, data);
+}
+
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertMean(const Operation& operation, const Model& model, ConversionData& data)
+{
+    using Operand = typename HalPolicy::Operand;
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    const Operand* axisOperand = GetInputOperand<HalPolicy>(operation, 1, model);
+    if (!axisOperand)
+    {
+        return Fail("%s: Could not read input 1", __func__);
+    }
+
+    std::vector<int32_t> axis;
+    if (!GetTensorInt32Values<HalPolicy>(*axisOperand, axis, model, data))
+    {
+        return Fail("%s: Input 1 has invalid values", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
+
+    // Convert the axis to unsigned int and remove duplicates.
+    unsigned int rank = inputInfo.GetNumDimensions();
+    std::set<unsigned int> uniqueAxis;
+    std::transform(axis.begin(), axis.end(),
+                   std::inserter(uniqueAxis, uniqueAxis.begin()),
+                   [rank](int i) -> unsigned int { return (i + rank) % rank; });
+
+    // Get the "keep dims" flag.
+    int32_t keepDims = 0;
+    if (!GetInputInt32<HalPolicy>(operation, 2, keepDims, model, data))
+    {
+        return Fail("%s: Could not read input 2", __func__);
+    }
+
+    armnn::MeanDescriptor descriptor;
+    descriptor.m_Axis.assign(uniqueAxis.begin(), uniqueAxis.end());
+    descriptor.m_KeepDims = keepDims > 0;
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsMeanSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddMeanLayer(descriptor);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+}
+
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertMul(const Operation& operation, const Model& model, ConversionData& data)
+{
+    using Operand = typename HalPolicy::Operand;
+
+    LayerInputHandle input0 = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    LayerInputHandle input1 = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
+
+    if (!input0.IsValid() || !input1.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    // The FuseActivation parameter is always the input index 2
+    // and it should be optional
+    ActivationFn activationFunction;
+    if (!GetOptionalInputActivation<HalPolicy>(operation, 2, activationFunction, model, data))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Operand* outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
+
+    if (outputOperand == nullptr)
+    {
+        return false;
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsMultiplicationSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input0.GetTensorInfo(),
+                               input1.GetTensorInfo(),
+                               outputInfo);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const startLayer = data.m_Network->AddMultiplicationLayer();
+    armnn::IConnectableLayer* const endLayer   = ProcessActivation(outputInfo, activationFunction, startLayer, data);
+
+    const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
+    const armnn::TensorInfo& inputTensorInfo1 = input1.GetTensorInfo();
+
+    if (endLayer != nullptr)
+    {
+        BroadcastTensor(input0, input1, startLayer, *data.m_Network);
+        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
+    }
+    else
+    {
+        return Fail("%s: ProcessActivation failed", __func__);
+    }
+}
+
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertPad(Operation& operation, const Model& model, ConversionData& data)
+{
+    using Operand = typename HalPolicy::Operand;
+
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
@@ -1946,7 +2565,7 @@ bool ConvertPad(HalOperation& operation, const HalModel& model, ConversionData& 
         descriptor.m_PadValue = inputInfo.GetQuantizationOffset();
     }
 
-    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output", __func__);
@@ -1981,10 +2600,86 @@ bool ConvertPad(HalOperation& operation, const HalModel& model, ConversionData& 
 
 template<typename HalPolicy,
          typename Operation = typename HalPolicy::Operation,
-         typename Operand   = typename HalPolicy::Operand,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertReshape(const Operation& operation, const Model& model, ConversionData& data)
+{
+    using Operand = typename HalPolicy::Operand;
+
+    const Operand* inputOperand = GetInputOperand<HalPolicy>(operation, 0, model);
+    const Operand* requestedShapeOperand = GetInputOperand<HalPolicy>(operation, 1, model);
+    const Operand* outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
+
+    if (inputOperand == nullptr
+        || requestedShapeOperand == nullptr
+        || outputOperand == nullptr)
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    if (requestedShapeOperand->dimensions.size() != 1)
+    {
+        return Fail("%s: Input 1 expected to be one-dimensional (found %i dimensions)",
+                    __func__, requestedShapeOperand->dimensions.size());
+    }
+
+    std::vector<int32_t> targetDimensions;
+    if (!GetTensorInt32Values<HalPolicy>(*requestedShapeOperand, targetDimensions, model, data))
+    {
+        return Fail("%s: Could not read values of input 1", __func__);
+    }
+
+    const Shape inputOperandShape = GetOperandShape(*inputOperand);
+
+    Shape requestedShape;
+    // targetDimensions may contain special values (e.g. -1). reshapePrepare() is an AndroidNN provided utility
+    // function that resolves these values into a fully specified tensor shape.
+    if (!reshapePrepare(inputOperandShape, targetDimensions.data(), targetDimensions.size(), &requestedShape))
+    {
+        return Fail("%s: Failed to resolve the requested shape", __func__);
+    }
+
+    const Shape outputOperandShape = GetOperandShape(*outputOperand);
+    if (!SameShape(requestedShape, outputOperandShape))
+    {
+        return Fail("%s: Shape of output operand does not match resolved requested shape", __func__);
+    }
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Could not read input 0", __func__);
+    }
+
+    armnn::ReshapeDescriptor reshapeDescriptor;
+    reshapeDescriptor.m_TargetShape = armnn::TensorShape(requestedShape.dimensions.size(),
+                                                         requestedShape.dimensions.data());
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsReshapeSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input.GetTensorInfo(),
+                               reshapeDescriptor);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* layer = data.m_Network->AddReshapeLayer(reshapeDescriptor);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+}
+
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
          typename Model     = typename HalPolicy::Model>
 bool ConvertSub(const Operation& operation, const Model& model, ConversionData& data)
 {
+    using Operand = typename HalPolicy::Operand;
+
     LayerInputHandle input0 = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     LayerInputHandle input1 = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
 
@@ -2039,6 +2734,274 @@ bool ConvertSub(const Operation& operation, const Model& model, ConversionData& 
     }
 
     return Fail("%s: ProcessActivation failed", __func__);
+}
+
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertSqueeze(const Operation& operation, const Model& model, ConversionData& data)
+{
+    using Operand = typename HalPolicy::Operand;
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+    unsigned int rank = inputInfo.GetNumDimensions();
+    if (rank > 4)
+    {
+        Fail("%s: Inputs with rank greater than 4 are not supported", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    if (IsDynamicTensor(GetTensorInfoForOperand(*output)))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    // NOTE: Axis is an optional parameter to SQUEEZE, therefore we do not want to generate a failure
+    // if the operand index is out of bounds.
+    const Operand* axisOperand = GetInputOperand<HalPolicy>(operation, 1, model, false);
+
+    const uint32_t dimensionSequence[] = { 0, 1, 2, 3 };
+
+    std::vector<int32_t> axis;
+    if (!axisOperand)
+    {
+        axis.assign(dimensionSequence,
+                    dimensionSequence + rank);
+    }
+    else
+    {
+        GetTensorInt32Values<HalPolicy>(*axisOperand, axis, model, data);
+    }
+
+    std::vector<uint32_t> outputDims;
+    for (unsigned int i = 0; i < rank; i++)
+    {
+        bool skipSqueeze = (std::find(axis.begin(), axis.end(), i) == axis.end());
+        auto currentDimension = inputInfo.GetShape()[i];
+        if (skipSqueeze || currentDimension != 1)
+        {
+            outputDims.push_back(currentDimension);
+        }
+    }
+
+    armnn::TensorShape outShape = armnn::TensorShape(outputDims.size(), outputDims.data());
+
+    armnn::TensorInfo outputInfo = inputInfo;
+    outputInfo.SetShape(outShape);
+
+    armnn::ReshapeDescriptor reshapeDesc;
+    reshapeDesc.m_TargetShape = outputInfo.GetShape();
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsReshapeSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               reshapeDesc);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddReshapeLayer(reshapeDesc);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+}
+
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertStridedSlice(const Operation& operation, const Model& model, ConversionData& data)
+{
+    using Operand = typename HalPolicy::Operand;
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
+    unsigned int rank = inputInfo.GetNumDimensions();
+    if (rank > 4)
+    {
+        Fail("%s: Inputs with rank greater than 4 are not supported", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    const Operand* beginOperand   = GetInputOperand<HalPolicy>(operation, 1, model);
+    const Operand* endOperand     = GetInputOperand<HalPolicy>(operation, 2, model);
+    const Operand* stridesOperand = GetInputOperand<HalPolicy>(operation, 3, model);
+
+    std::vector<int32_t> beginValues;
+    std::vector<int32_t> endValues;
+    std::vector<int32_t> stridesValues;
+
+    // The length of the beginOperand, endOperand and stridesOperand must be of a rank(input)
+    auto ValidateInputOperands = [&] (const Operand& operand, std::vector<int32_t>& operandValues)
+    {
+        if (!GetTensorInt32Values<HalPolicy>(operand, operandValues, model, data))
+        {
+            return false;
+        }
+
+        if (operandValues.size() != rank)
+        {
+            return false;
+        }
+
+        return true;
+    };
+
+    if (!ValidateInputOperands(*beginOperand, beginValues)
+        || !ValidateInputOperands(*endOperand, endValues)
+        || !ValidateInputOperands(*stridesOperand, stridesValues))
+    {
+        return Fail("%s: Operation has invalid input operand", __func__);
+    }
+
+    // Stride cannot have value '0'
+    if (std::any_of(stridesValues.cbegin(), stridesValues.cend(), [](int32_t i){ return i == 0; }))
+    {
+        return Fail("%s: Stride must be non-zero value.", __func__);
+    }
+
+    armnn::StridedSliceDescriptor descriptor;
+    descriptor.m_Begin.assign(beginValues.cbegin(), beginValues.cend());
+    descriptor.m_End.assign(endValues.cbegin(), endValues.cend());
+    descriptor.m_Stride.assign(stridesValues.cbegin(), stridesValues.cend());
+    descriptor.m_DataLayout = armnn::DataLayout::NHWC;
+
+    // Get the "begin_mask", "end_mask", and "shrink_axis_mask" flags
+    if (!GetInputInt32<HalPolicy>(operation, 4, descriptor.m_BeginMask, model, data) ||
+        !GetInputInt32<HalPolicy>(operation, 5, descriptor.m_EndMask, model, data) ||
+        !GetInputInt32<HalPolicy>(operation, 6, descriptor.m_ShrinkAxisMask, model, data))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsStridedSliceSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddStridedSliceLayer(descriptor);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+}
+
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertTranspose(const Operation& operation, const Model& model, ConversionData& data)
+{
+    using Operand = typename HalPolicy::Operand;
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
+    unsigned int rank = inputInfo.GetNumDimensions();
+    if (rank > 4)
+    {
+        Fail("%s: Inputs with rank greater than 4 are not supported", __func__);
+    }
+
+    // NOTE: Axis is an optional parameter to TRANSPOSE, therefore we do not want to generate a failure
+    // if the operand index is out of bounds.
+    const Operand* permOperand = GetInputOperand<HalPolicy>(operation, 1, model, false);
+
+    std::vector<int32_t> perm(rank);
+    if (!permOperand)
+    {
+        // NOTE: If perm is not given, it is set to (n-1...0), where n is the rank of the tensor
+        for (unsigned int i = rank; i > 0; i--)
+        {
+            perm[rank - i] = boost::numeric_cast<int> (i - 1);
+        }
+    }
+    else
+    {
+        GetTensorInt32Values<HalPolicy>(*permOperand, perm, model, data);
+    }
+
+    std::vector<uint32_t> outputDims(perm.begin(), perm.begin() + rank);
+
+    auto permutationVector = armnn::PermutationVector(outputDims.data(), outputDims.size());
+    if (!permutationVector.IsEqual(NHWCToArmNN)
+        && !permutationVector.IsEqual(ArmNNToNHWC)
+        && !permutationVector.IsEqual({ 3, 2, 0, 1 }))
+    {
+        return Fail("%s: Only [0, 3, 1, 2], [0, 2, 3, 1] and [3, 2, 0, 1] permutations are supported.", __func__);
+    }
+
+    armnn::PermuteDescriptor permuteDesc;
+    permuteDesc.m_DimMappings = permutationVector;
+
+    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsPermuteSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               permuteDesc);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddPermuteLayer(permuteDesc);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
 }
 
 template<typename HalPolicy,

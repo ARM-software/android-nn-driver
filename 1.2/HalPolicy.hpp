@@ -31,6 +31,8 @@ public:
     static bool ConvertOperation(const Operation& operation, const Model& model, ConversionData& data);
 
 private:
+    static bool ConvertAdd(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertAveragePool2d(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertBatchToSpaceNd(const Operation& operation, const Model& model, ConversionData& data);
@@ -41,13 +43,35 @@ private:
 
     static bool ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertDequantize(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertDiv(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertFloor(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertFullyConnected(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertL2Normalization(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertL2Pool2d(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertLocalResponseNormalization(const Operation& operation,
+                                                  const Model& model,
+                                                  ConversionData& data);
+
+    static bool ConvertLogistic(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertLstm(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertMaxPool2d(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertMaximum(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertMean(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertMinimum(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertMul(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertPad(const Operation& operation, const Model& model, ConversionData& data);
 
@@ -65,6 +89,8 @@ private:
 
     static bool ConvertReLu6(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertReshape(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertResize(const Operation& operation,
                               const Model& model,
                               ConversionData& data,
@@ -76,11 +102,15 @@ private:
 
     static bool ConvertSpaceToDepth(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertSqueeze(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertStridedSlice(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertSub(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertTanH(const Operation& operation, const Model& model, ConversionData& data);
 
-    static bool ConvertLstm(const Operation& operation, const Model& model, ConversionData& data);
+    static bool ConvertTranspose(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertTransposeConv2d(const Operation& operation, const Model& model, ConversionData& data);
 };

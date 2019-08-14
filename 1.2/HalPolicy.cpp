@@ -7,9 +7,6 @@
 
 #include "Utils.hpp"
 
-#include "../1.0/HalPolicy.hpp"
-#include "../1.1/HalPolicy.hpp"
-
 #include <DataLayoutIndexed.hpp>
 #include <Half.hpp>
 
@@ -20,109 +17,12 @@ namespace armnn_driver
 namespace hal_1_2
 {
 
-bool HandledByV1_0(V1_2::OperationType operationType)
-{
-    switch (static_cast<V1_0::OperationType>(operationType))
-    {
-        case V1_0::OperationType::ADD:
-        case V1_0::OperationType::DEPTH_TO_SPACE:
-        case V1_0::OperationType::DEQUANTIZE:
-        case V1_0::OperationType::EMBEDDING_LOOKUP:
-        case V1_0::OperationType::FLOOR:
-        case V1_0::OperationType::FULLY_CONNECTED:
-        case V1_0::OperationType::HASHTABLE_LOOKUP:
-        case V1_0::OperationType::L2_NORMALIZATION:
-        case V1_0::OperationType::LOCAL_RESPONSE_NORMALIZATION:
-        case V1_0::OperationType::LOGISTIC:
-        case V1_0::OperationType::LSH_PROJECTION:
-        case V1_0::OperationType::MUL:
-        case V1_0::OperationType::RESHAPE:
-        case V1_0::OperationType::RNN:
-        case V1_0::OperationType::SVDF:
-        case V1_0::OperationType::OEM_OPERATION:
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool HandledByV1_1(V1_2::OperationType operationType)
-{
-    if (HandledByV1_0(operationType))
-    {
-        return true;
-    }
-    switch (static_cast<V1_1::OperationType>(operationType))
-    {
-        case V1_1::OperationType::DIV:
-        case V1_1::OperationType::MEAN:
-        case V1_1::OperationType::SQUEEZE:
-        case V1_1::OperationType::STRIDED_SLICE:
-        case V1_1::OperationType::TRANSPOSE:
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool HandledByV1_0(const V1_2::Operation& operation)
-{
-    return HandledByV1_0(operation.type);
-}
-
-bool HandledByV1_1(const V1_2::Operation& operation)
-{
-    return HandledByV1_1(operation.type);
-}
-
-V1_0::OperationType CastToV1_0(V1_2::OperationType type)
-{
-    return static_cast<V1_0::OperationType>(type);
-}
-
-V1_1::OperationType CastToV1_1(V1_2::OperationType type)
-{
-    return static_cast<V1_1::OperationType>(type);
-}
-
-V1_0::Operation ConvertToV1_0(const V1_2::Operation& operation)
-{
-    V1_0::Operation op;
-    op.type = CastToV1_0(operation.type);
-    op.inputs = operation.inputs;
-    op.outputs = operation.outputs;
-    return op;
-}
-
-V1_1::Operation ConvertToV1_1(const V1_2::Operation& operation)
-{
-    V1_1::Operation op;
-    op.type = CastToV1_1(operation.type);
-    op.inputs = operation.inputs;
-    op.outputs = operation.outputs;
-    return op;
-}
-
 bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model, ConversionData& data)
 {
-    if (HandledByV1_0(operation) && compliantWithV1_0(model))
-    {
-        hal_1_0::HalPolicy::Operation v10Operation = ConvertToV1_0(operation);
-        hal_1_0::HalPolicy::Model v10Model = convertToV1_0(model);
-
-        return hal_1_0::HalPolicy::ConvertOperation(v10Operation, v10Model, data);
-    }
-
-    if (HandledByV1_1(operation) && compliantWithV1_1(model))
-    {
-        hal_1_1::HalPolicy::Operation v11Operation = ConvertToV1_1(operation);
-        hal_1_1::HalPolicy::Model v11Model = convertToV1_1(model);
-
-        return hal_1_1::HalPolicy::ConvertOperation(v11Operation, v11Model, data);
-    }
-
     switch (operation.type)
     {
+        case V1_2::OperationType::ADD:
+            return ConvertAdd(operation, model, data);
         case V1_2::OperationType::AVERAGE_POOL_2D:
             return ConvertAveragePool2d(operation, model, data);
         case V1_2::OperationType::BATCH_TO_SPACE_ND:
@@ -133,14 +33,34 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertConv2d(operation, model, data);
         case V1_2::OperationType::DEPTHWISE_CONV_2D:
             return ConvertDepthwiseConv2d(operation, model, data);
+        case V1_2::OperationType::DEQUANTIZE:
+            return ConvertDequantize(operation, model, data);
+        case V1_2::OperationType::DIV:
+            return ConvertDiv(operation, model, data);
+        case V1_2::OperationType::FLOOR:
+            return ConvertFloor(operation, model, data);
+        case V1_2::OperationType::FULLY_CONNECTED:
+            return ConvertFullyConnected(operation, model, data);
+        case V1_2::OperationType::L2_NORMALIZATION:
+            return ConvertL2Normalization(operation, model, data);
         case V1_2::OperationType::L2_POOL_2D:
             return ConvertL2Pool2d(operation, model, data);
+        case V1_2::OperationType::LOCAL_RESPONSE_NORMALIZATION:
+            return ConvertLocalResponseNormalization(operation, model, data);
+        case V1_2::OperationType::LOGISTIC:
+            return ConvertLogistic(operation, model, data);
+        case V1_2::OperationType::LSTM:
+            return ConvertLstm(operation, model, data);
         case V1_2::OperationType::MAX_POOL_2D:
             return ConvertMaxPool2d(operation, model, data);
         case V1_2::OperationType::MAXIMUM:
             return ConvertMaximum(operation, model, data);
+        case V1_2::OperationType::MEAN:
+            return ConvertMean(operation, model, data);
         case V1_2::OperationType::MINIMUM:
             return ConvertMinimum(operation, model, data);
+        case V1_2::OperationType::MUL:
+            return ConvertMul(operation, model, data);
         case V1_2::OperationType::PAD:
             return ConvertPad(operation, model, data);
         case V1_2::OperationType::PAD_V2:
@@ -157,10 +77,18 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertReLu1(operation, model, data);
         case V1_2::OperationType::RELU6:
             return ConvertReLu6(operation, model, data);
+        case V1_2::OperationType::RESHAPE:
+            return ConvertReshape(operation, model, data);
         case V1_2::OperationType::RESIZE_BILINEAR:
             return ConvertResize(operation, model, data, armnn::ResizeMethod::Bilinear);
         case V1_2::OperationType::RESIZE_NEAREST_NEIGHBOR:
             return ConvertResize(operation, model, data, armnn::ResizeMethod::NearestNeighbor);
+        case V1_2::OperationType::SQUEEZE:
+            return ConvertSqueeze(operation, model, data);
+        case V1_2::OperationType::STRIDED_SLICE:
+            return ConvertStridedSlice(operation, model, data);
+        case V1_2::OperationType::TRANSPOSE:
+            return ConvertTranspose(operation, model, data);
         case V1_2::OperationType::TRANSPOSE_CONV_2D:
             return ConvertTransposeConv2d(operation, model, data);
         case V1_2::OperationType::SOFTMAX:
@@ -173,12 +101,16 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertSub(operation, model, data);
         case V1_2::OperationType::TANH:
             return ConvertTanH(operation, model, data);
-        case V1_2::OperationType::LSTM:
-            return ConvertLstm(operation, model, data);
         default:
             return Fail("%s: Operation type %s not supported in ArmnnDriver",
                         __func__, toString(operation.type).c_str());
     }
+}
+
+bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertAdd()");
+    return ::ConvertAdd<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertAveragePool2d(const Operation& operation, const Model& model, ConversionData& data)
@@ -517,10 +449,54 @@ bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *endLayer, model, data);
 }
 
+bool HalPolicy::ConvertDequantize(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertDequantize()");
+    return ::ConvertDequantize<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertDiv(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertDiv()");
+    return ::ConvertDiv<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertFloor(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertFloor()");
+    return ::ConvertFloor<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertFullyConnected(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertFullyConnected()");
+    return ::ConvertFullyConnected<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertL2Normalization()");
+    return ::ConvertL2Normalization<hal_1_2::HalPolicy>(operation, model, data);
+}
+
 bool HalPolicy::ConvertL2Pool2d(const Operation& operation, const Model& model, ConversionData& data)
 {
     ALOGV("hal_1_2::HalPolicy::ConvertL2Pool2d()");
     return ConvertPooling2d<hal_1_2::HalPolicy>(operation, __func__, armnn::PoolingAlgorithm::L2, model, data);
+}
+
+bool HalPolicy::ConvertLocalResponseNormalization(const Operation& operation,
+                                                  const Model& model,
+                                                  ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertLocalResponseNormalization()");
+    return ::ConvertLocalResponseNormalization<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertLogistic(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertLogistic()");
+    return ::ConvertLogistic<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertMaxPool2d(const Operation& operation, const Model& model, ConversionData& data)
@@ -574,6 +550,12 @@ bool HalPolicy::ConvertMaximum(const Operation& operation, const Model& model, C
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
 }
 
+bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertMean()");
+    return ::ConvertMean<hal_1_2::HalPolicy>(operation, model, data);
+}
+
 bool HalPolicy::ConvertMinimum(const Operation& operation, const Model& model, ConversionData& data)
 {
     ALOGV("hal_1_2::HalPolicy::ConvertMinimum()");
@@ -617,6 +599,12 @@ bool HalPolicy::ConvertMinimum(const Operation& operation, const Model& model, C
     BroadcastTensor(input0, input1, layer, *data.m_Network);
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
+}
+
+bool HalPolicy::ConvertMul(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertMul()");
+    return ::ConvertMul<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, ConversionData& data)
@@ -1037,6 +1025,12 @@ bool HalPolicy::ConvertReLu6(const Operation& operation, const Model& model, Con
 {
     ALOGV("hal_1_2::HalPolicy::ConvertReLu6()");
     return ::ConvertReLu6<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertReshape(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertReshape()");
+    return ::ConvertReshape<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertResize(const Operation& operation,
@@ -1731,6 +1725,24 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
             SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 1, *layer, 1, model, data) &&
             SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 2, *layer, 2, model, data) &&
             SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 3, *layer, 3, model, data));
+}
+
+bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_1::HalPolicy::ConvertSqueeze()");
+    return ::ConvertSqueeze<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_1::HalPolicy::ConvertStridedSlice()");
+    return ::ConvertStridedSlice<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_1::HalPolicy::ConvertTranspose()");
+    return ::ConvertTranspose<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertTransposeConv2d(const Operation& operation, const Model& model, ConversionData& data)
