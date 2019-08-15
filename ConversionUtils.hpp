@@ -2257,6 +2257,11 @@ template<typename HalPolicy,
          typename Model     = typename HalPolicy::Model>
 bool ConvertL2Normalization(const Operation& operation, const Model& model, ConversionData& data)
 {
+    if (operation.inputs.size() != 1)
+    {
+        return Fail("%s: Optional inputs are not supported", __func__);
+    }
+
     using Operand = typename HalPolicy::Operand;
 
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
@@ -2313,6 +2318,11 @@ bool ConvertLocalResponseNormalization(const Operation& operation,
                                        const Model& model,
                                        ConversionData& data)
 {
+    if (operation.inputs.size() != 5)
+    {
+        return Fail("%s: Optional inputs are not supported", __func__);
+    }
+
     using Operand     = typename HalPolicy::Operand;
     using OperandType = typename HalPolicy::OperandType;
 
