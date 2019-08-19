@@ -232,8 +232,8 @@ armnn::IConnectableLayer& AddReshapeLayer(armnn::INetwork& network, LayerHandleT
     return *reshapeLayer;
 }
 
-void BroadcastTensor(LayerInputHandle& input0, LayerInputHandle& input1,
-                     armnn::IConnectableLayer* startLayer, armnn::INetwork& network)
+bool BroadcastTensor(LayerInputHandle& input0, LayerInputHandle& input1,
+                     armnn::IConnectableLayer* startLayer, ConversionData& data)
 {
     BOOST_ASSERT(startLayer != nullptr);
 
@@ -249,7 +249,7 @@ void BroadcastTensor(LayerInputHandle& input0, LayerInputHandle& input1,
         input0.Connect(startLayer->GetInputSlot(0));
         input1.Connect(startLayer->GetInputSlot(1));
 
-        return;
+        return true;
     }
 
     // Since the number of dimensions do not match then we need to add degenerate dimensions
@@ -273,7 +273,24 @@ void BroadcastTensor(LayerInputHandle& input0, LayerInputHandle& input1,
     armnn::TensorInfo reshapedInfo = smallInfo;
     reshapedInfo.SetShape(armnn::TensorShape{ boost::numeric_cast<unsigned int>(reshapedDimensions.size()),
                                               reshapedDimensions.data() });
-    armnn::IConnectableLayer& reshapeLayer = AddReshapeLayer(network, smallInputHandle, reshapedInfo);
+
+    // RehsapeDescriptor that is ignored in the IsReshapeSupported function
+    armnn::ReshapeDescriptor reshapeDescriptor;
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsReshapeSupported,
+                               data.m_Backends,
+                               isSupported,
+                               reshapedInfo,
+                               reshapeDescriptor);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    BOOST_ASSERT(data.m_Network != nullptr);
+    armnn::IConnectableLayer& reshapeLayer = AddReshapeLayer(*data.m_Network, smallInputHandle, reshapedInfo);
 
     if (input0IsSmaller)
     {
@@ -301,6 +318,8 @@ void BroadcastTensor(LayerInputHandle& input0, LayerInputHandle& input1,
         input0.Connect(startLayer->GetInputSlot(0));
         reshapeLayer.GetOutputSlot(0).Connect(startLayer->GetInputSlot(1));
     }
+
+    return true;
 }
 
 void CalcPadding(uint32_t input, uint32_t kernel, uint32_t stride, uint32_t& outPadHead, uint32_t& outPadTail,
@@ -1489,7 +1508,12 @@ bool ConvertAdd(const Operation& operation, const Model& model, ConversionData& 
 
     if (endLayer != nullptr)
     {
-        BroadcastTensor(input0, input1, startLayer, *data.m_Network);
+        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
+        if (!isReshapeSupported)
+        {
+            return false;
+        }
+
         return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
     }
     else
@@ -2095,7 +2119,12 @@ bool ConvertDiv(const Operation& operation, const Model& model, ConversionData& 
 
     if (endLayer)
     {
-        BroadcastTensor(input0, input1, startLayer, *data.m_Network);
+        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
+        if (!isReshapeSupported)
+        {
+            return false;
+        }
+
         return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
     }
     return Fail("%s: ProcessActivation failed", __func__);
@@ -2536,7 +2565,12 @@ bool ConvertMul(const Operation& operation, const Model& model, ConversionData& 
 
     if (endLayer != nullptr)
     {
-        BroadcastTensor(input0, input1, startLayer, *data.m_Network);
+        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
+        if (!isReshapeSupported)
+        {
+            return false;
+        }
+
         return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
     }
     else
@@ -2739,7 +2773,11 @@ bool ConvertSub(const Operation& operation, const Model& model, ConversionData& 
 
     if (endLayer)
     {
-        BroadcastTensor(input0, input1, startLayer, *data.m_Network);
+        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
+        if (!isReshapeSupported)
+        {
+            return false;
+        }
         return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
     }
 
