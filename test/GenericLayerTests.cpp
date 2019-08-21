@@ -188,7 +188,8 @@ BOOST_AUTO_TEST_CASE(UnsupportedLayerContinueOnFailure)
     AddOutputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 1, 3, 4});
     AddOutputOperand<HalPolicy>(model,
                                 hidl_vec<uint32_t>{1, 1, 3, 4},
-                                HalPolicy::OperandType::TENSOR_QUANT8_ASYMM);
+                                HalPolicy::OperandType::TENSOR_QUANT8_ASYMM,
+                                1.f / 225.f);
 
     // Fully connected is supported
     AddInputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 3});

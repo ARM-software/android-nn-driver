@@ -124,7 +124,7 @@ ConcatTestImpl(const std::vector<const TestTensor*> & inputs,
     }
 
     // add memory for the output
-    android::sp<IMemory> outMemory = AddPoolAndGetData(expectedOutputTensor.GetNumElements(), request);
+    android::sp<IMemory> outMemory = AddPoolAndGetData<float>(expectedOutputTensor.GetNumElements(), request);
     float* outdata = static_cast<float*>(static_cast<void*>(outMemory->getPointer()));
 
     // run the execution

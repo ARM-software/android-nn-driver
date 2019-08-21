@@ -84,9 +84,9 @@ BOOST_AUTO_TEST_CASE(ConcurrentExecute)
         requests[i].outputs = hidl_vec<RequestArgument>{output};
         // set the input data (matching source test)
         float indata[] = {2, 32, 16};
-        AddPoolAndSetData(3, requests[i], indata);
+        AddPoolAndSetData<float>(3, requests[i], indata);
         // add memory for the output
-        outMemory[i] = AddPoolAndGetData(1, requests[i]);
+        outMemory[i] = AddPoolAndGetData<float>(1, requests[i]);
         outdata[i] = static_cast<float*>(static_cast<void*>(outMemory[i]->getPointer()));
     }
 

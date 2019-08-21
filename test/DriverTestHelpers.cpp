@@ -102,33 +102,6 @@ hidl_memory allocateSharedMemory(int64_t size)
     return memory;
 }
 
-android::sp<IMemory> AddPoolAndGetData(uint32_t size, Request& request)
-{
-    hidl_memory pool;
-
-    android::sp<IAllocator> allocator = IAllocator::getService("ashmem");
-    allocator->allocate(sizeof(float) * size, [&](bool success, const hidl_memory& mem) {
-        BOOST_TEST(success);
-        pool = mem;
-    });
-
-    request.pools.resize(request.pools.size() + 1);
-    request.pools[request.pools.size() - 1] = pool;
-
-    android::sp<IMemory> mapped = mapMemory(pool);
-    mapped->update();
-    return mapped;
-}
-
-void AddPoolAndSetData(uint32_t size, Request& request, const float* data)
-{
-    android::sp<IMemory> memory = AddPoolAndGetData(size, request);
-
-    float* dst = static_cast<float*>(static_cast<void*>(memory->getPointer()));
-
-    memcpy(dst, data, size * sizeof(float));
-}
-
 android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_0::Model& model,
                                                          armnn_driver::ArmnnDriver& driver,
                                                          ErrorStatus& prepareStatus,

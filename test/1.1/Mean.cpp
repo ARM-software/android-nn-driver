@@ -86,7 +86,7 @@ void MeanTestImpl(const TestTensor& input,
     AddPoolAndSetData(input.GetNumElements(), request, input.GetData());
 
     // Add memory for the output
-    android::sp<IMemory> outMemory = AddPoolAndGetData(expectedOutput.GetNumElements(), request);
+    android::sp<IMemory> outMemory = AddPoolAndGetData<float>(expectedOutput.GetNumElements(), request);
     const float* outputData = static_cast<const float*>(static_cast<void*>(outMemory->getPointer()));
 
     ErrorStatus execStatus = Execute(preparedModel, request);

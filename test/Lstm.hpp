@@ -372,12 +372,12 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
     AddPoolAndSetData(cellStateInValue.size(), request, cellStateInValue.data());
 
     // add memory for the outputs
-    AddPoolAndGetData(scratchBufferValue.size(), request);
-    android::sp<IMemory> outputStateOutMemory = AddPoolAndGetData(outputStateOutValue.size(), request);
+    AddPoolAndGetData<float>(scratchBufferValue.size(), request);
+    android::sp<IMemory> outputStateOutMemory = AddPoolAndGetData<float>(outputStateOutValue.size(), request);
     float* outputStateOutData = static_cast<float*>(static_cast<void*>(outputStateOutMemory->getPointer()));
-    android::sp<IMemory> cellStateOutMemory = AddPoolAndGetData(cellStateOutValue.size(), request);
+    android::sp<IMemory> cellStateOutMemory = AddPoolAndGetData<float>(cellStateOutValue.size(), request);
     float* cellStateOutData = static_cast<float*>(static_cast<void*>(cellStateOutMemory->getPointer()));
-    android::sp<IMemory> outputMemory = AddPoolAndGetData(outputValue.size(), request);
+    android::sp<IMemory> outputMemory = AddPoolAndGetData<float>(outputValue.size(), request);
     float* outputData = static_cast<float*>(static_cast<void*>(outputMemory->getPointer()));
 
     // make the prepared model and run the execution

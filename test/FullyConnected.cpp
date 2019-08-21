@@ -70,10 +70,10 @@ BOOST_AUTO_TEST_CASE(FullyConnected)
 
     // set the input data (matching source test)
     float indata[] = {2, 32, 16};
-    AddPoolAndSetData(3, request, indata);
+    AddPoolAndSetData<float>(3, request, indata);
 
     // add memory for the output
-    android::sp<IMemory> outMemory = AddPoolAndGetData(1, request);
+    android::sp<IMemory> outMemory = AddPoolAndGetData<float>(1, request);
     float* outdata = static_cast<float*>(static_cast<void*>(outMemory->getPointer()));
 
     // run the execution
@@ -153,7 +153,7 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInput)
     AddPoolAndSetData(8, request, indata);
 
     // add memory for the output
-    android::sp<IMemory> outMemory = AddPoolAndGetData(8, request);
+    android::sp<IMemory> outMemory = AddPoolAndGetData<float>(8, request);
     float* outdata = static_cast<float*>(static_cast<void*>(outMemory->getPointer()));
 
     // run the execution
@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInputReshape)
     AddPoolAndSetData(8, request, indata);
 
     // add memory for the output
-    android::sp<IMemory> outMemory = AddPoolAndGetData(8, request);
+    android::sp<IMemory> outMemory = AddPoolAndGetData<float>(8, request);
     float* outdata = static_cast<float*>(static_cast<void*>(outMemory->getPointer()));
 
     // run the execution

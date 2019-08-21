@@ -102,7 +102,7 @@ void PaddingTestImpl(android::nn::PaddingScheme paddingScheme, bool fp16Enabled 
     AddPoolAndSetData(6, request, indata);
 
     // add memory for the output
-    android::sp<IMemory> outMemory = AddPoolAndGetData(outSize, request);
+    android::sp<IMemory> outMemory = AddPoolAndGetData<float>(outSize, request);
     float* outdata = reinterpret_cast<float*>(static_cast<void*>(outMemory->getPointer()));
 
     // run the execution

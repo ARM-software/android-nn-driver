@@ -99,9 +99,34 @@ private:
 
 hidl_memory allocateSharedMemory(int64_t size);
 
-android::sp<IMemory> AddPoolAndGetData(uint32_t size, Request& request);
+template<typename T>
+android::sp<IMemory> AddPoolAndGetData(uint32_t size, Request& request)
+{
+    hidl_memory pool;
 
-void AddPoolAndSetData(uint32_t size, Request& request, const float* data);
+    android::sp<IAllocator> allocator = IAllocator::getService("ashmem");
+    allocator->allocate(sizeof(T) * size, [&](bool success, const hidl_memory& mem) {
+        BOOST_TEST(success);
+        pool = mem;
+    });
+
+    request.pools.resize(request.pools.size() + 1);
+    request.pools[request.pools.size() - 1] = pool;
+
+    android::sp<IMemory> mapped = mapMemory(pool);
+    mapped->update();
+    return mapped;
+}
+
+template<typename T>
+void AddPoolAndSetData(uint32_t size, Request& request, const T* data)
+{
+    android::sp<IMemory> memory = AddPoolAndGetData<T>(size, request);
+
+    T* dst = static_cast<T*>(static_cast<void*>(memory->getPointer()));
+
+    memcpy(dst, data, size * sizeof(T));
+}
 
 template<typename HalPolicy,
          typename HalModel   = typename HalPolicy::Model,
@@ -176,7 +201,9 @@ void AddTensorOperand(HalModel& model,
                       const hidl_vec<uint32_t>& dimensions,
                       const T* values,
                       HalOperandType operandType = HalOperandType::TENSOR_FLOAT32,
-                      HalOperandLifeTime operandLifeTime = HalOperandLifeTime::CONSTANT_COPY)
+                      HalOperandLifeTime operandLifeTime = HalOperandLifeTime::CONSTANT_COPY,
+                      double scale = 0.f,
+                      int offset = 0)
 {
     using HalOperand = typename HalPolicy::Operand;
 
@@ -197,6 +224,8 @@ void AddTensorOperand(HalModel& model,
     HalOperand op    = {};
     op.type          = operandType;
     op.dimensions    = dimensions;
+    op.scale         = scale;
+    op.zeroPoint     = offset;
     op.lifetime      = HalOperandLifeTime::CONSTANT_COPY;
     op.location      = location;
 
@@ -218,9 +247,11 @@ void AddTensorOperand(HalModel& model,
                       const hidl_vec<uint32_t>& dimensions,
                       const std::vector<T>& values,
                       HalOperandType operandType = HalPolicy::OperandType::TENSOR_FLOAT32,
-                      HalOperandLifeTime operandLifeTime = HalOperandLifeTime::CONSTANT_COPY)
+                      HalOperandLifeTime operandLifeTime = HalOperandLifeTime::CONSTANT_COPY,
+                      double scale = 0.f,
+                      int offset = 0)
 {
-    AddTensorOperand<HalPolicy, T>(model, dimensions, values.data(), operandType, operandLifeTime);
+    AddTensorOperand<HalPolicy, T>(model, dimensions, values.data(), operandType, operandLifeTime, scale, offset);
 }
 
 template<typename HalPolicy,
@@ -228,14 +259,17 @@ template<typename HalPolicy,
          typename HalOperandType = typename HalPolicy::OperandType>
 void AddInputOperand(HalModel& model,
                      const hidl_vec<uint32_t>& dimensions,
-                     HalOperandType operandType = HalOperandType::TENSOR_FLOAT32)
+                     HalOperandType operandType = HalOperandType::TENSOR_FLOAT32,
+                     double scale = 0.f,
+                     int offset = 0)
 {
     using HalOperand         = typename HalPolicy::Operand;
     using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
 
     HalOperand op    = {};
     op.type          = operandType;
-    op.scale         = operandType == HalOperandType::TENSOR_QUANT8_ASYMM ? 1.f / 255.f : 0.f;
+    op.scale         = scale;
+    op.zeroPoint     = offset;
     op.dimensions    = dimensions;
     op.lifetime      = HalOperandLifeTime::MODEL_INPUT;
 
@@ -250,14 +284,17 @@ template<typename HalPolicy,
          typename HalOperandType = typename HalPolicy::OperandType>
 void AddOutputOperand(HalModel& model,
                       const hidl_vec<uint32_t>& dimensions,
-                      HalOperandType operandType = HalOperandType::TENSOR_FLOAT32)
+                      HalOperandType operandType = HalOperandType::TENSOR_FLOAT32,
+                      double scale = 0.f,
+                      int offset = 0)
 {
     using HalOperand         = typename HalPolicy::Operand;
     using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
 
     HalOperand op    = {};
     op.type          = operandType;
-    op.scale         = operandType == HalOperandType::TENSOR_QUANT8_ASYMM ? 1.f / 255.f : 0.f;
+    op.scale         = scale;
+    op.zeroPoint     = offset;
     op.dimensions    = dimensions;
     op.lifetime      = HalOperandLifeTime::MODEL_OUTPUT;
 
