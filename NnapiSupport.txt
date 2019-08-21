@@ -10,7 +10,7 @@ For integration and usage documentation, please see README.md.
 
 --- Support for Android Neural Networks HAL operations ---
 
-The following AndroidNN HAL 1.0 and 1.1 operations are currently supported:
+The following AndroidNN HAL 1.0, 1.1 and 1.2 operations are currently supported:
 
 AndroidNN operator           Tensor type supported
 ADD                          (FLOAT32,QUANT8_ASYMM)
@@ -28,15 +28,22 @@ L2_POOL_2D                   (FLOAT32,QUANT8_ASYMM)
 LOCAL_RESPONSE_NORMALIZATION (FLOAT32)
 LOGISTIC                     (FLOAT32,QUANT8_ASYMM)
 LSTM                         (FLOAT32)
+MAXIMUM                      (FLOAT32,QUANT8_ASYMM)
 MAX_POOL_2D                  (FLOAT32,QUANT8_ASYMM)
 MEAN                         (FLOAT32,QUANT8_ASYMM)
+MINIMUM                      (FLOAT32,QUANT8_ASYMM)
 MUL                          (FLOAT32,QUANT8_ASYMM)
 PAD                          (FLOAT32,QUANT8_ASYMM)
+PAD_V2                       (FLOAT32,QUANT8_ASYMM)
+PRELU                        (FLOAT32,QUANT8_ASYMM)
+QUANTIZE                     (FLOAT32,QUANT8_ASYMM)
+QUANTIZED_16BIT_LSTM         (QUANT8_ASYMM)
 RELU                         (FLOAT32,QUANT8_ASYMM)
 RELU1                        (FLOAT32,QUANT8_ASYMM)
 RELU6                        (FLOAT32,QUANT8_ASYMM)
 RESHAPE                      (FLOAT32,QUANT8_ASYMM)
 RESIZE_BILINEAR              (FLOAT32,QUANT8_ASYMM)
+RESIZE_NEAREST_NEIGHBOR      (FLOAT32,QUANT8_ASYMM)
 SOFTMAX                      (FLOAT32,QUANT8_ASYMM)
 SPACE_TO_BATCH_ND            (FLOAT32,QUANT8_ASYMM)
 SPACE_TO_DEPTH_ND            (FLOAT32,QUANT8_ASYMM)
@@ -45,19 +52,6 @@ STRIDED_SLICE                (FLOAT32,QUANT8_ASYMM)
 SUB                          (FLOAT32,QUANT8_ASYMM)
 TANH                         (FLOAT32,QUANT8_ASYMM)
 TRANSPOSE                    (FLOAT32,QUANT8_ASYMM)
-
-The following AndroidNN HAL 1.2 operations are currently supported:
-
-CONV_2D                      (FLOAT32,QUANT8_ASYMM)
-DEPTHWISE_CONV_2D            (FLOAT32,QUANT8_ASYMM)
-MAXIMUM                      (FLOAT32,QUANT8_ASYMM)
-MINIMUM                      (FLOAT32,QUANT8_ASYMM)
-PAD_V2                       (FLOAT32,QUANT8_ASYMM)
-PRELU                        (FLOAT32,QUANT8_ASYMM)
-QUANTIZE                     (FLOAT32,QUANT8_ASYMM)
-QUANTIZED_16BIT_LSTM         (QUANT8_ASYMM)
-RESIZE_NEAREST_NEIGHBOR      (FLOAT32,QUANT8_ASYMM)
-SOFTMAX                      (FLOAT32,QUANT8_ASYMM)
 TRANSPOSE_CONV_2D            (FLOAT32,QUANT8_ASYMM)
 
 --- Unsupported operators ---
@@ -74,7 +68,6 @@ SVDF
 The following AndroidNN HAL 1.2 operations are currently not supported:
 
 CONCATENATION
-LSTM
 
 Where operations are not supported by the ArmNN Android NN Driver, the driver indicates this to the framework
 appropriately and the framework implements those operations using a CPU implementation.

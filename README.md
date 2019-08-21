@@ -9,9 +9,8 @@ For more information about supported operations and configurations, see NnapiSup
 ### Prerequisites
 
 1. Android source tree for Android P FSK-R3 or later, in the directory `<ANDROID_ROOT>`
+1. Android source tree for Android Q FSK-2 or later, in the directory `<ANDROID_ROOT>`
 2. Mali OpenCL driver integrated into the Android source tree
-
-Please Note: ArmNN Neural Networks driver does not currently support Mali OpenCL driver for Android Q.
 
 ### Procedure
 
@@ -34,6 +33,12 @@ thus the following should be added to `device.mk` instead:
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.1-service-armnn
 </pre> `Android.mk` contains the module definition of both versions of the ArmNN driver.
 
+For Android Q, a new version of the NN API is available (1.2),
+thus the following should be added to `device.mk` instead:
+<pre>
+PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.2-service-armnn
+</pre> `Android.mk` contains the module definition of both versions of the ArmNN driver.
+
 Similarly, the Neon or CL backend can be enabled/disabled by setting ARMNN_COMPUTE_CL_ENABLE or
 ARMNN_COMPUTE_NEON_ENABLE in `device.mk`:
 <pre>
@@ -41,6 +46,7 @@ ARMNN_COMPUTE_CL_ENABLE := 1
 </pre>
 
 For Android P and Android Q the vendor manifest.xml requires the Neural Network HAL information.
+For Android P use HAL version 1.1 as below. For Android Q substitute 1.2 where necessary.
 ```xml
 <hal format="hidl">
     <name>android.hardware.neuralnetworks</name>
