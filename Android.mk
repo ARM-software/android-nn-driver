@@ -53,9 +53,9 @@ ifndef ARMNN_COMPUTE_NEON_ENABLED
 # ARMNN_COMPUTE_NEON_ENABLED is undefined, use the following default value
 ARMNN_COMPUTE_NEON_ENABLED := 1
 endif
-ifndef ARMNN_COMPUTE_REF_ENABLED
-# ARMNN_COMPUTE_REF_ENABLED is undefined, use the following default value
-ARMNN_COMPUTE_REF_ENABLED := 1
+ifndef ARMNN_REF_ENABLED
+# ARMNN_REF_ENABLED is undefined, use the following default value
+ARMNN_REF_ENABLED := 1
 endif
 
 #######################
@@ -114,10 +114,10 @@ LOCAL_CFLAGS += \
         -DARMCOMPUTENEON_ENABLED
 endif # ARMNN_COMPUTE_NEON_ENABLED == 1
 
-ifeq ($(ARMNN_COMPUTE_REF_ENABLED),1)
+ifeq ($(ARMNN_REF_ENABLED),1)
 LOCAL_CFLAGS += \
-        -DARMCOMPUTEREF_ENABLED
-endif # ARMNN_COMPUTE_REF_ENABLED == 1
+        -DARMNNREF_ENABLED
+endif # ARMNN_REF_ENABLED == 1
 
 LOCAL_SRC_FILES := \
         1.0/ArmnnDriverImpl.cpp \
@@ -231,10 +231,10 @@ LOCAL_CFLAGS += \
         -DARMCOMPUTENEON_ENABLED
 endif # ARMNN_COMPUTE_NEON_ENABLED == 1
 
-ifeq ($(ARMNN_COMPUTE_REF_ENABLED),1)
+ifeq ($(ARMNN_REF_ENABLED),1)
 LOCAL_CFLAGS += \
-        -DARMCOMPUTEREF_ENABLED
-endif # ARMNN_COMPUTE_REF_ENABLED == 1
+        -DARMNNREF_ENABLED
+endif # ARMNN_REF_ENABLED == 1
 
 LOCAL_SRC_FILES := \
         1.0/ArmnnDriverImpl.cpp \
@@ -340,10 +340,10 @@ LOCAL_CFLAGS += \
         -DARMCOMPUTENEON_ENABLED
 endif # ARMNN_COMPUTE_NEON_ENABLED == 1
 
-ifeq ($(ARMNN_COMPUTE_REF_ENABLED),1)
+ifeq ($(ARMNN_REF_ENABLED),1)
 LOCAL_CFLAGS += \
-        -DARMCOMPUTEREF_ENABLED
-endif # ARMNN_COMPUTE_REF_ENABLED == 1
+        -DARMNNREF_ENABLED
+endif # ARMNN_REF_ENABLED == 1
 
 LOCAL_SRC_FILES := \
         1.0/ArmnnDriverImpl.cpp \
