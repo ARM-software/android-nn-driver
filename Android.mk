@@ -38,24 +38,21 @@ OPENCL_HEADER_PATH := $(LOCAL_PATH)/clframework/include
 NN_HEADER_PATH := $(LOCAL_PATH)/../../../frameworks/ml/nn/runtime/include
 
 # Variables to control CL/NEON/reference backend support
-#
-# They can be optionally passed from the command line to build the backends programmatically
-# For example, to disable CL support, do from the top of the Android source tree:
-# ARMNN_COMPUTE_CL_ENABLED=0 make
-# Or export it as an environment variable, export ARMNN_COMPUTE_CL_ENABLED=0, and then run the make command
-#
-# Set the following default values to '0' to disable support for a specific backend
-ifndef ARMNN_COMPUTE_CL_ENABLED
-# ARMNN_COMPUTE_CL_ENABLED is undefined, use the following default value
+# Set them to '0' to disable support for a specific backend
 ARMNN_COMPUTE_CL_ENABLED := 1
-endif
-ifndef ARMNN_COMPUTE_NEON_ENABLED
-# ARMNN_COMPUTE_NEON_ENABLED is undefined, use the following default value
 ARMNN_COMPUTE_NEON_ENABLED := 1
-endif
-ifndef ARMNN_REF_ENABLED
-# ARMNN_REF_ENABLED is undefined, use the following default value
 ARMNN_REF_ENABLED := 1
+
+ifeq ($(ARMNN_COMPUTE_CL_ENABLE),0)
+ARMNN_COMPUTE_CL_ENABLED := 0
+endif
+
+ifeq ($(ARMNN_COMPUTE_NEON_ENABLE),0)
+ARMNN_COMPUTE_NEON_ENABLED := 0
+endif
+
+ifeq ($(ARMNN_REF_ENABLE),0)
+ARMNN_REF_ENABLED := 0
 endif
 
 #######################

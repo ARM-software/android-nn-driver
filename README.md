@@ -39,8 +39,8 @@ thus the following should be added to `device.mk` instead:
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.2-service-armnn
 </pre> `Android.mk` contains the module definition of both versions of the ArmNN driver.
 
-Similarly, the Neon or CL backend can be enabled/disabled by setting ARMNN_COMPUTE_CL_ENABLE or
-ARMNN_COMPUTE_NEON_ENABLE in `device.mk`:
+Similarly, the Neon, CL or reference backend can be enabled/disabled by setting ARMNN_COMPUTE_CL_ENABLE,
+ARMNN_COMPUTE_NEON_ENABLE or ARMNN_REF_ENABLE in `device.mk`:
 <pre>
 ARMNN_COMPUTE_CL_ENABLE := 1
 </pre>
