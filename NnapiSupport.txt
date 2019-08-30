@@ -54,20 +54,5 @@ TANH                         (FLOAT32,QUANT8_ASYMM)
 TRANSPOSE                    (FLOAT32,QUANT8_ASYMM)
 TRANSPOSE_CONV_2D            (FLOAT32,QUANT8_ASYMM)
 
---- Unsupported operators ---
-
-The following AndroidNN HAL 1.0 operations are currently not supported:
-
-DEPTH_TO_SPACE
-EMBEDDING_LOOKUP
-HASHTABLE_LOOKUP
-LSH_PROJECTION
-RNN
-SVDF
-
-The following AndroidNN HAL 1.2 operations are currently not supported:
-
-CONCATENATION
-
 Where operations are not supported by the ArmNN Android NN Driver, the driver indicates this to the framework
 appropriately and the framework implements those operations using a CPU implementation.
