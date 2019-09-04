@@ -102,6 +102,8 @@ private:
 
     static bool ConvertSpaceToDepth(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertSqrt(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertSqueeze(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertStridedSlice(const Operation& operation, const Model& model, ConversionData& data);

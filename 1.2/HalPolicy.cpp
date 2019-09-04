@@ -83,6 +83,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertResize(operation, model, data, armnn::ResizeMethod::Bilinear);
         case V1_2::OperationType::RESIZE_NEAREST_NEIGHBOR:
             return ConvertResize(operation, model, data, armnn::ResizeMethod::NearestNeighbor);
+        case V1_2::OperationType::SQRT:
+            return ConvertSqrt(operation, model, data);
         case V1_2::OperationType::SQUEEZE:
             return ConvertSqueeze(operation, model, data);
         case V1_2::OperationType::STRIDED_SLICE:
@@ -1739,21 +1741,30 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
             SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 3, *layer, 3, model, data));
 }
 
+bool HalPolicy::ConvertSqrt(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertSqrt()");
+    armnn::ActivationDescriptor desc;
+    desc.m_Function = armnn::ActivationFunction::Sqrt;
+
+    return ::ConvertToActivation<hal_1_2::HalPolicy>(operation, __func__, desc, model, data);
+}
+
 bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_1::HalPolicy::ConvertSqueeze()");
+    ALOGV("hal_1_2::HalPolicy::ConvertSqueeze()");
     return ::ConvertSqueeze<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_1::HalPolicy::ConvertStridedSlice()");
+    ALOGV("hal_1_2::HalPolicy::ConvertStridedSlice()");
     return ::ConvertStridedSlice<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_1::HalPolicy::ConvertTranspose()");
+    ALOGV("hal_1_2::HalPolicy::ConvertTranspose()");
     return ::ConvertTranspose<hal_1_2::HalPolicy>(operation, model, data);
 }
 
