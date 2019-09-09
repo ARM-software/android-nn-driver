@@ -21,6 +21,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
 {
     switch (operation.type)
     {
+        case V1_2::OperationType::ABS:
+            return ConvertAbs(operation, model, data);
         case V1_2::OperationType::ADD:
             return ConvertAdd(operation, model, data);
         case V1_2::OperationType::AVERAGE_POOL_2D:
@@ -107,6 +109,12 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return Fail("%s: Operation type %s not supported in ArmnnDriver",
                         __func__, toString(operation.type).c_str());
     }
+}
+
+bool HalPolicy::ConvertAbs(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertAbs()");
+    return ::ConvertAbs<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, ConversionData& data)

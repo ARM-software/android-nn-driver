@@ -31,6 +31,8 @@ public:
     static bool ConvertOperation(const Operation& operation, const Model& model, ConversionData& data);
 
 private:
+    static bool ConvertAbs(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertAdd(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertAveragePool2d(const Operation& operation, const Model& model, ConversionData& data);
