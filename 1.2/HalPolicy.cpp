@@ -85,6 +85,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertResize(operation, model, data, armnn::ResizeMethod::Bilinear);
         case V1_2::OperationType::RESIZE_NEAREST_NEIGHBOR:
             return ConvertResize(operation, model, data, armnn::ResizeMethod::NearestNeighbor);
+        case V1_2::OperationType::RSQRT:
+            return ConvertRsqrt(operation, model, data);
         case V1_2::OperationType::SQRT:
             return ConvertSqrt(operation, model, data);
         case V1_2::OperationType::SQUEEZE:
@@ -1167,6 +1169,48 @@ bool HalPolicy::ConvertResize(const Operation& operation,
     assert(layer != nullptr);
 
     layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
+}
+
+bool HalPolicy::ConvertRsqrt(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertRsqrt()");
+
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid input", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsRsqrtSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input.GetTensorInfo(),
+                               outputInfo);
+
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddRsqrtLayer();
+    assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);

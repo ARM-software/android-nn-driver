@@ -98,6 +98,8 @@ private:
                               ConversionData& data,
                               armnn::ResizeMethod resizeMethod);
 
+    static bool ConvertRsqrt(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertSoftmax(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertSpaceToBatchNd(const Operation& operation, const Model& model, ConversionData& data);
