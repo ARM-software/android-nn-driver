@@ -57,6 +57,8 @@ private:
 
     static bool ConvertFullyConnected(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertGroupedConv2d(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertL2Normalization(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertL2Pool2d(const Operation& operation, const Model& model, ConversionData& data);

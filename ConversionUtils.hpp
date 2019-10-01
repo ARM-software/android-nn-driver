@@ -125,43 +125,46 @@ static bool Fail(const char* formatStr, Args&&... args)
 // Convenience macro to call an Is*Supported function and log caller name together with reason for lack of support.
 // Called as: FORWARD_LAYER_SUPPORT_FUNC(__func__, Is*Supported, backends, a, b, c, d, e)
 #define FORWARD_LAYER_SUPPORT_FUNC(funcName, func, backends, supported, ...) \
-    std::string reasonIfUnsupported; \
-    try { \
-        for (auto&& backendId : backends) \
+try \
+{ \
+    for (auto&& backendId : backends) \
+    { \
+        auto layerSupportObject = armnn::GetILayerSupportByBackendId(backendId); \
+        if (layerSupportObject) \
         { \
-            auto layerSupportObject = armnn::GetILayerSupportByBackendId(backendId); \
-            if (layerSupportObject) \
+            std::string reasonIfUnsupported; \
+            supported = \
+                layerSupportObject->func(__VA_ARGS__, armnn::Optional<std::string&>(reasonIfUnsupported)); \
+            if (supported) \
             { \
-                supported = \
-                    layerSupportObject->func(__VA_ARGS__, armnn::Optional<std::string&>(reasonIfUnsupported)); \
-                if (supported) \
-                { \
-                    break; \
-                } \
-                else \
-                { \
-                    if (reasonIfUnsupported.size() > 0) \
-                    { \
-                        ALOGD("%s: not supported by armnn: %s", funcName, reasonIfUnsupported.c_str()); \
-                    } \
-                    else \
-                    { \
-                        ALOGD("%s: not supported by armnn", funcName); \
-                    } \
-                } \
+                break; \
             } \
             else \
             { \
-                ALOGD("%s: backend not registered: %s", funcName, backendId.Get().c_str()); \
+                if (reasonIfUnsupported.size() > 0) \
+                { \
+                    ALOGD("%s: not supported by armnn: %s", funcName, reasonIfUnsupported.c_str()); \
+                } \
+                else \
+                { \
+                    ALOGD("%s: not supported by armnn", funcName); \
+                } \
             } \
         } \
-        if (!supported) \
+        else \
         { \
-            ALOGD("%s: not supported by any specified backend", funcName); \
+            ALOGD("%s: backend not registered: %s", funcName, backendId.Get().c_str()); \
         } \
-    } catch (const armnn::InvalidArgumentException &e) { \
-        throw armnn::InvalidArgumentException(e, "Failed to check layer support", CHECK_LOCATION()); \
-    }
+    } \
+    if (!supported) \
+    { \
+        ALOGD("%s: not supported by any specified backend", funcName); \
+    } \
+} \
+catch (const armnn::InvalidArgumentException &e) \
+{ \
+    throw armnn::InvalidArgumentException(e, "Failed to check layer support", CHECK_LOCATION()); \
+}
 
 template<typename Operand>
 armnn::TensorShape GetTensorShapeForOperand(const Operand& operand)
