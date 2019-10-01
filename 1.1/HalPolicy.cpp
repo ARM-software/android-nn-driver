@@ -16,6 +16,7 @@ static std::vector<V1_0::OperationType> opsEquivalentInV10({
     V1_0::OperationType::AVERAGE_POOL_2D,
     V1_0::OperationType::CONCATENATION,
     V1_0::OperationType::CONV_2D,
+    V1_0::OperationType::DEPTH_TO_SPACE,
     V1_0::OperationType::DEPTHWISE_CONV_2D,
     V1_0::OperationType::DEQUANTIZE,
     V1_0::OperationType::FLOOR,

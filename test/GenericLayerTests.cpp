@@ -122,16 +122,26 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
 
     V1_0::Model model3 = {};
 
-    AddInputOperand<HalPolicy>(model3, hidl_vec<uint32_t>{1, 1, 1, 8});
-    AddIntOperand<HalPolicy>(model3, 2);
-    AddOutputOperand<HalPolicy>(model3, hidl_vec<uint32_t>{1, 2, 2, 2});
+    AddInputOperand<HalPolicy>(model3,
+                               hidl_vec<uint32_t>{1, 1, 3, 4},
+                               HalPolicy::OperandType::TENSOR_INT32);
+    AddInputOperand<HalPolicy>(model3,
+                               hidl_vec<uint32_t>{4},
+                               HalPolicy::OperandType::TENSOR_INT32);
+    AddInputOperand<HalPolicy>(model3, hidl_vec<uint32_t>{1, 1, 3, 4});
+
+    AddOutputOperand<HalPolicy>(model3, hidl_vec<uint32_t>{1, 1, 3, 4});
+    AddOutputOperand<HalPolicy>(model3,
+                                hidl_vec<uint32_t>{1, 1, 3, 4},
+                                HalPolicy::OperandType::TENSOR_QUANT8_ASYMM,
+                                1.f / 225.f);
 
     model3.operations.resize(1);
 
     // Add unsupported operation, should return no error but we don't support it
-    model3.operations[0].type    = HalPolicy::OperationType::DEPTH_TO_SPACE;
-    model3.operations[0].inputs  = hidl_vec<uint32_t>{0, 1};
-    model3.operations[0].outputs = hidl_vec<uint32_t>{2};
+    model3.operations[0].type    = HalPolicy::OperationType::HASHTABLE_LOOKUP;
+    model3.operations[0].inputs  = hidl_vec<uint32_t>{0, 1, 2};
+    model3.operations[0].outputs = hidl_vec<uint32_t>{3, 4};
 
     driver->getSupportedOperations(model3, cb);
     BOOST_TEST((int)errorStatus == (int)ErrorStatus::NONE);

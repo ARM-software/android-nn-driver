@@ -34,6 +34,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertConcatenation(operation, model, data);
         case V1_2::OperationType::CONV_2D:
             return ConvertConv2d(operation, model, data);
+        case V1_2::OperationType::DEPTH_TO_SPACE:
+            return ConvertDepthToSpace(operation, model, data);
         case V1_2::OperationType::DEPTHWISE_CONV_2D:
             return ConvertDepthwiseConv2d(operation, model, data);
         case V1_2::OperationType::DEQUANTIZE:
@@ -296,6 +298,12 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
     input.Connect(startLayer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *endLayer, model, data);
+}
+
+bool HalPolicy::ConvertDepthToSpace(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertDepthToSpace()");
+    return ::ConvertDepthToSpace<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data)

@@ -1880,6 +1880,73 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
 template<typename HalPolicy,
          typename HalOperation   = typename HalPolicy::Operation,
          typename HalModel       = typename HalPolicy::Model>
+bool ConvertDepthToSpace(const HalOperation& operation, const HalModel& model, ConversionData& data)
+{
+    using HalOperand     = typename HalPolicy::Operand;
+    using HalOperandType = typename HalPolicy::OperandType;
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid() )
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
+    unsigned int rank = inputInfo.GetNumDimensions();
+    if (rank != 4)
+    {
+        return Fail("%s: Only inputs with rank 4 are supported", __func__);
+    }
+
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    armnn::DepthToSpaceDescriptor descriptor;
+
+    GetInputScalar<HalPolicy>(operation, 1, HalOperandType::INT32, descriptor.m_BlockSize, model, data);
+    if (descriptor.m_BlockSize <= 1)
+    {
+        return Fail("%s: Block size must be at least 1 in all dimensions");
+    }
+
+    descriptor.m_DataLayout = armnn::DataLayout::NHWC;
+    if (Is12Operand(*output))
+    {
+        descriptor.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 2, model, data);
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsDepthToSpaceSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddDepthToSpaceLayer(descriptor);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+}
+
+template<typename HalPolicy,
+         typename HalOperation   = typename HalPolicy::Operation,
+         typename HalModel       = typename HalPolicy::Model>
 bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
     using HalOperand     = typename HalPolicy::Operand;

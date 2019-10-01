@@ -38,6 +38,8 @@ private:
 
     static bool ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertDepthToSpace(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertDequantize(const Operation& operation, const Model& model, ConversionData& data);
