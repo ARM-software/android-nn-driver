@@ -54,6 +54,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertFullyConnected(operation, model, data);
         case V1_2::OperationType::GROUPED_CONV_2D:
             return ConvertGroupedConv2d(operation, model, data);
+        case V1_2::OperationType::INSTANCE_NORMALIZATION:
+            return ConvertInstanceNormalization(operation, model, data);
         case V1_2::OperationType::L2_NORMALIZATION:
             return ConvertL2Normalization(operation, model, data);
         case V1_2::OperationType::L2_POOL_2D:
@@ -884,6 +886,90 @@ bool HalPolicy::ConvertGroupedConv2d(const Operation& operation, const Model& mo
     }
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
+}
+
+bool HalPolicy::ConvertInstanceNormalization(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertInstanceNormalization()");
+
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has an invalid input 0", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Operation has an invalid output", __func__);
+    }
+
+    const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    // Determine data type of input tensor
+    OperandType inputType;
+    if (!GetOperandType<hal_1_2::HalPolicy>(operation, 0, model, inputType))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    InstanceNormalizationDescriptor desc;
+
+    // Read gamma, beta & epsilon
+    if (inputType == OperandType::TENSOR_FLOAT16)
+    {
+        Half fp16Gamma;
+        Half fp16Beta;
+        Half fp16Epsilon;
+
+        if (!GetInputScalar<hal_1_2::HalPolicy>(operation, 1, OperandType::FLOAT16, fp16Gamma, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 2, OperandType::FLOAT16, fp16Beta, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 3, OperandType::FLOAT16, fp16Epsilon, model, data))
+        {
+            return Fail("%s: Operation has invalid inputs (FLOAT16)", __func__);
+        }
+
+        desc.m_Gamma = static_cast<float>(fp16Gamma);
+        desc.m_Beta  = static_cast<float>(fp16Beta);
+        desc.m_Eps   = static_cast<float>(fp16Epsilon);
+    }
+    else if (inputType == OperandType::TENSOR_FLOAT32)
+    {
+        if (!GetInputScalar<hal_1_2::HalPolicy>(operation, 1, OperandType::FLOAT32, desc.m_Gamma, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 2, OperandType::FLOAT32, desc.m_Beta, model, data) ||
+            !GetInputScalar<hal_1_2::HalPolicy>(operation, 3, OperandType::FLOAT32, desc.m_Eps, model, data))
+        {
+            return Fail("%s: Operation has invalid inputs (FLOAT32)", __func__);
+        }
+    }
+    else
+    {
+        return Fail("%s: Unsupported input tensor type: %d", __func__, inputType);
+    }
+
+    desc.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 4, model, data);
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsInstanceNormalizationSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input.GetTensorInfo(),
+                               outputInfo,
+                               desc);
+    if (!isSupported)
+    {
+       return false;
+    }
+
+    IConnectableLayer* layer = data.m_Network->AddInstanceNormalizationLayer(desc);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& model, ConversionData& data)
