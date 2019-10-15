@@ -71,6 +71,8 @@ private:
 
     static bool ConvertLogistic(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertLogSoftmax(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertLstm(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertMaxPool2d(const Operation& operation, const Model& model, ConversionData& data);

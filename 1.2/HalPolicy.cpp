@@ -64,6 +64,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertLocalResponseNormalization(operation, model, data);
         case V1_2::OperationType::LOGISTIC:
             return ConvertLogistic(operation, model, data);
+        case V1_2::OperationType::LOG_SOFTMAX:
+            return ConvertLogSoftmax(operation, model, data);
         case V1_2::OperationType::LSTM:
             return ConvertLstm(operation, model, data);
         case V1_2::OperationType::MAX_POOL_2D:
@@ -996,6 +998,90 @@ bool HalPolicy::ConvertLogistic(const Operation& operation, const Model& model, 
 {
     ALOGV("hal_1_2::HalPolicy::ConvertLogistic()");
     return ::ConvertLogistic<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertLogSoftmax(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertLogSoftmax()");
+
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Failed to read input 0", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Failed to read output", __func__);
+    }
+
+    const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    // Determine data type of input tensor
+    OperandType inputType;
+    if (!GetOperandType<hal_1_2::HalPolicy>(operation, 0, model, inputType))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    LogSoftmaxDescriptor descriptor;
+
+    // Read beta
+    if (inputType == OperandType::TENSOR_FLOAT16)
+    {
+        Half fp16Beta;
+        if (!GetInputScalar<hal_1_2::HalPolicy>(operation, 1, OperandType::FLOAT16, fp16Beta, model, data))
+        {
+            return Fail("%s: Failed to read input 1 (FLOAT16)", __func__);
+        }
+
+        descriptor.m_Beta  = static_cast<float>(fp16Beta);
+    }
+    else if (inputType == OperandType::TENSOR_FLOAT32)
+    {
+        if (!GetInputScalar<hal_1_2::HalPolicy>(operation, 1, OperandType::FLOAT32, descriptor.m_Beta, model, data))
+        {
+            return Fail("%s: Failed to read input 1 (FLOAT32)", __func__);
+        }
+    }
+    else
+    {
+        return Fail("%s: Unsupported input tensor type: %d", __func__, inputType);
+    }
+
+    // Read axis
+    if (!GetInputInt32<hal_1_2::HalPolicy>(operation, 2, descriptor.m_Axis, model, data))
+    {
+        return Fail("%s: Failed to read input 2", __func__);
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsLogSoftmaxSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input.GetTensorInfo(),
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* layer = data.m_Network->AddLogSoftmaxLayer(descriptor);
+    if (!layer)
+    {
+        return Fail("%s: AddLogSoftmaxLayer() returned nullptr", __func__);
+    }
+
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertMaxPool2d(const Operation& operation, const Model& model, ConversionData& data)
