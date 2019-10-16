@@ -37,6 +37,11 @@ ARMNN_UTILS_HEADER_PATH := $(LOCAL_PATH)/armnn/src/armnnUtils
 OPENCL_HEADER_PATH := $(LOCAL_PATH)/clframework/include
 NN_HEADER_PATH := $(LOCAL_PATH)/../../../frameworks/ml/nn/runtime/include
 
+# Get ArmNN's version from file
+get_version_number = $(shell sed -n 's/.*$1  *\([0-9*]\)/\1/p' $(LOCAL_PATH)/armnn/ArmnnVersion.txt)
+ARMNN_VERSION := 20$(call get_version_number,ARMNN_MAJOR_VERSION)$(call get_version_number,ARMNN_MINOR_VERSION)$(call get_version_number,ARMNN_PATCH_VERSION)
+$(info android-nn-driver ARMNN_VERSION: $(ARMNN_VERSION))
+
 # Variables to control CL/NEON/reference backend support
 # Set them to '0' to disable support for a specific backend
 ARMNN_COMPUTE_CL_ENABLED := 1
@@ -82,7 +87,8 @@ LOCAL_CFLAGS := \
         -std=$(CPP_VERSION) \
         -fexceptions \
         -Werror \
-        -Wno-format-security
+        -Wno-format-security \
+        -DARMNN_VERSION_FROM_FILE=$(ARMNN_VERSION)
 
 ifeq ($(P_OR_LATER),1)
 # Required to build with the changes made to the Android ML framework starting from Android P,
@@ -205,6 +211,7 @@ LOCAL_CFLAGS := \
         -fexceptions \
         -Werror \
         -Wno-format-security \
+        -DARMNN_VERSION_FROM_FILE=$(ARMNN_VERSION) \
         -DARMNN_ANDROID_P \
         -DARMNN_ANDROID_NN_V1_1
 
@@ -314,6 +321,7 @@ LOCAL_CFLAGS := \
         -fexceptions \
         -Werror \
         -Wno-format-security \
+        -DARMNN_VERSION_FROM_FILE=$(ARMNN_VERSION) \
         -DARMNN_ANDROID_Q \
         -DARMNN_ANDROID_NN_V1_2
 
@@ -421,7 +429,9 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_CFLAGS := \
         -std=$(CPP_VERSION) \
-        -fexceptions
+        -fexceptions \
+        -DARMNN_VERSION_FROM_FILE=$(ARMNN_VERSION)
+
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS += \
         -UNDEBUG
@@ -512,7 +522,9 @@ LOCAL_C_INCLUDES := \
 LOCAL_CFLAGS := \
         -std=$(CPP_VERSION) \
         -fexceptions \
+        -DARMNN_VERSION_FROM_FILE=$(ARMNN_VERSION) \
         -DARMNN_ANDROID_NN_V1_1
+
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS += \
         -UNDEBUG
@@ -595,8 +607,10 @@ LOCAL_C_INCLUDES := \
 LOCAL_CFLAGS := \
         -std=$(CPP_VERSION) \
         -fexceptions \
+        -DARMNN_VERSION_FROM_FILE=$(ARMNN_VERSION) \
         -DARMNN_ANDROID_NN_V1_2 \
         -DBOOST_NO_AUTO_PTR
+
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS += \
         -UNDEBUG

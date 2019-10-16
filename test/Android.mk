@@ -12,6 +12,11 @@ NN_HEADER_PATH := $(LOCAL_PATH)/../../../../frameworks/ml/nn/runtime/include
 ARMNN_HEADER_PATH := $(LOCAL_PATH)/../armnn/include
 ARMNN_DRIVER_HEADER_PATH := $(LOCAL_PATH)/..
 
+# Get ArmNN's version from file
+get_version_number = $(shell sed -n 's/.*$1  *\([0-9*]\)/\1/p' $(LOCAL_PATH)/../armnn/ArmnnVersion.txt)
+ARMNN_VERSION := 20$(call get_version_number,ARMNN_MAJOR_VERSION)$(call get_version_number,ARMNN_MINOR_VERSION)$(call get_version_number,ARMNN_PATCH_VERSION)
+$(info android-nn-driver/test ARMNN_VERSION: $(ARMNN_VERSION))
+
 ##########################
 # armnn-driver-tests@1.0 #
 ##########################
@@ -40,7 +45,8 @@ LOCAL_CFLAGS := \
         -fexceptions \
         -Werror \
         -O0 \
-        -UNDEBUG
+        -UNDEBUG \
+        -DARMNN_VERSION_FROM_FILE=$(ARMNN_VERSION)
 
 ifeq ($(P_OR_LATER),1)
 # Required to build with the changes made to the Android ML framework starting from Android P,
@@ -148,6 +154,7 @@ LOCAL_CFLAGS := \
         -Werror \
         -O0 \
         -UNDEBUG \
+        -DARMNN_VERSION_FROM_FILE=$(ARMNN_VERSION) \
         -DARMNN_ANDROID_P \
         -DARMNN_ANDROID_NN_V1_1
 
@@ -245,6 +252,7 @@ LOCAL_CFLAGS := \
         -Werror \
         -O0 \
         -UNDEBUG \
+        -DARMNN_VERSION_FROM_FILE=$(ARMNN_VERSION) \
         -DARMNN_ANDROID_Q \
         -DARMNN_ANDROID_NN_V1_2
 
