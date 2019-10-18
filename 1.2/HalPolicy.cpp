@@ -2010,6 +2010,8 @@ bool HalPolicy::ConvertTanH(const Operation& operation, const Model& model, Conv
 
 bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, ConversionData& data)
 {
+    ALOGV("hal_1_2::HalPolicy::ConvertLstm()");
+
     // Inputs:
     // 00: The input: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [batch_size, input_size], where
     //      “batch_size” corresponds to the batching dimension, and “input_size” is the size of the input.
@@ -2035,27 +2037,27 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
     // 02: The input-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, input_size].
     const ConstTensorPin inputToForgetWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 2, model, data);
+            (DequantizeAndMakeConstTensorPin<hal_1_2::HalPolicy>(operation, model, data, 2));
     // 03: The input-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     // [num_units, input_size].
     const ConstTensorPin inputToCellWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 3, model, data);
+            (DequantizeAndMakeConstTensorPin<hal_1_2::HalPolicy>(operation, model, data, 3));
     // 04: The input-to-output weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, input_size].
     const ConstTensorPin inputToOutputWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 4, model, data);
+           (DequantizeAndMakeConstTensorPin<hal_1_2::HalPolicy>(operation, model, data, 4));
     // 06: The recurrent-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, output_size].
     const ConstTensorPin recurrentToForgetWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 6, model, data);
+           (DequantizeAndMakeConstTensorPin<hal_1_2::HalPolicy>(operation, model, data, 6));
     // 07: The recurrent-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, output_size].
     const ConstTensorPin recurrentToCellWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 7, model, data);
+           (DequantizeAndMakeConstTensorPin<hal_1_2::HalPolicy>(operation, model, data, 7));
     // 08: The recurrent-to-output weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, output_size].
     const ConstTensorPin recurrentToOutputWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 8, model, data);
+            (DequantizeAndMakeConstTensorPin<hal_1_2::HalPolicy>(operation, model, data, 8));
     // 13: The forget gate bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
     const ConstTensorPin forgetGateBiasPin =
             ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation, 13, model, data);
@@ -2083,56 +2085,21 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
     // 01: The input-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, input_size], where “num_units” corresponds to the number of cell units.
     const ConstTensorPin inputToInputWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation,
-                                                                      1,
-                                                                      model,
-                                                                      data,
-                                                                      g_DontPermute,
-                                                                      nullptr,
-                                                                      true);
-
+            (DequantizeAndMakeConstTensorPin<hal_1_2::HalPolicy>(operation, model, data, 1, true));
     // 05: The recurrent-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [num_units, output_size], where “output_size” corresponds to either the number of cell units (i.e.,
     //     “num_units”), or the second dimension of the “projection_weights”, if defined.
     const ConstTensorPin recurrentToInputWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation,
-                                                                      5,
-                                                                      model,
-                                                                      data,
-                                                                      g_DontPermute,
-                                                                      nullptr,
-                                                                      true);
-
+            (DequantizeAndMakeConstTensorPin<hal_1_2::HalPolicy>(operation, model, data, 5, true));
     // 09: The cell-to-input weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
     const ConstTensorPin cellToInputWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation,
-                                                                      9,
-                                                                      model,
-                                                                      data,
-                                                                      g_DontPermute,
-                                                                      nullptr,
-                                                                      true);
-
+            (DequantizeAndMakeConstTensorPin<hal_1_2::HalPolicy>(operation, model, data, 9, true));
     // 10: The cell-to-forget weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
     const ConstTensorPin cellToForgetWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation,
-                                                                      10,
-                                                                      model,
-                                                                      data,
-                                                                      g_DontPermute,
-                                                                      nullptr,
-                                                                      true);
-
+            (DequantizeAndMakeConstTensorPin<hal_1_2::HalPolicy>(operation, model, data, 10, true));
     // 11: The cell-to-output weights: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
     const ConstTensorPin cellToOutputWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation,
-                                                                      11,
-                                                                      model,
-                                                                      data,
-                                                                      g_DontPermute,
-                                                                      nullptr,
-                                                                      true);
-
+            (DequantizeAndMakeConstTensorPin<hal_1_2::HalPolicy>(operation, model, data, 11, true));
     // 12: The input gate bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [num_units].
     const ConstTensorPin inputGateBiasPin =
             ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation,
@@ -2146,14 +2113,7 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
     // 16: The projection weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
     //     [output_size, num_units].
     const ConstTensorPin projectionWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation,
-                                                                      16,
-                                                                      model,
-                                                                      data,
-                                                                      g_DontPermute,
-                                                                      nullptr,
-                                                                      true);
-
+            (DequantizeAndMakeConstTensorPin<hal_1_2::HalPolicy>(operation, model, data, 16, true));
     // 17: The projection bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape [output_size].
     const ConstTensorPin projectionBiasPin =
             ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation,
@@ -2196,14 +2156,8 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
     // Get the normalization tensors
     // 23: The input layer normalization weights. A 1-D tensor of shape [num_units].
     //     Used to rescale normalized inputs to activation at input gate.
-    const ConstTensorPin inputLayerNormWeightsPin =
-            ConvertOperationInputToConstTensorPin<hal_1_2::HalPolicy>(operation,
-                                                                      23,
-                                                                      model,
-                                                                      data,
-                                                                      g_DontPermute,
-                                                                      nullptr,
-                                                                      true);
+    const ConstTensorPin inputLayerNormWeightsPin
+            (DequantizeAndMakeConstTensorPin<hal_1_2::HalPolicy>(operation, model, data, 23, true));
 
     // 24: The forget layer normalization weights. A 1-D tensor of shape [num_units].
     //     Used to rescale normalized inputs to activation at forget gate.
@@ -2357,7 +2311,9 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
         IsDynamicTensor(cellStateOutInfo)   ||
         IsDynamicTensor(outputInfo))
     {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
+        return Fail("%s: Dynamic output tensors are not supported %d %d %d %d", __func__,
+                    IsDynamicTensor(scratchBufferInfo), IsDynamicTensor(outputStateOutInfo),
+                    IsDynamicTensor(cellStateOutInfo), IsDynamicTensor(outputInfo));
     }
 
     // Basic parameters
