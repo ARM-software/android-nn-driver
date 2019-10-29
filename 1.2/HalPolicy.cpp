@@ -1636,6 +1636,7 @@ bool HalPolicy::ConvertResize(const Operation& operation,
                               ResizeMethod resizeMethod)
 {
     ALOGV("hal_1_2::HalPolicy::ConvertResize()");
+    ALOGV("resizeMethod = %s", GetResizeMethodAsCString(resizeMethod));
 
     LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
@@ -1741,7 +1742,6 @@ bool HalPolicy::ConvertResize(const Operation& operation,
 
     assert(layer != nullptr);
 
-    layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
