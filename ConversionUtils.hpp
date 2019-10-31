@@ -1590,10 +1590,13 @@ bool ConvertConcatenation(const Operation& operation, const Model& model, Conver
             return Fail("%s: Operation has invalid inputs", __func__);
         }
 
-        armnn::TensorShape operandShape     = GetTensorShapeForOperand(*operand);
-        LayerInputHandle operandInputHandle =
-                ConvertToLayerInputHandle<HalPolicy>(operation, i, model, data);
+        LayerInputHandle operandInputHandle = ConvertToLayerInputHandle<HalPolicy>(operation, i, model, data);
+        if (!operandInputHandle.IsValid())
+        {
+            return Fail("%s: Operation has invalid inputs", __func__);
+        }
 
+        armnn::TensorShape operandShape     = GetTensorShapeForOperand(*operand);
         if (operandShape.GetNumDimensions() == 0)
         {
             return Fail("%s: Operands with rank 0 are not supported", __func__);

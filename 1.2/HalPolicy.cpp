@@ -420,6 +420,12 @@ bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& 
     {
         return Fail("%s: Operand is invalid", __func__);
     }
+    if ( weightsOperand->dimensions[0] != 1)
+    {
+        return Fail("%s: Invalid weights; for depthwise convolution, dimension 0 must be 1 but it is %i",
+                    __func__, weightsOperand->dimensions[0] );
+    }
+
     DepthwiseConvolution2dDescriptor desc;
     desc.m_DataLayout = DataLayout::NHWC;
 
