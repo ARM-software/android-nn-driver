@@ -149,13 +149,13 @@ public:
             const android::hardware::hidl_vec<android::hardware::hidl_handle>&, const HidlToken&,
             const android::sp<V1_2::IPreparedModelCallback>& cb)
     {
-        ALOGV("hal_1_2::ArmnnDriver::prepareModel_1_1()");
+        ALOGV("hal_1_2::ArmnnDriver::prepareModel_1_2()");
 
         if (!(preference == ExecutionPreference::LOW_POWER ||
               preference == ExecutionPreference::FAST_SINGLE_ANSWER ||
               preference == ExecutionPreference::SUSTAINED_SPEED))
         {
-            ALOGV("hal_1_2::ArmnnDriver::prepareModel_1_1: Invalid execution preference");
+            ALOGV("hal_1_2::ArmnnDriver::prepareModel_1_2: Invalid execution preference");
             cb->notify(ErrorStatus::INVALID_ARGUMENT, nullptr);
             return ErrorStatus::INVALID_ARGUMENT;
         }
