@@ -150,7 +150,7 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
         return ErrorStatus::NONE;
     }
 
-    unique_ptr<ArmnnPreparedModel<HalPolicy>> preparedModel(
+    sp<ArmnnPreparedModel<HalPolicy>> preparedModel(
             new ArmnnPreparedModel<HalPolicy>(
                     netId,
                     runtime.get(),
@@ -180,7 +180,7 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
         }
     }
 
-    NotifyCallbackAndCheck(cb, ErrorStatus::NONE, preparedModel.release());
+    NotifyCallbackAndCheck(cb, ErrorStatus::NONE, preparedModel);
 
     return ErrorStatus::NONE;
 }
