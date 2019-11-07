@@ -702,7 +702,12 @@ bool HalPolicy::ConvertGroupedConv2d(const Operation& operation, const Model& mo
     }
 
     ConstTensor weights = weightsPin.GetConstTensor();
-    ConstTensor biases  = biasesPin.GetConstTensor();
+    if (weights.GetInfo().HasPerAxisQuantization())
+    {
+        return Fail("%s: Per-axis quantization is not supported", __func__);
+    }
+
+    ConstTensor biases = biasesPin.GetConstTensor();
     SanitizeBiasQuantizationScale(biases.GetInfo(), weights.GetInfo(), inputInfo);
 
     const TensorShape& inputShape   = inputInfo.GetShape();
