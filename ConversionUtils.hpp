@@ -755,6 +755,12 @@ ConstTensorPin ConvertOperandToConstTensorPin(const HalOperand& operand,
     }
 
     armnn::TensorInfo tensorInfo = GetTensorInfoForOperand(operand);
+    // Android datalayout might be different than armnn datalayout, e.g. the kernel for the depthwise convolution.
+    if (tensorInfo.HasPerAxisQuantization())
+    {
+        tensorInfo.SetQuantizationDim(dimensionMappings[tensorInfo.GetQuantizationDim().value()]);
+    }
+
     if (overrideTensorShape != nullptr)
     {
         tensorInfo.SetShape(*overrideTensorShape);
