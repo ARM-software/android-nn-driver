@@ -50,6 +50,10 @@ struct CapabilitiesFixture
         __system_property_set("Armnn.operandTypeTensorInt32Performance.powerUsage", nullStr);
         __system_property_set("Armnn.operandTypeInt32Performance.execTime", nullStr);
         __system_property_set("Armnn.operandTypeInt32Performance.powerUsage", nullStr);
+        __system_property_set("Armnn.operandTypeTensorQuant8SymmPerformance.execTime", nullStr);
+        __system_property_set("Armnn.operandTypeTensorQuant8SymmPerformance.powerUsage", nullStr);
+        __system_property_set("Armnn.operandTypeTensorQuant8SymmPerChannelPerformance.execTime", nullStr);
+        __system_property_set("Armnn.operandTypeTensorQuant8SymmPerChannelPerformance.powerUsage", nullStr);
     }
 };
 
@@ -77,14 +81,14 @@ BOOST_AUTO_TEST_CASE(PerformanceCapabilitiesWithRuntime)
             CheckOperandType(capabilities, OperandType::TENSOR_QUANT16_SYMM, 3.0f, 3.1f);
             CheckOperandType(capabilities, OperandType::TENSOR_INT32, 3.2f, 3.3f);
             CheckOperandType(capabilities, OperandType::INT32, 3.4f, 3.5f);
+            CheckOperandType(capabilities, OperandType::TENSOR_QUANT8_SYMM, 2.8f, 2.9f);
+            CheckOperandType(capabilities, OperandType::TENSOR_QUANT8_SYMM_PER_CHANNEL, 2.8f, 2.9f);
 
             // Unsupported operands take FLT_MAX value
             CheckOperandType(capabilities, OperandType::UINT32, FLT_MAX, FLT_MAX);
             CheckOperandType(capabilities, OperandType::BOOL, FLT_MAX, FLT_MAX);
-            CheckOperandType(capabilities, OperandType::TENSOR_QUANT8_SYMM, FLT_MAX, FLT_MAX);
             CheckOperandType(capabilities, OperandType::TENSOR_QUANT16_ASYMM, FLT_MAX, FLT_MAX);
             CheckOperandType(capabilities, OperandType::TENSOR_BOOL8, FLT_MAX, FLT_MAX);
-            CheckOperandType(capabilities, OperandType::TENSOR_QUANT8_SYMM_PER_CHANNEL, FLT_MAX, FLT_MAX);
             CheckOperandType(capabilities, OperandType::OEM, FLT_MAX, FLT_MAX);
             CheckOperandType(capabilities, OperandType::TENSOR_OEM_BYTE, FLT_MAX, FLT_MAX);
 
@@ -107,6 +111,10 @@ BOOST_AUTO_TEST_CASE(PerformanceCapabilitiesWithRuntime)
     __system_property_set("Armnn.operandTypeTensorInt32Performance.powerUsage", "3.3f");
     __system_property_set("Armnn.operandTypeInt32Performance.execTime", "3.4f");
     __system_property_set("Armnn.operandTypeInt32Performance.powerUsage", "3.5f");
+    __system_property_set("Armnn.operandTypeTensorQuant8SymmPerformance.execTime", "2.8f");
+    __system_property_set("Armnn.operandTypeTensorQuant8SymmPerformance.powerUsage", "2.9f");
+    __system_property_set("Armnn.operandTypeTensorQuant8SymmPerChannelPerformance.execTime", "2.8f");
+    __system_property_set("Armnn.operandTypeTensorQuant8SymmPerChannelPerformance.powerUsage", "2.9f");
 
     armnn::IRuntime::CreationOptions options;
     armnn::IRuntimePtr runtime(armnn::IRuntime::Create(options));
@@ -131,14 +139,14 @@ BOOST_AUTO_TEST_CASE(PerformanceCapabilitiesUndefined)
             CheckOperandType(capabilities, OperandType::TENSOR_QUANT16_SYMM, defaultValue, defaultValue);
             CheckOperandType(capabilities, OperandType::TENSOR_INT32, defaultValue, defaultValue);
             CheckOperandType(capabilities, OperandType::INT32, defaultValue, defaultValue);
+            CheckOperandType(capabilities, OperandType::TENSOR_QUANT8_SYMM_PER_CHANNEL, defaultValue, defaultValue);
+            CheckOperandType(capabilities, OperandType::TENSOR_QUANT8_SYMM, defaultValue, defaultValue);
 
             // Unsupported operands take FLT_MAX value
             CheckOperandType(capabilities, OperandType::UINT32, FLT_MAX, FLT_MAX);
             CheckOperandType(capabilities, OperandType::BOOL, FLT_MAX, FLT_MAX);
-            CheckOperandType(capabilities, OperandType::TENSOR_QUANT8_SYMM, FLT_MAX, FLT_MAX);
             CheckOperandType(capabilities, OperandType::TENSOR_QUANT16_ASYMM, FLT_MAX, FLT_MAX);
             CheckOperandType(capabilities, OperandType::TENSOR_BOOL8, FLT_MAX, FLT_MAX);
-            CheckOperandType(capabilities, OperandType::TENSOR_QUANT8_SYMM_PER_CHANNEL, FLT_MAX, FLT_MAX);
             CheckOperandType(capabilities, OperandType::OEM, FLT_MAX, FLT_MAX);
             CheckOperandType(capabilities, OperandType::TENSOR_OEM_BYTE, FLT_MAX, FLT_MAX);
 

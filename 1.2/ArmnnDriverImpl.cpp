@@ -43,6 +43,11 @@ const char *g_OperandTypeTensorQuant8SymmPerformanceExecTime =
 const char *g_OperandTypeTensorQuant8SymmPerformancePowerUsage =
         "Armnn.operandTypeTensorQuant8SymmPerformance.powerUsage";
 
+const char *g_OperandTypeTensorQuant8SymmPerChannelPerformanceExecTime =
+    "Armnn.operandTypeTensorQuant8SymmPerChannelPerformance.execTime";
+const char *g_OperandTypeTensorQuant8SymmPerChannelPerformancePowerUsage =
+    "Armnn.operandTypeTensorQuant8SymmPerChannelPerformance.powerUsage";
+
 
 const char *g_OperandTypeTensorInt32PerformanceExecTime     = "Armnn.operandTypeTensorInt32Performance.execTime";
 const char *g_OperandTypeTensorInt32PerformancePowerUsage   = "Armnn.operandTypeTensorInt32Performance.powerUsage";
@@ -273,6 +278,14 @@ Return<void> ArmnnDriverImpl::getCapabilities_1_2(const armnn::IRuntimePtr& runt
                     .execTime = ParseSystemProperty(g_OperandTypeTensorQuant16SymmPerformanceExecTime, defaultValue),
                     .powerUsage = ParseSystemProperty(g_OperandTypeTensorQuant16SymmPerformancePowerUsage, defaultValue)
                 });
+
+        update(&capabilities.operandPerformance, OperandType::TENSOR_QUANT8_SYMM_PER_CHANNEL,
+               {
+                   .execTime =
+                   ParseSystemProperty(g_OperandTypeTensorQuant8SymmPerChannelPerformanceExecTime, defaultValue),
+                   .powerUsage =
+                   ParseSystemProperty(g_OperandTypeTensorQuant8SymmPerChannelPerformancePowerUsage, defaultValue)
+               });
 
         update(&capabilities.operandPerformance, OperandType::TENSOR_INT32,
                 {
