@@ -2300,15 +2300,22 @@ inline bool IsQSymm8(const V1_2::Operand& operand)
 template<typename HalPolicy,
          typename Operation = typename HalPolicy::Operation,
          typename Model     = typename HalPolicy::Model>
-std::tuple<std::unique_ptr<float[]>, size_t, armnn::TensorInfo>
+std::tuple<std::unique_ptr<float[]>, size_t, armnn::TensorInfo, int>
 DequantizeIfRequired(size_t operand_index, const Operation& operation, const Model& model, const ConversionData& data)
 {
     using HalOperand = typename HalPolicy::Operand;
 
     const HalOperand* weightsOperand = GetInputOperand<HalPolicy>(operation, operand_index, model);
-    if (!weightsOperand || IsOperandConstant<HalPolicy>(*weightsOperand))
+    if (!weightsOperand)
     {
-        return { nullptr, 0, armnn::TensorInfo() };
+        // Invalid Operand will return with error code '-1'
+        return { nullptr, 0, armnn::TensorInfo(), -1 };
+    }
+
+    if (IsOperandConstant<HalPolicy>(*weightsOperand))
+    {
+        // Weights are already constant
+        return { nullptr, 0, armnn::TensorInfo(), 0 };
     }
 
     const size_t weightsInputIndex = operation.inputs[operand_index];
@@ -2369,10 +2376,10 @@ DequantizeIfRequired(size_t operand_index, const Operation& operation, const Mod
                                      operand->dimensions.data(),
                                      armnn::DataType::Float32);
 
-        return { std::move(dequantizedBuffer), dequantizedBufferLength * sizeof(float), std::move(tensorInfo) };
+        return { std::move(dequantizedBuffer), dequantizedBufferLength * sizeof(float), std::move(tensorInfo), 0 };
     }
 
-    return { nullptr, 0, armnn::TensorInfo() };
+    return { nullptr, 0, armnn::TensorInfo() , 0};
 }
 
 template<typename HalPolicy,
@@ -2385,16 +2392,21 @@ ConstTensorPin DequantizeAndMakeConstTensorPin(const Operation& operation,
                                                bool optional = false)
 {
     auto dequantized = DequantizeIfRequired<HalPolicy, Operation, Model>(operandIndex,operation, model, data);
-    if (std::get<1>(dequantized) == 0 && optional)
+    if (std::get<3>(dequantized) == -1)
     {
-        // Optional tensor with no values is not really an error. Return it as invalid, but marked as optional
-        return ConstTensorPin(true);
+        // Return it as invalid, tensor with no values is not really an error
+        return ConstTensorPin();
     }
 
-    return std::get<1>(dequantized) ?
-                ConstTensorPin(std::get<2>(dequantized), std::get<0>(dequantized).get(),
-                               std::get<1>(dequantized), g_DontPermute):
-                ConvertOperationInputToConstTensorPin<HalPolicy>(operation, operandIndex, model, data);
+    if (std::get<1>(dequantized) == 0)
+    {
+       return ConvertOperationInputToConstTensorPin<HalPolicy>(
+                          operation, operandIndex, model, data, g_DontPermute, nullptr, optional);
+
+    }
+
+    return ConstTensorPin(std::get<2>(dequantized), std::get<0>(dequantized).get(),
+                          std::get<1>(dequantized), g_DontPermute);
 }
 
 
