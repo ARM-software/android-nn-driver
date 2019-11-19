@@ -35,6 +35,11 @@ private:
 
     static bool ConvertAdd(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertArgMinMax(const Operation& operation,
+                                 const Model& model,
+                                 ConversionData& data,
+                                 armnn::ArgMinMaxFunction argMinMaxFunction);
+
     static bool ConvertAveragePool2d(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertBatchToSpaceNd(const Operation& operation, const Model& model, ConversionData& data);
