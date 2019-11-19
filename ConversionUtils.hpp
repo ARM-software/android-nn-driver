@@ -166,8 +166,8 @@ catch (const armnn::InvalidArgumentException &e) \
     throw armnn::InvalidArgumentException(e, "Failed to check layer support", CHECK_LOCATION()); \
 }
 
-template<typename Operand>
-armnn::TensorShape GetTensorShapeForOperand(const Operand& operand)
+template<typename HalOperand>
+armnn::TensorShape GetTensorShapeForOperand(const HalOperand& operand)
 {
     return armnn::TensorShape(operand.dimensions.size(), operand.dimensions.data());
 }
@@ -220,7 +220,8 @@ inline bool Is12Operand(V1_2::Operand)
 #endif
 
 template<typename LayerHandleType>
-armnn::IConnectableLayer& AddReshapeLayer(armnn::INetwork& network, LayerHandleType& inputLayer,
+armnn::IConnectableLayer& AddReshapeLayer(armnn::INetwork& network,
+                                          LayerHandleType& inputLayer,
                                           armnn::TensorInfo reshapeInfo)
 {
     armnn::ReshapeDescriptor reshapeDescriptor;
@@ -236,8 +237,10 @@ armnn::IConnectableLayer& AddReshapeLayer(armnn::INetwork& network, LayerHandleT
     return *reshapeLayer;
 }
 
-bool BroadcastTensor(LayerInputHandle& input0, LayerInputHandle& input1,
-                     armnn::IConnectableLayer* startLayer, ConversionData& data)
+bool BroadcastTensor(LayerInputHandle& input0,
+                     LayerInputHandle& input1,
+                     armnn::IConnectableLayer* startLayer,
+                     ConversionData& data)
 {
     BOOST_ASSERT(startLayer != nullptr);
 
@@ -326,7 +329,11 @@ bool BroadcastTensor(LayerInputHandle& input0, LayerInputHandle& input1,
     return true;
 }
 
-void CalcPadding(uint32_t input, uint32_t kernel, uint32_t stride, uint32_t& outPadHead, uint32_t& outPadTail,
+void CalcPadding(uint32_t input,
+                 uint32_t kernel,
+                 uint32_t stride,
+                 uint32_t& outPadHead,
+                 uint32_t& outPadTail,
                  android::nn::PaddingScheme scheme)
 {
     int32_t padHead;
@@ -1492,11 +1499,11 @@ bool ConvertPooling2d(const HalOperation& operation,
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertAdd(const Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertAdd(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    using Operand = typename HalPolicy::Operand;
+    using HalOperand = typename HalPolicy::Operand;
 
     LayerInputHandle input0 = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     LayerInputHandle input1 = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
@@ -1514,7 +1521,7 @@ bool ConvertAdd(const Operation& operation, const Model& model, ConversionData& 
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!outputOperand)
     {
         return false;
@@ -1562,16 +1569,16 @@ bool ConvertAdd(const Operation& operation, const Model& model, ConversionData& 
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertArgMinMax(const Operation& operation,
-                      const Model& model,
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertArgMinMax(const HalOperation& operation,
+                      const HalModel& model,
                       ConversionData& data,
                       armnn::ArgMinMaxFunction argMinMaxFunction)
 {
     ALOGV("argMinMaxFunction = %s", GetArgMinMaxFunctionAsCString(argMinMaxFunction));
 
-    using HalOperand = typename HalPolicy::Operand;
+    using HalOperand     = typename HalPolicy::Operand;
     using HalOperandType = typename HalPolicy::OperandType;
 
     LayerInputHandle input0 = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
@@ -1638,11 +1645,11 @@ bool ConvertArgMinMax(const Operation& operation,
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertConcatenation(const Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertConcatenation(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    using HalOperand = typename HalPolicy::Operand;
+    using HalOperand     = typename HalPolicy::Operand;
     using HalOperandType = typename HalPolicy::OperandType;
 
     // The first N (0..N-1) inputs are tensors. The Nth input is the concatenation axis.
@@ -2208,11 +2215,11 @@ bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertDequantize(const Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertDequantize(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    using Operand = typename HalPolicy::Operand;
+    using HalOperand = typename HalPolicy::Operand;
 
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
@@ -2227,7 +2234,7 @@ bool ConvertDequantize(const Operation& operation, const Model& model, Conversio
         return Fail("%s: Operation has quantization dimension different than 0", __func__);
     }
 
-    const Operand* const outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* const outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!outputOperand)
     {
         return Fail("%s: Operation has invalid outputs", __func__);
@@ -2259,11 +2266,11 @@ bool ConvertDequantize(const Operation& operation, const Model& model, Conversio
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertDiv(const Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertDiv(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    using Operand = typename HalPolicy::Operand;
+    using HalOperand = typename HalPolicy::Operand;
 
     LayerInputHandle input0 = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     LayerInputHandle input1 = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
@@ -2281,7 +2288,7 @@ bool ConvertDiv(const Operation& operation, const Model& model, ConversionData& 
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -2323,11 +2330,11 @@ bool ConvertDiv(const Operation& operation, const Model& model, ConversionData& 
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertFloor(const Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertFloor(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    using Operand = typename HalPolicy::Operand;
+    using HalOperand = typename HalPolicy::Operand;
 
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
@@ -2335,7 +2342,7 @@ bool ConvertFloor(const Operation& operation, const Model& model, ConversionData
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* const outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* const outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!outputOperand)
     {
         return Fail("%s: Operation has invalid outputs", __func__);
@@ -2380,25 +2387,35 @@ inline bool IsQSymm8(const V1_2::Operand& operand)
 
 #endif
 
+enum class DequantizeStatus
+{
+    SUCCESS,
+    NOT_REQUIRED,
+    INVALID_OPERAND
+};
+
+using DequantizeResult = std::tuple<std::unique_ptr<float[]>, size_t, armnn::TensorInfo, DequantizeStatus>;
+
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-std::tuple<std::unique_ptr<float[]>, size_t, armnn::TensorInfo, int>
-DequantizeIfRequired(size_t operand_index, const Operation& operation, const Model& model, const ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+DequantizeResult DequantizeIfRequired(size_t operand_index,
+                                      const HalOperation& operation,
+                                      const HalModel& model,
+                                      const ConversionData& data)
 {
     using HalOperand = typename HalPolicy::Operand;
 
     const HalOperand* weightsOperand = GetInputOperand<HalPolicy>(operation, operand_index, model);
     if (!weightsOperand)
     {
-        // Invalid Operand will return with error code '-1'
-        return { nullptr, 0, armnn::TensorInfo(), -1 };
+        return { nullptr, 0, armnn::TensorInfo(), DequantizeStatus::INVALID_OPERAND };
     }
 
     if (IsOperandConstant<HalPolicy>(*weightsOperand))
     {
         // Weights are already constant
-        return { nullptr, 0, armnn::TensorInfo(), 0 };
+        return { nullptr, 0, armnn::TensorInfo(), DequantizeStatus::NOT_REQUIRED };
     }
 
     const size_t weightsInputIndex = operation.inputs[operand_index];
@@ -2459,53 +2476,62 @@ DequantizeIfRequired(size_t operand_index, const Operation& operation, const Mod
                                      operand->dimensions.data(),
                                      armnn::DataType::Float32);
 
-        return { std::move(dequantizedBuffer), dequantizedBufferLength * sizeof(float), std::move(tensorInfo), 0 };
+        return { std::move(dequantizedBuffer), dequantizedBufferLength * sizeof(float),
+                 std::move(tensorInfo),
+                 DequantizeStatus::SUCCESS };
     }
 
-    return { nullptr, 0, armnn::TensorInfo() , 0};
+    return { nullptr, 0, armnn::TensorInfo() , DequantizeStatus::NOT_REQUIRED};
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-ConstTensorPin DequantizeAndMakeConstTensorPin(const Operation& operation,
-                                               const Model& model,
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+ConstTensorPin DequantizeAndMakeConstTensorPin(const HalOperation& operation,
+                                               const HalModel& model,
                                                const ConversionData& data,
                                                size_t operandIndex,
                                                bool optional = false)
 {
-    auto dequantized = DequantizeIfRequired<HalPolicy, Operation, Model>(operandIndex,operation, model, data);
-    if (std::get<3>(dequantized) == -1)
+    DequantizeResult dequantized = DequantizeIfRequired<HalPolicy>(operandIndex,operation, model, data);
+
+    DequantizeStatus status = std::get<3>(dequantized);
+    switch (status)
     {
-        // Return it as invalid, tensor with no values is not really an error
-        return ConstTensorPin();
+        case DequantizeStatus::INVALID_OPERAND:
+        {
+            // return invalid const tensor pin
+            return ConstTensorPin();
+        }
+        case DequantizeStatus::NOT_REQUIRED:
+        {
+            return ConvertOperationInputToConstTensorPin<HalPolicy>(
+                operation, operandIndex, model, data, g_DontPermute, nullptr, optional);
+        }
+        case DequantizeStatus::SUCCESS:
+        default:
+        {
+            return ConstTensorPin(
+                std::get<2>(dequantized), std::get<0>(dequantized).get(), std::get<1>(dequantized), g_DontPermute);
+        }
     }
-
-    if (std::get<1>(dequantized) == 0)
-    {
-       return ConvertOperationInputToConstTensorPin<HalPolicy>(
-                          operation, operandIndex, model, data, g_DontPermute, nullptr, optional);
-
-    }
-
-    return ConstTensorPin(std::get<2>(dequantized), std::get<0>(dequantized).get(),
-                          std::get<1>(dequantized), g_DontPermute);
 }
 
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertFullyConnected(const Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    using Operand = typename HalPolicy::Operand;
+    using HalOperand = typename HalPolicy::Operand;
+
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -2604,16 +2630,16 @@ bool ConvertFullyConnected(const Operation& operation, const Model& model, Conve
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertL2Normalization(const Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertL2Normalization(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
+    using HalOperand = typename HalPolicy::Operand;
+
     if (operation.inputs.size() != 1)
     {
         return Fail("%s: Optional inputs are not supported", __func__);
     }
-
-    using Operand = typename HalPolicy::Operand;
 
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
@@ -2621,7 +2647,7 @@ bool ConvertL2Normalization(const Operation& operation, const Model& model, Conv
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -2663,10 +2689,10 @@ bool ConvertL2Normalization(const Operation& operation, const Model& model, Conv
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertLocalResponseNormalization(const Operation& operation,
-                                       const Model& model,
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertLocalResponseNormalization(const HalOperation& operation,
+                                       const HalModel& model,
                                        ConversionData& data)
 {
     if (operation.inputs.size() != 5)
@@ -2674,8 +2700,8 @@ bool ConvertLocalResponseNormalization(const Operation& operation,
         return Fail("%s: Optional inputs are not supported", __func__);
     }
 
-    using Operand     = typename HalPolicy::Operand;
-    using OperandType = typename HalPolicy::OperandType;
+    using HalOperand     = typename HalPolicy::Operand;
+    using HalOperandType = typename HalPolicy::OperandType;
 
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
@@ -2683,7 +2709,7 @@ bool ConvertLocalResponseNormalization(const Operation& operation,
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -2707,7 +2733,7 @@ bool ConvertLocalResponseNormalization(const Operation& operation,
     descriptor.m_NormMethodType  = armnn::NormalizationAlgorithmMethod::LocalBrightness;
 
     if (!input.IsValid() ||
-        !GetInputScalar<HalPolicy>(operation, 1, OperandType::INT32, descriptor.m_NormSize, model, data) ||
+        !GetInputScalar<HalPolicy>(operation, 1, HalOperandType::INT32, descriptor.m_NormSize, model, data) ||
         !GetInputFloat32<HalPolicy>(operation, 2, descriptor.m_K, model, data) ||
         !GetInputFloat32<HalPolicy>(operation, 3, descriptor.m_Alpha, model, data) ||
         !GetInputFloat32<HalPolicy>(operation, 4, descriptor.m_Beta, model, data))
@@ -2741,12 +2767,10 @@ bool ConvertLocalResponseNormalization(const Operation& operation,
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertLogistic(const Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertLogistic(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    using Operand = typename HalPolicy::Operand;
-
     armnn::ActivationDescriptor desc;
     desc.m_Function = armnn::ActivationFunction::Sigmoid;
 
@@ -2754,11 +2778,11 @@ bool ConvertLogistic(const Operation& operation, const Model& model, ConversionD
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertMean(const Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertMean(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    using Operand = typename HalPolicy::Operand;
+    using HalOperand = typename HalPolicy::Operand;
 
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
@@ -2766,7 +2790,7 @@ bool ConvertMean(const Operation& operation, const Model& model, ConversionData&
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -2778,7 +2802,7 @@ bool ConvertMean(const Operation& operation, const Model& model, ConversionData&
         return Fail("%s: Dynamic output tensors are not supported", __func__);
     }
 
-    const Operand* axisOperand = GetInputOperand<HalPolicy>(operation, 1, model);
+    const HalOperand* axisOperand = GetInputOperand<HalPolicy>(operation, 1, model);
     if (!axisOperand)
     {
         return Fail("%s: Could not read input 1", __func__);
@@ -2831,11 +2855,11 @@ bool ConvertMean(const Operation& operation, const Model& model, ConversionData&
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertMul(const Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertMul(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    using Operand = typename HalPolicy::Operand;
+    using HalOperand = typename HalPolicy::Operand;
 
     LayerInputHandle input0 = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     LayerInputHandle input1 = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
@@ -2853,7 +2877,7 @@ bool ConvertMul(const Operation& operation, const Model& model, ConversionData& 
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
 
     if (outputOperand == nullptr)
     {
@@ -2902,11 +2926,11 @@ bool ConvertMul(const Operation& operation, const Model& model, ConversionData& 
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertPad(Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertPad(HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    using Operand = typename HalPolicy::Operand;
+    using HalOperand = typename HalPolicy::Operand;
 
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
@@ -2931,7 +2955,7 @@ bool ConvertPad(Operation& operation, const Model& model, ConversionData& data)
         descriptor.m_PadValue = inputInfo.GetQuantizationOffset();
     }
 
-    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output", __func__);
@@ -2965,15 +2989,15 @@ bool ConvertPad(Operation& operation, const Model& model, ConversionData& data)
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertReshape(const Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertReshape(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    using Operand = typename HalPolicy::Operand;
+    using HalOperand = typename HalPolicy::Operand;
 
-    const Operand* inputOperand = GetInputOperand<HalPolicy>(operation, 0, model);
-    const Operand* requestedShapeOperand = GetInputOperand<HalPolicy>(operation, 1, model);
-    const Operand* outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* inputOperand = GetInputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* requestedShapeOperand = GetInputOperand<HalPolicy>(operation, 1, model);
+    const HalOperand* outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
 
     if (inputOperand == nullptr
         || requestedShapeOperand == nullptr
@@ -3040,11 +3064,11 @@ bool ConvertReshape(const Operation& operation, const Model& model, ConversionDa
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertSub(const Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertSub(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    using Operand = typename HalPolicy::Operand;
+    using HalOperand = typename HalPolicy::Operand;
 
     LayerInputHandle input0 = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     LayerInputHandle input1 = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
@@ -3062,7 +3086,7 @@ bool ConvertSub(const Operation& operation, const Model& model, ConversionData& 
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -3107,11 +3131,11 @@ bool ConvertSub(const Operation& operation, const Model& model, ConversionData& 
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertSqueeze(const Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertSqueeze(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    using Operand = typename HalPolicy::Operand;
+    using HalOperand = typename HalPolicy::Operand;
 
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
@@ -3126,7 +3150,7 @@ bool ConvertSqueeze(const Operation& operation, const Model& model, ConversionDa
         Fail("%s: Inputs with rank greater than 4 are not supported", __func__);
     }
 
-    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -3139,7 +3163,7 @@ bool ConvertSqueeze(const Operation& operation, const Model& model, ConversionDa
 
     // NOTE: Axis is an optional parameter to SQUEEZE, therefore we do not want to generate a failure
     // if the operand index is out of bounds.
-    const Operand* axisOperand = GetInputOperand<HalPolicy>(operation, 1, model, false);
+    const HalOperand* axisOperand = GetInputOperand<HalPolicy>(operation, 1, model, false);
 
     const uint32_t dimensionSequence[] = { 0, 1, 2, 3 };
 
@@ -3193,11 +3217,11 @@ bool ConvertSqueeze(const Operation& operation, const Model& model, ConversionDa
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertStridedSlice(const Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertStridedSlice(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    using Operand = typename HalPolicy::Operand;
+    using HalOperand = typename HalPolicy::Operand;
 
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
@@ -3212,7 +3236,7 @@ bool ConvertStridedSlice(const Operation& operation, const Model& model, Convers
         Fail("%s: Inputs with rank greater than 4 are not supported", __func__);
     }
 
-    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
@@ -3224,16 +3248,16 @@ bool ConvertStridedSlice(const Operation& operation, const Model& model, Convers
         return Fail("%s: Dynamic output tensors are not supported", __func__);
     }
 
-    const Operand* beginOperand   = GetInputOperand<HalPolicy>(operation, 1, model);
-    const Operand* endOperand     = GetInputOperand<HalPolicy>(operation, 2, model);
-    const Operand* stridesOperand = GetInputOperand<HalPolicy>(operation, 3, model);
+    const HalOperand* beginOperand   = GetInputOperand<HalPolicy>(operation, 1, model);
+    const HalOperand* endOperand     = GetInputOperand<HalPolicy>(operation, 2, model);
+    const HalOperand* stridesOperand = GetInputOperand<HalPolicy>(operation, 3, model);
 
     std::vector<int32_t> beginValues;
     std::vector<int32_t> endValues;
     std::vector<int32_t> stridesValues;
 
     // The length of the beginOperand, endOperand and stridesOperand must be of a rank(input)
-    auto ValidateInputOperands = [&] (const Operand& operand, std::vector<int32_t>& operandValues)
+    auto ValidateInputOperands = [&] (const HalOperand& operand, std::vector<int32_t>& operandValues)
     {
         if (!GetTensorInt32Values<HalPolicy>(operand, operandValues, model, data))
         {
@@ -3296,11 +3320,11 @@ bool ConvertStridedSlice(const Operation& operation, const Model& model, Convers
 }
 
 template<typename HalPolicy,
-         typename Operation = typename HalPolicy::Operation,
-         typename Model     = typename HalPolicy::Model>
-bool ConvertTranspose(const Operation& operation, const Model& model, ConversionData& data)
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertTranspose(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
-    using Operand = typename HalPolicy::Operand;
+    using HalOperand = typename HalPolicy::Operand;
 
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
@@ -3317,7 +3341,7 @@ bool ConvertTranspose(const Operation& operation, const Model& model, Conversion
 
     // NOTE: Axis is an optional parameter to TRANSPOSE, therefore we do not want to generate a failure
     // if the operand index is out of bounds.
-    const Operand* permOperand = GetInputOperand<HalPolicy>(operation, 1, model, false);
+    const HalOperand* permOperand = GetInputOperand<HalPolicy>(operation, 1, model, false);
 
     std::vector<int32_t> perm(rank);
     if (!permOperand)
@@ -3346,7 +3370,7 @@ bool ConvertTranspose(const Operation& operation, const Model& model, Conversion
     armnn::PermuteDescriptor permuteDesc;
     permuteDesc.m_DimMappings = permutationVector;
 
-    const Operand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!output)
     {
         return Fail("%s: Could not read output 0", __func__);
