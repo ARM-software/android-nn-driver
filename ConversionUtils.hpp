@@ -1564,6 +1564,82 @@ bool ConvertAdd(const Operation& operation, const Model& model, ConversionData& 
 template<typename HalPolicy,
          typename Operation = typename HalPolicy::Operation,
          typename Model     = typename HalPolicy::Model>
+bool ConvertArgMinMax(const Operation& operation,
+                      const Model& model,
+                      ConversionData& data,
+                      armnn::ArgMinMaxFunction argMinMaxFunction)
+{
+    ALOGV("argMinMaxFunction = %s", GetArgMinMaxFunctionAsCString(argMinMaxFunction));
+
+    using HalOperand = typename HalPolicy::Operand;
+    using HalOperandType = typename HalPolicy::OperandType;
+
+    LayerInputHandle input0 = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+
+    if (!input0.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    int32_t axis;
+    if (!GetInputScalar<HalPolicy>(operation, 1, HalOperandType::INT32, axis, model, data))
+    {
+        return Fail("%s: Operation has invalid inputs. Failed to read axis.", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo = input0.GetTensorInfo();
+    int rank = static_cast<int>(inputInfo.GetNumDimensions());
+
+    if (((axis < -rank) && (axis < 0)) || ((axis >= rank) && (axis > 0)))
+    {
+        // Square bracket denotes inclusive n while parenthesis denotes exclusive n
+        // E.g. Rank 4 tensor can have axis in range [-4, 3)
+        // -1 == 3, -2 == 2, -3 == 1, -4 == 0
+        return Fail("%s: Axis must be in range [-n, n)", __func__);
+    }
+
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const armnn::TensorInfo& inputInfo0 = input0.GetTensorInfo();
+
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    armnn::ArgMinMaxDescriptor descriptor;
+    descriptor.m_Function = argMinMaxFunction;
+    descriptor.m_Axis     = axis;
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsArgMinMaxSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo0,
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* layer = data.m_Network->AddArgMinMaxLayer(descriptor);
+    assert(layer != nullptr);
+
+    input0.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+}
+
+template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
 bool ConvertConcatenation(const Operation& operation, const Model& model, ConversionData& data)
 {
     using HalOperand = typename HalPolicy::Operand;

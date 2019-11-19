@@ -88,6 +88,10 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertAbs(operation, model, data);
         case V1_2::OperationType::ADD:
             return ConvertAdd(operation, model, data);
+        case V1_2::OperationType::ARGMAX:
+            return ConvertArgMinMax(operation, model, data, ArgMinMaxFunction::Max);
+        case V1_2::OperationType::ARGMIN:
+            return ConvertArgMinMax(operation, model, data, ArgMinMaxFunction::Min);
         case V1_2::OperationType::AVERAGE_POOL_2D:
             return ConvertAveragePool2d(operation, model, data);
         case V1_2::OperationType::BATCH_TO_SPACE_ND:
@@ -208,6 +212,15 @@ bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, Conve
 {
     ALOGV("hal_1_2::HalPolicy::ConvertAdd()");
     return ::ConvertAdd<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertArgMinMax(const V1_2::Operation& operation,
+                                 const V1_2::Model& model,
+                                 ConversionData& data,
+                                 armnn::ArgMinMaxFunction argMinMaxFunction)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertArgMinMax()");
+    return ::ConvertArgMinMax<hal_1_2::HalPolicy>(operation, model, data, argMinMaxFunction);
 }
 
 bool HalPolicy::ConvertAveragePool2d(const Operation& operation, const Model& model, ConversionData& data)
