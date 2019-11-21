@@ -2220,6 +2220,13 @@ bool ConvertDequantize(const Operation& operation, const Model& model, Conversio
         return Fail("%s: Operation has invalid input", __func__);
     }
 
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+    const armnn::Optional<unsigned int>& quantizationDim = inputInfo.GetQuantizationDim();
+    if (quantizationDim.has_value() && quantizationDim.value() != 0)
+    {
+        return Fail("%s: Operation has quantization dimension different than 0", __func__);
+    }
+
     const Operand* const outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!outputOperand)
     {
@@ -2237,8 +2244,8 @@ bool ConvertDequantize(const Operation& operation, const Model& model, Conversio
                                IsDequantizeSupported,
                                data.m_Backends,
                                isSupported,
-                               input.GetTensorInfo(),
-                               GetTensorInfoForOperand(*outputOperand));
+                               inputInfo,
+                               outputInfo);
     if (!isSupported)
     {
         return false;
