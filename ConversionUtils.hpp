@@ -3360,16 +3360,8 @@ bool ConvertTranspose(const HalOperation& operation, const HalModel& model, Conv
 
     std::vector<uint32_t> outputDims(perm.begin(), perm.begin() + rank);
 
-    auto permutationVector = armnn::PermutationVector(outputDims.data(), outputDims.size());
-    if (!permutationVector.IsEqual(NHWCToArmNN)
-        && !permutationVector.IsEqual(ArmNNToNHWC)
-        && !permutationVector.IsEqual({ 3, 2, 0, 1 }))
-    {
-        return Fail("%s: Only [0, 3, 1, 2], [0, 2, 3, 1] and [3, 2, 0, 1] permutations are supported.", __func__);
-    }
-
     armnn::PermuteDescriptor permuteDesc;
-    permuteDesc.m_DimMappings = permutationVector;
+    permuteDesc.m_DimMappings = armnn::PermutationVector(outputDims.data(), outputDims.size());
 
     const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!output)
