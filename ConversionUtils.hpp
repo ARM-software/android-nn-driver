@@ -1807,7 +1807,7 @@ bool ConvertConcatenation(const HalOperation& operation, const HalModel& model, 
         concatDescriptor =
                 armnn::CreateDescriptorForConcatenation(inputShapes.begin(), inputShapes.end(), concatDim);
     }
-    catch (const armnn::Exception& error)
+    catch (std::exception& error)
     {
         return Fail("%s: Error preparing concat descriptor. %s", __func__, error.what());
     }

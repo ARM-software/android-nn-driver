@@ -25,7 +25,7 @@ ModelToINetworkConverter<HalPolicy>::ModelToINetworkConverter(const std::vector<
     {
         Convert();
     }
-    catch (armnn::Exception& e)
+    catch (std::exception& e)
     {
         m_ConversionResult = ConversionResult::UnsupportedFeature;
         ALOGE("%s: Unexpected exception: %s", __func__, e.what());

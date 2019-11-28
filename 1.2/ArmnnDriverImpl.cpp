@@ -138,10 +138,10 @@ Return<ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(const armnn::IRuntime
                                  OptOptions,
                                  errMessages);
     }
-    catch (armnn::Exception &e)
+    catch (std::exception &e)
     {
         std::stringstream message;
-        message << "armnn::Exception (" << e.what() << ") caught from optimize.";
+        message << "Exception (" << e.what() << ") caught from optimize.";
         FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
         return ErrorStatus::NONE;
     }
@@ -173,10 +173,10 @@ Return<ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(const armnn::IRuntime
             return FailPrepareModel(ErrorStatus::GENERAL_FAILURE, "Network could not be loaded", cb);
         }
     }
-    catch (armnn::Exception& e)
+    catch (std::exception& e)
     {
         std::stringstream message;
-        message << "armnn::Exception (" << e.what()<< ") caught from LoadNetwork.";
+        message << "Exception (" << e.what()<< ") caught from LoadNetwork.";
         FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
         return ErrorStatus::NONE;
     }
@@ -204,7 +204,7 @@ Return<ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(const armnn::IRuntime
         {
             clTunedParameters->Save(options.GetClTunedParametersFile().c_str());
         }
-        catch (const armnn::Exception& error)
+        catch (std::exception& error)
         {
             ALOGE("ArmnnDriverImpl::prepareModel: Failed to save CL tuned parameters file '%s': %s",
                   options.GetClTunedParametersFile().c_str(), error.what());
