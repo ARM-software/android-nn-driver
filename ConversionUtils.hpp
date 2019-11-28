@@ -11,8 +11,8 @@
 #include <armnn/ILayerSupport.hpp>
 #include <armnn/BackendHelper.hpp>
 
-#include "armnn/src/armnnUtils/DataLayoutIndexed.hpp"
-#include "armnn/src/armnnUtils/Permute.hpp"
+#include <armnnUtils/DataLayoutIndexed.hpp>
+#include <armnnUtils/Permute.hpp>
 
 #include "1.0/FullyConnected.hpp"
 

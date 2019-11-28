@@ -4,14 +4,14 @@
 //
 
 #include "HalPolicy.hpp"
-
 #include "Utils.hpp"
 
-#include <DataLayoutIndexed.hpp>
-#include <Half.hpp>
-#include <TensorUtils.hpp>
-
 #include <armnn/TypesUtils.hpp>
+
+#include <armnnUtils/DataLayoutIndexed.hpp>
+#include <armnnUtils/TensorUtils.hpp>
+
+#include <Half.hpp>
 
 #include <cmath>
 #include <string>

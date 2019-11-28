@@ -7,8 +7,9 @@
 
 #include "Utils.hpp"
 
+#include <armnnUtils/Permute.hpp>
+
 #include <Half.hpp>
-#include <Permute.hpp>
 
 #include <cassert>
 #include <cinttypes>
