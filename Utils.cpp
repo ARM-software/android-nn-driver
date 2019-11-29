@@ -9,8 +9,6 @@
 
 #include <armnnUtils/Permute.hpp>
 
-#include <Half.hpp>
-
 #include <cassert>
 #include <cinttypes>
 
@@ -25,14 +23,12 @@ const armnn::PermutationVector g_DontPermute{};
 namespace
 {
 
-template <typename T>
 void SwizzleAndroidNn4dTensorToArmNn(const armnn::TensorShape& inTensorShape, const void* input,
-                                     void* output, const armnn::PermutationVector& mappings)
+                                     void* output, size_t dataTypeSize, const armnn::PermutationVector& mappings)
 {
-    const auto inputData = static_cast<const T*>(input);
-    const auto outputData = static_cast<T*>(output);
+    assert(inTensorShape.GetNumDimensions() == 4U);
 
-    armnnUtils::Permute(armnnUtils::Permuted(inTensorShape, mappings), mappings, inputData, outputData, sizeof(T));
+    armnnUtils::Permute(armnnUtils::Permuted(inTensorShape, mappings), mappings, input, output, dataTypeSize);
 }
 
 } // anonymous namespace
@@ -42,19 +38,14 @@ void SwizzleAndroidNn4dTensorToArmNn(const armnn::TensorInfo& tensor, const void
 {
     assert(tensor.GetNumDimensions() == 4U);
 
-    switch(tensor.GetDataType())
+    armnn::DataType dataType = tensor.GetDataType();
+    switch (dataType)
     {
     case armnn::DataType::Float16:
-        SwizzleAndroidNn4dTensorToArmNn<armnn::Half>(tensor.GetShape(), input, output, mappings);
-        break;
     case armnn::DataType::Float32:
-        SwizzleAndroidNn4dTensorToArmNn<float>(tensor.GetShape(), input, output, mappings);
-        break;
     case armnn::DataType::QuantisedAsymm8:
-        SwizzleAndroidNn4dTensorToArmNn<uint8_t>(tensor.GetShape(), input, output, mappings);
-        break;
     case armnn::DataType::QuantizedSymm8PerAxis:
-        SwizzleAndroidNn4dTensorToArmNn<int8_t>(tensor.GetShape(), input, output, mappings);
+        SwizzleAndroidNn4dTensorToArmNn(tensor.GetShape(), input, output, armnn::GetDataTypeSize(dataType), mappings);
         break;
     default:
         ALOGW("Unknown armnn::DataType for swizzling");
