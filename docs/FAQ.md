@@ -33,3 +33,8 @@ https://github.com/ARM-software/android-nn-driver/tree/v19.08
 https://github.com/ARM-software/armnn/tree/v19.08
 https://github.com/ARM-software/computelibrary/tree/v19.08
 
+Instance Normalization test failures 
+------------------------------------
+
+There is a known issue in the Android NNAPI implementation of Instance Normalization that will be fixed in an upcoming revision of Android 10. Using the Arm NN Android NNAPI driver with versions of the Android 10 VTS and CTS tests that do not have that fix will generate multiple Instance Normalization failures. 
+
