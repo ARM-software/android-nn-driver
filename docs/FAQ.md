@@ -17,3 +17,19 @@ https://android.googlesource.com/platform/test/vts-testcase/hal/+/f74899c6c09b52
 
 An acceptable workaround is to increase the timeout defined in AndroidTest.xml, in a similar way to https://android.googlesource.com/platform/test/vts-testcase/hal/+/f74899c6c09b52703e6db0323dffb4ae52539db4.
 
+Problems seen when trying to build the android-nn-driver obtained from GitHub
+-----------------------------------------------------------------------------
+
+Some users have encountered difficulties when attempting to build copies of the android-nn-driver obtained from GitHub. The build reports missing module source paths from clframework or armnn. This is due to incompatiblities between the android-nn-driver and armnn or clframework versions. The versions of android-nn-driver, armnn and clframework have to match for them to work together. So the 19.08 version of android-nn-driver, clframework and armnn will work together but none of them will work with earlier or later versions of the others. In order to ensure that the correct versions of armnn or clframework are obtained you can do the following:
+
+1. Delete or move the armnn or clframework directories from the android-nn-driver directory.
+2. Run the setup.sh script in the android-nn-driver directory. 
+
+This will download the correct versions from GitHub and the android-nn-driver should build correctly. Alternatively you can go to the GitHub pages for android-nn-driver, armnn and computelibrary (clframework) and download versions with the same release tag. 
+
+For 19.08 these would be:
+
+https://github.com/ARM-software/android-nn-driver/tree/v19.08
+https://github.com/ARM-software/armnn/tree/v19.08
+https://github.com/ARM-software/computelibrary/tree/v19.08
+
