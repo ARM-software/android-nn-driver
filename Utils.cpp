@@ -122,7 +122,7 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_2::Operand& operand)
             type = armnn::DataType::QuantisedAsymm8;
             break;
         case V1_2::OperandType::TENSOR_QUANT8_SYMM:
-            type = armnn::DataType::QuantisedSymm8;
+            type = armnn::DataType::QSymmS8;
             break;
         case V1_2::OperandType::TENSOR_QUANT16_SYMM:
             type = armnn::DataType::QuantisedSymm16;
