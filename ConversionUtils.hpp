@@ -3370,6 +3370,11 @@ bool ConvertTranspose(const HalOperation& operation, const HalModel& model, Conv
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
 
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
