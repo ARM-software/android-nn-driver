@@ -64,7 +64,7 @@ ArmnnDevice::ArmnnDevice(DriverOptions options)
             {
                 m_ClTunedParameters->Load(m_Options.GetClTunedParametersFile().c_str());
             }
-            catch (const armnn::Exception& error)
+            catch (std::exception& error)
             {
                 // This is only a warning because the file won't exist the first time you are generating it.
                 ALOGW("ArmnnDevice: Failed to load CL tuned parameters file '%s': %s",
@@ -76,6 +76,10 @@ ArmnnDevice::ArmnnDevice(DriverOptions options)
     catch (const armnn::ClRuntimeUnavailableException& error)
     {
         ALOGE("ArmnnDevice: Failed to setup CL runtime: %s. Device will be unavailable.", error.what());
+    }
+    catch (std::exception& error)
+    {
+        ALOGE("ArmnnDevice: Unknown exception: %s. Device will be unavailable.", error.what());
     }
 #endif
     runtimeOptions.m_EnableGpuProfiling = m_Options.IsGpuProfilingEnabled();

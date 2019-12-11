@@ -1349,7 +1349,7 @@ bool ConvertPooling2d(const HalOperation& operation,
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
-        return Fail("%s: Could not read input 0", operationName);
+        return Fail("%s: Operation Could not read input 0", operationName);
     }
 
     const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
@@ -1410,16 +1410,17 @@ bool ConvertPooling2d(const HalOperation& operation,
             return Fail("%s: Operation has invalid inputs", operationName);
         }
 
-        const unsigned int inputWidth  = inputInfo.GetShape()[2];
-        const unsigned int inputHeight = inputInfo.GetShape()[1];
-
-        CalcPadding(inputWidth, desc.m_PoolWidth, desc.m_StrideX, desc.m_PadLeft, desc.m_PadRight, scheme);
-        CalcPadding(inputHeight, desc.m_PoolHeight, desc.m_StrideY, desc.m_PadTop, desc.m_PadBottom, scheme);
-
         if (Is12Operand(*output))
         {
             desc.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 7, model, data);
         }
+
+        const armnnUtils::DataLayoutIndexed dataLayout(desc.m_DataLayout);
+        const unsigned int inputWidth  = inputInfo.GetShape()[dataLayout.GetWidthIndex()];
+        const unsigned int inputHeight = inputInfo.GetShape()[dataLayout.GetHeightIndex()];
+
+        CalcPadding(inputWidth, desc.m_PoolWidth, desc.m_StrideX, desc.m_PadLeft, desc.m_PadRight, scheme);
+        CalcPadding(inputHeight, desc.m_PoolHeight, desc.m_StrideY, desc.m_PadTop, desc.m_PadBottom, scheme);
     }
 
     bool isSupported = false;
@@ -1587,10 +1588,13 @@ bool ConvertConcatenation(const Operation& operation, const Model& model, Conver
             return Fail("%s: Operation has invalid inputs", __func__);
         }
 
-        armnn::TensorShape operandShape     = GetTensorShapeForOperand(*operand);
-        LayerInputHandle operandInputHandle =
-                ConvertToLayerInputHandle<HalPolicy>(operation, i, model, data);
+        LayerInputHandle operandInputHandle = ConvertToLayerInputHandle<HalPolicy>(operation, i, model, data);
+        if (!operandInputHandle.IsValid())
+        {
+            return Fail("%s: Operation has invalid inputs", __func__);
+        }
 
+        armnn::TensorShape operandShape     = GetTensorShapeForOperand(*operand);
         if (operandShape.GetNumDimensions() == 0)
         {
             return Fail("%s: Operands with rank 0 are not supported", __func__);
@@ -1681,7 +1685,7 @@ bool ConvertConcatenation(const Operation& operation, const Model& model, Conver
         concatDescriptor =
                 armnn::CreateDescriptorForConcatenation(inputShapes.begin(), inputShapes.end(), concatDim);
     }
-    catch (const armnn::Exception& error)
+    catch (std::exception& error)
     {
         return Fail("%s: Error preparing concat descriptor. %s", __func__, error.what());
     }
