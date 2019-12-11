@@ -314,9 +314,9 @@ Return<void> ArmnnPreparedModel_1_2<HalVersion>::executeSynchronously(const Requ
             pOutputTensors->emplace_back(i, outputTensor);
         }
     }
-    catch (armnn::Exception& e)
+    catch (std::exception& e)
     {
-        ALOGW("armnn::Exception caught while preparing for EnqueueWorkload: %s", e.what());
+        ALOGW("Exception caught while preparing for EnqueueWorkload: %s", e.what());
         cb(ErrorStatus::GENERAL_FAILURE, {}, g_NoTiming);
         return Void();
     }
@@ -345,9 +345,9 @@ Return<void> ArmnnPreparedModel_1_2<HalVersion>::executeSynchronously(const Requ
             return Void();
         }
     }
-    catch (armnn::Exception& e)
+    catch (std::exception& e)
     {
-        ALOGW("armnn::Exception caught from EnqueueWorkload: %s", e.what());
+        ALOGW("Exception caught from EnqueueWorkload: %s", e.what());
         cb(ErrorStatus::GENERAL_FAILURE, {}, g_NoTiming);
         return Void();
     }
@@ -531,9 +531,9 @@ void ArmnnPreparedModel_1_2<HalVersion>::ExecuteGraph(
             return;
         }
     }
-    catch (armnn::Exception& e)
+    catch (std::exception& e)
     {
-        ALOGW("armnn::Exception caught from EnqueueWorkload: %s", e.what());
+        ALOGW("Exception caught from EnqueueWorkload: %s", e.what());
         cb.callback(ErrorStatus::GENERAL_FAILURE, {}, g_NoTiming,
                 "ArmnnPreparedModel_1_2::ExecuteGraph");
         return;
@@ -594,9 +594,9 @@ bool ArmnnPreparedModel_1_2<HalVersion>::ExecuteWithDummyInputs()
             return false;
         }
     }
-    catch (armnn::Exception& e)
+    catch (std::exception& e)
     {
-        ALOGW("ExecuteWithDummyInputs: armnn::Exception caught from EnqueueWorkload: %s", e.what());
+        ALOGW("ExecuteWithDummyInputs: Exception caught from EnqueueWorkload: %s", e.what());
         return false;
     }
     return true;
@@ -707,9 +707,9 @@ Return <ErrorStatus> ArmnnPreparedModel_1_2<HalVersion>::Execute(const Request& 
             }
         }
     }
-    catch (armnn::Exception& e)
+    catch (std::exception& e)
     {
-        ALOGW("armnn::Exception caught while preparing for EnqueueWorkload: %s", e.what());
+        ALOGW("Exception caught while preparing for EnqueueWorkload: %s", e.what());
         callback(ErrorStatus::GENERAL_FAILURE, {}, g_NoTiming, "ArmnnPreparedModel_1_2::execute");
         return ErrorStatus::GENERAL_FAILURE;
     }
