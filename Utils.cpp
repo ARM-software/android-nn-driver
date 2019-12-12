@@ -6,6 +6,7 @@
 #define LOG_TAG "ArmnnDriver"
 
 #include "Utils.hpp"
+#include "Half.hpp"
 
 #include <armnnUtils/Permute.hpp>
 
@@ -239,6 +240,11 @@ void DumpTensor(const std::string& dumpDir,
         case armnn::DataType::Signed32:
         {
             dumpElementFunction = &DumpTensorElement<int32_t>;
+            break;
+        }
+        case armnn::DataType::Float16:
+        {
+            dumpElementFunction = &DumpTensorElement<armnn::Half>;
             break;
         }
         default:
