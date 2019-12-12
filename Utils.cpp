@@ -226,6 +226,11 @@ void DumpTensor(const std::string& dumpDir,
             dumpElementFunction = &DumpTensorElement<int32_t>;
             break;
         }
+        case armnn::DataType::Float16:
+        {
+            dumpElementFunction = &DumpTensorElement<armnn::Half>;
+            break;
+        }
         default:
         {
             dumpElementFunction = nullptr;
