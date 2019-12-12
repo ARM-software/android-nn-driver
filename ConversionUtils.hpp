@@ -241,6 +241,7 @@ armnn::IConnectableLayer& AddReshapeLayer(armnn::INetwork& network,
 
 bool BroadcastTensor(LayerInputHandle& input0,
                      LayerInputHandle& input1,
+                     const armnn::TensorInfo& outputInfo,
                      armnn::IConnectableLayer* startLayer,
                      ConversionData& data)
 {
@@ -292,6 +293,7 @@ bool BroadcastTensor(LayerInputHandle& input0,
                                data.m_Backends,
                                isSupported,
                                reshapedInfo,
+                               outputInfo,
                                reshapeDescriptor);
     if (!isSupported)
     {
@@ -559,6 +561,41 @@ void SwizzleInputs(armnn::INetwork& network,
         }
     }
 }
+
+bool CheckReshapeSupported(ConversionData& data,
+                           std::vector<LayerInputHandle>& inputs,
+                           std::vector<armnn::TensorShape>& inputShapes,
+                           const armnn::PermutationVector& mapping,
+                           const armnn::TensorInfo& outputInfo)
+{
+    if (!mapping.IsEqual(IdentityPermutation4D))
+    {
+        size_t nInputs = inputs.size();
+        for (size_t i=0; i<nInputs; ++i)
+        {
+            // check permute layer
+            armnn::PermuteDescriptor permuteDesc;
+            permuteDesc.m_DimMappings = mapping;
+
+            bool isSupported = false;
+            FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                       IsPermuteSupported,
+                                       data.m_Backends,
+                                       isSupported,
+                                       inputs[i].GetTensorInfo(),
+                                       outputInfo,
+                                       permuteDesc);
+            if (!isSupported)
+            {
+                return false;
+            }
+
+        }
+        SwizzleInputs(*data.m_Network, inputs, inputShapes, mapping);
+    }
+    return true;
+}
+
 
 bool CreateConcatPermutationParameters(const unsigned int numberOfDimensions,
                                        int32_t & concatDimension,
@@ -1557,7 +1594,7 @@ bool ConvertAdd(const HalOperation& operation, const HalModel& model, Conversion
 
     if (endLayer != nullptr)
     {
-        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
+        bool isReshapeSupported = BroadcastTensor(input0, input1, outputInfo, startLayer, data);
         if (!isReshapeSupported)
         {
             return false;
@@ -1742,6 +1779,22 @@ bool ConvertConcatenation(const HalOperation& operation, const HalModel& model, 
                 tensorDimensionsAdded = 2;
             }
 
+            armnn::ReshapeDescriptor reshapeDescriptor;
+            reshapeDescriptor.m_TargetShape = reshapeInfo.GetShape();
+
+            bool isSupported = false;
+            FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                       IsReshapeSupported,
+                                       data.m_Backends,
+                                       isSupported,
+                                       operandInputHandle.GetTensorInfo(),
+                                       reshapeInfo,
+                                       reshapeDescriptor);
+            if (!isSupported)
+            {
+                return false;
+            }
+
             armnn::IConnectableLayer& newReshape = AddReshapeLayer(
                     *data.m_Network,
                     operandInputHandle,
@@ -1797,7 +1850,10 @@ bool ConvertConcatenation(const HalOperation& operation, const HalModel& model, 
 
     // this is no-op for identity swizzles, otherwise it replaces both
     // the handles and shapes with the swizzled layer output handles and shapes
-    SwizzleInputs(*data.m_Network, inputHandles, inputShapes, permutationPair.first);
+    if (!CheckReshapeSupported(data, inputHandles, inputShapes, permutationPair.first, outputInfo))
+    {
+        return false;
+    }
 
     // Create an armnn concat layer descriptor - this will also perform validation on the input shapes
     armnn::OriginsDescriptor concatDescriptor;
@@ -1853,6 +1909,21 @@ bool ConvertConcatenation(const HalOperation& operation, const HalModel& model, 
 
     if (needPermute)
     {
+        armnn::PermuteDescriptor permuteDesc;
+        permuteDesc.m_DimMappings = permutationPair.second;
+
+        bool isSupported = false;
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsPermuteSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   layer->GetOutputSlot(0).GetTensorInfo(),
+                                   outputInfo,
+                                   permuteDesc);
+        if (!isSupported)
+        {
+            return false;
+        }
         // Add permutation layer and connect the output to it, the permutation becomes the output layer
         armnn::IConnectableLayer& deswizzleLayer = AddPermuteLayer(*data.m_Network,
                                                                    layer->GetOutputSlot(0),
@@ -1873,6 +1944,22 @@ bool ConvertConcatenation(const HalOperation& operation, const HalModel& model, 
         else if (tensorDimensionsAdded == 2)
         {
             afterConcatInfo.SetShape(armnn::TensorShape({ afterConcatInfo.GetShape()[2] }));
+        }
+
+        armnn::ReshapeDescriptor reshapeDescriptor;
+        reshapeDescriptor.m_TargetShape = afterConcatInfo.GetShape();
+
+        bool isSupported = false;
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsReshapeSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   layer->GetOutputSlot(0).GetTensorInfo(),
+                                   afterConcatInfo,
+                                   reshapeDescriptor);
+        if (!isSupported)
+        {
+            return false;
         }
 
         layer = &AddReshapeLayer(
@@ -2321,7 +2408,7 @@ bool ConvertDiv(const HalOperation& operation, const HalModel& model, Conversion
 
     if (endLayer)
     {
-        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
+        bool isReshapeSupported = BroadcastTensor(input0, input1, outputInfo, startLayer, data);
         if (!isReshapeSupported)
         {
             return false;
@@ -2922,7 +3009,7 @@ bool ConvertMul(const HalOperation& operation, const HalModel& model, Conversion
 
     if (endLayer != nullptr)
     {
-        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
+        bool isReshapeSupported = BroadcastTensor(input0, input1, outputInfo, startLayer, data);
         if (!isReshapeSupported)
         {
             return false;
@@ -3061,6 +3148,7 @@ bool ConvertReshape(const HalOperation& operation, const HalModel& model, Conver
                                data.m_Backends,
                                isSupported,
                                input.GetTensorInfo(),
+                               GetTensorInfoForOperand(*outputOperand),
                                reshapeDescriptor);
     if (!isSupported)
     {
@@ -3130,7 +3218,7 @@ bool ConvertSub(const HalOperation& operation, const HalModel& model, Conversion
 
     if (endLayer)
     {
-        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
+        bool isReshapeSupported = BroadcastTensor(input0, input1, outputInfo, startLayer, data);
         if (!isReshapeSupported)
         {
             return false;
@@ -3214,6 +3302,7 @@ bool ConvertSqueeze(const HalOperation& operation, const HalModel& model, Conver
                                data.m_Backends,
                                isSupported,
                                inputInfo,
+                               outputInfo,
                                reshapeDesc);
     if (!isSupported)
     {
