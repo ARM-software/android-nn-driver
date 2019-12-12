@@ -551,7 +551,7 @@ bool HalPolicy::ConvertMaximum(const Operation& operation, const Model& model, C
 
     armnn::IConnectableLayer* layer = data.m_Network->AddMaximumLayer();
     assert(layer != nullptr);
-    bool isReshapeSupported = BroadcastTensor(input0, input1, layer, data);
+    bool isReshapeSupported = BroadcastTensor(input0, input1, outInfo, layer, data);
     if (!isReshapeSupported)
     {
         return false;
@@ -606,7 +606,7 @@ bool HalPolicy::ConvertMinimum(const Operation& operation, const Model& model, C
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddMinimumLayer();
     assert(layer != nullptr);
-    bool isReshapeSupported = BroadcastTensor(input0, input1, layer, data);
+    bool isReshapeSupported = BroadcastTensor(input0, input1, outputInfo, layer, data);
     if (!isReshapeSupported)
     {
         return false;
@@ -769,7 +769,7 @@ bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, Con
         return Fail("%s: AddPreluLayer failed", __func__);
     }
 
-    bool isReshapeSupported = BroadcastTensor(input, alpha, layer, data);
+    bool isReshapeSupported = BroadcastTensor(input, alpha, outputInfo, layer, data);
     if (!isReshapeSupported)
     {
         return false;
