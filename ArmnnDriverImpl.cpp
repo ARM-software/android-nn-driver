@@ -131,7 +131,7 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
 
     // Export the optimized network graph to a dot file if an output dump directory
     // has been specified in the drivers' arguments.
-    ExportNetworkGraphToDotFile<HalModel>(*optNet, options.GetRequestInputsAndOutputsDumpDir(), model);
+    std::string dotGraphFileName = ExportNetworkGraphToDotFile(*optNet, options.GetRequestInputsAndOutputsDumpDir());
 
     // Load it into the runtime.
     armnn::NetworkId netId = 0;
@@ -149,6 +149,12 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
         FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
         return ErrorStatus::NONE;
     }
+
+    // Now that we have a networkId for the graph rename the dump file to use it
+    // so that we can associate the graph file and the input/output tensor dump files
+    RenameGraphDotFile(dotGraphFileName,
+                       options.GetRequestInputsAndOutputsDumpDir(),
+                       netId);
 
     sp<ArmnnPreparedModel<HalPolicy>> preparedModel(
             new ArmnnPreparedModel<HalPolicy>(
@@ -191,7 +197,31 @@ Return<void> ArmnnDriverImpl<HalPolicy>::getSupportedOperations(const armnn::IRu
                                                                 const HalModel& model,
                                                                 HalGetSupportedOperations_cb cb)
 {
-    ALOGV("ArmnnDriverImpl::getSupportedOperations()");
+    std::stringstream ss;
+    ss << "ArmnnDriverImpl::getSupportedOperations()";
+    std::string fileName;
+    std::string timestamp;
+    if (!options.GetRequestInputsAndOutputsDumpDir().empty())
+    {
+        timestamp = GetFileTimestamp();
+        fileName = boost::str(boost::format("%1%/%2%_getSupportedOperations.txt")
+                          % options.GetRequestInputsAndOutputsDumpDir()
+                          % timestamp);
+        ss << " : " << fileName;
+    }
+    ALOGV(ss.str().c_str());
+
+    if (!options.GetRequestInputsAndOutputsDumpDir().empty())
+    {
+        //dump the marker file
+        std::ofstream fileStream;
+        fileStream.open(fileName, std::ofstream::out | std::ofstream::trunc);
+        if (fileStream.good())
+        {
+            fileStream << timestamp << std::endl;
+        }
+        fileStream.close();
+    }
 
     vector<bool> result;
 

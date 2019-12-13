@@ -119,7 +119,7 @@ public:
 
     Return<void> getVersionString(getVersionString_cb cb)
     {
-        ALOGV("hal_1_2::ArmnnDriver::getSupportedOperations()");
+        ALOGV("hal_1_2::ArmnnDriver::getVersionString()");
 
         cb(ErrorStatus::NONE, "ArmNN");
         return Void();
