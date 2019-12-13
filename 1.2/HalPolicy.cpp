@@ -172,6 +172,10 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
         desc.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 10, model, data);
     }
 
+    if (desc.m_DataLayout == armnn::DataLayout::NCHW)
+    {
+        return Fail("%s: Operation has invalid inputs NCHW is not supported", __func__);
+    }
     const armnn::PermutationVector OHWIToOIHW = {0, 2, 3, 1};
 
     // ArmNN does not currently support non-fixed weights or bias
@@ -335,6 +339,10 @@ bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& 
     const uint32_t dataLayoutFlagIndex = implicitPadding ? 8 : 11;
     desc.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, dataLayoutFlagIndex, model, data);
 
+    if (desc.m_DataLayout == armnn::DataLayout::NCHW)
+    {
+        return Fail("%s: Operation has invalid inputs NCHW is not supported", __func__);
+    }
     armnnUtils::DataLayoutIndexed dataLayoutIndexed(desc.m_DataLayout);
     unsigned int channelsIndex = dataLayoutIndexed.GetChannelsIndex();
     unsigned int widthIndex = dataLayoutIndexed.GetWidthIndex();
@@ -1082,6 +1090,11 @@ bool HalPolicy::ConvertResize(const Operation& operation,
     descriptor.m_Method     = resizeMethod;
     descriptor.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 3, model, data);
 
+    if (descriptor.m_DataLayout == armnn::DataLayout::NCHW)
+    {
+        return Fail("%s: Operation has invalid inputs NCHW is not supported", __func__);
+    }
+
     OperandType operandType1;
     OperandType operandType2;
 
@@ -1213,6 +1226,11 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
     }
 
     desc.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 2, model, data);
+
+    if (desc.m_DataLayout == armnn::DataLayout::NCHW)
+    {
+        return Fail("%s: Operation has invalid inputs NCHW is not supported", __func__);
+    }
 
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
@@ -1807,6 +1825,11 @@ bool HalPolicy::ConvertTransposeConv2d(const Operation& operation, const Model& 
     else
     {
         desc.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 10, model, data);
+    }
+
+    if (desc.m_DataLayout == armnn::DataLayout::NCHW)
+    {
+        return Fail("%s: Operation has invalid inputs NCHW is not supported", __func__);
     }
 
     armnnUtils::DataLayoutIndexed dataLayoutIndexed(desc.m_DataLayout);
