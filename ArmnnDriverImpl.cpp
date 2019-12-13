@@ -129,10 +129,6 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
         return ErrorStatus::NONE;
     }
 
-    // Export the optimized network graph to a dot file if an output dump directory
-    // has been specified in the drivers' arguments.
-    ExportNetworkGraphToDotFile<HalModel>(*optNet, options.GetRequestInputsAndOutputsDumpDir(), model);
-
     // Load it into the runtime.
     armnn::NetworkId netId = 0;
     try
@@ -149,6 +145,10 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
         FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
         return ErrorStatus::NONE;
     }
+
+    // Export the optimized network graph to a dot file if an output dump directory
+    // has been specified in the drivers' arguments.
+    ExportNetworkGraphToDotFile(*optNet, options.GetRequestInputsAndOutputsDumpDir(), netId);
 
     unique_ptr<ArmnnPreparedModel<HalPolicy>> preparedModel(
             new ArmnnPreparedModel<HalPolicy>(

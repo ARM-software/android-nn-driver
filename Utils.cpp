@@ -343,6 +343,39 @@ void DumpJsonProfilingIfRequired(bool gpuProfilingEnabled,
     profiler->Print(fileStream);
 }
 
+void ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimizedNetwork,
+                                 const std::string& dumpDir,
+                                 const armnn::NetworkId networkId)
+{
+    // The dump directory must exist in advance.
+    if (dumpDir.empty())
+    {
+        return;
+    }
+
+    // Set the name of the output .dot file.
+    const std::string fileName = boost::str(boost::format("%1%/%2%_networkgraph.dot")
+                                            % dumpDir
+                                            % std::to_string(networkId));
+
+    ALOGV("Exporting the optimized network graph to file: %s", fileName.c_str());
+
+    // Write the network graph to a dot file.
+    std::ofstream fileStream;
+    fileStream.open(fileName, std::ofstream::out | std::ofstream::trunc);
+
+    if (!fileStream.good())
+    {
+        ALOGW("Could not open file %s for writing", fileName.c_str());
+        return;
+    }
+
+    if (optimizedNetwork.SerializeToDot(fileStream) != armnn::Status::Success)
+    {
+        ALOGW("An error occurred when writing to file %s", fileName.c_str());
+    }
+}
+
 bool IsDynamicTensor(const armnn::TensorInfo& outputInfo)
 {
     // Dynamic tensors have at least one 0-sized dimension
