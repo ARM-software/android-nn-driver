@@ -11,7 +11,13 @@
 #include <Permute.hpp>
 
 #include <cassert>
+#include <cerrno>
 #include <cinttypes>
+#include <sstream>
+#include <cstdio>
+#include <time.h>
+
+
 
 using namespace android;
 using namespace android::hardware;
@@ -343,20 +349,26 @@ void DumpJsonProfilingIfRequired(bool gpuProfilingEnabled,
     profiler->Print(fileStream);
 }
 
-void ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimizedNetwork,
-                                 const std::string& dumpDir,
-                                 const armnn::NetworkId networkId)
+std::string ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimizedNetwork,
+                                        const std::string& dumpDir)
 {
+    std::string fileName;
     // The dump directory must exist in advance.
     if (dumpDir.empty())
     {
-        return;
+        return fileName;
+    }
+
+    std::string timestamp = GetFileTimestamp();
+    if (timestamp.empty())
+    {
+        return fileName;
     }
 
     // Set the name of the output .dot file.
-    const std::string fileName = boost::str(boost::format("%1%/%2%_networkgraph.dot")
-                                            % dumpDir
-                                            % std::to_string(networkId));
+    fileName = boost::str(boost::format("%1%/%2%_networkgraph.dot")
+                          % dumpDir
+                          % timestamp);
 
     ALOGV("Exporting the optimized network graph to file: %s", fileName.c_str());
 
@@ -367,13 +379,14 @@ void ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimizedNetwor
     if (!fileStream.good())
     {
         ALOGW("Could not open file %s for writing", fileName.c_str());
-        return;
+        return fileName;
     }
 
     if (optimizedNetwork.SerializeToDot(fileStream) != armnn::Status::Success)
     {
         ALOGW("An error occurred when writing to file %s", fileName.c_str());
     }
+    return fileName;
 }
 
 bool IsDynamicTensor(const armnn::TensorInfo& outputInfo)
@@ -381,5 +394,48 @@ bool IsDynamicTensor(const armnn::TensorInfo& outputInfo)
     // Dynamic tensors have at least one 0-sized dimension
     return outputInfo.GetNumElements() == 0u;
 }
+
+std::string GetFileTimestamp()
+{
+    // used to get a timestamp to name diagnostic files (the ArmNN serialized graph
+    // and getSupportedOperations.txt files)
+    timespec ts;
+    int iRet = clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+    std::stringstream ss;
+    if (iRet == 0)
+    {
+        ss << std::to_string(ts.tv_sec) << "_" << std::to_string(ts.tv_nsec);
+    }
+    else
+    {
+        ALOGW("clock_gettime failed with errno %s : %s", std::to_string(errno).c_str(), std::strerror(errno));
+    }
+    return ss.str();
+}
+
+void RenameGraphDotFile(const std::string& oldName, const std::string& dumpDir, const armnn::NetworkId networkId)
+{
+    if (dumpDir.empty())
+    {
+        return;
+    }
+    if (oldName.empty())
+    {
+        return;
+    }
+    const std::string newFileName = boost::str(boost::format("%1%/%2%_networkgraph.dot")
+                                               % dumpDir
+                                               % std::to_string(networkId));
+    int iRet = rename(oldName.c_str(), newFileName.c_str());
+    if (iRet != 0)
+    {
+        std::stringstream ss;
+        ss << "rename of [" << oldName << "] to [" << newFileName << "] failed with errno " << std::to_string(errno)
+           << " : " << std::strerror(errno);
+        ALOGW(ss.str().c_str());
+    }
+}
+
+
 
 } // namespace armnn_driver

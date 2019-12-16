@@ -104,11 +104,14 @@ void DumpJsonProfilingIfRequired(bool gpuProfilingEnabled,
                                  armnn::NetworkId networkId,
                                  const armnn::IProfiler* profiler);
 
-void ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimizedNetwork,
-                                 const std::string& dumpDir,
-                                 const armnn::NetworkId networkId);
+std::string ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimizedNetwork,
+                                        const std::string& dumpDir);
+
+void RenameGraphDotFile(const std::string& oldName, const std::string& dumpDir, const armnn::NetworkId networkId);
 
 /// Checks if a tensor info represents a dynamic tensor
 bool IsDynamicTensor(const armnn::TensorInfo& outputInfo);
+
+std::string GetFileTimestamp();
 
 } // namespace armnn_driver
