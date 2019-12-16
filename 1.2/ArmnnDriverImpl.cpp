@@ -161,8 +161,8 @@ Return<ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(const armnn::IRuntime
 
     // Export the optimized network graph to a dot file if an output dump directory
     // has been specified in the drivers' arguments.
-    ExportNetworkGraphToDotFile<hal_1_2::HalPolicy::Model>(*optNet, options.GetRequestInputsAndOutputsDumpDir(),
-            model);
+    std::string dotGraphFileName = ExportNetworkGraphToDotFile(*optNet,
+                                                               options.GetRequestInputsAndOutputsDumpDir());
 
     // Load it into the runtime.
     armnn::NetworkId netId = 0;
@@ -180,6 +180,12 @@ Return<ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(const armnn::IRuntime
         FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
         return ErrorStatus::NONE;
     }
+
+    // Now that we have a networkId for the graph rename the dump file to use it
+    // so that we can associate the graph file and the input/output tensor dump files
+    RenameGraphDotFile(dotGraphFileName,
+                       options.GetRequestInputsAndOutputsDumpDir(),
+                       netId);
 
     std::unique_ptr<ArmnnPreparedModel_1_2<hal_1_2::HalPolicy>> preparedModel(
             new ArmnnPreparedModel_1_2<hal_1_2::HalPolicy>(
