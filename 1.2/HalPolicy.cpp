@@ -43,6 +43,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertFullyConnected(operation, model, data);
         case V1_2::OperationType::L2_NORMALIZATION:
             return ConvertL2Normalization(operation, model, data);
+        case V1_2::OperationType::L2_POOL_2D:
+            return ConvertL2Pool2d(operation, model, data);
         case V1_2::OperationType::LOCAL_RESPONSE_NORMALIZATION:
             return ConvertLocalResponseNormalization(operation, model, data);
         case V1_2::OperationType::LOGISTIC:
@@ -490,6 +492,12 @@ bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& 
 {
     ALOGV("hal_1_2::HalPolicy::ConvertL2Normalization()");
     return ::ConvertL2Normalization<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertL2Pool2d(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertL2Pool2d()");
+    return ConvertPooling2d<hal_1_2::HalPolicy>(operation, __func__, armnn::PoolingAlgorithm::L2, model, data);
 }
 
 bool HalPolicy::ConvertLocalResponseNormalization(const Operation& operation,
