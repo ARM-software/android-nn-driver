@@ -181,6 +181,7 @@ inline bool IsOperandTypeSupportedForTensors(V1_0::OperandType type)
 inline bool IsOperandTypeSupportedForTensors(V1_2::OperandType type)
 {
     return type == V1_2::OperandType::BOOL                ||
+           type == V1_2::OperandType::TENSOR_FLOAT16      ||
            type == V1_2::OperandType::TENSOR_FLOAT32      ||
            type == V1_2::OperandType::TENSOR_QUANT8_ASYMM ||
            type == V1_2::OperandType::TENSOR_QUANT16_SYMM ||
