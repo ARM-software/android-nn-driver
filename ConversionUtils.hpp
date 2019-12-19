@@ -241,7 +241,6 @@ armnn::IConnectableLayer& AddReshapeLayer(armnn::INetwork& network,
 
 bool BroadcastTensor(LayerInputHandle& input0,
                      LayerInputHandle& input1,
-                     const armnn::TensorInfo& outputInfo,
                      armnn::IConnectableLayer* startLayer,
                      ConversionData& data)
 {
@@ -292,8 +291,8 @@ bool BroadcastTensor(LayerInputHandle& input0,
                                IsReshapeSupported,
                                data.m_Backends,
                                isSupported,
+                               smallInfo,
                                reshapedInfo,
-                               outputInfo,
                                reshapeDescriptor);
     if (!isSupported)
     {
@@ -1594,7 +1593,7 @@ bool ConvertAdd(const HalOperation& operation, const HalModel& model, Conversion
 
     if (endLayer != nullptr)
     {
-        bool isReshapeSupported = BroadcastTensor(input0, input1, outputInfo, startLayer, data);
+        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
         if (!isReshapeSupported)
         {
             return false;
@@ -2408,7 +2407,7 @@ bool ConvertDiv(const HalOperation& operation, const HalModel& model, Conversion
 
     if (endLayer)
     {
-        bool isReshapeSupported = BroadcastTensor(input0, input1, outputInfo, startLayer, data);
+        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
         if (!isReshapeSupported)
         {
             return false;
@@ -3009,7 +3008,7 @@ bool ConvertMul(const HalOperation& operation, const HalModel& model, Conversion
 
     if (endLayer != nullptr)
     {
-        bool isReshapeSupported = BroadcastTensor(input0, input1, outputInfo, startLayer, data);
+        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
         if (!isReshapeSupported)
         {
             return false;
@@ -3218,7 +3217,7 @@ bool ConvertSub(const HalOperation& operation, const HalModel& model, Conversion
 
     if (endLayer)
     {
-        bool isReshapeSupported = BroadcastTensor(input0, input1, outputInfo, startLayer, data);
+        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
         if (!isReshapeSupported)
         {
             return false;
