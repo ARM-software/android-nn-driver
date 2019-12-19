@@ -3215,11 +3215,6 @@ bool ConvertBatchToSpaceNd(const HalOperation& operation,
     if (Is12Operand(*output))
     {
         batchToSpaceNdDesc.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 2, model, data);
-
-        if (batchToSpaceNdDesc.m_DataLayout == armnn::DataLayout::NCHW)
-        {
-            return Fail("%s: Operation has invalid inputs NCHW is not supported", __func__);
-        }
     }
     // Setting crops to 0,0 0,0 as it is not supported in Android NN API
     batchToSpaceNdDesc.m_Crops = {{0, 0}, {0, 0}};
@@ -3322,11 +3317,6 @@ bool ConvertSpaceToBatchNd(const HalOperation& operation, const HalModel& model,
     if (Is12Operand(*output))
     {
         descriptor.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 3, model, data);
-
-        if (descriptor.m_DataLayout == armnn::DataLayout::NCHW)
-        {
-            return Fail("%s: Operation has invalid inputs NCHW is not supported", __func__);
-        }
     }
 
     bool isSupported = false;
