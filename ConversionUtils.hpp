@@ -1430,6 +1430,11 @@ bool ConvertPooling2d(const HalOperation& operation,
         if (Is12Operand(*output))
         {
             desc.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 10, model, data);
+
+            if (desc.m_DataLayout == armnn::DataLayout::NCHW)
+            {
+                return Fail("%s: Operation has invalid inputs NCHW is not supported", operationName);
+            }
         }
     }
     else
@@ -1449,6 +1454,11 @@ bool ConvertPooling2d(const HalOperation& operation,
         if (Is12Operand(*output))
         {
             desc.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 7, model, data);
+
+            if (desc.m_DataLayout == armnn::DataLayout::NCHW)
+            {
+                return Fail("%s: Operation has invalid inputs NCHW is not supported", operationName);
+            }
         }
 
         const armnnUtils::DataLayoutIndexed dataLayout(desc.m_DataLayout);
