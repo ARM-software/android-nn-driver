@@ -181,12 +181,14 @@ inline bool IsOperandTypeSupportedForTensors(V1_0::OperandType type)
 
 #ifdef ARMNN_ANDROID_NN_V1_2
 
+// Support within the 1.2 driver for specific tensor data types
 inline bool IsOperandTypeSupportedForTensors(V1_2::OperandType type)
 {
     return type == V1_2::OperandType::BOOL                           ||
            type == V1_2::OperandType::TENSOR_FLOAT16                 ||
            type == V1_2::OperandType::TENSOR_FLOAT32                 ||
            type == V1_2::OperandType::TENSOR_QUANT8_ASYMM            ||
+           type == V1_2::OperandType::TENSOR_QUANT8_SYMM             ||
            type == V1_2::OperandType::TENSOR_QUANT8_SYMM_PER_CHANNEL ||
            type == V1_2::OperandType::TENSOR_QUANT16_SYMM            ||
            type == V1_2::OperandType::TENSOR_INT32;
