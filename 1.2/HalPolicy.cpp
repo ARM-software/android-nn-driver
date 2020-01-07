@@ -1223,11 +1223,6 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
 
     desc.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 2, model, data);
 
-    if (desc.m_DataLayout == armnn::DataLayout::NCHW)
-    {
-        return Fail("%s: Operation has invalid inputs NCHW is not supported", __func__);
-    }
-
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsSpaceToDepthSupported,
