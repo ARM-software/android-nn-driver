@@ -31,8 +31,6 @@ public:
     static bool ConvertOperation(const Operation& operation, const Model& model, ConversionData& data);
 
 private:
-    static bool ConvertAbs(const Operation& operation, const Model& model, ConversionData& data);
-
     static bool ConvertAdd(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertArgMinMax(const Operation& operation,
@@ -62,6 +60,11 @@ private:
     static bool ConvertDiv(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertExpandDims(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertElementwiseUnary(const Operation& operation,
+                                        const Model& model,
+                                        ConversionData& data,
+                                        armnn::UnaryOperation unaryOperation);
 
     static bool ConvertFloor(const Operation& operation, const Model& model, ConversionData& data);
 
@@ -117,8 +120,6 @@ private:
                               const Model& model,
                               ConversionData& data,
                               armnn::ResizeMethod resizeMethod);
-
-    static bool ConvertRsqrt(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertSoftmax(const Operation& operation, const Model& model, ConversionData& data);
 

@@ -85,7 +85,7 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
     switch (operation.type)
     {
         case V1_2::OperationType::ABS:
-            return ConvertAbs(operation, model, data);
+            return ConvertElementwiseUnary(operation, model, data, UnaryOperation::Abs);
         case V1_2::OperationType::ADD:
             return ConvertAdd(operation, model, data);
         case V1_2::OperationType::ARGMAX:
@@ -175,7 +175,7 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
         case V1_2::OperationType::RESIZE_NEAREST_NEIGHBOR:
             return ConvertResize(operation, model, data, ResizeMethod::NearestNeighbor);
         case V1_2::OperationType::RSQRT:
-            return ConvertRsqrt(operation, model, data);
+            return ConvertElementwiseUnary(operation, model, data, UnaryOperation::Rsqrt);
         case V1_2::OperationType::SQRT:
             return ConvertSqrt(operation, model, data);
         case V1_2::OperationType::SQUEEZE:
@@ -200,12 +200,6 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return Fail("%s: Operation type %s not supported in ArmnnDriver",
                         __func__, toString(operation.type).c_str());
     }
-}
-
-bool HalPolicy::ConvertAbs(const Operation& operation, const Model& model, ConversionData& data)
-{
-    ALOGV("hal_1_2::HalPolicy::ConvertAbs()");
-    return ::ConvertAbs<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, ConversionData& data)
@@ -646,6 +640,59 @@ bool HalPolicy::ConvertDiv(const Operation& operation, const Model& model, Conve
 {
     ALOGV("hal_1_2::HalPolicy::ConvertDiv()");
     return ::ConvertDiv<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertElementwiseUnary(const Operation& operation,
+                                        const Model& model,
+                                        ConversionData& data,
+                                        UnaryOperation unaryOperation)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertElementwiseUnary()");
+    ALOGV("unaryOperation = %s", GetUnaryOperationAsCString(unaryOperation));
+
+    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
+
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid input", __func__);
+    }
+
+    const Operand* output = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const TensorInfo& inputInfo = input.GetTensorInfo();
+    const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    ElementwiseUnaryDescriptor descriptor(unaryOperation);
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsElementwiseUnarySupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               descriptor);
+
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    IConnectableLayer* layer = data.m_Network->AddElementwiseUnaryLayer(descriptor);
+    assert(layer != nullptr);
+
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
 }
 
 bool HalPolicy::ConvertExpandDims(const Operation& operation, const Model& model, ConversionData& data)
@@ -1930,48 +1977,6 @@ bool HalPolicy::ConvertResize(const Operation& operation,
 
     assert(layer != nullptr);
 
-    input.Connect(layer->GetInputSlot(0));
-
-    return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
-}
-
-bool HalPolicy::ConvertRsqrt(const Operation& operation, const Model& model, ConversionData& data)
-{
-    ALOGV("hal_1_2::HalPolicy::ConvertRsqrt()");
-
-    LayerInputHandle input = ConvertToLayerInputHandle<hal_1_2::HalPolicy>(operation, 0, model, data);
-    if (!input.IsValid())
-    {
-        return Fail("%s: Operation has invalid input", __func__);
-    }
-
-    const Operand* output = GetOutputOperand<hal_1_2::HalPolicy>(operation, 0, model);
-    if (!output)
-    {
-        return Fail("%s: Could not read output 0", __func__);
-    }
-
-    const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
-
-    bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsRsqrtSupported,
-                               data.m_Backends,
-                               isSupported,
-                               input.GetTensorInfo(),
-                               outputInfo);
-
-    if (!isSupported)
-    {
-        return false;
-    }
-
-    IConnectableLayer* const layer = data.m_Network->AddRsqrtLayer();
-    assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
