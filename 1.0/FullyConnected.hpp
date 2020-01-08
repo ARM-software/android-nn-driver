@@ -12,8 +12,8 @@
 namespace armnn_driver
 {
 
-inline armnn::TensorShape FlattenFullyConnectedInput(const armnn::TensorShape &inputShape,
-                                                     const armnn::TensorShape &weightsShape)
+inline armnn::TensorShape FlattenFullyConnectedInput(const armnn::TensorShape& inputShape,
+                                                     const armnn::TensorShape& weightsShape)
 {
     if (inputShape.GetNumDimensions() > 2U)
     {
@@ -33,6 +33,15 @@ inline armnn::TensorShape FlattenFullyConnectedInput(const armnn::TensorShape &i
     {
         return inputShape;
     }
+}
+
+inline bool VerifyFullyConnectedShapes(const armnn::TensorShape& inputShape,
+                                       const armnn::TensorShape& weightsShape,
+                                       const armnn::TensorShape& outputShape,
+                                       bool  transposeWeightMatrix)
+{
+    unsigned int dimIdx = transposeWeightMatrix ? 0 : 1;
+    return (inputShape[0] == outputShape[0] && weightsShape[dimIdx] == outputShape[1]);
 }
 
 }
