@@ -2645,6 +2645,14 @@ bool ConvertFullyConnected(const Operation& operation, const Model& model, Conve
     desc.m_TransposeWeightMatrix = true;
     desc.m_BiasEnabled           = true;
 
+    if (!VerifyFullyConnectedShapes(reshapedInfo.GetShape(),
+                                    weights.GetInfo().GetShape(),
+                                    outputInfo.GetShape(),
+                                    desc.m_TransposeWeightMatrix))
+    {
+        return Fail("%s: Expected outputShape does not match actual outputShape", __func__);
+    }
+
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsFullyConnectedSupported,
