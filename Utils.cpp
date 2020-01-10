@@ -43,7 +43,7 @@ void SwizzleAndroidNn4dTensorToArmNn(const armnn::TensorInfo& tensor, const void
     {
     case armnn::DataType::Float16:
     case armnn::DataType::Float32:
-    case armnn::DataType::QuantisedAsymm8:
+    case armnn::DataType::QAsymmU8:
     case armnn::DataType::QuantizedSymm8PerAxis:
         SwizzleAndroidNn4dTensorToArmNn(tensor.GetShape(), input, output, armnn::GetDataTypeSize(dataType), mappings);
         break;
@@ -83,7 +83,7 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_0::Operand& operand)
             type = armnn::DataType::Float32;
             break;
         case V1_0::OperandType::TENSOR_QUANT8_ASYMM:
-            type = armnn::DataType::QuantisedAsymm8;
+            type = armnn::DataType::QAsymmU8;
             break;
         case V1_0::OperandType::TENSOR_INT32:
             type = armnn::DataType::Signed32;
@@ -119,13 +119,13 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_2::Operand& operand)
             type = armnn::DataType::QuantizedSymm8PerAxis;
             break;
         case V1_2::OperandType::TENSOR_QUANT8_ASYMM:
-            type = armnn::DataType::QuantisedAsymm8;
+            type = armnn::DataType::QAsymmU8;
             break;
         case V1_2::OperandType::TENSOR_QUANT8_SYMM:
             type = armnn::DataType::QSymmS8;
             break;
         case V1_2::OperandType::TENSOR_QUANT16_SYMM:
-            type = armnn::DataType::QuantisedSymm16;
+            type = armnn::DataType::QSymmS16;
             break;
         case V1_2::OperandType::TENSOR_INT32:
             type = armnn::DataType::Signed32;
@@ -228,7 +228,7 @@ void DumpTensor(const std::string& dumpDir,
             dumpElementFunction = &DumpTensorElement<float>;
             break;
         }
-        case armnn::DataType::QuantisedAsymm8:
+        case armnn::DataType::QAsymmU8:
         {
             dumpElementFunction = &DumpTensorElement<uint8_t, uint32_t>;
             break;
