@@ -172,10 +172,6 @@ bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, Co
         desc.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 10, model, data);
     }
 
-    if (desc.m_DataLayout == armnn::DataLayout::NCHW)
-    {
-        return Fail("%s: Operation has invalid inputs NCHW is not supported", __func__);
-    }
     const armnn::PermutationVector OHWIToOIHW = {0, 2, 3, 1};
 
     // ArmNN does not currently support non-fixed weights or bias
@@ -1085,11 +1081,6 @@ bool HalPolicy::ConvertResize(const Operation& operation,
     armnn::ResizeDescriptor descriptor;
     descriptor.m_Method     = resizeMethod;
     descriptor.m_DataLayout = OptionalDataLayout<hal_1_2::HalPolicy>(operation, 3, model, data);
-
-    if (descriptor.m_DataLayout == armnn::DataLayout::NCHW)
-    {
-        return Fail("%s: Operation has invalid inputs NCHW is not supported", __func__);
-    }
 
     OperandType operandType1;
     OperandType operandType2;
