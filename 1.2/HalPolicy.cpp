@@ -2697,11 +2697,11 @@ bool HalPolicy::ConvertTransposeConv2d(const Operation& operation, const Model& 
 
         const uint32_t kernelX = weights.GetShape()[widthIndex];
         const uint32_t kernelY = weights.GetShape()[heightIndex];
-        const uint32_t outputX  = outputInfo.GetShape()[widthIndex];
-        const uint32_t outputY  = outputInfo.GetShape()[heightIndex];
+        const uint32_t outputX = outputInfo.GetShape()[widthIndex];
+        const uint32_t outputY = outputInfo.GetShape()[heightIndex];
 
-        CalcPaddingTransposeConv(outputX, kernelX, desc.m_StrideX, padLeft, padRight, paddingScheme);
-        CalcPaddingTransposeConv(outputY, kernelY, desc.m_StrideY, padTop, padBottom, paddingScheme);
+        CalcPaddingTransposeConv(outputX, kernelX, strideX, padLeft, padRight, paddingScheme);
+        CalcPaddingTransposeConv(outputY, kernelY, strideY, padTop, padBottom, paddingScheme);
 
         // NOTE: The Android NN API allows for negative padding values in TransposeConv2d,
         // but Arm NN only supports values >= 0

@@ -358,7 +358,7 @@ void CalcPadding(uint32_t input, uint32_t kernel, uint32_t stride, uint32_t dila
     outPadTail = boost::numeric_cast<uint32_t>(padTail);
 }
 
-void CalcPaddingTransposeConv(uint32_t output, uint32_t kernel, uint32_t stride, int32_t& outPadHead,
+void CalcPaddingTransposeConv(uint32_t output, uint32_t kernel, int32_t stride, int32_t& outPadHead,
                               int32_t& outPadTail, android::nn::PaddingScheme scheme)
 {
     calculateExplicitPaddingTransposeConv(output, stride, kernel, scheme, &outPadHead, &outPadTail);
