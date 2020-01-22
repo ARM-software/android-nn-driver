@@ -102,7 +102,7 @@ void TransposeTestImpl(const TestTensor & inputs, int32_t perm[],
 
 BOOST_DATA_TEST_CASE(Transpose , COMPUTE_DEVICES)
 {
-    int32_t perm[] = {3, 2, 0, 1};
+    int32_t perm[] = {2, 3, 1, 0};
     TestTensor input{armnn::TensorShape{1, 2, 2, 2},{1, 2, 3, 4, 5, 6, 7, 8}};
     TestTensor expected{armnn::TensorShape{2, 2, 2, 1},{1, 5, 2, 6, 3, 7, 4, 8}};
 
@@ -111,7 +111,7 @@ BOOST_DATA_TEST_CASE(Transpose , COMPUTE_DEVICES)
 
 BOOST_DATA_TEST_CASE(TransposeNHWCToArmNN , COMPUTE_DEVICES)
 {
-    int32_t perm[] = {0, 2, 3, 1};
+    int32_t perm[] = {0, 3, 1, 2};
     TestTensor input{armnn::TensorShape{1, 2, 2, 3},{1, 2, 3, 11, 12, 13, 21, 22, 23, 31, 32, 33}};
     TestTensor expected{armnn::TensorShape{1, 3, 2, 2},{1, 11, 21, 31, 2, 12, 22, 32, 3, 13, 23, 33}};
 
@@ -120,7 +120,7 @@ BOOST_DATA_TEST_CASE(TransposeNHWCToArmNN , COMPUTE_DEVICES)
 
 BOOST_DATA_TEST_CASE(TransposeArmNNToNHWC , COMPUTE_DEVICES)
 {
-    int32_t perm[] = {0, 3, 1, 2};
+    int32_t perm[] = {0, 2, 3, 1};
     TestTensor input{armnn::TensorShape{1, 2, 2, 2},{1, 2, 3, 4, 5, 6, 7, 8}};
     TestTensor expected{armnn::TensorShape{1, 2, 2, 2},{1, 5, 2, 6, 3, 7, 4, 8}};
 

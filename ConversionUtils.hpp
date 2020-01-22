@@ -3370,8 +3370,20 @@ bool ConvertTranspose(const HalOperation& operation, const HalModel& model, Conv
 
     std::vector<uint32_t> outputDims(perm.begin(), perm.begin() + rank);
 
+    // Permutation vectors (outputDims) are given in ANN/Tf format, we must convert them to ArmNN format
+    // For ANN/Tf/ACL: output[i] = input[ perm[i] ]
+    // For ArmNN: output[ perm[i] ] = input[i]
+    // e.g. 3,0,1,2 -> 1,2,3,0
+    std::vector<unsigned int> armnnPermuteShape(rank);
+    std::vector<unsigned int>::iterator it;
+    for (unsigned int i = 0u; i < rank; ++i)
+    {
+        it = std::find(outputDims.begin(), outputDims.end(), i);
+        armnnPermuteShape[i] = static_cast<unsigned int>(std::distance(outputDims.begin(), it));
+    }
+
     armnn::PermuteDescriptor permuteDesc;
-    permuteDesc.m_DimMappings = armnn::PermutationVector(outputDims.data(), outputDims.size());
+    permuteDesc.m_DimMappings = armnn::PermutationVector(armnnPermuteShape.data(), armnnPermuteShape.size());
 
     const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!output)
