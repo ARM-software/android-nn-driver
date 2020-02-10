@@ -209,9 +209,15 @@ Return<ErrorStatus> ArmnnPreparedModel<HalVersion>::execute(const Request& reque
             pOutputTensors->emplace_back(i, outputTensor);
         }
     }
+    catch (armnn::Exception& e)
+    {
+        ALOGW("armnn::Exception caught while preparing for EnqueueWorkload: %s", e.what());
+        NotifyCallbackAndCheck(callback, ErrorStatus::GENERAL_FAILURE, "ArmnnPreparedModel::execute");
+        return ErrorStatus::GENERAL_FAILURE;
+    }
     catch (std::exception& e)
     {
-        ALOGW("Exception caught while preparing for EnqueueWorkload: %s", e.what());
+        ALOGE("std::exception caught while preparing for EnqueueWorkload: %s", e.what());
         NotifyCallbackAndCheck(callback, ErrorStatus::GENERAL_FAILURE, "ArmnnPreparedModel::execute");
         return ErrorStatus::GENERAL_FAILURE;
     }
@@ -253,9 +259,15 @@ void ArmnnPreparedModel<HalVersion>::ExecuteGraph(
             return;
         }
     }
+    catch (armnn::Exception& e)
+    {
+        ALOGW("armnn::Exception caught from EnqueueWorkload: %s", e.what());
+        cb.callback(ErrorStatus::GENERAL_FAILURE, "ArmnnPreparedModel::ExecuteGraph");
+        return;
+    }
     catch (std::exception& e)
     {
-        ALOGW("Exception caught from EnqueueWorkload: %s", e.what());
+        ALOGE("std::exception caught from EnqueueWorkload: %s", e.what());
         cb.callback(ErrorStatus::GENERAL_FAILURE, "ArmnnPreparedModel::ExecuteGraph");
         return;
     }
@@ -306,9 +318,14 @@ bool ArmnnPreparedModel<HalVersion>::ExecuteWithDummyInputs()
             return false;
         }
     }
+    catch (armnn::Exception& e)
+    {
+        ALOGW("ExecuteWithDummyInputs: armnn::Exception caught from EnqueueWorkload: %s", e.what());
+        return false;
+    }
     catch (std::exception& e)
     {
-        ALOGW("ExecuteWithDummyInputs: Exception caught from EnqueueWorkload: %s", e.what());
+        ALOGE("ExecuteWithDummyInputs: std::exception caught from EnqueueWorkload: %s", e.what());
         return false;
     }
     return true;
