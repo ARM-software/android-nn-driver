@@ -1399,7 +1399,10 @@ bool ConvertPaddings(const HalOperation& operation,
     }
 
     std::vector<int32_t> paddings;
-    GetTensorInt32Values<HalPolicy>(*paddingsOperand, paddings, model, data);
+    if (!GetTensorInt32Values<HalPolicy>(*paddingsOperand, paddings, model, data))
+    {
+        return Fail("%s: Operation has invalid or unsupported paddings operand", __func__);
+    }
 
     // add padding for each dimension of input tensor.
     for (unsigned int i = 0; i < paddings.size() - 1; i += 2)
@@ -3271,9 +3274,9 @@ bool ConvertSqueeze(const HalOperation& operation, const HalModel& model, Conver
         axis.assign(dimensionSequence,
                     dimensionSequence + rank);
     }
-    else
+    else if (!GetTensorInt32Values<HalPolicy>(*axisOperand, axis, model, data))
     {
-        GetTensorInt32Values<HalPolicy>(*axisOperand, axis, model, data);
+        return Fail("%s: Operation has an invalid or unsupported axis operand", __func__);
     }
 
     std::vector<uint32_t> outputDims;
@@ -3451,9 +3454,9 @@ bool ConvertTranspose(const HalOperation& operation, const HalModel& model, Conv
             perm[rank - i] = boost::numeric_cast<int> (i - 1);
         }
     }
-    else
+    else if (!GetTensorInt32Values<HalPolicy>(*permOperand, perm, model, data))
     {
-        GetTensorInt32Values<HalPolicy>(*permOperand, perm, model, data);
+        return Fail("%s: Operation has an invalid or unsupported permutation operand", __func__);
     }
 
     std::vector<uint32_t> outputDims(perm.begin(), perm.begin() + rank);
@@ -3634,7 +3637,10 @@ bool ConvertSpaceToBatchNd(const HalOperation& operation, const HalModel& model,
     }
 
     std::vector<int32_t> blockShape;
-    GetTensorInt32Values<HalPolicy>(*blockShapeOperand, blockShape, model, data);
+    if (!GetTensorInt32Values<HalPolicy>(*blockShapeOperand, blockShape, model, data))
+    {
+        return Fail("%s: Operation has an invalid or unsupported block size operand", __func__);
+    }
     if (std::any_of(blockShape.cbegin(), blockShape.cend(), [](int32_t i){ return i < 1; }))
     {
         return Fail("%s: Block shape must be at least 1 in all dimensions.", __func__);
@@ -3648,7 +3654,10 @@ bool ConvertSpaceToBatchNd(const HalOperation& operation, const HalModel& model,
 
     std::vector<std::pair<unsigned int, unsigned int>> paddingList;
     std::vector<int32_t> paddings;
-    GetTensorInt32Values<HalPolicy>(*paddingsOperand, paddings, model, data);
+    if (!GetTensorInt32Values<HalPolicy>(*paddingsOperand, paddings, model, data))
+    {
+        return Fail("%s: Operation has an invalid or unsupported paddings operand", __func__);
+    }
     for (unsigned int i = 0; i < paddings.size() - 1; i += 2)
     {
         int paddingBeforeInput = paddings[i];
