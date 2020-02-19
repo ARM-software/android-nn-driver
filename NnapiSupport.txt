@@ -15,6 +15,8 @@ The following AndroidNN HAL 1.0, 1.1 and 1.2 operations are currently supported:
 AndroidNN operator           Tensor type supported
 ABS                          (FLOAT32)
 ADD                          (FLOAT32, QUANT8_ASYMM)
+ARGMAX                       (FLOAT32, QUANT8_ASYMM)
+ARGMIN                       (FLOAT32, QUANT8_ASYMM)
 AVERAGE_POOL_2D              (FLOAT32, QUANT8_ASYMM)
 BATCH_TO_SPACE_ND            (FLOAT32, QUANT8_ASYMM)
 CONCATENATION                (FLOAT32, FLOAT16, QUANT8_ASYMM)
