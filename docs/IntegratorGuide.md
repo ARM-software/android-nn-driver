@@ -6,8 +6,8 @@ This document describes how to integrate the Arm NN Android NNAPI driver into an
 ### Prerequisites
 
 1. Android source tree for Android P FSK-R3 or later, in the directory `<ANDROID_ROOT>`
-1. Android source tree for Android Q FSK-2 or later, in the directory `<ANDROID_ROOT>`
-2. Mali OpenCL driver integrated into the Android source tree
+2. Android source tree for Android Q FSK-2 or later, in the directory `<ANDROID_ROOT>`
+3. Mali OpenCL driver integrated into the Android source tree
 
 ### Procedure
 
