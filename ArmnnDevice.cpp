@@ -94,7 +94,7 @@ ArmnnDevice::ArmnnDevice(DriverOptions options)
         {
             if (std::find(supportedDevices.cbegin(), supportedDevices.cend(), backend) == supportedDevices.cend())
             {
-                ALOGW("Requested unknown backend %s", backend.Get().c_str());
+                ALOGW("ArmnnDevice: Requested unknown backend %s", backend.Get().c_str());
             }
             else
             {
@@ -105,8 +105,8 @@ ArmnnDevice::ArmnnDevice(DriverOptions options)
 
     if (backends.empty())
     {
-        backends.emplace_back("GpuAcc");
-        ALOGW("No known backend specified. Defaulting to: GpuAcc");
+        // No known backend specified
+        throw armnn::InvalidArgumentException("ArmnnDevice: No known backend specified.");
     }
 
     m_Options.SetBackends(backends);
