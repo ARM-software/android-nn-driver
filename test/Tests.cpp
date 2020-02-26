@@ -30,10 +30,10 @@ BOOST_AUTO_TEST_CASE(TestCapabilities)
     // Making the driver object on the stack causes a weird libc error, so make it on the heap instead
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
-    ErrorStatus error;
+    V1_0::ErrorStatus error;
     V1_0::Capabilities cap;
 
-    auto cb = [&](ErrorStatus status, const V1_0::Capabilities& capabilities)
+    auto cb = [&](V1_0::ErrorStatus status, const V1_0::Capabilities& capabilities)
     {
         error = status;
         cap = capabilities;
@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_CASE(TestCapabilities)
 
     driver->getCapabilities(cb);
 
-    BOOST_TEST((int)error == (int)ErrorStatus::NONE);
+    BOOST_TEST((int)error == (int)V1_0::ErrorStatus::NONE);
     BOOST_TEST(cap.float32Performance.execTime > 0.f);
     BOOST_TEST(cap.float32Performance.powerUsage > 0.f);
     BOOST_TEST(cap.quantized8Performance.execTime > 0.f);

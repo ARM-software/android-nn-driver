@@ -93,7 +93,7 @@ void PaddingTestImpl(android::nn::PaddingScheme paddingScheme, bool fp16Enabled 
     output.location        = outloc;
     output.dimensions      = hidl_vec<uint32_t>{};
 
-    Request request = {};
+    V1_0::Request request = {};
     request.inputs  = hidl_vec<RequestArgument>{input};
     request.outputs = hidl_vec<RequestArgument>{output};
 

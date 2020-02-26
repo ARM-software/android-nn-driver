@@ -42,12 +42,11 @@ LOCAL_CFLAGS := \
         -O0 \
         -UNDEBUG
 
-ifeq ($(P_OR_LATER),1)
-# Required to build with the changes made to the Android ML framework starting from Android P,
-# regardless of the HAL version used for the build.
+# Required to build with the changes made to the Android ML framework specific to Android R
+ifeq ($(R_OR_LATER),1)
 LOCAL_CFLAGS+= \
-        -DARMNN_ANDROID_P
-endif # PLATFORM_VERSION == 9
+        -DARMNN_ANDROID_R
+endif # R or later
 
 ifeq ($(Q_OR_LATER),1)
 LOCAL_CFLAGS += \
@@ -108,6 +107,11 @@ LOCAL_SHARED_LIBRARIES+= \
         android.hardware.neuralnetworks@1.2
 endif # PLATFORM_VERSION == Q
 
+ifeq ($(R_OR_LATER),1)
+LOCAL_SHARED_LIBRARIES+= \
+        android.hardware.neuralnetworks@1.3
+endif # R or later
+
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_SHARED_LIBRARIES+= \
         libOpenCL
@@ -148,8 +152,13 @@ LOCAL_CFLAGS := \
         -Werror \
         -O0 \
         -UNDEBUG \
-        -DARMNN_ANDROID_P \
         -DARMNN_ANDROID_NN_V1_1
+
+# Required to build with the changes made to the Android ML framework specific to Android R
+ifeq ($(R_OR_LATER),1)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_R
+endif # R or later
 
 ifeq ($(Q_OR_LATER),1)
 LOCAL_CFLAGS += \
@@ -207,6 +216,11 @@ LOCAL_SHARED_LIBRARIES+= \
         android.hardware.neuralnetworks@1.2
 endif # PLATFORM_VERSION == Q
 
+ifeq ($(R_OR_LATER),1)
+LOCAL_SHARED_LIBRARIES+= \
+        android.hardware.neuralnetworks@1.3
+endif # R or later
+
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_SHARED_LIBRARIES+= \
         libOpenCL
@@ -245,13 +259,14 @@ LOCAL_CFLAGS := \
         -Werror \
         -O0 \
         -UNDEBUG \
-        -DARMNN_ANDROID_Q \
+        -DBOOST_NO_AUTO_PTR \
         -DARMNN_ANDROID_NN_V1_2
 
-ifeq ($(Q_OR_LATER),1)
-LOCAL_CFLAGS += \
-        -DBOOST_NO_AUTO_PTR
-endif # PLATFORM_VERSION == Q or later
+# Required to build with the changes made to the Android ML framework specific to Android R
+ifeq ($(R_OR_LATER),1)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_R
+endif # R or later
 
 LOCAL_SRC_FILES := \
         1.0/Convolution2D.cpp \
@@ -302,6 +317,11 @@ LOCAL_SHARED_LIBRARIES := \
         android.hardware.neuralnetworks@1.2 \
         android.hidl.allocator@1.0 \
         android.hidl.memory@1.0
+
+ifeq ($(R_OR_LATER),1)
+LOCAL_SHARED_LIBRARIES+= \
+        android.hardware.neuralnetworks@1.3
+endif # R or later
 
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_SHARED_LIBRARIES+= \

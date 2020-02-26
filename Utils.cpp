@@ -69,13 +69,7 @@ void* GetMemoryFromPool(DataLocation location, const std::vector<android::nn::Ru
 
     const android::nn::RunTimePoolInfo& memPool = memPools[location.poolIndex];
 
-    // Type android::nn::RunTimePoolInfo has changed between Android O and Android P, where
-    // "buffer" has been made private and must be accessed via the accessor method "getBuffer".
-#if defined(ARMNN_ANDROID_P) || defined(ARMNN_ANDROID_Q) // Use the new Android implementation.
     uint8_t* memPoolBuffer = memPool.getBuffer();
-#else // Fallback to the old Android O implementation.
-    uint8_t* memPoolBuffer = memPool.buffer;
-#endif
 
     uint8_t* memory = memPoolBuffer + location.offset;
 

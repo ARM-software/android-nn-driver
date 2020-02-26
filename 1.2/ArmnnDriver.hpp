@@ -29,6 +29,7 @@ namespace hal_1_2
 class ArmnnDriver : public ArmnnDevice, public V1_2::IDevice
 {
 public:
+
     ArmnnDriver(DriverOptions options)
         : ArmnnDevice(std::move(options))
     {
@@ -57,8 +58,8 @@ public:
                                                                                          cb);
     }
 
-    Return<ErrorStatus> prepareModel(const V1_0::Model& model,
-                                     const android::sp<V1_0::IPreparedModelCallback>& cb) override
+    Return<V1_0::ErrorStatus> prepareModel(const V1_0::Model& model,
+                                           const android::sp<V1_0::IPreparedModelCallback>& cb) override
     {
         ALOGV("hal_1_2::ArmnnDriver::prepareModel()");
 
@@ -86,9 +87,9 @@ public:
                                                                                          cb);
     }
 
-    Return<ErrorStatus> prepareModel_1_1(const V1_1::Model& model,
-                                         V1_1::ExecutionPreference preference,
-                                         const android::sp<V1_0::IPreparedModelCallback>& cb) override
+    Return<V1_0::ErrorStatus> prepareModel_1_1(const V1_1::Model& model,
+                                               V1_1::ExecutionPreference preference,
+                                               const android::sp<V1_0::IPreparedModelCallback>& cb) override
     {
         ALOGV("hal_1_2::ArmnnDriver::prepareModel_1_1()");
 
@@ -97,8 +98,8 @@ public:
               preference == ExecutionPreference::SUSTAINED_SPEED))
         {
             ALOGV("hal_1_2::ArmnnDriver::prepareModel_1_1: Invalid execution preference");
-            cb->notify(ErrorStatus::INVALID_ARGUMENT, nullptr);
-            return ErrorStatus::INVALID_ARGUMENT;
+            cb->notify(V1_0::ErrorStatus::INVALID_ARGUMENT, nullptr);
+            return V1_0::ErrorStatus::INVALID_ARGUMENT;
         }
 
         return armnn_driver::ArmnnDriverImpl<hal_1_1::HalPolicy>::prepareModel(m_Runtime,
@@ -121,7 +122,7 @@ public:
     {
         ALOGV("hal_1_2::ArmnnDriver::getVersionString()");
 
-        cb(ErrorStatus::NONE, "ArmNN");
+        cb(V1_0::ErrorStatus::NONE, "ArmNN");
         return Void();
     }
 
@@ -129,22 +130,22 @@ public:
     {
         ALOGV("hal_1_2::ArmnnDriver::getType()");
 
-        cb(ErrorStatus::NONE, V1_2::DeviceType::CPU);
+        cb(V1_0::ErrorStatus::NONE, V1_2::DeviceType::CPU);
         return Void();
     }
 
-    Return<ErrorStatus> prepareModelFromCache(
+    Return<V1_0::ErrorStatus> prepareModelFromCache(
             const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
             const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
             const HidlToken&,
             const sp<V1_2::IPreparedModelCallback>& callback)
     {
         ALOGV("hal_1_2::ArmnnDriver::prepareModelFromCache()");
-        callback->notify_1_2(ErrorStatus::GENERAL_FAILURE, nullptr);
-        return ErrorStatus::GENERAL_FAILURE;
+        callback->notify_1_2(V1_0::ErrorStatus::GENERAL_FAILURE, nullptr);
+        return V1_0::ErrorStatus::GENERAL_FAILURE;
     }
 
-    Return<ErrorStatus> prepareModel_1_2(const V1_2::Model& model, V1_1::ExecutionPreference preference,
+    Return<V1_0::ErrorStatus> prepareModel_1_2(const V1_2::Model& model, V1_1::ExecutionPreference preference,
             const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
             const android::hardware::hidl_vec<android::hardware::hidl_handle>&, const HidlToken&,
             const android::sp<V1_2::IPreparedModelCallback>& cb)
@@ -156,8 +157,8 @@ public:
               preference == ExecutionPreference::SUSTAINED_SPEED))
         {
             ALOGV("hal_1_2::ArmnnDriver::prepareModel_1_2: Invalid execution preference");
-            cb->notify(ErrorStatus::INVALID_ARGUMENT, nullptr);
-            return ErrorStatus::INVALID_ARGUMENT;
+            cb->notify(V1_0::ErrorStatus::INVALID_ARGUMENT, nullptr);
+            return V1_0::ErrorStatus::INVALID_ARGUMENT;
         }
 
         return ArmnnDriverImpl::prepareArmnnModel_1_2(m_Runtime,
@@ -172,7 +173,7 @@ public:
     Return<void> getSupportedExtensions(getSupportedExtensions_cb cb)
     {
         ALOGV("hal_1_2::ArmnnDriver::getSupportedExtensions()");
-        cb(ErrorStatus::NONE, {/* No extensions. */});
+        cb(V1_0::ErrorStatus::NONE, {/* No extensions. */});
         return Void();
     }
 
@@ -199,7 +200,7 @@ public:
         ALOGV("hal_1_2::ArmnnDriver::getSupportedExtensions()");
 
         // Set both numbers to be 0 for cache not supported.
-        cb(ErrorStatus::NONE, 0, 0);
+        cb(V1_0::ErrorStatus::NONE, 0, 0);
         return Void();
     }
 };

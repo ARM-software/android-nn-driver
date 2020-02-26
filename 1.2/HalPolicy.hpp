@@ -11,6 +11,8 @@
 
 #include <armnn/Types.hpp>
 
+namespace V1_2 = ::android::hardware::neuralnetworks::V1_2;
+
 namespace armnn_driver
 {
 namespace hal_1_2

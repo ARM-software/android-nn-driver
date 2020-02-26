@@ -11,6 +11,14 @@
 
 #include <armnn/ArmNN.hpp>
 
+#ifdef ARMNN_ANDROID_R
+using namespace android::nn::hal;
+#endif
+
+
+namespace V1_0 = ::android::hardware::neuralnetworks::V1_0;
+namespace V1_1 = ::android::hardware::neuralnetworks::V1_1;
+
 namespace armnn_driver
 {
 namespace hal_1_1

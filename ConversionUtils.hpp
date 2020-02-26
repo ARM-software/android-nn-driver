@@ -35,6 +35,10 @@ namespace armnn_driver
 /// Helper classes
 ///
 
+#ifdef ARMNN_ANDROID_R
+using OperandType = android::nn::hal::OperandType;
+#endif
+
 struct ConversionData
 {
     ConversionData(const std::vector<armnn::BackendId>& backends)

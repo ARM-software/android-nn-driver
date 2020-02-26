@@ -46,8 +46,8 @@ public:
         return armnn_driver::ArmnnDriverImpl<HalPolicy>::getSupportedOperations(m_Runtime, m_Options, model, cb);
     }
 
-    Return<ErrorStatus> prepareModel(const V1_0::Model& model,
-                                     const android::sp<V1_0::IPreparedModelCallback>& cb) override
+    Return<V1_0::ErrorStatus> prepareModel(const V1_0::Model& model,
+                                           const android::sp<V1_0::IPreparedModelCallback>& cb) override
     {
         ALOGV("hal_1_0::ArmnnDriver::prepareModel()");
 

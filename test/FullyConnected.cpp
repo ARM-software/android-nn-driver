@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(FullyConnected)
     output.location  = outloc;
     output.dimensions = hidl_vec<uint32_t>{};
 
-    Request request = {};
+    V1_0::Request request = {};
     request.inputs  = hidl_vec<RequestArgument>{input};
     request.outputs = hidl_vec<RequestArgument>{output};
 
@@ -87,10 +87,10 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInput)
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
-    ErrorStatus error;
+    V1_0::ErrorStatus error;
     std::vector<bool> sup;
 
-    ArmnnDriver::getSupportedOperations_cb cb = [&](ErrorStatus status, const std::vector<bool>& supported)
+    ArmnnDriver::getSupportedOperations_cb cb = [&](V1_0::ErrorStatus status, const std::vector<bool>& supported)
         {
             error = status;
             sup = supported;
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInput)
     output.location  = outloc;
     output.dimensions = hidl_vec<uint32_t>{};
 
-    Request request = {};
+    V1_0::Request request = {};
     request.inputs  = hidl_vec<RequestArgument>{input};
     request.outputs = hidl_vec<RequestArgument>{output};
 
@@ -173,10 +173,10 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInputReshape)
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
-    ErrorStatus error;
+    V1_0::ErrorStatus error;
     std::vector<bool> sup;
 
-    ArmnnDriver::getSupportedOperations_cb cb = [&](ErrorStatus status, const std::vector<bool>& supported)
+    ArmnnDriver::getSupportedOperations_cb cb = [&](V1_0::ErrorStatus status, const std::vector<bool>& supported)
         {
             error = status;
             sup = supported;
@@ -229,7 +229,7 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInputReshape)
     output.location  = outloc;
     output.dimensions = hidl_vec<uint32_t>{};
 
-    Request request = {};
+    V1_0::Request request = {};
     request.inputs  = hidl_vec<RequestArgument>{input};
     request.outputs = hidl_vec<RequestArgument>{output};
 

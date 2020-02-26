@@ -8,6 +8,7 @@ LOCAL_PATH := $(ANDROID_NN_DRIVER_LOCAL_PATH)
 
 P_OR_LATER := 0
 Q_OR_LATER := 0
+R_OR_LATER := 0
 
 ifeq ($(PLATFORM_VERSION),9)
 P_OR_LATER := 1
@@ -24,6 +25,12 @@ ifeq ($(PLATFORM_VERSION),Q)
 P_OR_LATER := 1
 Q_OR_LATER := 1
 endif # PLATFORM_VERSION == Q
+
+ifeq ($(PLATFORM_VERSION),R)
+P_OR_LATER := 1
+Q_OR_LATER := 1
+R_OR_LATER := 1
+endif # PLATFORM_VERSION == R
 
 CPP_VERSION := c++14
 
@@ -55,6 +62,10 @@ ifeq ($(ARMNN_REF_ENABLE),0)
 ARMNN_REF_ENABLED := 0
 endif
 
+ifeq ($(PLATFORM_VERSION),R)
+ARMNN_COMPUTE_CL_ENABLED := 0
+endif # PLATFORM_VERSION == R
+
 #######################
 # libarmnn-driver@1.0 #
 #######################
@@ -84,12 +95,11 @@ LOCAL_CFLAGS := \
         -Werror \
         -Wno-format-security
 
-ifeq ($(P_OR_LATER),1)
-# Required to build with the changes made to the Android ML framework starting from Android P,
-# regardless of the HAL version used for the build.
+# Required to build with the changes made to the Android ML framework specific to Android R
+ifeq ($(PLATFORM_VERSION),R)
 LOCAL_CFLAGS+= \
-        -DARMNN_ANDROID_P
-endif # PLATFORM_VERSION == 9
+        -DARMNN_ANDROID_R
+endif # R or later
 
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS+= \
@@ -164,7 +174,12 @@ LOCAL_SHARED_LIBRARIES+= \
         libfmq \
         libcutils \
         android.hardware.neuralnetworks@1.2
-endif # PLATFORM_VERSION == Q
+endif # Q or later
+
+ifeq ($(R_OR_LATER),1)
+LOCAL_SHARED_LIBRARIES+= \
+        android.hardware.neuralnetworks@1.3
+endif # R or later
 
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_SHARED_LIBRARIES+= \
@@ -205,7 +220,6 @@ LOCAL_CFLAGS := \
         -fexceptions \
         -Werror \
         -Wno-format-security \
-        -DARMNN_ANDROID_P \
         -DARMNN_ANDROID_NN_V1_1
 
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
@@ -217,6 +231,12 @@ ifeq ($(Q_OR_LATER),1)
 LOCAL_CFLAGS += \
         -DBOOST_NO_AUTO_PTR
 endif # PLATFORM_VERSION == Q or later
+
+# Required to build with the changes made to the Android ML framework specific to Android R
+ifeq ($(PLATFORM_VERSION),R)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_R
+endif # R or later
 
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_CFLAGS += \
@@ -279,6 +299,11 @@ LOCAL_SHARED_LIBRARIES+= \
         android.hardware.neuralnetworks@1.2
 endif # PLATFORM_VERSION == Q
 
+ifeq ($(R_OR_LATER),1)
+LOCAL_SHARED_LIBRARIES+= \
+        android.hardware.neuralnetworks@1.3
+endif # R or later
+
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_SHARED_LIBRARIES+= \
         libOpenCL
@@ -314,7 +339,7 @@ LOCAL_CFLAGS := \
         -fexceptions \
         -Werror \
         -Wno-format-security \
-        -DARMNN_ANDROID_Q \
+        -DBOOST_NO_AUTO_PTR \
         -DARMNN_ANDROID_NN_V1_2
 
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
@@ -322,10 +347,11 @@ LOCAL_CFLAGS+= \
         -UNDEBUG
 endif # ARMNN_DRIVER_DEBUG == 1
 
-ifeq ($(Q_OR_LATER),1)
-LOCAL_CFLAGS += \
-        -DBOOST_NO_AUTO_PTR
-endif # PLATFORM_VERSION == Q or later
+# Required to build with the changes made to the Android ML framework specific to Android R
+ifeq ($(PLATFORM_VERSION),R)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_R
+endif # R or later
 
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_CFLAGS += \
@@ -387,6 +413,11 @@ LOCAL_SHARED_LIBRARIES := \
         android.hardware.neuralnetworks@1.1 \
         android.hardware.neuralnetworks@1.2
 
+ifeq ($(R_OR_LATER),1)
+LOCAL_SHARED_LIBRARIES+= \
+        android.hardware.neuralnetworks@1.3
+endif # R or later
+
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_SHARED_LIBRARIES+= \
         libOpenCL
@@ -433,6 +464,12 @@ LOCAL_CFLAGS += \
         -DBOOST_NO_AUTO_PTR
 endif # PLATFORM_VERSION == Q or later
 
+# Required to build with the changes made to the Android ML framework specific to Android R
+ifeq ($(PLATFORM_VERSION),R)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_R
+endif # R or later
+
 LOCAL_SRC_FILES := \
         service.cpp
 
@@ -468,6 +505,7 @@ ifeq ($(P_OR_LATER),1)
 LOCAL_SHARED_LIBRARIES+= \
         android.hardware.neuralnetworks@1.1
 endif # PLATFORM_VERSION == 9
+
 ifeq ($(Q_OR_LATER),1)
 LOCAL_SHARED_LIBRARIES+= \
         libnativewindow \
@@ -476,6 +514,11 @@ LOCAL_SHARED_LIBRARIES+= \
         libcutils \
         android.hardware.neuralnetworks@1.2
 endif # PLATFORM_VERSION == Q
+
+ifeq ($(R_OR_LATER),1)
+LOCAL_SHARED_LIBRARIES+= \
+        android.hardware.neuralnetworks@1.3
+endif # R or later
 
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_SHARED_LIBRARIES+= \
@@ -525,6 +568,12 @@ LOCAL_CFLAGS += \
         -DBOOST_NO_AUTO_PTR
 endif # PLATFORM_VERSION == Q or later
 
+# Required to build with the changes made to the Android ML framework specific to Android R
+ifeq ($(PLATFORM_VERSION),R)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_R
+endif # R or later
+
 LOCAL_SRC_FILES := \
         service.cpp
 
@@ -563,6 +612,11 @@ LOCAL_SHARED_LIBRARIES+= \
         libcutils \
         android.hardware.neuralnetworks@1.2
 endif # PLATFORM_VERSION == Q
+
+ifeq ($(R_OR_LATER),1)
+LOCAL_SHARED_LIBRARIES+= \
+        android.hardware.neuralnetworks@1.3
+endif # PLATFORM_VERSION == R
 
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_SHARED_LIBRARIES+= \
@@ -605,6 +659,12 @@ LOCAL_CFLAGS += \
         -UNDEBUG
 endif # ARMNN_DRIVER_DEBUG == 1
 
+# Required to build with the changes made to the Android ML framework specific to Android R
+ifeq ($(PLATFORM_VERSION),R)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_R
+endif # R or later
+
 LOCAL_SRC_FILES := \
         service.cpp
 
@@ -639,6 +699,11 @@ LOCAL_SHARED_LIBRARIES := \
         android.hardware.neuralnetworks@1.0 \
         android.hardware.neuralnetworks@1.1 \
         android.hardware.neuralnetworks@1.2
+
+ifeq ($(R_OR_LATER),1)
+LOCAL_SHARED_LIBRARIES+= \
+        android.hardware.neuralnetworks@1.3
+endif # R or later
 
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_SHARED_LIBRARIES+= \

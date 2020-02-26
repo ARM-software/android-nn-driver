@@ -11,11 +11,12 @@
 namespace
 {
 
-const char *g_Float32PerformanceExecTimeName             = "ArmNN.float32Performance.execTime";
-const char *g_Float32PerformancePowerUsageName           = "ArmNN.float32Performance.powerUsage";
-const char *g_Quantized8PerformanceExecTimeName          = "ArmNN.quantized8Performance.execTime";
-const char *g_Quantized8PerformancePowerUsageName        = "ArmNN.quantized8Performance.powerUsage";
-const char *g_RelaxedFloat32toFloat16PerformanceExecTime = "ArmNN.relaxedFloat32toFloat16Performance.execTime";
+const char *g_Float32PerformanceExecTimeName                   = "ArmNN.float32Performance.execTime";
+const char *g_Float32PerformancePowerUsageName                 = "ArmNN.float32Performance.powerUsage";
+const char *g_Quantized8PerformanceExecTimeName                = "ArmNN.quantized8Performance.execTime";
+const char *g_Quantized8PerformancePowerUsageName              = "ArmNN.quantized8Performance.powerUsage";
+const char *g_RelaxedFloat32toFloat16PerformanceExecTime       = "ArmNN.relaxedFloat32toFloat16Performance.execTime";
+const char *g_RelaxedFloat32toFloat16PerformancePowerUsageName = "ArmNN.relaxedFloat32toFloat16Performance.powerUsage";
 
 } // anonymous namespace
 
@@ -47,17 +48,21 @@ Return<void> ArmnnDriverImpl::getCapabilities_1_1(const armnn::IRuntimePtr& runt
         capabilities.relaxedFloat32toFloat16Performance.execTime =
             ParseSystemProperty(g_RelaxedFloat32toFloat16PerformanceExecTime, .1f);
 
-        cb(ErrorStatus::NONE, capabilities);
+        capabilities.relaxedFloat32toFloat16Performance.powerUsage =
+            ParseSystemProperty(g_RelaxedFloat32toFloat16PerformancePowerUsageName, .1f);
+
+        cb(V1_0::ErrorStatus::NONE, capabilities);
     }
     else
     {
-        capabilities.float32Performance.execTime                 = 0;
-        capabilities.float32Performance.powerUsage               = 0;
-        capabilities.quantized8Performance.execTime              = 0;
-        capabilities.quantized8Performance.powerUsage            = 0;
-        capabilities.relaxedFloat32toFloat16Performance.execTime = 0;
+        capabilities.float32Performance.execTime                   = 0;
+        capabilities.float32Performance.powerUsage                 = 0;
+        capabilities.quantized8Performance.execTime                = 0;
+        capabilities.quantized8Performance.powerUsage              = 0;
+        capabilities.relaxedFloat32toFloat16Performance.execTime   = 0;
+        capabilities.relaxedFloat32toFloat16Performance.powerUsage = 0;
 
-        cb(ErrorStatus::DEVICE_UNAVAILABLE, capabilities);
+        cb(V1_0::ErrorStatus::DEVICE_UNAVAILABLE, capabilities);
     }
 
     return Void();

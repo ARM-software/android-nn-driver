@@ -26,9 +26,9 @@ using namespace armnn;
 namespace
 {
 
-bool IsQSymmDequantizeForWeights(const Operation& operation, const Model& model)
+bool IsQSymmDequantizeForWeights(const HalPolicy::Operation& operation, const HalPolicy::Model& model)
 {
-    const Operand* operand = GetInputOperand<hal_1_2::HalPolicy>(operation, 0, model);
+    const HalPolicy::Operand* operand = GetInputOperand<hal_1_2::HalPolicy>(operation, 0, model);
     if (!operand)
     {
         return false;

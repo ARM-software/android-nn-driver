@@ -45,13 +45,13 @@ public:
 
     virtual ~ArmnnPreparedModel_1_2();
 
-    virtual Return<ErrorStatus> execute(const Request& request,
-                                        const sp<V1_0::IExecutionCallback>& callback) override;
+    virtual Return<V1_0::ErrorStatus> execute(const V1_0::Request& request,
+                                              const sp<V1_0::IExecutionCallback>& callback) override;
 
-    virtual Return<ErrorStatus> execute_1_2(const Request& request, MeasureTiming measure,
-                                            const sp<V1_2::IExecutionCallback>& callback) override;
+    virtual Return<V1_0::ErrorStatus> execute_1_2(const V1_0::Request& request, MeasureTiming measure,
+                                                  const sp<V1_2::IExecutionCallback>& callback) override;
 
-    virtual Return<void> executeSynchronously(const Request &request,
+    virtual Return<void> executeSynchronously(const V1_0::Request &request,
                                               MeasureTiming measure,
                                               V1_2::IPreparedModel::executeSynchronously_cb cb) override;
 
@@ -72,9 +72,9 @@ public:
     bool ExecuteWithDummyInputs();
 
 private:
-    Return <ErrorStatus> Execute(const Request& request,
-                                 MeasureTiming measureTiming,
-                                 armnnExecuteCallback_1_2 callback);
+    Return <V1_0::ErrorStatus> Execute(const V1_0::Request& request,
+                                       MeasureTiming measureTiming,
+                                       armnnExecuteCallback_1_2 callback);
 
     template <typename TensorBindingCollection>
     void DumpTensorsIfRequired(char const* tensorNamePrefix, const TensorBindingCollection& tensorBindings);

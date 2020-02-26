@@ -78,7 +78,7 @@ void MeanTestImpl(const TestTensor& input,
     outArg.dimensions      = expectedOutput.GetDimensions();
 
     // Make the request based on the arguments
-    Request request = {};
+    V1_0::Request request = {};
     request.inputs  = hidl_vec<RequestArgument>{ inArg };
     request.outputs = hidl_vec<RequestArgument>{ outArg };
 
@@ -89,8 +89,8 @@ void MeanTestImpl(const TestTensor& input,
     android::sp<IMemory> outMemory = AddPoolAndGetData<float>(expectedOutput.GetNumElements(), request);
     const float* outputData = static_cast<const float*>(static_cast<void*>(outMemory->getPointer()));
 
-    ErrorStatus execStatus = Execute(preparedModel, request);
-    BOOST_TEST(execStatus == ErrorStatus::NONE);
+    V1_0::ErrorStatus execStatus = Execute(preparedModel, request);
+    BOOST_TEST(execStatus == V1_0::ErrorStatus::NONE);
 
     const float* expectedOutputData = expectedOutput.GetData();
     for (unsigned int i = 0; i < expectedOutput.GetNumElements(); i++)

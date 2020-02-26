@@ -76,7 +76,7 @@ void TransposeTestImpl(const TestTensor & inputs, int32_t perm[],
     output.dimensions = expectedOutputTensor.GetDimensions();
 
     // make the request based on the arguments
-    Request request = {};
+    V1_0::Request request = {};
     request.inputs  = hidl_vec<RequestArgument>{input};
     request.outputs = hidl_vec<RequestArgument>{output};
 

@@ -9,6 +9,10 @@
 
 #include <HalInterfaces.h>
 
+#ifdef ARMNN_ANDROID_R
+using namespace android::nn::hal;
+#endif
+
 namespace V1_0 = ::android::hardware::neuralnetworks::V1_0;
 namespace V1_1 = ::android::hardware::neuralnetworks::V1_1;
 
@@ -32,7 +36,7 @@ public:
             const HalModel& model,
             HalGetSupportedOperations_cb);
 
-    static Return<ErrorStatus> prepareModel(
+    static Return<V1_0::ErrorStatus> prepareModel(
             const armnn::IRuntimePtr& runtime,
             const armnn::IGpuAccTunedParametersPtr& clTunedParameters,
             const DriverOptions& options,

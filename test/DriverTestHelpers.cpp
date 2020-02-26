@@ -15,7 +15,7 @@ namespace neuralnetworks
 namespace V1_0
 {
 
-std::ostream& operator<<(std::ostream& os, ErrorStatus stat)
+std::ostream& operator<<(std::ostream& os, V1_0::ErrorStatus stat)
 {
    return os << static_cast<int>(stat);
 }
@@ -31,7 +31,7 @@ namespace driverTestHelpers
 using namespace android::hardware;
 using namespace armnn_driver;
 
-Return<void> ExecutionCallback::notify(ErrorStatus status)
+Return<void> ExecutionCallback::notify(V1_0::ErrorStatus status)
 {
     (void)status;
     ALOGI("ExecutionCallback::notify invoked");
@@ -53,7 +53,7 @@ Return<void> ExecutionCallback::wait()
     return Void();
 }
 
-Return<void> PreparedModelCallback::notify(ErrorStatus status,
+Return<void> PreparedModelCallback::notify(V1_0::ErrorStatus status,
                                            const android::sp<V1_0::IPreparedModel>& preparedModel)
 {
     m_ErrorStatus = status;
@@ -63,7 +63,7 @@ Return<void> PreparedModelCallback::notify(ErrorStatus status,
 
 #ifdef ARMNN_ANDROID_NN_V1_2
 
-Return<void> PreparedModelCallback_1_2::notify(ErrorStatus status,
+Return<void> PreparedModelCallback_1_2::notify(V1_0::ErrorStatus status,
                                                const android::sp<V1_0::IPreparedModel>& preparedModel)
 {
     m_ErrorStatus = status;
@@ -71,7 +71,7 @@ Return<void> PreparedModelCallback_1_2::notify(ErrorStatus status,
     return Void();
 }
 
-Return<void> PreparedModelCallback_1_2::notify_1_2(ErrorStatus status,
+Return<void> PreparedModelCallback_1_2::notify_1_2(V1_0::ErrorStatus status,
                                                    const android::sp<V1_2::IPreparedModel>& preparedModel)
 {
     m_ErrorStatus = status;
@@ -104,15 +104,15 @@ hidl_memory allocateSharedMemory(int64_t size)
 
 android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_0::Model& model,
                                                          armnn_driver::ArmnnDriver& driver,
-                                                         ErrorStatus& prepareStatus,
-                                                         ErrorStatus expectedStatus)
+                                                         V1_0::ErrorStatus& prepareStatus,
+                                                         V1_0::ErrorStatus expectedStatus)
 {
     android::sp<PreparedModelCallback> cb(new PreparedModelCallback());
     driver.prepareModel(model, cb);
 
     prepareStatus = cb->GetErrorStatus();
     BOOST_TEST(prepareStatus == expectedStatus);
-    if (expectedStatus == ErrorStatus::NONE)
+    if (expectedStatus == V1_0::ErrorStatus::NONE)
     {
         BOOST_TEST((cb->GetPreparedModel() != nullptr));
     }
@@ -123,15 +123,15 @@ android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_0::Model& mode
 
 android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_1::Model& model,
                                                          armnn_driver::ArmnnDriver& driver,
-                                                         ErrorStatus& prepareStatus,
-                                                         ErrorStatus expectedStatus)
+                                                         V1_0::ErrorStatus& prepareStatus,
+                                                         V1_0::ErrorStatus expectedStatus)
 {
     android::sp<PreparedModelCallback> cb(new PreparedModelCallback());
     driver.prepareModel_1_1(model, V1_1::ExecutionPreference::LOW_POWER, cb);
 
     prepareStatus = cb->GetErrorStatus();
     BOOST_TEST(prepareStatus == expectedStatus);
-    if (expectedStatus == ErrorStatus::NONE)
+    if (expectedStatus == V1_0::ErrorStatus::NONE)
     {
         BOOST_TEST((cb->GetPreparedModel() != nullptr));
     }
@@ -144,8 +144,8 @@ android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_1::Model& mode
 
 android::sp<V1_2::IPreparedModel> PrepareModelWithStatus_1_2(const armnn_driver::hal_1_2::HalPolicy::Model& model,
                                                              armnn_driver::ArmnnDriver& driver,
-                                                             ErrorStatus& prepareStatus,
-                                                             ErrorStatus expectedStatus)
+                                                             V1_0::ErrorStatus& prepareStatus,
+                                                             V1_0::ErrorStatus expectedStatus)
 {
     android::sp<PreparedModelCallback_1_2> cb(new PreparedModelCallback_1_2());
 
@@ -157,7 +157,7 @@ android::sp<V1_2::IPreparedModel> PrepareModelWithStatus_1_2(const armnn_driver:
 
     prepareStatus = cb->GetErrorStatus();
     BOOST_TEST(prepareStatus == expectedStatus);
-    if (expectedStatus == ErrorStatus::NONE)
+    if (expectedStatus == V1_0::ErrorStatus::NONE)
     {
         BOOST_TEST((cb->GetPreparedModel_1_2() != nullptr));
     }
@@ -166,23 +166,24 @@ android::sp<V1_2::IPreparedModel> PrepareModelWithStatus_1_2(const armnn_driver:
 
 #endif
 
-ErrorStatus Execute(android::sp<V1_0::IPreparedModel> preparedModel,
-                    const Request& request,
-                    ErrorStatus expectedStatus)
+V1_0::ErrorStatus Execute(android::sp<V1_0::IPreparedModel> preparedModel,
+                          const V1_0::Request& request,
+                          V1_0::ErrorStatus expectedStatus)
 {
     BOOST_TEST(preparedModel.get() != nullptr);
     android::sp<ExecutionCallback> cb(new ExecutionCallback());
-    ErrorStatus execStatus = preparedModel->execute(request, cb);
+    V1_0::ErrorStatus execStatus = preparedModel->execute(request, cb);
     BOOST_TEST(execStatus == expectedStatus);
     ALOGI("Execute: waiting for callback to be invoked");
     cb->wait();
     return execStatus;
 }
 
-android::sp<ExecutionCallback> ExecuteNoWait(android::sp<V1_0::IPreparedModel> preparedModel, const Request& request)
+android::sp<ExecutionCallback> ExecuteNoWait(android::sp<V1_0::IPreparedModel> preparedModel,
+                                             const V1_0::Request& request)
 {
     android::sp<ExecutionCallback> cb(new ExecutionCallback());
-    BOOST_TEST(preparedModel->execute(request, cb) == ErrorStatus::NONE);
+    BOOST_TEST(preparedModel->execute(request, cb) == V1_0::ErrorStatus::NONE);
     ALOGI("ExecuteNoWait: returning callback object");
     return cb;
 }

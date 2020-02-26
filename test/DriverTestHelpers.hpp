@@ -12,6 +12,10 @@
 #include <iosfwd>
 #include <boost/test/unit_test.hpp>
 
+#include <android/hidl/allocator/1.0/IAllocator.h>
+
+using ::android::hidl::allocator::V1_0::IAllocator;
+
 namespace android
 {
 namespace hardware
@@ -21,7 +25,7 @@ namespace neuralnetworks
 namespace V1_0
 {
 
-std::ostream& operator<<(std::ostream& os, ErrorStatus stat);
+std::ostream& operator<<(std::ostream& os, V1_0::ErrorStatus stat);
 
 } // namespace android::hardware::neuralnetworks::V1_0
 } // namespace android::hardware::neuralnetworks
@@ -36,7 +40,7 @@ std::ostream& operator<<(std::ostream& os, V1_0::ErrorStatus stat);
 struct ExecutionCallback : public V1_0::IExecutionCallback
 {
     ExecutionCallback() : mNotified(false) {}
-    Return<void> notify(ErrorStatus status) override;
+    Return<void> notify(V1_0::ErrorStatus status) override;
     /// wait until the callback has notified us that it is done
     Return<void> wait();
 
@@ -52,18 +56,18 @@ class PreparedModelCallback : public V1_0::IPreparedModelCallback
 {
 public:
     PreparedModelCallback()
-        : m_ErrorStatus(ErrorStatus::NONE)
+        : m_ErrorStatus(V1_0::ErrorStatus::NONE)
         , m_PreparedModel()
     { }
     ~PreparedModelCallback() override { }
 
-    Return<void> notify(ErrorStatus status,
+    Return<void> notify(V1_0::ErrorStatus status,
                         const android::sp<V1_0::IPreparedModel>& preparedModel) override;
-    ErrorStatus GetErrorStatus() { return m_ErrorStatus; }
+    V1_0::ErrorStatus GetErrorStatus() { return m_ErrorStatus; }
     android::sp<V1_0::IPreparedModel> GetPreparedModel() { return m_PreparedModel; }
 
 private:
-    ErrorStatus                  m_ErrorStatus;
+    V1_0::ErrorStatus                  m_ErrorStatus;
     android::sp<V1_0::IPreparedModel>  m_PreparedModel;
 };
 
@@ -73,24 +77,24 @@ class PreparedModelCallback_1_2 : public V1_2::IPreparedModelCallback
 {
 public:
     PreparedModelCallback_1_2()
-            : m_ErrorStatus(ErrorStatus::NONE)
+            : m_ErrorStatus(V1_0::ErrorStatus::NONE)
             , m_PreparedModel()
             , m_PreparedModel_1_2()
     { }
     ~PreparedModelCallback_1_2() override { }
 
-    Return<void> notify(ErrorStatus status, const android::sp<V1_0::IPreparedModel>& preparedModel) override;
+    Return<void> notify(V1_0::ErrorStatus status, const android::sp<V1_0::IPreparedModel>& preparedModel) override;
 
-    Return<void> notify_1_2(ErrorStatus status, const android::sp<V1_2::IPreparedModel>& preparedModel) override;
+    Return<void> notify_1_2(V1_0::ErrorStatus status, const android::sp<V1_2::IPreparedModel>& preparedModel) override;
 
-    ErrorStatus GetErrorStatus() { return m_ErrorStatus; }
+    V1_0::ErrorStatus GetErrorStatus() { return m_ErrorStatus; }
 
     android::sp<V1_0::IPreparedModel> GetPreparedModel() { return m_PreparedModel; }
 
     android::sp<V1_2::IPreparedModel> GetPreparedModel_1_2() { return m_PreparedModel_1_2; }
 
 private:
-    ErrorStatus                        m_ErrorStatus;
+    V1_0::ErrorStatus                   m_ErrorStatus;
     android::sp<V1_0::IPreparedModel>  m_PreparedModel;
     android::sp<V1_2::IPreparedModel>  m_PreparedModel_1_2;
 };
@@ -100,7 +104,7 @@ private:
 hidl_memory allocateSharedMemory(int64_t size);
 
 template<typename T>
-android::sp<IMemory> AddPoolAndGetData(uint32_t size, Request& request)
+android::sp<IMemory> AddPoolAndGetData(uint32_t size, V1_0::Request& request)
 {
     hidl_memory pool;
 
@@ -119,7 +123,7 @@ android::sp<IMemory> AddPoolAndGetData(uint32_t size, Request& request)
 }
 
 template<typename T>
-void AddPoolAndSetData(uint32_t size, Request& request, const T* data)
+void AddPoolAndSetData(uint32_t size, V1_0::Request& request, const T* data)
 {
     android::sp<IMemory> memory = AddPoolAndGetData<T>(size, request);
 
@@ -201,7 +205,7 @@ void AddTensorOperand(HalModel& model,
                       const hidl_vec<uint32_t>& dimensions,
                       const T* values,
                       HalOperandType operandType = HalOperandType::TENSOR_FLOAT32,
-                      HalOperandLifeTime operandLifeTime = HalOperandLifeTime::CONSTANT_COPY,
+                      HalOperandLifeTime operandLifeTime = V1_0::OperandLifeTime::CONSTANT_COPY,
                       double scale = 0.f,
                       int offset = 0)
 {
@@ -247,7 +251,7 @@ void AddTensorOperand(HalModel& model,
                       const hidl_vec<uint32_t>& dimensions,
                       const std::vector<T>& values,
                       HalOperandType operandType = HalPolicy::OperandType::TENSOR_FLOAT32,
-                      HalOperandLifeTime operandLifeTime = HalOperandLifeTime::CONSTANT_COPY,
+                      HalOperandLifeTime operandLifeTime = V1_0::OperandLifeTime::CONSTANT_COPY,
                       double scale = 0.f,
                       int offset = 0)
 {
@@ -306,15 +310,15 @@ void AddOutputOperand(HalModel& model,
 
 android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_0::Model& model,
                                                          armnn_driver::ArmnnDriver& driver,
-                                                         ErrorStatus& prepareStatus,
-                                                         ErrorStatus expectedStatus = ErrorStatus::NONE);
+                                                         V1_0::ErrorStatus& prepareStatus,
+                                                         V1_0::ErrorStatus expectedStatus = V1_0::ErrorStatus::NONE);
 
 #if defined(ARMNN_ANDROID_NN_V1_1) || defined(ARMNN_ANDROID_NN_V1_2)
 
 android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_1::Model& model,
                                                          armnn_driver::ArmnnDriver& driver,
-                                                         ErrorStatus& prepareStatus,
-                                                         ErrorStatus expectedStatus = ErrorStatus::NONE);
+                                                         V1_0::ErrorStatus& prepareStatus,
+                                                         V1_0::ErrorStatus expectedStatus = V1_0::ErrorStatus::NONE);
 
 #endif
 
@@ -322,7 +326,7 @@ template<typename HalModel>
 android::sp<V1_0::IPreparedModel> PrepareModel(const HalModel& model,
                                                armnn_driver::ArmnnDriver& driver)
 {
-    ErrorStatus prepareStatus = ErrorStatus::NONE;
+    V1_0::ErrorStatus prepareStatus = V1_0::ErrorStatus::NONE;
     return PrepareModelWithStatus(model, driver, prepareStatus);
 }
 
@@ -330,25 +334,25 @@ android::sp<V1_0::IPreparedModel> PrepareModel(const HalModel& model,
 
 android::sp<V1_2::IPreparedModel> PrepareModelWithStatus_1_2(const armnn_driver::hal_1_2::HalPolicy::Model& model,
                                                             armnn_driver::ArmnnDriver& driver,
-                                                            ErrorStatus& prepareStatus,
-                                                            ErrorStatus expectedStatus = ErrorStatus::NONE);
+                                                            V1_0::ErrorStatus& prepareStatus,
+                                                            V1_0::ErrorStatus expectedStatus = V1_0::ErrorStatus::NONE);
 
 template<typename HalModel>
 android::sp<V1_2::IPreparedModel> PrepareModel_1_2(const HalModel& model,
                                                    armnn_driver::ArmnnDriver& driver)
 {
-    ErrorStatus prepareStatus = ErrorStatus::NONE;
+    V1_0::ErrorStatus prepareStatus = V1_0::ErrorStatus::NONE;
     return PrepareModelWithStatus_1_2(model, driver, prepareStatus);
 }
 
 #endif
 
 
-ErrorStatus Execute(android::sp<V1_0::IPreparedModel> preparedModel,
-                    const Request& request,
-                    ErrorStatus expectedStatus = ErrorStatus::NONE);
+V1_0::ErrorStatus Execute(android::sp<V1_0::IPreparedModel> preparedModel,
+                          const V1_0::Request& request,
+                          V1_0::ErrorStatus expectedStatus = V1_0::ErrorStatus::NONE);
 
 android::sp<ExecutionCallback> ExecuteNoWait(android::sp<V1_0::IPreparedModel> preparedModel,
-                                             const Request& request);
+                                             const V1_0::Request& request);
 
 } // namespace driverTestHelpers

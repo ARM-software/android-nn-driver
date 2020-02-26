@@ -27,6 +27,10 @@ namespace V1_2 = ::android::hardware::neuralnetworks::V1_2;
 namespace armnn_driver
 {
 
+#ifdef ARMNN_ANDROID_R
+using DataLocation = ::android::nn::hal::DataLocation;
+#endif
+
 extern const armnn::PermutationVector g_DontPermute;
 
 template <typename OperandType>

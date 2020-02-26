@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(ConcurrentExecute)
     output.dimensions = hidl_vec<uint32_t>{};
 
     // build the requests
-    Request requests[maxRequests];
+    V1_0::Request requests[maxRequests];
     android::sp<IMemory> outMemory[maxRequests];
     float* outdata[maxRequests];
     for (size_t i = 0; i < maxRequests; ++i)

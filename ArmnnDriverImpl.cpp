@@ -26,7 +26,7 @@ namespace
 {
 
 void NotifyCallbackAndCheck(const sp<V1_0::IPreparedModelCallback>& callback,
-                            ErrorStatus errorStatus,
+                            V1_0::ErrorStatus errorStatus,
                             const sp<V1_0::IPreparedModel>& preparedModelPtr)
 {
     Return<void> returned = callback->notify(errorStatus, preparedModelPtr);
@@ -38,9 +38,9 @@ void NotifyCallbackAndCheck(const sp<V1_0::IPreparedModelCallback>& callback,
     }
 }
 
-Return<ErrorStatus> FailPrepareModel(ErrorStatus error,
-                                     const string& message,
-                                     const sp<V1_0::IPreparedModelCallback>& callback)
+Return<V1_0::ErrorStatus> FailPrepareModel(V1_0::ErrorStatus error,
+                                           const string& message,
+                                           const sp<V1_0::IPreparedModelCallback>& callback)
 {
     ALOGW("ArmnnDriverImpl::prepareModel: %s", message.c_str());
     NotifyCallbackAndCheck(callback, error, nullptr);
@@ -54,7 +54,7 @@ namespace armnn_driver
 {
 
 template<typename HalPolicy>
-Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
+Return<V1_0::ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
         const armnn::IRuntimePtr& runtime,
         const armnn::IGpuAccTunedParametersPtr& clTunedParameters,
         const DriverOptions& options,
@@ -67,17 +67,17 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     if (cb.get() == nullptr)
     {
         ALOGW("ArmnnDriverImpl::prepareModel: Invalid callback passed to prepareModel");
-        return ErrorStatus::INVALID_ARGUMENT;
+        return V1_0::ErrorStatus::INVALID_ARGUMENT;
     }
 
     if (!runtime)
     {
-        return FailPrepareModel(ErrorStatus::DEVICE_UNAVAILABLE, "Device unavailable", cb);
+        return FailPrepareModel(V1_0::ErrorStatus::DEVICE_UNAVAILABLE, "Device unavailable", cb);
     }
 
     if (!android::nn::validateModel(model))
     {
-        return FailPrepareModel(ErrorStatus::INVALID_ARGUMENT, "Invalid model passed as input", cb);
+        return FailPrepareModel(V1_0::ErrorStatus::INVALID_ARGUMENT, "Invalid model passed as input", cb);
     }
 
     // Deliberately ignore any unsupported operations requested by the options -
@@ -90,8 +90,8 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
 
     if (modelConverter.GetConversionResult() != ConversionResult::Success)
     {
-        FailPrepareModel(ErrorStatus::GENERAL_FAILURE, "ModelToINetworkConverter failed", cb);
-        return ErrorStatus::NONE;
+        FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "ModelToINetworkConverter failed", cb);
+        return V1_0::ErrorStatus::NONE;
     }
 
     // Optimize the network
@@ -112,8 +112,8 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     {
         stringstream message;
         message << "Exception (" << e.what() << ") caught from optimize.";
-        FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
-        return ErrorStatus::NONE;
+        FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, message.str(), cb);
+        return V1_0::ErrorStatus::NONE;
     }
 
     // Check that the optimized network is valid.
@@ -125,8 +125,8 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
         {
             message << "\n" << msg;
         }
-        FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
-        return ErrorStatus::NONE;
+        FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, message.str(), cb);
+        return V1_0::ErrorStatus::NONE;
     }
 
     // Export the optimized network graph to a dot file if an output dump directory
@@ -139,15 +139,15 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     {
         if (runtime->LoadNetwork(netId, move(optNet)) != armnn::Status::Success)
         {
-            return FailPrepareModel(ErrorStatus::GENERAL_FAILURE, "Network could not be loaded", cb);
+            return FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "Network could not be loaded", cb);
         }
     }
     catch (std::exception& e)
     {
         stringstream message;
         message << "Exception (" << e.what()<< ") caught from LoadNetwork.";
-        FailPrepareModel(ErrorStatus::GENERAL_FAILURE, message.str(), cb);
-        return ErrorStatus::NONE;
+        FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, message.str(), cb);
+        return V1_0::ErrorStatus::NONE;
     }
 
     // Now that we have a networkId for the graph rename the dump file to use it
@@ -168,7 +168,7 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     // this is enabled) before the first 'real' inference which removes the overhead of the first inference.
     if (!preparedModel->ExecuteWithDummyInputs())
     {
-        return FailPrepareModel(ErrorStatus::GENERAL_FAILURE, "Network could not be executed", cb);
+        return FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "Network could not be executed", cb);
     }
 
     if (clTunedParameters &&
@@ -186,9 +186,9 @@ Return<ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
         }
     }
 
-    NotifyCallbackAndCheck(cb, ErrorStatus::NONE, preparedModel);
+    NotifyCallbackAndCheck(cb, V1_0::ErrorStatus::NONE, preparedModel);
 
-    return ErrorStatus::NONE;
+    return V1_0::ErrorStatus::NONE;
 }
 
 template<typename HalPolicy>
@@ -227,14 +227,14 @@ Return<void> ArmnnDriverImpl<HalPolicy>::getSupportedOperations(const armnn::IRu
 
     if (!runtime)
     {
-        cb(ErrorStatus::DEVICE_UNAVAILABLE, result);
+        cb(V1_0::ErrorStatus::DEVICE_UNAVAILABLE, result);
         return Void();
     }
 
     // Run general model validation, if this doesn't pass we shouldn't analyse the model anyway.
     if (!android::nn::validateModel(model))
     {
-        cb(ErrorStatus::INVALID_ARGUMENT, result);
+        cb(V1_0::ErrorStatus::INVALID_ARGUMENT, result);
         return Void();
     }
 
@@ -246,7 +246,7 @@ Return<void> ArmnnDriverImpl<HalPolicy>::getSupportedOperations(const armnn::IRu
     if (modelConverter.GetConversionResult() != ConversionResult::Success
             && modelConverter.GetConversionResult() != ConversionResult::UnsupportedFeature)
     {
-        cb(ErrorStatus::GENERAL_FAILURE, result);
+        cb(V1_0::ErrorStatus::GENERAL_FAILURE, result);
         return Void();
     }
 
@@ -259,7 +259,7 @@ Return<void> ArmnnDriverImpl<HalPolicy>::getSupportedOperations(const armnn::IRu
         result.push_back(operationSupported);
     }
 
-    cb(ErrorStatus::NONE, result);
+    cb(V1_0::ErrorStatus::NONE, result);
     return Void();
 }
 

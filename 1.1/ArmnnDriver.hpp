@@ -33,6 +33,7 @@ public:
     ~ArmnnDriver() {}
 
 public:
+
     Return<void> getCapabilities(V1_0::IDevice::getCapabilities_cb cb) override
     {
         ALOGV("hal_1_1::ArmnnDriver::getCapabilities()");
@@ -51,8 +52,8 @@ public:
                                                                                          cb);
     }
 
-    Return<ErrorStatus> prepareModel(const V1_0::Model& model,
-                                     const android::sp<V1_0::IPreparedModelCallback>& cb) override
+    Return<V1_0::ErrorStatus> prepareModel(const V1_0::Model& model,
+                                           const android::sp<V1_0::IPreparedModelCallback>& cb) override
     {
         ALOGV("hal_1_1::ArmnnDriver::prepareModel()");
 
@@ -81,9 +82,9 @@ public:
                                                                                          cb);
     }
 
-    Return<ErrorStatus> prepareModel_1_1(const V1_1::Model& model,
-                                         V1_1::ExecutionPreference preference,
-                                         const android::sp<V1_0::IPreparedModelCallback>& cb) override
+    Return<V1_0::ErrorStatus> prepareModel_1_1(const V1_1::Model& model,
+                                               V1_1::ExecutionPreference preference,
+                                               const android::sp<V1_0::IPreparedModelCallback>& cb) override
     {
         ALOGV("hal_1_1::ArmnnDriver::prepareModel_1_1()");
 
@@ -92,8 +93,8 @@ public:
               preference == ExecutionPreference::SUSTAINED_SPEED))
         {
             ALOGV("hal_1_1::ArmnnDriver::prepareModel_1_1: Invalid execution preference");
-            cb->notify(ErrorStatus::INVALID_ARGUMENT, nullptr);
-            return ErrorStatus::INVALID_ARGUMENT;
+            cb->notify(V1_0::ErrorStatus::INVALID_ARGUMENT, nullptr);
+            return V1_0::ErrorStatus::INVALID_ARGUMENT;
         }
 
         return armnn_driver::ArmnnDriverImpl<hal_1_1::HalPolicy>::prepareModel(m_Runtime,

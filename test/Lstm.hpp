@@ -54,18 +54,18 @@ bool TolerantCompareEqual(float a, float b, float tolerance = 0.00001f)
 
 // Helper function to create an OperandLifeTime::NO_VALUE for testing.
 // To be used on optional input operands that have no values - these are valid and should be tested.
-OperandLifeTime CreateNoValueLifeTime(const hidl_vec<uint32_t>& dimensions)
+V1_0::OperandLifeTime CreateNoValueLifeTime(const hidl_vec<uint32_t>& dimensions)
 {
     // Only create a NO_VALUE for optional operands that have no elements
     if (dimensions.size() == 0 || dimensions[0] == 0)
     {
-        return OperandLifeTime::NO_VALUE;
+        return V1_0::OperandLifeTime::NO_VALUE;
     }
-    return OperandLifeTime::CONSTANT_COPY;
+    return V1_0::OperandLifeTime::CONSTANT_COPY;
 }
 
 template<typename HalModel>
-void ExecuteModel(const HalModel& model, armnn_driver::ArmnnDriver& driver, const Request& request)
+void ExecuteModel(const HalModel& model, armnn_driver::ArmnnDriver& driver, const V1_0::Request& request)
 {
     android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, driver);
     if (preparedModel.get() != nullptr)
@@ -79,7 +79,7 @@ void ExecuteModel(const HalModel& model, armnn_driver::ArmnnDriver& driver, cons
 template<>
 void ExecuteModel<armnn_driver::hal_1_2::HalPolicy::Model>(const armnn_driver::hal_1_2::HalPolicy::Model& model,
                                                            armnn_driver::ArmnnDriver& driver,
-                                                           const Request& request)
+                                                           const V1_0::Request& request)
 {
     android::sp<V1_2::IPreparedModel> preparedModel = PrepareModel_1_2(model, driver);
     if (preparedModel.get() != nullptr)
@@ -362,7 +362,7 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
     outputArguments[2] = CreateRequestArgument<float>(cellStateOutValue, 5);
     outputArguments[3] = CreateRequestArgument<float>(outputValue, 6);
 
-    Request request = {};
+    V1_0::Request request = {};
     request.inputs  = inputArguments;
     request.outputs = outputArguments;
 
@@ -640,7 +640,7 @@ void QuantizedLstmTestImpl(const hidl_vec<uint32_t>&    inputDimensions,
     outputArguments[0] = CreateRequestArgument<int16_t>(cellStateOutValue, 3);
     outputArguments[1] = CreateRequestArgument<uint8_t>(outputValue, 4);
 
-    Request request = {};
+    V1_0::Request request = {};
     request.inputs  = inputArguments;
     request.outputs = outputArguments;
 

@@ -43,7 +43,7 @@ Return<void> ArmnnDriverImpl::getCapabilities(const armnn::IRuntimePtr& runtime,
         capabilities.quantized8Performance.powerUsage =
             ParseSystemProperty(g_Quantized8PerformancePowerUsageName, .1f);
 
-        cb(ErrorStatus::NONE, capabilities);
+        cb(V1_0::ErrorStatus::NONE, capabilities);
     }
     else
     {
@@ -52,7 +52,7 @@ Return<void> ArmnnDriverImpl::getCapabilities(const armnn::IRuntimePtr& runtime,
         capabilities.quantized8Performance.execTime   = 0;
         capabilities.quantized8Performance.powerUsage = 0;
 
-        cb(ErrorStatus::DEVICE_UNAVAILABLE, capabilities);
+        cb(V1_0::ErrorStatus::DEVICE_UNAVAILABLE, capabilities);
     }
 
     return Void();

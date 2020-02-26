@@ -9,6 +9,8 @@
 
 #include <HalInterfaces.h>
 
+namespace V1_1 = ::android::hardware::neuralnetworks::V1_1;
+
 namespace armnn_driver
 {
 namespace hal_1_1
