@@ -34,7 +34,7 @@ For Android Q, a new version of the NN API is available (1.2),
 thus the following should be added to `device.mk` instead:
 <pre>
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.2-service-armnn
-</pre> `Android.mk` contains the module definition of both versions of the ArmNN driver.
+</pre> `Android.mk` contains the module definition of all three versions (1.0, 1.1 and 1.2) of the ArmNN driver.
 
 Similarly, the Neon, CL or reference backend can be enabled/disabled by setting ARMNN_COMPUTE_CL_ENABLE,
 ARMNN_COMPUTE_NEON_ENABLE or ARMNN_REF_ENABLE in `device.mk`:
