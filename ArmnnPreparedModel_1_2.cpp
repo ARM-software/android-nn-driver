@@ -2,6 +2,9 @@
 // Copyright © 2017 Arm Ltd. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
+// Note: the ArmnnBurstExecutorWithCache in this file is based on Android code
+//       under the Apache 2.0 license. See comment below for details.
+//
 
 #define LOG_TAG "ArmnnDriver"
 
@@ -393,6 +396,10 @@ Return<void> ArmnnPreparedModel_1_2<HalVersion>::executeSynchronously(const Requ
     return Void();
 }
 
+/// This class is strongly inspired by the default implementation in Android named DefaultBurstExecutorWithCache.
+/// The original code is licensed under Apache-2.0 and can be found at the following link:
+/// https://android.googlesource.com/platform/frameworks/
+///         ml/+/refs/tags/android-10.0.0_r20/nn/common/ExecutionBurstServer.cpp
 class ArmnnBurstExecutorWithCache : public ExecutionBurstServer::IBurstExecutorWithCache {
 public:
     ArmnnBurstExecutorWithCache(IPreparedModel* preparedModel)
