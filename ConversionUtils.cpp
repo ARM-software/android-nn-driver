@@ -4,6 +4,7 @@
 //
 
 #include "ConversionUtils.hpp"
+#include <armnnUtils/Permute.hpp>
 
 ///
 /// Helper classes

@@ -12,7 +12,7 @@
 #include <armnn/BackendHelper.hpp>
 
 #include <armnnUtils/DataLayoutIndexed.hpp>
-#include <armnnUtils/Permute.hpp>
+#include <armnnUtils/Transpose.hpp>
 
 #include "1.0/FullyConnected.hpp"
 
@@ -432,21 +432,18 @@ void SanitizeBiasQuantizationScale(armnn::TensorInfo& biasInfo,
 
 // 4D Tensor Permutations
 const armnn::PermutationVector IdentityPermutation4D({ 0U, 1U, 2U, 3U });
-const armnn::PermutationVector NHWCToArmNN({ 0U, 2U, 3U, 1U });
-const armnn::PermutationVector ArmNNToNHWC({ 0U, 3U, 1U, 2U });
 const armnn::PermutationVector SwapDim1And2({ 0U, 2U, 1U, 3U });
 
 // 3D Permutation Vectors
-const armnn::PermutationVector IdentityPermutation3D({ 0U, 1U, 2U });
-const armnn::PermutationVector RotateTensorLeft({ 2U, 0U, 1U });
-const armnn::PermutationVector RotateTensorRight({ 1U, 2U, 0U });
+const armnn::PermutationVector RotateTensorLeft({ 1U, 2U, 0U });
+const armnn::PermutationVector RotateTensorRight({ 2U, 0U, 1U });
 
 template<typename OSlot>
-armnn::IConnectableLayer& AddPermuteLayer(armnn::INetwork& network, OSlot& input,
-                                          const armnn::PermutationVector& mappings)
+armnn::IConnectableLayer& AddTransposeLayer(armnn::INetwork& network, OSlot& input,
+                                            const armnn::PermutationVector& mappings)
 {
     // Add swizzle layer
-    armnn::IConnectableLayer* const layer = network.AddPermuteLayer(mappings);
+    armnn::IConnectableLayer* const layer = network.AddTransposeLayer(mappings);
 
     BOOST_ASSERT(layer != nullptr);
 
@@ -454,42 +451,10 @@ armnn::IConnectableLayer& AddPermuteLayer(armnn::INetwork& network, OSlot& input
     input.Connect(layer->GetInputSlot(0));
 
     // Setup swizzled output
-    const armnn::TensorInfo outInfo = armnnUtils::Permuted(input.GetTensorInfo(), mappings);
+    const armnn::TensorInfo outInfo = armnnUtils::TransposeTensorShape(input.GetTensorInfo(), mappings);
     layer->GetOutputSlot(0).SetTensorInfo(outInfo);
 
     return *layer;
-}
-
-void SwizzleIn(armnn::INetwork& network, LayerInputHandle& input, armnn::IConnectableLayer& layer, unsigned int index)
-{
-    // Add swizzle layer
-    armnn::IConnectableLayer& swizzleLayer = AddPermuteLayer(network, input, NHWCToArmNN);
-    // Connect swizzled input to layer
-    swizzleLayer.GetOutputSlot(0).Connect(layer.GetInputSlot(index));
-}
-
-armnn::IConnectableLayer& DeswizzleOut(armnn::INetwork& network, armnn::IConnectableLayer& layer, unsigned int index)
-{
-    // Add deswizzle layer
-    armnn::IConnectableLayer& deswizzleLayer = AddPermuteLayer(network, layer.GetOutputSlot(index), ArmNNToNHWC);
-    return deswizzleLayer;
-}
-
-// only suitable for input/output slot index 0, for other slots, use SwizzleIn and DeswizzleOut directly
-armnn::IConnectableLayer& SwizzleInDeswizzleOut(armnn::INetwork& network,
-                                                LayerInputHandle& input,
-                                                armnn::IConnectableLayer& firstLayer,
-                                                armnn::IConnectableLayer& lastLayer)
-{
-    SwizzleIn(network, input, firstLayer, 0);
-    return DeswizzleOut(network, lastLayer, 0);
-}
-
-// only suitable for input/output slot index 0, for other slots, use SwizzleIn and DeswizzleOut directly
-armnn::IConnectableLayer& SwizzleInDeswizzleOut(armnn::INetwork& network, LayerInputHandle& input,
-                                                armnn::IConnectableLayer& layer)
-{
-    return SwizzleInDeswizzleOut(network, input, layer, layer);
 }
 
 bool ValidateConcatOutputShape(const std::vector<armnn::TensorShape> & inputShapes,
@@ -551,7 +516,7 @@ void SwizzleInputs(armnn::INetwork& network,
         for (size_t i=0; i<nInputs; ++i)
         {
             // add swizzle layer
-            armnn::IConnectableLayer& swizzleLayer = AddPermuteLayer(network, inputs[i], mapping);
+            armnn::IConnectableLayer& swizzleLayer = AddTransposeLayer(network, inputs[i], mapping);
             auto& outputSlot = swizzleLayer.GetOutputSlot(0);
             auto& outputInfo = outputSlot.GetTensorInfo();
             // replace inputs with the swizzled ones
@@ -573,17 +538,17 @@ bool CheckReshapeSupported(ConversionData& data,
         for (size_t i=0; i<nInputs; ++i)
         {
             // check permute layer
-            armnn::PermuteDescriptor permuteDesc;
-            permuteDesc.m_DimMappings = mapping;
+            armnn::TransposeDescriptor transposeDesc;
+            transposeDesc.m_DimMappings = mapping;
 
             bool isSupported = false;
             FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                                       IsPermuteSupported,
+                                       IsTransposeSupported,
                                        data.m_Backends,
                                        isSupported,
                                        inputs[i].GetTensorInfo(),
                                        outputInfo,
-                                       permuteDesc);
+                                       transposeDesc);
             if (!isSupported)
             {
                 return false;
@@ -1845,7 +1810,7 @@ bool ConvertConcatenation(const HalOperation& operation, const HalModel& model, 
 
     if (needPermute)
     {
-        outputShape = armnnUtils::Permuted(outputShape, permutationPair.first);
+        outputShape = armnnUtils::TransposeTensorShape(outputShape, permutationPair.first);
     }
 
     outputInfo.SetShape(outputShape);
@@ -1911,25 +1876,25 @@ bool ConvertConcatenation(const HalOperation& operation, const HalModel& model, 
 
     if (needPermute)
     {
-        armnn::PermuteDescriptor permuteDesc;
-        permuteDesc.m_DimMappings = permutationPair.second;
+        armnn::TransposeDescriptor transposeDesc;
+        transposeDesc.m_DimMappings = permutationPair.second;
 
         bool isSupported = false;
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                                   IsPermuteSupported,
+                                   IsTransposeSupported,
                                    data.m_Backends,
                                    isSupported,
                                    layer->GetOutputSlot(0).GetTensorInfo(),
                                    outputInfo,
-                                   permuteDesc);
+                                   transposeDesc);
         if (!isSupported)
         {
             return false;
         }
         // Add permutation layer and connect the output to it, the permutation becomes the output layer
-        armnn::IConnectableLayer& deswizzleLayer = AddPermuteLayer(*data.m_Network,
-                                                                   layer->GetOutputSlot(0),
-                                                                   permutationPair.second);
+        armnn::IConnectableLayer& deswizzleLayer = AddTransposeLayer(*data.m_Network,
+                                                                     layer->GetOutputSlot(0),
+                                                                     permutationPair.second);
         layer = &deswizzleLayer;
     }
 
@@ -3461,20 +3426,8 @@ bool ConvertTranspose(const HalOperation& operation, const HalModel& model, Conv
 
     std::vector<uint32_t> outputDims(perm.begin(), perm.begin() + rank);
 
-    // Permutation vectors (outputDims) are given in ANN/Tf format, we must convert them to ArmNN format
-    // For ANN/Tf/ACL: output[i] = input[ perm[i] ]
-    // For ArmNN: output[ perm[i] ] = input[i]
-    // e.g. 3,0,1,2 -> 1,2,3,0
-    std::vector<unsigned int> armnnPermuteShape(rank);
-    std::vector<unsigned int>::iterator it;
-    for (unsigned int i = 0u; i < rank; ++i)
-    {
-        it = std::find(outputDims.begin(), outputDims.end(), i);
-        armnnPermuteShape[i] = static_cast<unsigned int>(std::distance(outputDims.begin(), it));
-    }
-
-    armnn::PermuteDescriptor permuteDesc;
-    permuteDesc.m_DimMappings = armnn::PermutationVector(armnnPermuteShape.data(), armnnPermuteShape.size());
+    armnn::TransposeDescriptor transposeDesc;
+    transposeDesc.m_DimMappings = armnn::PermutationVector(outputDims.data(), outputDims.size());
 
     const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!output)
@@ -3491,18 +3444,18 @@ bool ConvertTranspose(const HalOperation& operation, const HalModel& model, Conv
 
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsPermuteSupported,
+                               IsTransposeSupported,
                                data.m_Backends,
                                isSupported,
                                inputInfo,
                                outputInfo,
-                               permuteDesc);
+                               transposeDesc);
     if (!isSupported)
     {
         return false;
     }
 
-    armnn::IConnectableLayer* const layer = data.m_Network->AddPermuteLayer(permuteDesc);
+    armnn::IConnectableLayer* const layer = data.m_Network->AddTransposeLayer(transposeDesc);
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
