@@ -52,7 +52,7 @@ ConstTensorPin::ConstTensorPin(const armnn::TensorInfo& tensorInfo,
                                uint32_t numBytes,
                                const armnn::PermutationVector& mappings)
 {
-    boost::ignore_unused(numBytes);
+    armnn::IgnoreUnused(numBytes);
     assert(tensorInfo.GetNumBytes() == numBytes);
 
     const bool needsSwizzling = (mappings.GetSize() > 0);

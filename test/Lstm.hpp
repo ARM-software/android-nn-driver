@@ -7,6 +7,8 @@
 
 #include "DriverTestHelpers.hpp"
 
+#include <armnn/utility/IgnoreUnused.hpp>
+
 #include <boost/array.hpp>
 #include <boost/math/special_functions/relative_difference.hpp>
 
@@ -2371,7 +2373,7 @@ void LstmCifgPeepholeProjectionNoClippingLayerNorm(armnn::Compute compute)
 template <typename HalPolicy>
 void QuantizedLstm(armnn::Compute compute)
 {
-    boost::ignore_unused(compute);
+    armnn::IgnoreUnused(compute);
     // This replicates android/frameworks/ml/nn/runtime/test/generated/vts_models/quantized_lstm.model.cpp
     // with values from android/frameworks/ml/nn/runtime/test/generated/examples/quantized_lstm.example.cpp
     // and weights, biases and scalars passed as CONSTANT_COPY tensors (instead of MODEL_INPUT tensors).

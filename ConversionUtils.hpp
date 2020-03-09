@@ -10,6 +10,7 @@
 #include <armnn/ArmNN.hpp>
 #include <armnn/ILayerSupport.hpp>
 #include <armnn/BackendHelper.hpp>
+#include <armnn/utility/IgnoreUnused.hpp>
 
 #include <armnnUtils/DataLayoutIndexed.hpp>
 #include <armnnUtils/Transpose.hpp>
@@ -21,7 +22,6 @@
 #include <OperationsUtils.h>
 
 #include <boost/assert.hpp>
-#include <boost/core/ignore_unused.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 

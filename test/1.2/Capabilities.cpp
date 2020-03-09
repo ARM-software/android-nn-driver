@@ -8,7 +8,6 @@
 #include "Utils.h"
 
 #include <boost/test/unit_test.hpp>
-#include <boost/core/ignore_unused.hpp>
 
 #include <sys/system_properties.h>
 

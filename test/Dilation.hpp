@@ -8,8 +8,8 @@
 #include "DriverTestHelpers.hpp"
 
 #include <armnn/LayerVisitorBase.hpp>
+#include <armnn/utility/IgnoreUnused.hpp>
 
-#include <boost/core/ignore_unused.hpp>
 #include <boost/test/unit_test.hpp>
 
 #include <numeric>
@@ -53,10 +53,10 @@ public:
                                  const Optional<ConstTensor>& biases,
                                  const char *name = nullptr) override
     {
-        ignore_unused(layer);
-        ignore_unused(weights);
-        ignore_unused(biases);
-        ignore_unused(name);
+        IgnoreUnused(layer);
+        IgnoreUnused(weights);
+        IgnoreUnused(biases);
+        IgnoreUnused(name);
 
         CheckDilationParams(descriptor);
     }
@@ -67,10 +67,10 @@ public:
                                           const Optional<ConstTensor>& biases,
                                           const char *name = nullptr) override
     {
-        ignore_unused(layer);
-        ignore_unused(weights);
-        ignore_unused(biases);
-        ignore_unused(name);
+        IgnoreUnused(layer);
+        IgnoreUnused(weights);
+        IgnoreUnused(biases);
+        IgnoreUnused(name);
 
         CheckDilationParams(descriptor);
     }
