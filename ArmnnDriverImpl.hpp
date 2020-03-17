@@ -23,6 +23,13 @@ namespace V1_2 = ::android::hardware::neuralnetworks::V1_2;
 namespace armnn_driver
 {
 
+template <typename Callback, typename Context>
+struct CallbackContext
+{
+    Callback callback;
+    Context ctx;
+};
+
 template<typename HalPolicy>
 class ArmnnDriverImpl
 {

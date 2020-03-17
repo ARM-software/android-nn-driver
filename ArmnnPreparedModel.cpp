@@ -84,7 +84,8 @@ using namespace android::hardware;
 namespace armnn_driver
 {
 template<typename HalVersion>
-RequestThread<ArmnnPreparedModel, HalVersion, ArmnnCallback_1_0> ArmnnPreparedModel<HalVersion>::m_RequestThread;
+RequestThread<ArmnnPreparedModel, HalVersion, CallbackContext_1_0>
+    ArmnnPreparedModel<HalVersion>::m_RequestThread;
 
 template<typename HalVersion>
 template <typename TensorBindingCollection>
@@ -226,7 +227,7 @@ Return<V1_0::ErrorStatus> ArmnnPreparedModel<HalVersion>::execute(
         NotifyCallbackAndCheck(callback, errorStatus, callingFunction);
     };
 
-    ArmnnCallback_1_0 armnnCb;
+    CallbackContext_1_0 armnnCb;
     armnnCb.callback = cb;
     // post the request for asynchronous execution
     m_RequestThread.PostMsg(this, pMemPools, pInputTensors, pOutputTensors, armnnCb);
@@ -237,18 +238,18 @@ Return<V1_0::ErrorStatus> ArmnnPreparedModel<HalVersion>::execute(
 template<typename HalVersion>
 void ArmnnPreparedModel<HalVersion>::ExecuteGraph(
         std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& pMemPools,
-        std::shared_ptr<armnn::InputTensors>& pInputTensors,
-        std::shared_ptr<armnn::OutputTensors>& pOutputTensors,
-        ArmnnCallback_1_0 cb)
+        armnn::InputTensors& inputTensors,
+        armnn::OutputTensors& outputTensors,
+        CallbackContext_1_0 cb)
 {
     ALOGV("ArmnnPreparedModel::ExecuteGraph(...)");
 
-    DumpTensorsIfRequired("Input", *pInputTensors);
+    DumpTensorsIfRequired("Input", inputTensors);
 
     // run it
     try
     {
-        armnn::Status status = m_Runtime->EnqueueWorkload(m_NetworkId, *pInputTensors, *pOutputTensors);
+        armnn::Status status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors);
         if (status != armnn::Status::Success)
         {
             ALOGW("EnqueueWorkload failed");
@@ -269,7 +270,7 @@ void ArmnnPreparedModel<HalVersion>::ExecuteGraph(
         return;
     }
 
-    DumpTensorsIfRequired("Output", *pOutputTensors);
+    DumpTensorsIfRequired("Output", outputTensors);
 
     // Commit output buffers.
     // Note that we update *all* pools, even if they aren't actually used as outputs -

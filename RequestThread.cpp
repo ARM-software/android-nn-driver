@@ -21,15 +21,15 @@ using namespace android;
 namespace armnn_driver
 {
 
-template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename Callback>
-RequestThread<PreparedModel, HalVersion, Callback>::RequestThread()
+template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename CallbackContext>
+RequestThread<PreparedModel, HalVersion, CallbackContext>::RequestThread()
 {
     ALOGV("RequestThread::RequestThread()");
     m_Thread = std::make_unique<std::thread>(&RequestThread::Process, this);
 }
 
-template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename Callback>
-RequestThread<PreparedModel, HalVersion, Callback>::~RequestThread()
+template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename CallbackContext>
+RequestThread<PreparedModel, HalVersion, CallbackContext>::~RequestThread()
 {
     ALOGV("RequestThread::~RequestThread()");
 
@@ -54,25 +54,25 @@ RequestThread<PreparedModel, HalVersion, Callback>::~RequestThread()
     catch (const std::exception&) { } // Swallow any exception.
 }
 
-template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename Callback>
-void RequestThread<PreparedModel, HalVersion, Callback>::PostMsg(PreparedModel<HalVersion>* model,
+template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename CallbackContext>
+void RequestThread<PreparedModel, HalVersion, CallbackContext>::PostMsg(PreparedModel<HalVersion>* model,
         std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& memPools,
         std::shared_ptr<armnn::InputTensors>& inputTensors,
         std::shared_ptr<armnn::OutputTensors>& outputTensors,
-        Callback callback)
+        CallbackContext callbackContext)
 {
     ALOGV("RequestThread::PostMsg(...)");
     auto data = std::make_shared<AsyncExecuteData>(model,
                                                    memPools,
                                                    inputTensors,
                                                    outputTensors,
-                                                   callback);
+                                                   callbackContext);
     auto pMsg = std::make_shared<ThreadMsg>(ThreadMsgType::REQUEST, data);
     PostMsg(pMsg);
 }
 
-template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename Callback>
-void RequestThread<PreparedModel, HalVersion, Callback>::PostMsg(std::shared_ptr<ThreadMsg>& pMsg)
+template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename CallbackContext>
+void RequestThread<PreparedModel, HalVersion, CallbackContext>::PostMsg(std::shared_ptr<ThreadMsg>& pMsg)
 {
     ALOGV("RequestThread::PostMsg(pMsg)");
     // Add a message to the queue and notify the request thread
@@ -81,8 +81,8 @@ void RequestThread<PreparedModel, HalVersion, Callback>::PostMsg(std::shared_ptr
     m_Cv.notify_one();
 }
 
-template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename Callback>
-void RequestThread<PreparedModel, HalVersion, Callback>::Process()
+template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename CallbackContext>
+void RequestThread<PreparedModel, HalVersion, CallbackContext>::Process()
 {
     ALOGV("RequestThread::Process()");
     while (true)
@@ -109,9 +109,9 @@ void RequestThread<PreparedModel, HalVersion, Callback>::Process()
                 // invoke the asynchronous execution method
                 PreparedModel<HalVersion>* model = pMsg->data->m_Model;
                 model->ExecuteGraph(pMsg->data->m_MemPools,
-                                    pMsg->data->m_InputTensors,
-                                    pMsg->data->m_OutputTensors,
-                                    pMsg->data->m_Callback);
+                                    *(pMsg->data->m_InputTensors),
+                                    *(pMsg->data->m_OutputTensors),
+                                    pMsg->data->m_CallbackContext);
                 break;
             }
 
@@ -139,16 +139,16 @@ void RequestThread<PreparedModel, HalVersion, Callback>::Process()
 /// Class template specializations
 ///
 
-template class RequestThread<ArmnnPreparedModel, hal_1_0::HalPolicy, ArmnnCallback_1_0>;
+template class RequestThread<ArmnnPreparedModel, hal_1_0::HalPolicy, CallbackContext_1_0>;
 
 #ifdef ARMNN_ANDROID_NN_V1_1
-template class RequestThread<armnn_driver::ArmnnPreparedModel, hal_1_1::HalPolicy, ArmnnCallback_1_0>;
+template class RequestThread<armnn_driver::ArmnnPreparedModel, hal_1_1::HalPolicy, CallbackContext_1_0>;
 #endif
 
 #ifdef ARMNN_ANDROID_NN_V1_2
-template class RequestThread<ArmnnPreparedModel, hal_1_1::HalPolicy, ArmnnCallback_1_0>;
-template class RequestThread<ArmnnPreparedModel, hal_1_2::HalPolicy, ArmnnCallback_1_0>;
-template class RequestThread<ArmnnPreparedModel_1_2, hal_1_2::HalPolicy, ArmnnCallback_1_2>;
+template class RequestThread<ArmnnPreparedModel, hal_1_1::HalPolicy, CallbackContext_1_0>;
+template class RequestThread<ArmnnPreparedModel, hal_1_2::HalPolicy, CallbackContext_1_0>;
+template class RequestThread<ArmnnPreparedModel_1_2, hal_1_2::HalPolicy, CallbackContext_1_2>;
 #endif
 
 } // namespace armnn_driver

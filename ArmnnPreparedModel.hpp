@@ -24,6 +24,10 @@ struct ArmnnCallback_1_0
     armnnExecuteCallback_1_0 callback;
 };
 
+struct ExecutionContext_1_0 {};
+
+using CallbackContext_1_0 = CallbackContext<armnnExecuteCallback_1_0, ExecutionContext_1_0>;
+
 template <typename HalVersion>
 class ArmnnPreparedModel : public V1_0::IPreparedModel
 {
@@ -43,9 +47,9 @@ public:
 
     /// execute the graph prepared from the request
     void ExecuteGraph(std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& pMemPools,
-                      std::shared_ptr<armnn::InputTensors>& pInputTensors,
-                      std::shared_ptr<armnn::OutputTensors>& pOutputTensors,
-                      ArmnnCallback_1_0 callback);
+                      armnn::InputTensors& inputTensors,
+                      armnn::OutputTensors& outputTensors,
+                      CallbackContext_1_0 callback);
 
     /// Executes this model with dummy inputs (e.g. all zeroes).
     /// \return false on failure, otherwise true
@@ -60,7 +64,7 @@ private:
     HalModel                                                                m_Model;
     // There must be a single RequestThread for all ArmnnPreparedModel objects to ensure serial execution of workloads
     // It is specific to this class, so it is declared as static here
-    static RequestThread<ArmnnPreparedModel, HalVersion, ArmnnCallback_1_0> m_RequestThread;
+    static RequestThread<ArmnnPreparedModel, HalVersion, CallbackContext_1_0> m_RequestThread;
     uint32_t                                                                m_RequestCount;
     const std::string&                                                      m_RequestInputsAndOutputsDumpDir;
     const bool                                                              m_GpuProfilingEnabled;
