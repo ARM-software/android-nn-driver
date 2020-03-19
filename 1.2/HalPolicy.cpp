@@ -279,9 +279,11 @@ bool HalPolicy::ConvertComparison(const Operation& operation,
 
     IConnectableLayer* layer = data.m_Network->AddComparisonLayer(descriptor);
     assert(layer != nullptr);
-
-    input0.Connect(layer->GetInputSlot(0));
-    input1.Connect(layer->GetInputSlot(1));
+    bool isReshapeSupported = BroadcastTensor(input0, input1, layer, data);
+    if (!isReshapeSupported)
+    {
+        return false;
+    }
 
     return SetupAndTrackLayerOutputSlot<hal_1_2::HalPolicy>(operation, 0, *layer, model, data);
 }
