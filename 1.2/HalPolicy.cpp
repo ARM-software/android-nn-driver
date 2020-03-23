@@ -150,6 +150,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertMinimum(operation, model, data);
         case V1_2::OperationType::MUL:
             return ConvertMul(operation, model, data);
+        case V1_2::OperationType::NEG:
+            return ConvertElementwiseUnary(operation, model, data, UnaryOperation::Neg);
         case V1_2::OperationType::NOT_EQUAL:
             return ConvertComparison(operation, model, data, ComparisonOperation::NotEqual);
         case V1_2::OperationType::PAD:
