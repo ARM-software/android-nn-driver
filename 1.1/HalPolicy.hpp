@@ -26,6 +26,7 @@ public:
     using Operation                 = V1_1::Operation;
     using OperationType             = V1_1::OperationType;
     using getSupportedOperations_cb = V1_1::IDevice::getSupportedOperations_1_1_cb;
+    using ErrorStatus               = V1_0::ErrorStatus;
 
     static bool ConvertOperation(const Operation& operation, const Model& model, ConversionData& data);
 

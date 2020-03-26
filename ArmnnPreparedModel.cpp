@@ -294,7 +294,7 @@ bool ArmnnPreparedModel<HalVersion>::ExecuteWithDummyInputs()
 {
     std::vector<std::vector<char>> storage;
     armnn::InputTensors inputTensors;
-    for (unsigned int i = 0; i < m_Model.inputIndexes.size(); i++)
+    for (unsigned int i = 0; i < getMainModel(m_Model).inputIndexes.size(); i++)
     {
         const armnn::TensorInfo inputTensorInfo = m_Runtime->GetInputTensorInfo(m_NetworkId, i);
         storage.emplace_back(inputTensorInfo.GetNumBytes());
@@ -304,7 +304,7 @@ bool ArmnnPreparedModel<HalVersion>::ExecuteWithDummyInputs()
     }
 
     armnn::OutputTensors outputTensors;
-    for (unsigned int i = 0; i < m_Model.outputIndexes.size(); i++)
+    for (unsigned int i = 0; i < getMainModel(m_Model).outputIndexes.size(); i++)
     {
         const armnn::TensorInfo outputTensorInfo = m_Runtime->GetOutputTensorInfo(m_NetworkId, i);
         storage.emplace_back(outputTensorInfo.GetNumBytes());
@@ -348,5 +348,11 @@ template class ArmnnPreparedModel<hal_1_1::HalPolicy>;
 #ifdef ARMNN_ANDROID_NN_V1_2
 template class ArmnnPreparedModel<hal_1_1::HalPolicy>;
 template class ArmnnPreparedModel<hal_1_2::HalPolicy>;
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_3
+template class ArmnnPreparedModel<hal_1_1::HalPolicy>;
+template class ArmnnPreparedModel<hal_1_2::HalPolicy>;
+template class ArmnnPreparedModel<hal_1_3::HalPolicy>;
 #endif
 } // namespace armnn_driver

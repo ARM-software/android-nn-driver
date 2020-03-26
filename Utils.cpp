@@ -103,7 +103,7 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_0::Operand& operand)
     return ret;
 }
 
-#ifdef ARMNN_ANDROID_NN_V1_2 // Using ::android::hardware::neuralnetworks::V1_2
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)// Using ::android::hardware::neuralnetworks::V1_2
 
 armnn::TensorInfo GetTensorInfoForOperand(const V1_2::Operand& operand)
 {
@@ -164,15 +164,86 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_2::Operand& operand)
 
 #endif
 
+#ifdef ARMNN_ANDROID_NN_V1_3 // Using ::android::hardware::neuralnetworks::V1_3
+
+armnn::TensorInfo GetTensorInfoForOperand(const V1_3::Operand& operand)
+{
+    using namespace armnn;
+    bool perChannel = false;
+
+    DataType type;
+    switch (operand.type)
+    {
+        case V1_3::OperandType::TENSOR_FLOAT32:
+            type = armnn::DataType::Float32;
+            break;
+        case V1_3::OperandType::TENSOR_FLOAT16:
+            type = armnn::DataType::Float16;
+            break;
+        case V1_3::OperandType::TENSOR_QUANT8_ASYMM:
+            type = armnn::DataType::QAsymmU8;
+            break;
+        case V1_3::OperandType::TENSOR_QUANT8_SYMM_PER_CHANNEL:
+            perChannel=true;
+            ARMNN_FALLTHROUGH;
+        case V1_3::OperandType::TENSOR_QUANT8_SYMM:
+            type = armnn::DataType::QSymmS8;
+            break;
+        case V1_3::OperandType::TENSOR_QUANT16_SYMM:
+            type = armnn::DataType::QSymmS16;
+            break;
+        case V1_3::OperandType::TENSOR_INT32:
+            type = armnn::DataType::Signed32;
+            break;
+        case V1_3::OperandType::TENSOR_QUANT8_ASYMM_SIGNED:
+            type = armnn::DataType::QAsymmS8;
+            break;
+        default:
+            throw UnsupportedOperand<V1_3::OperandType>(operand.type);
+    }
+
+    TensorInfo ret(operand.dimensions.size(), operand.dimensions.data(), type);
+    if (perChannel)
+    {
+        // ExtraParams is expected to be of type channelQuant
+        BOOST_ASSERT(operand.extraParams.getDiscriminator() ==
+                     V1_3::Operand::ExtraParams::hidl_discriminator::channelQuant);
+
+        auto perAxisQuantParams = operand.extraParams.channelQuant();
+
+        ret.SetQuantizationScales(perAxisQuantParams.scales);
+        ret.SetQuantizationDim(MakeOptional<unsigned int>(perAxisQuantParams.channelDim));
+    }
+    else
+    {
+        ret.SetQuantizationScale(operand.scale);
+        ret.SetQuantizationOffset(operand.zeroPoint);
+    }
+
+    return ret;
+}
+
+#endif
+
 std::string GetOperandSummary(const V1_0::Operand& operand)
 {
     return android::hardware::details::arrayToString(operand.dimensions, operand.dimensions.size()) + " " +
         toString(operand.type);
 }
 
-#ifdef ARMNN_ANDROID_NN_V1_2 // Using ::android::hardware::neuralnetworks::V1_2
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3) // Using ::android::hardware::neuralnetworks::V1_2
 
 std::string GetOperandSummary(const V1_2::Operand& operand)
+{
+    return android::hardware::details::arrayToString(operand.dimensions, operand.dimensions.size()) + " " +
+           toString(operand.type);
+}
+
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_3 // Using ::android::hardware::neuralnetworks::V1_3
+
+std::string GetOperandSummary(const V1_3::Operand& operand)
 {
     return android::hardware::details::arrayToString(operand.dimensions, operand.dimensions.size()) + " " +
            toString(operand.type);
@@ -446,6 +517,27 @@ void RenameGraphDotFile(const std::string& oldName, const std::string& dumpDir, 
         ss << "rename of [" << oldName << "] to [" << newFileName << "] failed with errno " << std::to_string(errno)
            << " : " << std::strerror(errno);
         ALOGW(ss.str().c_str());
+    }
+}
+
+void CommitPools(std::vector<::android::nn::RunTimePoolInfo>& memPools)
+{
+    if (memPools.empty())
+    {
+        return;
+    }
+    // Commit output buffers.
+    // Note that we update *all* pools, even if they aren't actually used as outputs -
+    // this is simpler and is what the CpuExecutor does.
+    for (auto& pool : memPools)
+    {
+        // Type android::nn::RunTimePoolInfo has changed between Android P & Q and Android R, where
+        // update() has been removed and flush() added.
+#if defined(ARMNN_ANDROID_R) // Use the new Android implementation.
+        pool.flush();
+#else
+        pool.update();
+#endif
     }
 }
 

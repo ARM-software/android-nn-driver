@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2020 Arm Ltd. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -7,7 +7,7 @@
 
 namespace armnn_driver
 {
-namespace hal_1_2
+namespace hal_1_3
 {
 
 using namespace armnn;
@@ -15,125 +15,125 @@ using namespace armnn;
 namespace
 {
 
-} // anonymous namespace
+} // anonymouse namespace
 
 bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model, ConversionData& data)
 {
     switch (operation.type)
     {
-        case V1_2::OperationType::ABS:
+        case V1_3::OperationType::ABS:
             return ConvertElementwiseUnary(operation, model, data, UnaryOperation::Abs);
-        case V1_2::OperationType::ADD:
+        case V1_3::OperationType::ADD:
             return ConvertAdd(operation, model, data);
-        case V1_2::OperationType::ARGMAX:
+        case V1_3::OperationType::ARGMAX:
             return ConvertArgMinMax(operation, model, data, ArgMinMaxFunction::Max);
-        case V1_2::OperationType::ARGMIN:
+        case V1_3::OperationType::ARGMIN:
             return ConvertArgMinMax(operation, model, data, ArgMinMaxFunction::Min);
-        case V1_2::OperationType::AVERAGE_POOL_2D:
+        case V1_3::OperationType::AVERAGE_POOL_2D:
             return ConvertAveragePool2d(operation, model, data);
-        case V1_2::OperationType::BATCH_TO_SPACE_ND:
+        case V1_3::OperationType::BATCH_TO_SPACE_ND:
             return ConvertBatchToSpaceNd(operation, model, data);
-        case V1_2::OperationType::CONCATENATION:
+        case V1_3::OperationType::CONCATENATION:
             return ConvertConcatenation(operation, model, data);
-        case V1_2::OperationType::CONV_2D:
+        case V1_3::OperationType::CONV_2D:
             return ConvertConv2d(operation, model, data);
-        case V1_2::OperationType::DEPTH_TO_SPACE:
+        case V1_3::OperationType::DEPTH_TO_SPACE:
             return ConvertDepthToSpace(operation, model, data);
-        case V1_2::OperationType::DEPTHWISE_CONV_2D:
+        case V1_3::OperationType::DEPTHWISE_CONV_2D:
             return ConvertDepthwiseConv2d(operation, model, data);
-        case V1_2::OperationType::DEQUANTIZE:
+        case V1_3::OperationType::DEQUANTIZE:
             return ConvertDequantize(operation, model, data);
-        case V1_2::OperationType::DIV:
+        case V1_3::OperationType::DIV:
             return ConvertDiv(operation, model, data);
-        case V1_2::OperationType::EQUAL:
+        case V1_3::OperationType::EQUAL:
             return ConvertComparison(operation, model, data, ComparisonOperation::Equal);
-        case V1_2::OperationType::EXPAND_DIMS:
+        case V1_3::OperationType::EXPAND_DIMS:
             return ConvertExpandDims(operation, model, data);
-        case V1_2::OperationType::FLOOR:
+        case V1_3::OperationType::FLOOR:
             return ConvertFloor(operation, model, data);
-        case V1_2::OperationType::FULLY_CONNECTED:
+        case V1_3::OperationType::FULLY_CONNECTED:
             return ConvertFullyConnected(operation, model, data);
-        case V1_2::OperationType::GREATER:
+        case V1_3::OperationType::GREATER:
             return ConvertComparison(operation, model, data, ComparisonOperation::Greater);
-        case V1_2::OperationType::GREATER_EQUAL:
+        case V1_3::OperationType::GREATER_EQUAL:
             return ConvertComparison(operation, model, data, ComparisonOperation::GreaterOrEqual);
-        case V1_2::OperationType::GROUPED_CONV_2D:
+        case V1_3::OperationType::GROUPED_CONV_2D:
             return ConvertGroupedConv2d(operation, model, data);
-        case V1_2::OperationType::INSTANCE_NORMALIZATION:
+        case V1_3::OperationType::INSTANCE_NORMALIZATION:
             return ConvertInstanceNormalization(operation, model, data);
-        case V1_2::OperationType::L2_NORMALIZATION:
+        case V1_3::OperationType::L2_NORMALIZATION:
             return ConvertL2Normalization(operation, model, data);
-        case V1_2::OperationType::L2_POOL_2D:
+        case V1_3::OperationType::L2_POOL_2D:
             return ConvertL2Pool2d(operation, model, data);
-        case V1_2::OperationType::LESS:
+        case V1_3::OperationType::LESS:
             return ConvertComparison(operation, model, data, ComparisonOperation::Less);
-        case V1_2::OperationType::LESS_EQUAL:
+        case V1_3::OperationType::LESS_EQUAL:
             return ConvertComparison(operation, model, data, ComparisonOperation::LessOrEqual);
-        case V1_2::OperationType::LOCAL_RESPONSE_NORMALIZATION:
+        case V1_3::OperationType::LOCAL_RESPONSE_NORMALIZATION:
             return ConvertLocalResponseNormalization(operation, model, data);
-        case V1_2::OperationType::LOGISTIC:
+        case V1_3::OperationType::LOGISTIC:
             return ConvertLogistic(operation, model, data);
-        case V1_2::OperationType::LOG_SOFTMAX:
+        case V1_3::OperationType::LOG_SOFTMAX:
             return ConvertLogSoftmax(operation, model, data);
-        case V1_2::OperationType::LSTM:
+        case V1_3::OperationType::LSTM:
             return ConvertLstm(operation, model, data);
-        case V1_2::OperationType::MAX_POOL_2D:
+        case V1_3::OperationType::MAX_POOL_2D:
             return ConvertMaxPool2d(operation, model, data);
-        case V1_2::OperationType::MAXIMUM:
+        case V1_3::OperationType::MAXIMUM:
             return ConvertMaximum(operation, model, data);
-        case V1_2::OperationType::MEAN:
+        case V1_3::OperationType::MEAN:
             return ConvertMean(operation, model, data);
-        case V1_2::OperationType::MINIMUM:
+        case V1_3::OperationType::MINIMUM:
             return ConvertMinimum(operation, model, data);
-        case V1_2::OperationType::MUL:
+        case V1_3::OperationType::MUL:
             return ConvertMul(operation, model, data);
-        case V1_2::OperationType::NEG:
+        case V1_3::OperationType::NEG:
             return ConvertElementwiseUnary(operation, model, data, UnaryOperation::Neg);
-        case V1_2::OperationType::NOT_EQUAL:
+        case V1_3::OperationType::NOT_EQUAL:
             return ConvertComparison(operation, model, data, ComparisonOperation::NotEqual);
-        case V1_2::OperationType::PAD:
+        case V1_3::OperationType::PAD:
             return ConvertPad(operation, model, data);
-        case V1_2::OperationType::PAD_V2:
+        case V1_3::OperationType::PAD_V2:
             return ConvertPadV2(operation, model, data);
-        case V1_2::OperationType::PRELU:
+        case V1_3::OperationType::PRELU:
             return ConvertPrelu(operation, model, data);
-        case V1_2::OperationType::QUANTIZE:
+        case V1_3::OperationType::QUANTIZE:
             return ConvertQuantize(operation, model, data);
-        case V1_2::OperationType::QUANTIZED_16BIT_LSTM:
+        case V1_3::OperationType::QUANTIZED_16BIT_LSTM:
             return ConvertQuantizedLstm(operation, model, data);
-        case V1_2::OperationType::RELU:
+        case V1_3::OperationType::RELU:
             return ConvertReLu(operation, model, data);
-        case V1_2::OperationType::RELU1:
+        case V1_3::OperationType::RELU1:
             return ConvertReLu1(operation, model, data);
-        case V1_2::OperationType::RELU6:
+        case V1_3::OperationType::RELU6:
             return ConvertReLu6(operation, model, data);
-        case V1_2::OperationType::RESHAPE:
+        case V1_3::OperationType::RESHAPE:
             return ConvertReshape(operation, model, data);
-        case V1_2::OperationType::RESIZE_BILINEAR:
+        case V1_3::OperationType::RESIZE_BILINEAR:
             return ConvertResize(operation, model, data, ResizeMethod::Bilinear);
-        case V1_2::OperationType::RESIZE_NEAREST_NEIGHBOR:
+        case V1_3::OperationType::RESIZE_NEAREST_NEIGHBOR:
             return ConvertResize(operation, model, data, ResizeMethod::NearestNeighbor);
-        case V1_2::OperationType::RSQRT:
+        case V1_3::OperationType::RSQRT:
             return ConvertElementwiseUnary(operation, model, data, UnaryOperation::Rsqrt);
-        case V1_2::OperationType::SQRT:
+        case V1_3::OperationType::SQRT:
             return ConvertSqrt(operation, model, data);
-        case V1_2::OperationType::SQUEEZE:
+        case V1_3::OperationType::SQUEEZE:
             return ConvertSqueeze(operation, model, data);
-        case V1_2::OperationType::STRIDED_SLICE:
+        case V1_3::OperationType::STRIDED_SLICE:
             return ConvertStridedSlice(operation, model, data);
-        case V1_2::OperationType::TRANSPOSE:
+        case V1_3::OperationType::TRANSPOSE:
             return ConvertTranspose(operation, model, data);
-        case V1_2::OperationType::TRANSPOSE_CONV_2D:
+        case V1_3::OperationType::TRANSPOSE_CONV_2D:
             return ConvertTransposeConv2d(operation, model, data);
-        case V1_2::OperationType::SOFTMAX:
+        case V1_3::OperationType::SOFTMAX:
             return ConvertSoftmax(operation, model, data);
-        case V1_2::OperationType::SPACE_TO_BATCH_ND  :
+        case V1_3::OperationType::SPACE_TO_BATCH_ND  :
             return ConvertSpaceToBatchNd(operation, model, data);
-        case V1_2::OperationType::SPACE_TO_DEPTH:
+        case V1_3::OperationType::SPACE_TO_DEPTH:
             return ConvertSpaceToDepth(operation, model, data);
-        case V1_2::OperationType::SUB:
+        case V1_3::OperationType::SUB:
             return ConvertSub(operation, model, data);
-        case V1_2::OperationType::TANH:
+        case V1_3::OperationType::TANH:
             return ConvertTanH(operation, model, data);
         default:
             return Fail("%s: Operation type %s not supported in ArmnnDriver",
@@ -143,29 +143,29 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
 
 bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertAdd()");
-    return ::ConvertAdd<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertAdd()");
+    return ::ConvertAdd<hal_1_3::HalPolicy>(operation, model, data);
 }
 
-bool HalPolicy::ConvertArgMinMax(const V1_2::Operation& operation,
-                                 const V1_2::Model& model,
+bool HalPolicy::ConvertArgMinMax(const V1_3::Operation& operation,
+                                 const V1_3::Model& model,
                                  ConversionData& data,
                                  armnn::ArgMinMaxFunction argMinMaxFunction)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertArgMinMax()");
-    return ::ConvertArgMinMax<hal_1_2::HalPolicy>(operation, model, data, argMinMaxFunction);
+    ALOGV("hal_1_3::HalPolicy::ConvertArgMinMax()");
+    return ::ConvertArgMinMax<hal_1_3::HalPolicy>(operation, model, data, argMinMaxFunction);
 }
 
 bool HalPolicy::ConvertAveragePool2d(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertAveragePool2d()");
-    return ConvertPooling2d<hal_1_2::HalPolicy>(operation, __func__, PoolingAlgorithm::Average, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertAveragePool2d()");
+    return ConvertPooling2d<hal_1_3::HalPolicy>(operation, __func__, PoolingAlgorithm::Average, model, data);
 }
 
 bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertBatchToSpaceNd()");
-    return ::ConvertBatchToSpaceNd<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertBatchToSpaceNd()");
+    return ::ConvertBatchToSpaceNd<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertComparison(const Operation& operation,
@@ -173,44 +173,45 @@ bool HalPolicy::ConvertComparison(const Operation& operation,
                                   ConversionData& data,
                                   ComparisonOperation comparisonOperation)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertComparison()");
-    return ::ConvertComparison_1_2<hal_1_2::HalPolicy>(operation, model, data, comparisonOperation);
+    ALOGV("hal_1_3::HalPolicy::ConvertComparison()");
+    return ::ConvertComparison_1_2<hal_1_3::HalPolicy>(operation, model, data, comparisonOperation);
 }
+
 
 bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertConcatenation()");
-    return ::ConvertConcatenation<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertConcatenation()");
+    return ::ConvertConcatenation<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertConv2d(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertConv2d()");
-    return ::ConvertConv2d_1_2<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertConv2d()");
+    return ::ConvertConv2d_1_2<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertDepthToSpace(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertDepthToSpace()");
-    return ::ConvertDepthToSpace<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertDepthToSpace()");
+    return ::ConvertDepthToSpace<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertDepthwiseConv2d(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertDepthwiseConv2d()");
-    return ::ConvertDepthwiseConv2d_1_2<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertDepthwiseConv2d()");
+    return ::ConvertDepthwiseConv2d_1_2<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertDequantize(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertDequantize()");
-    return ::ConvertDequantize_1_2<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertDequantize()");
+    return ::ConvertDequantize_1_2<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertDiv(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertDiv()");
-    return ::ConvertDiv<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertDiv()");
+    return ::ConvertDiv<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertElementwiseUnary(const Operation& operation,
@@ -218,154 +219,160 @@ bool HalPolicy::ConvertElementwiseUnary(const Operation& operation,
                                         ConversionData& data,
                                         UnaryOperation unaryOperation)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertElementwiseUnary()");
-    return ::ConvertElementwiseUnary<hal_1_2::HalPolicy>(operation, model, data, unaryOperation);
+    ALOGV("hal_1_3::HalPolicy::ConvertElementwiseUnary()");
+    return ::ConvertElementwiseUnary<hal_1_3::HalPolicy>(operation, model, data, unaryOperation);
 }
 
 bool HalPolicy::ConvertExpandDims(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertExpandDims()");
-    return ::ConvertExpandDims<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertExpandDims()");
+    return ::ConvertExpandDims<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertFloor(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertFloor()");
-    return ::ConvertFloor<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertFloor()");
+    return ::ConvertFloor<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertFullyConnected(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertFullyConnected()");
-    return ::ConvertFullyConnected<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertFullyConnected()");
+    return ::ConvertFullyConnected<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertGroupedConv2d(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertGroupedConv2d()");
-    return ::ConvertGroupedConv2d<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertGroupedConv2d()");
+    return ::ConvertGroupedConv2d<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertInstanceNormalization(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertInstanceNormalization()");
-    return ::ConvertInstanceNormalization<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertInstanceNormalization()");
+    return ::ConvertInstanceNormalization<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertL2Normalization(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertL2Normalization()");
-    return ::ConvertL2Normalization<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertL2Normalization()");
+    return ::ConvertL2Normalization<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertL2Pool2d(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertL2Pool2d()");
-    return ConvertPooling2d<hal_1_2::HalPolicy>(operation, __func__, PoolingAlgorithm::L2, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertL2Pool2d()");
+    return ConvertPooling2d<hal_1_3::HalPolicy>(operation, __func__, PoolingAlgorithm::L2, model, data);
 }
 
 bool HalPolicy::ConvertLocalResponseNormalization(const Operation& operation,
                                                   const Model& model,
                                                   ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertLocalResponseNormalization()");
-    return ::ConvertLocalResponseNormalization<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertLocalResponseNormalization()");
+    return ::ConvertLocalResponseNormalization<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertLogistic(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertLogistic()");
-    return ::ConvertLogistic<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertLogistic()");
+    return ::ConvertLogistic<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertLogSoftmax(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertLogSoftmax()");
-    return ::ConvertLogSoftmax<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertLogSoftmax()");
+    return ::ConvertLogSoftmax<hal_1_3::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertLstm()");
+    return ::ConvertLstm<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertMaxPool2d(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertMaxPool2d()");
-    return ConvertPooling2d<hal_1_2::HalPolicy>(operation, __func__, PoolingAlgorithm::Max, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertMaxPool2d()");
+    return ConvertPooling2d<hal_1_3::HalPolicy>(operation, __func__, PoolingAlgorithm::Max, model, data);
 }
 
 bool HalPolicy::ConvertMaximum(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertMaximum()");
-    return ::ConvertMaximum<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertConvertMaximumMaximum()");
+    return ::ConvertMaximum<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertMean()");
-    return ::ConvertMean<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertMean()");
+    return ::ConvertMean<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertMinimum(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertMinimum()");
-    return ::ConvertMinimum<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertMinimum()");
+    return ::ConvertMinimum<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertMul(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertMul()");
-    return ::ConvertMul<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertMul()");
+    return ::ConvertMul<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertPad(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertPad()");
-    return ::ConvertPad<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertPad()");
+    return ::ConvertPad<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertPadV2(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertPadV2()");
-    return ::ConvertPadV2<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertPadV2()");
+    return ::ConvertPadV2<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertPrelu(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertPrelu()");
-    return ::ConvertPrelu<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertPrelu()");
+    return ::ConvertPrelu<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertQuantize(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertQuantize()");
-    return ::ConvertQuantize<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertQuantize()");
+    return ::ConvertQuantize<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertQuantizedLstm(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertQuantizedLstm()");
-    return ::ConvertQuantizedLstm<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertQuantizedLstm()");
+    return ::ConvertQuantizedLstm<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertReLu(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertReLu()");
-    return ::ConvertReLu<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertReLu()");
+    return ::ConvertReLu<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertReLu1(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertReLu1()");
-    return ::ConvertReLu1<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertReLu1()");
+    return ::ConvertReLu1<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertReLu6(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertReLu6()");
-    return ::ConvertReLu6<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertReLu6()");
+    return ::ConvertReLu6<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertReshape(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertReshape()");
-    return ::ConvertReshape<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertReshape()");
+    return ::ConvertReshape<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertResize(const Operation& operation,
@@ -373,78 +380,72 @@ bool HalPolicy::ConvertResize(const Operation& operation,
                               ConversionData& data,
                               ResizeMethod resizeMethod)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertResize()");
-    return ::ConvertResize<hal_1_2::HalPolicy>(operation, model, data, resizeMethod);
+    ALOGV("hal_1_3::HalPolicy::ConvertResize()");
+    return ::ConvertResize<hal_1_3::HalPolicy>(operation, model, data, resizeMethod);
 }
 
 bool HalPolicy::ConvertSpaceToBatchNd(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertSpaceToBatchNd()");
-    return ::ConvertSpaceToBatchNd<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertSpaceToBatchNd()");
+    return ::ConvertSpaceToBatchNd<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertSpaceToDepth()");
-    return ::ConvertSpaceToDepth<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertSpaceToDepth()");
+    return ::ConvertSpaceToDepth<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertSoftmax()");
-    return ::ConvertSoftmax<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertSoftmax()");
+    return ::ConvertSoftmax<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertSub(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertSub()");
-    return ::ConvertSub<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertSub()");
+    return ::ConvertSub<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertTanH(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertTanH()");
-    return ::ConvertTanH<hal_1_2::HalPolicy>(operation, model, data);
-}
-
-bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, ConversionData& data)
-{
-    ALOGV("hal_1_2::HalPolicy::ConvertLstm()");
-    return ::ConvertLstm<hal_1_2::HalPolicy>(operation, model, data);
-}
-
-bool HalPolicy::ConvertSqrt(const Operation& operation, const Model& model, ConversionData& data)
-{
-    ALOGV("hal_1_2::HalPolicy::ConvertSqrt()");
-    ActivationDescriptor desc;
-    desc.m_Function = ActivationFunction::Sqrt;
-
-    return ::ConvertToActivation<hal_1_2::HalPolicy>(operation, __func__, desc, model, data);
-}
-
-bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, ConversionData& data)
-{
-    ALOGV("hal_1_2::HalPolicy::ConvertSqueeze()");
-    return ::ConvertSqueeze<hal_1_2::HalPolicy>(operation, model, data);
-}
-
-bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& model, ConversionData& data)
-{
-    ALOGV("hal_1_2::HalPolicy::ConvertStridedSlice()");
-    return ::ConvertStridedSlice<hal_1_2::HalPolicy>(operation, model, data);
-}
-
-bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model, ConversionData& data)
-{
-    ALOGV("hal_1_2::HalPolicy::ConvertTranspose()");
-    return ::ConvertTranspose<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertTanH()");
+    return ::ConvertTanH<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertTransposeConv2d(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertTransposeConv2d()");
-    return ::ConvertTransposeConv2d<hal_1_2::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertTransposeConv2d()");
+    return ::ConvertTransposeConv2d<hal_1_3::HalPolicy>(operation, model, data);
 }
 
-} // namespace hal_1_2
+bool HalPolicy::ConvertSqrt(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertSqrt()");
+    ActivationDescriptor desc;
+    desc.m_Function = ActivationFunction::Sqrt;
+
+    return ::ConvertToActivation<hal_1_3::HalPolicy>(operation, __func__, desc, model, data);
+}
+
+bool HalPolicy::ConvertSqueeze(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertSqueeze()");
+    return ::ConvertSqueeze<hal_1_3::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertStridedSlice(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertStridedSlice()");
+    return ::ConvertStridedSlice<hal_1_3::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertTranspose()");
+    return ::ConvertTranspose<hal_1_3::HalPolicy>(operation, model, data);
+}
+
+} // namespace hal_1_3
 } // namespace armnn_driver

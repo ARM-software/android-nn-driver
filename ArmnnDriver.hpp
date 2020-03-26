@@ -9,7 +9,28 @@
 
 #include <log/log.h>
 
-#ifdef ARMNN_ANDROID_NN_V1_2 // Using ::android::hardware::neuralnetworks::V1_2
+#ifdef ARMNN_ANDROID_NN_V1_3 // Using ::android::hardware::neuralnetworks::V1_3
+
+#include "1.1/ArmnnDriver.hpp"
+#include "1.2/ArmnnDriver.hpp"
+#include "1.3/ArmnnDriver.hpp"
+
+namespace armnn_driver
+{
+
+class ArmnnDriver : public hal_1_3::ArmnnDriver
+{
+public:
+    ArmnnDriver(DriverOptions options)
+        : hal_1_3::ArmnnDriver(std::move(options))
+    {
+        ALOGV("ArmnnDriver::ArmnnDriver()");
+    }
+    ~ArmnnDriver() {}
+};
+
+} // namespace armnn_driver
+#elif ARMNN_ANDROID_NN_V1_2 // Using ::android::hardware::neuralnetworks::V1_2
 
 #include "1.1/ArmnnDriver.hpp"
 #include "1.2/ArmnnDriver.hpp"

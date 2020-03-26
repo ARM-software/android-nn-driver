@@ -427,6 +427,114 @@ include $(BUILD_STATIC_LIBRARY)
 
 endif # PLATFORM_VERSION == Q
 
+ifeq ($(R_OR_LATER),1)
+# The following target is available starting from Android R
+
+#######################
+# libarmnn-driver@1.3 #
+#######################
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libarmnn-driver@1.3
+LOCAL_MODULE_TAGS := optional
+LOCAL_ARM_MODE := arm
+LOCAL_PROPRIETARY_MODULE := true
+# Mark source files as dependent on Android.mk
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+
+LOCAL_C_INCLUDES := \
+        $(ARMNN_HEADER_PATH) \
+        $(ARMNN_UTILS_HEADER_PATH) \
+        $(OPENCL_HEADER_PATH) \
+        $(NN_HEADER_PATH)
+
+LOCAL_CFLAGS := \
+        -std=$(CPP_VERSION) \
+        -fexceptions \
+        -Werror \
+        -Wno-format-security \
+        -DBOOST_NO_AUTO_PTR \
+        -DARMNN_ANDROID_NN_V1_3 \
+        -DARMNN_ANDROID_R
+
+ifeq ($(ARMNN_DRIVER_DEBUG),1)
+LOCAL_CFLAGS+= \
+        -UNDEBUG
+endif # ARMNN_DRIVER_DEBUG == 1
+
+ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMCOMPUTECL_ENABLED
+endif # ARMNN_COMPUTE_CL_ENABLED == 1
+
+ifeq ($(ARMNN_COMPUTE_NEON_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMCOMPUTENEON_ENABLED
+endif # ARMNN_COMPUTE_NEON_ENABLED == 1
+
+ifeq ($(ARMNN_REF_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMNNREF_ENABLED
+endif # ARMNN_REF_ENABLED == 1
+
+LOCAL_SRC_FILES := \
+        1.0/ArmnnDriverImpl.cpp \
+        1.0/HalPolicy.cpp \
+        1.1/ArmnnDriverImpl.cpp \
+        1.1/HalPolicy.cpp \
+        1.2/ArmnnDriverImpl.cpp \
+        1.2/HalPolicy.cpp \
+        1.3/ArmnnDriverImpl.cpp \
+        1.3/HalPolicy.cpp \
+        ArmnnDevice.cpp \
+        ArmnnDriverImpl.cpp \
+        ArmnnPreparedModel.cpp \
+        ArmnnPreparedModel_1_2.cpp \
+        ArmnnPreparedModel_1_3.cpp \
+        ConversionUtils.cpp \
+        DriverOptions.cpp \
+        ModelToINetworkConverter.cpp \
+        RequestThread.cpp \
+        Utils.cpp
+
+LOCAL_STATIC_LIBRARIES := \
+        libneuralnetworks_common \
+        libboost_log \
+        libboost_program_options \
+        libboost_system \
+        libboost_thread \
+        libboost_filesystem \
+        arm_compute_library
+
+LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
+
+LOCAL_SHARED_LIBRARIES := \
+        libbase \
+        libhidlbase \
+        libhidltransport \
+        libhidlmemory \
+        liblog \
+        libutils \
+        libnativewindow \
+        libui \
+        libfmq \
+        libcutils \
+        android.hidl.allocator@1.0 \
+        android.hidl.memory@1.0 \
+        android.hardware.neuralnetworks@1.0 \
+        android.hardware.neuralnetworks@1.1 \
+        android.hardware.neuralnetworks@1.2 \
+        android.hardware.neuralnetworks@1.3
+
+ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+LOCAL_SHARED_LIBRARIES+= \
+        libOpenCL
+endif
+
+include $(BUILD_STATIC_LIBRARY)
+
+endif # PLATFORM_VERSION == R
+
 #####################################################
 # android.hardware.neuralnetworks@1.0-service-armnn #
 #####################################################
@@ -713,6 +821,84 @@ endif
 include $(BUILD_EXECUTABLE)
 
 endif # PLATFORM_VERSION == Q
+
+ifeq ($(R_OR_LATER),1)
+# The following target is available starting from Android R
+
+#####################################################
+# android.hardware.neuralnetworks@1.3-service-armnn #
+#####################################################
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := android.hardware.neuralnetworks@1.3-service-armnn
+LOCAL_INIT_RC := android.hardware.neuralnetworks@1.3-service-armnn.rc
+LOCAL_MODULE_TAGS := optional
+LOCAL_ARM_MODE := arm
+LOCAL_MODULE_RELATIVE_PATH := hw
+LOCAL_PROPRIETARY_MODULE := true
+# Mark source files as dependent on Android.mk
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+
+LOCAL_C_INCLUDES := \
+        $(ARMNN_HEADER_PATH) \
+        $(NN_HEADER_PATH)
+
+LOCAL_CFLAGS := \
+        -std=$(CPP_VERSION) \
+        -fexceptions \
+        -DARMNN_ANDROID_NN_V1_3 \
+        -DBOOST_NO_AUTO_PTR \
+        -DARMNN_ANDROID_R
+
+ifeq ($(ARMNN_DRIVER_DEBUG),1)
+LOCAL_CFLAGS += \
+        -UNDEBUG
+endif # ARMNN_DRIVER_DEBUG == 1
+
+LOCAL_SRC_FILES := \
+        service.cpp
+
+LOCAL_STATIC_LIBRARIES := \
+        libneuralnetworks_common \
+        libboost_log \
+        libboost_program_options \
+        libboost_system \
+        libboost_thread \
+        libboost_filesystem \
+        arm_compute_library
+
+LOCAL_WHOLE_STATIC_LIBRARIES := \
+        libarmnn-driver@1.3
+
+LOCAL_SHARED_LIBRARIES := \
+        libbase \
+        libhidlbase \
+        libhidltransport \
+        libhidlmemory \
+        libdl \
+        libhardware \
+        liblog \
+        libtextclassifier_hash \
+        libutils \
+        libnativewindow \
+        libui \
+        libfmq \
+        libcutils \
+        android.hidl.allocator@1.0 \
+        android.hidl.memory@1.0 \
+        android.hardware.neuralnetworks@1.0 \
+        android.hardware.neuralnetworks@1.1 \
+        android.hardware.neuralnetworks@1.2 \
+        android.hardware.neuralnetworks@1.3
+
+ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+LOCAL_SHARED_LIBRARIES+= \
+        libOpenCL
+endif
+
+include $(BUILD_EXECUTABLE)
+
+endif # PLATFORM_VERSION == R
 
 ##########################
 # armnn module and tests #

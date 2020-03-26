@@ -20,6 +20,11 @@ namespace V1_1 = ::android::hardware::neuralnetworks::V1_1;
 namespace V1_2 = ::android::hardware::neuralnetworks::V1_2;
 #endif
 
+#ifdef ARMNN_ANDROID_NN_V1_3 // Using ::android::hardware::neuralnetworks::V1_3
+namespace V1_2 = ::android::hardware::neuralnetworks::V1_2;
+namespace V1_3 = ::android::hardware::neuralnetworks::V1_3;
+#endif
+
 namespace armnn_driver
 {
 
@@ -36,6 +41,7 @@ class ArmnnDriverImpl
 public:
     using HalModel                     = typename HalPolicy::Model;
     using HalGetSupportedOperations_cb = typename HalPolicy::getSupportedOperations_cb;
+    using HalErrorStatus               = typename HalPolicy::ErrorStatus;
 
     static Return<void> getSupportedOperations(
             const armnn::IRuntimePtr& runtime,

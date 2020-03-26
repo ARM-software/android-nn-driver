@@ -12,6 +12,11 @@
 #include "ArmnnPreparedModel_1_2.hpp"
 #endif
 
+#ifdef ARMNN_ANDROID_NN_V1_3
+#include "ArmnnPreparedModel_1_2.hpp"
+#include "ArmnnPreparedModel_1_3.hpp"
+#endif
+
 #include <boost/assert.hpp>
 
 #include <log/log.h>
@@ -149,6 +154,14 @@ template class RequestThread<armnn_driver::ArmnnPreparedModel, hal_1_1::HalPolic
 template class RequestThread<ArmnnPreparedModel, hal_1_1::HalPolicy, CallbackContext_1_0>;
 template class RequestThread<ArmnnPreparedModel, hal_1_2::HalPolicy, CallbackContext_1_0>;
 template class RequestThread<ArmnnPreparedModel_1_2, hal_1_2::HalPolicy, CallbackContext_1_2>;
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_3
+template class RequestThread<ArmnnPreparedModel, hal_1_1::HalPolicy, CallbackContext_1_0>;
+template class RequestThread<ArmnnPreparedModel, hal_1_2::HalPolicy, CallbackContext_1_0>;
+template class RequestThread<ArmnnPreparedModel, hal_1_3::HalPolicy, CallbackContext_1_0>;
+template class RequestThread<ArmnnPreparedModel_1_2, hal_1_2::HalPolicy, CallbackContext_1_2>;
+template class RequestThread<ArmnnPreparedModel_1_3, hal_1_3::HalPolicy, CallbackContext_1_3>;
 #endif
 
 } // namespace armnn_driver

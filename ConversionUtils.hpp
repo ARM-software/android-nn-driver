@@ -183,7 +183,7 @@ inline bool IsOperandTypeSupportedForTensors(V1_0::OperandType type)
            type == V1_0::OperandType::TENSOR_INT32;
 }
 
-#ifdef ARMNN_ANDROID_NN_V1_2
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)
 
 // Support within the 1.2 driver for specific tensor data types
 inline bool IsOperandTypeSupportedForTensors(V1_2::OperandType type)
@@ -201,17 +201,34 @@ inline bool IsOperandTypeSupportedForTensors(V1_2::OperandType type)
 
 #endif
 
+#ifdef ARMNN_ANDROID_NN_V1_3
+
+// Support within the 1.3 driver for specific tensor data types
+inline bool IsOperandTypeSupportedForTensors(V1_3::OperandType type)
+{
+    return type == V1_3::OperandType::BOOL                           ||
+           type == V1_3::OperandType::TENSOR_FLOAT16                 ||
+           type == V1_3::OperandType::TENSOR_FLOAT32                 ||
+           type == V1_3::OperandType::TENSOR_QUANT8_ASYMM            ||
+           type == V1_3::OperandType::TENSOR_QUANT8_SYMM             ||
+           type == V1_3::OperandType::TENSOR_QUANT8_SYMM_PER_CHANNEL ||
+           type == V1_3::OperandType::TENSOR_QUANT16_SYMM            ||
+           type == V1_3::OperandType::TENSOR_INT32;
+}
+
+#endif
+
 inline bool IsBool(V1_0::Operand)
 {
     return false;
 }
 
-inline bool Is12Operand(V1_0::Operand)
+inline bool Is12OrLaterOperand(V1_0::Operand)
 {
     return false;
 }
 
-#ifdef ARMNN_ANDROID_NN_V1_2
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)
 
 inline bool IsBool(V1_2::Operand operand)
 {
@@ -219,7 +236,22 @@ inline bool IsBool(V1_2::Operand operand)
 }
 
 /// Checks if a operand is 1_2 Operand
-inline bool Is12Operand(V1_2::Operand)
+inline bool Is12OrLaterOperand(V1_2::Operand)
+{
+    return true;
+}
+
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_3
+
+inline bool IsBool(V1_3::Operand operand)
+{
+    return operand.type == V1_3::OperandType::BOOL;
+}
+
+/// Checks if a operand is 1_2 Operand
+inline bool Is12OrLaterOperand(V1_3::Operand)
 {
     return true;
 }
@@ -351,7 +383,7 @@ void CalcPadding(uint32_t input,
     outPadTail = boost::numeric_cast<uint32_t>(padTail);
 }
 
-#ifdef ARMNN_ANDROID_NN_V1_2
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)
 
 void CalcPadding(uint32_t input, uint32_t kernel, uint32_t stride, uint32_t dilation, uint32_t& outPadHead,
                  uint32_t& outPadTail, android::nn::PaddingScheme scheme)
@@ -381,9 +413,23 @@ Shape GetOperandShape(const V1_0::Operand& operand)
     return shape;
 }
 
-#ifdef ARMNN_ANDROID_NN_V1_2
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)
 
 Shape GetOperandShape(const V1_2::Operand& operand)
+{
+    Shape shape;
+    shape.type = OperandType(operand.type);
+    shape.dimensions = operand.dimensions;
+    shape.scale = operand.scale;
+    shape.offset = operand.zeroPoint;
+    return shape;
+}
+
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_3
+
+Shape GetOperandShape(const V1_3::Operand& operand)
 {
     Shape shape;
     shape.type = OperandType(operand.type);
@@ -636,8 +682,9 @@ const HalOperand* GetInputOperand(const HalOperation& operation,
         return nullptr;
     }
 
-    BOOST_ASSERT(operation.inputs[inputIndex] < model.operands.size()); // Model should have been validated beforehand
-    return &model.operands[operation.inputs[inputIndex]];
+    // Model should have been validated beforehand
+    BOOST_ASSERT(operation.inputs[inputIndex] < getMainModel(model).operands.size());
+    return &getMainModel(model).operands[operation.inputs[inputIndex]];
 }
 
 template<typename HalPolicy,
@@ -655,9 +702,9 @@ const HalOperand* GetOutputOperand(const HalOperation& operation,
     }
 
     // Model should have been validated beforehand
-    BOOST_ASSERT(operation.outputs[outputIndex] < model.operands.size());
+    BOOST_ASSERT(operation.outputs[outputIndex] < getMainModel(model).operands.size());
 
-    return &model.operands[operation.outputs[outputIndex]];
+    return &getMainModel(model).operands[operation.outputs[outputIndex]];
 }
 
 template<typename HalPolicy,
@@ -1165,6 +1212,120 @@ LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
     }
 }
 
+
+#ifdef ARMNN_ANDROID_NN_V1_3
+template<typename HalPolicy>
+LayerInputHandle ConvertToLayerInputHandle(const ::android::hardware::neuralnetworks::V1_3::Operation& operation,
+                                           uint32_t inputIndex,
+                                           const::android::hardware::neuralnetworks::V1_3::Model& model,
+                                           ConversionData& data)
+{
+    using HalOperand         = typename HalPolicy::Operand;
+    using HalOperandType     = typename HalPolicy::OperandType;
+    using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
+
+    const HalOperand* operand = GetInputOperand<HalPolicy>(operation, inputIndex, model);
+    if (!operand)
+    {
+        Fail("%s: failed to get input operand %i", __func__, inputIndex);
+        return LayerInputHandle();
+    }
+
+    if (!IsOperandTypeSupportedForTensors(operand->type))
+    {
+        Fail("%s: unsupported operand type for tensor %s", __func__, toString(operand->type).c_str());
+        return LayerInputHandle();
+    }
+
+    try
+    {
+        armnn::TensorInfo operandTensorInfo = GetTensorInfoForOperand(*operand);
+        if (IsDynamicTensor(operandTensorInfo))
+        {
+            Fail("%s: dynamic input tensors are not supported", __func__);
+            return LayerInputHandle();
+        }
+
+        switch (operand->lifetime)
+        {
+            case HalOperandLifeTime::SUBGRAPH_INPUT:
+            {
+                // NOTE: We must check whether we can support the input tensor on at least one
+                // of the provided backends; otherwise we cannot convert the operation
+                bool isInputSupported = false;
+                FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                           IsInputSupported,
+                                           data.m_Backends,
+                                           isInputSupported,
+                                           operandTensorInfo);
+
+                if (!isInputSupported)
+                {
+                    Fail("%s: unsupported input tensor", __func__);
+                    return LayerInputHandle();
+                }
+
+                BOOST_FALLTHROUGH; // intentional fallthrough
+            }
+            case HalOperandLifeTime::TEMPORARY_VARIABLE: // intentional fallthrough
+            case HalOperandLifeTime::SUBGRAPH_OUTPUT:
+            {
+                // The tensor is either an operand internal to the model, or a model input.
+                // It can be associated with an ArmNN output slot for an existing layer.
+
+                // m_OutputSlotForOperand[...] can be nullptr if the previous layer could not be converted
+                const uint32_t operandIndex = operation.inputs[inputIndex];
+                return LayerInputHandle(true, data.m_OutputSlotForOperand[operandIndex], operandTensorInfo);
+            }
+            case HalOperandLifeTime::CONSTANT_COPY: // intentional fallthrough
+            case HalOperandLifeTime::CONSTANT_REFERENCE:
+            {
+                // The tensor has an already known constant value, and can be converted into an ArmNN Constant layer.
+                ConstTensorPin tensorPin = ConvertOperandToConstTensorPin<HalPolicy>(*operand, model, data);
+                if (tensorPin.IsValid())
+                {
+                    bool isSupported = false;
+                    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                               IsConstantSupported,
+                                               data.m_Backends,
+                                               isSupported,
+                                               tensorPin.GetConstTensor().GetInfo());
+                    if (!isSupported)
+                    {
+                        return LayerInputHandle();
+                    }
+
+                    armnn::IConnectableLayer* constantLayer =
+                        data.m_Network->AddConstantLayer(tensorPin.GetConstTensor());
+                    armnn::IOutputSlot& outputSlot = constantLayer->GetOutputSlot(0);
+                    outputSlot.SetTensorInfo(tensorPin.GetConstTensor().GetInfo());
+
+                    return LayerInputHandle(true, &outputSlot, operandTensorInfo);
+                }
+                else
+                {
+                    Fail("%s: invalid operand tensor", __func__);
+                    return LayerInputHandle();
+                }
+                break;
+            }
+            default:
+            {
+                // Unsupported lifetime for an input tensor
+                Fail("%s: unsupported lifetime for input tensor: %s",
+                     __func__, toString(operand->lifetime).c_str());
+                return LayerInputHandle();
+            }
+        }
+    }
+    catch (UnsupportedOperand<HalOperandType>& e)
+    {
+        Fail("%s: Operand type %s not supported in ArmnnDriver", __func__, toString(e.m_type).c_str());
+        return LayerInputHandle();
+    }
+}
+#endif
+
 template<typename HalPolicy,
          typename HalOperation = typename HalPolicy::Operation,
          typename HalModel     = typename HalPolicy::Model>
@@ -1448,7 +1609,7 @@ bool ConvertPooling2d(const HalOperation& operation,
             return Fail("%s: Operation has invalid inputs", operationName);
         }
 
-        if (Is12Operand(*output))
+        if (Is12OrLaterOperand(*output))
         {
             desc.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 10, model, data);
         }
@@ -1467,7 +1628,7 @@ bool ConvertPooling2d(const HalOperation& operation,
             return Fail("%s: Operation has invalid inputs", operationName);
         }
 
-        if (Is12Operand(*output))
+        if (Is12OrLaterOperand(*output))
         {
             desc.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 7, model, data);
         }
@@ -2106,7 +2267,7 @@ bool ConvertDepthToSpace(const HalOperation& operation, const HalModel& model, C
     }
 
     descriptor.m_DataLayout = armnn::DataLayout::NHWC;
-    if (Is12Operand(*output))
+    if (Is12OrLaterOperand(*output))
     {
         descriptor.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 2, model, data);
     }
@@ -2440,11 +2601,20 @@ inline bool IsQSymm8(const V1_0::Operand&)
     return false;
 }
 
-#ifdef ARMNN_ANDROID_NN_V1_2
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)
 
 inline bool IsQSymm8(const V1_2::Operand& operand)
 {
     return operand.type == V1_2::OperandType::TENSOR_QUANT8_SYMM;
+}
+
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_3
+
+inline bool IsQSymm8(const V1_3::Operand& operand)
+{
+    return operand.type == V1_3::OperandType::TENSOR_QUANT8_SYMM;
 }
 
 #endif
@@ -2484,10 +2654,10 @@ DequantizeResult DequantizeIfRequired(size_t operand_index,
 
     // The weights are a non const tensor, this indicates they might be the output of a dequantize op.
     // Iterate over the nodes and find the previous operation which should be DEQUANTIZE
-    for (uint32_t operationIdx = 0; operationIdx < model.operations.size(); ++operationIdx)
+    for (uint32_t operationIdx = 0; operationIdx < getMainModel(model).operations.size(); ++operationIdx)
     {
         // Search for the DEQUANTIZE op which has the operand with index equal to operandIndex
-        const auto& operationIt = model.operations[operationIdx];
+        const auto& operationIt = getMainModel(model).operations[operationIdx];
         if (operationIt.type != HalPolicy::OperationType::DEQUANTIZE)
         {
             continue;
@@ -3525,7 +3695,7 @@ bool ConvertBatchToSpaceNd(const HalOperation& operation,
     batchToSpaceNdDesc.m_BlockShape.assign(block.cbegin(), block.cend());
     batchToSpaceNdDesc.m_DataLayout = armnn::DataLayout::NHWC;
 
-    if (Is12Operand(*output))
+    if (Is12OrLaterOperand(*output))
     {
         batchToSpaceNdDesc.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 2, model, data);
     }
@@ -3633,7 +3803,7 @@ bool ConvertSpaceToBatchNd(const HalOperation& operation, const HalModel& model,
     descriptor.m_BlockShape.assign(blockShape.cbegin(), blockShape.cend());
     descriptor.m_PadList.assign(paddingList.cbegin(), paddingList.cend());
 
-    if (Is12Operand(*output))
+    if (Is12OrLaterOperand(*output))
     {
         descriptor.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 3, model, data);
     }

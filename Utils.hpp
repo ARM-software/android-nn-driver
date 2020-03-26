@@ -19,9 +19,14 @@
 #include <iomanip>
 
 namespace V1_0 = ::android::hardware::neuralnetworks::V1_0;
+namespace V1_1 = ::android::hardware::neuralnetworks::V1_1;
 
-#ifdef ARMNN_ANDROID_NN_V1_2 // Using ::android::hardware::neuralnetworks::V1_2
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)
 namespace V1_2 = ::android::hardware::neuralnetworks::V1_2;
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_3
+namespace V1_3 = ::android::hardware::neuralnetworks::V1_3;
 #endif
 
 namespace armnn_driver
@@ -29,6 +34,17 @@ namespace armnn_driver
 
 #ifdef ARMNN_ANDROID_R
 using DataLocation = ::android::nn::hal::DataLocation;
+#endif
+
+inline const V1_0::Model&    getMainModel(const V1_0::Model& model) { return model; }
+inline const V1_1::Model&    getMainModel(const V1_1::Model& model) { return model; }
+
+#if defined (ARMNN_ANDROID_NN_V1_2) || defined (ARMNN_ANDROID_NN_V1_3)
+inline const V1_2::Model&    getMainModel(const V1_2::Model& model) { return model; }
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_3
+inline const V1_3::Subgraph& getMainModel(const V1_3::Model& model) { return model.main; }
 #endif
 
 extern const armnn::PermutationVector g_DontPermute;
@@ -56,14 +72,22 @@ void* GetMemoryFromPool(DataLocation location,
 /// Can throw UnsupportedOperand
 armnn::TensorInfo GetTensorInfoForOperand(const V1_0::Operand& operand);
 
-#ifdef ARMNN_ANDROID_NN_V1_2 // Using ::android::hardware::neuralnetworks::V1_2
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3) // Using ::android::hardware::neuralnetworks::V1_2
 armnn::TensorInfo GetTensorInfoForOperand(const V1_2::Operand& operand);
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_3 // Using ::android::hardware::neuralnetworks::V1_3
+armnn::TensorInfo GetTensorInfoForOperand(const V1_3::Operand& operand);
 #endif
 
 std::string GetOperandSummary(const V1_0::Operand& operand);
 
-#ifdef ARMNN_ANDROID_NN_V1_2 // Using ::android::hardware::neuralnetworks::V1_2
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3) // Using ::android::hardware::neuralnetworks::V1_2
 std::string GetOperandSummary(const V1_2::Operand& operand);
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_3 // Using ::android::hardware::neuralnetworks::V1_3
+std::string GetOperandSummary(const V1_3::Operand& operand);
 #endif
 
 template <typename HalModel>
@@ -71,27 +95,30 @@ std::string GetModelSummary(const HalModel& model)
 {
     std::stringstream result;
 
-    result << model.inputIndexes.size() << " input(s), " << model.operations.size() << " operation(s), " <<
-        model.outputIndexes.size() << " output(s), " << model.operands.size() << " operand(s)" << std::endl;
+    result << getMainModel(model).inputIndexes.size() << " input(s), "
+           << getMainModel(model).operations.size() << " operation(s), "
+           << getMainModel(model).outputIndexes.size() << " output(s), "
+           << getMainModel(model).operands.size() << " operand(s) "
+           << std::endl;
 
     result << "Inputs: ";
-    for (uint32_t i = 0; i < model.inputIndexes.size(); i++)
+    for (uint32_t i = 0; i < getMainModel(model).inputIndexes.size(); i++)
     {
-        result << GetOperandSummary(model.operands[model.inputIndexes[i]]) << ", ";
+        result << GetOperandSummary(getMainModel(model).operands[getMainModel(model).inputIndexes[i]]) << ", ";
     }
     result << std::endl;
 
     result << "Operations: ";
-    for (uint32_t i = 0; i < model.operations.size(); i++)
+    for (uint32_t i = 0; i < getMainModel(model).operations.size(); i++)
     {
-        result << toString(model.operations[i].type).c_str() << ", ";
+        result << toString(getMainModel(model).operations[i].type).c_str() << ", ";
     }
     result << std::endl;
 
     result << "Outputs: ";
-    for (uint32_t i = 0; i < model.outputIndexes.size(); i++)
+    for (uint32_t i = 0; i < getMainModel(model).outputIndexes.size(); i++)
     {
-        result << GetOperandSummary(model.operands[model.outputIndexes[i]]) << ", ";
+        result << GetOperandSummary(getMainModel(model).operands[getMainModel(model).outputIndexes[i]]) << ", ";
     }
     result << std::endl;
 
@@ -117,5 +144,30 @@ void RenameGraphDotFile(const std::string& oldName, const std::string& dumpDir, 
 bool IsDynamicTensor(const armnn::TensorInfo& outputInfo);
 
 std::string GetFileTimestamp();
+
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)
+inline V1_2::OutputShape ComputeShape(const armnn::TensorInfo& info)
+{
+    V1_2::OutputShape shape;
+
+    android::hardware::hidl_vec<uint32_t> dimensions;
+
+    armnn::TensorShape tensorShape = info.GetShape();
+    const unsigned int numDims = tensorShape.GetNumDimensions();
+    dimensions.resize(numDims);
+
+    for (unsigned int outputIdx = 0u; outputIdx < numDims; ++outputIdx)
+    {
+        dimensions[outputIdx] = tensorShape[outputIdx];
+    }
+
+    shape.dimensions = dimensions;
+    shape.isSufficient = true;
+
+    return shape;
+}
+#endif
+
+void CommitPools(std::vector<::android::nn::RunTimePoolInfo>& memPools);
 
 } // namespace armnn_driver
