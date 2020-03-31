@@ -45,6 +45,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertDequantize(operation, model, data);
         case V1_3::OperationType::DIV:
             return ConvertDiv(operation, model, data);
+        case V1_3::OperationType::ELU:
+            return ConvertElu(operation, model, data);
         case V1_3::OperationType::EQUAL:
             return ConvertComparison(operation, model, data, ComparisonOperation::Equal);
         case V1_3::OperationType::EXPAND_DIMS:
@@ -59,6 +61,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertComparison(operation, model, data, ComparisonOperation::GreaterOrEqual);
         case V1_3::OperationType::GROUPED_CONV_2D:
             return ConvertGroupedConv2d(operation, model, data);
+        case V1_3::OperationType::HARD_SWISH:
+            return ConvertHardSwish(operation, model, data);
         case V1_3::OperationType::INSTANCE_NORMALIZATION:
             return ConvertInstanceNormalization(operation, model, data);
         case V1_3::OperationType::L2_NORMALIZATION:
@@ -223,6 +227,15 @@ bool HalPolicy::ConvertElementwiseUnary(const Operation& operation,
     return ::ConvertElementwiseUnary<hal_1_3::HalPolicy>(operation, model, data, unaryOperation);
 }
 
+bool HalPolicy::ConvertElu(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertElu()");
+    ActivationDescriptor desc;
+    desc.m_Function = ActivationFunction::Elu;
+
+    return ::ConvertToActivation<hal_1_3::HalPolicy>(operation, __func__, desc, model, data);
+}
+
 bool HalPolicy::ConvertExpandDims(const Operation& operation, const Model& model, ConversionData& data)
 {
     ALOGV("hal_1_3::HalPolicy::ConvertExpandDims()");
@@ -245,6 +258,15 @@ bool HalPolicy::ConvertGroupedConv2d(const Operation& operation, const Model& mo
 {
     ALOGV("hal_1_3::HalPolicy::ConvertGroupedConv2d()");
     return ::ConvertGroupedConv2d<hal_1_3::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertHardSwish(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertHardSwish()");
+    ActivationDescriptor desc;
+    desc.m_Function = ActivationFunction::HardSwish;
+
+    return ::ConvertToActivation<hal_1_3::HalPolicy>(operation, __func__, desc, model, data);
 }
 
 bool HalPolicy::ConvertInstanceNormalization(const Operation& operation, const Model& model, ConversionData& data)

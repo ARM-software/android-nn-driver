@@ -174,6 +174,9 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_3::Operand& operand)
     DataType type;
     switch (operand.type)
     {
+        case V1_3::OperandType::TENSOR_BOOL8:
+            type = armnn::DataType::Boolean;
+            break;
         case V1_3::OperandType::TENSOR_FLOAT32:
             type = armnn::DataType::Float32;
             break;

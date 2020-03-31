@@ -68,6 +68,8 @@ private:
                                         ConversionData& data,
                                         armnn::UnaryOperation unaryOperation);
 
+    static bool ConvertElu(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertExpandDims(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertFloor(const Operation& operation, const Model& model, ConversionData& data);
@@ -75,6 +77,8 @@ private:
     static bool ConvertFullyConnected(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertGroupedConv2d(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertHardSwish(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertInstanceNormalization(const Operation& operation, const Model& model, ConversionData& data);
 
