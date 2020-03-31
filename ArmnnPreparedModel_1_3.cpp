@@ -234,6 +234,7 @@ Return <V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::execute_1_3(
         const V1_3::Request& request,
         MeasureTiming measureTiming,
         const V1_3::OptionalTimePoint&,
+        const V1_3::OptionalTimeoutDuration&,
         const sp<V1_3::IExecutionCallback>& callback)
 {
     if (callback.get() == nullptr)
@@ -258,6 +259,7 @@ Return<void> ArmnnPreparedModel_1_3<HalVersion>::executeFenced(const V1_3::Reque
                                                                const hidl_vec<hidl_handle>&,
                                                                MeasureTiming,
                                                                const OptionalTimePoint&,
+                                                               const OptionalTimeoutDuration&,
                                                                const OptionalTimeoutDuration&,
                                                                executeFenced_cb cb)
 {
@@ -449,10 +451,12 @@ Return<void> ArmnnPreparedModel_1_3<HalVersion>::executeSynchronously(const V1_0
 }
 
 template<typename HalVersion>
-Return<void>  ArmnnPreparedModel_1_3<HalVersion>::executeSynchronously_1_3(const V1_3::Request& request,
-                                                                           MeasureTiming measureTiming,
-                                                                           const V1_3::OptionalTimePoint& deadline,
-                                                                           executeSynchronously_1_3_cb cb)
+Return<void>  ArmnnPreparedModel_1_3<HalVersion>::executeSynchronously_1_3(
+        const V1_3::Request& request,
+        MeasureTiming measureTiming,
+        const V1_3::OptionalTimePoint& deadline,
+        const V1_3::OptionalTimeoutDuration& loopTimeoutDuration,
+        executeSynchronously_1_3_cb cb)
 {
     ALOGV("ArmnnPreparedModel_1_3::executeSynchronously_1_3(): %s", GetModelSummary(m_Model).c_str());
     m_RequestCount++;
@@ -465,6 +469,13 @@ Return<void>  ArmnnPreparedModel_1_3<HalVersion>::executeSynchronously_1_3(const
 
     if (deadline.getDiscriminator() != OptionalTimePoint::hidl_discriminator::none)
     {
+        ALOGE("ArmnnPreparedModel_1_3::executeSynchronously_1_3 invalid request model");
+        cb(V1_3::ErrorStatus::INVALID_ARGUMENT, {}, g_NoTiming);
+        return Void();
+    }
+
+    if (loopTimeoutDuration.getDiscriminator() != OptionalTimeoutDuration::hidl_discriminator::none)
+     {
         ALOGE("ArmnnPreparedModel_1_3::executeSynchronously_1_3 invalid request model");
         cb(V1_3::ErrorStatus::INVALID_ARGUMENT, {}, g_NoTiming);
         return Void();

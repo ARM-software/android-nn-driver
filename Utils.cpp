@@ -210,7 +210,7 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_3::Operand& operand)
     {
         // ExtraParams is expected to be of type channelQuant
         BOOST_ASSERT(operand.extraParams.getDiscriminator() ==
-                     V1_3::Operand::ExtraParams::hidl_discriminator::channelQuant);
+                     V1_2::Operand::ExtraParams::hidl_discriminator::channelQuant);
 
         auto perAxisQuantParams = operand.extraParams.channelQuant();
 

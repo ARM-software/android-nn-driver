@@ -260,7 +260,6 @@ public:
     }
 
     Return<ErrorStatus> prepareModelFromCache_1_3(
-        V1_3::Priority,
         const V1_3::OptionalTimePoint&,
         const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
         const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
@@ -270,12 +269,6 @@ public:
         ALOGV("hal_1_3::ArmnnDriver::prepareModelFromCache()");
         callback->notify_1_3(ErrorStatus::GENERAL_FAILURE, nullptr);
         return ErrorStatus::GENERAL_FAILURE;
-    }
-
-    Return<void> supportsDeadlines(supportsDeadlines_cb cb) {
-        // Set both numbers to be false for deadlines not supported.
-        cb(/*prepareModelDeadline=*/false, /*executionDeadline=*/false);
-        return Void();
     }
 
     Return<void> allocate(const V1_3::BufferDesc& /*desc*/,

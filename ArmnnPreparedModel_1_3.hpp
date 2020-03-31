@@ -60,6 +60,7 @@ public:
     Return<V1_3::ErrorStatus> execute_1_3(const V1_3::Request& request,
                                           V1_2::MeasureTiming measure,
                                           const V1_3::OptionalTimePoint&,
+                                          const V1_3::OptionalTimeoutDuration&,
                                           const sp<V1_3::IExecutionCallback>& callback) override;
 
     Return<void> executeSynchronously(const V1_0::Request &request,
@@ -69,12 +70,14 @@ public:
     Return<void> executeSynchronously_1_3(const V1_3::Request &request,
                                           MeasureTiming measure,
                                           const V1_3::OptionalTimePoint& deadline,
+                                          const V1_3::OptionalTimeoutDuration& loopTimeoutDuration,
                                           V1_3::IPreparedModel::executeSynchronously_1_3_cb cb) override;
 
     Return<void> executeFenced(const V1_3::Request& request,
                                const android::hardware::hidl_vec<android::hardware::hidl_handle>& wait_for,
                                MeasureTiming measure,
                                const V1_3::OptionalTimePoint& deadline,
+                               const V1_3::OptionalTimeoutDuration& loopTimeoutDuration,
                                const V1_3::OptionalTimeoutDuration& duration,
                                executeFenced_cb callback) override;
 
