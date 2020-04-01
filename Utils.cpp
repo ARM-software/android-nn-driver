@@ -54,6 +54,7 @@ void SwizzleAndroidNn4dTensorToArmNn(const armnn::TensorInfo& tensor, const void
     case armnn::DataType::Float32:
     case armnn::DataType::QAsymmU8:
     case armnn::DataType::QSymmS8:
+    case armnn::DataType::QAsymmS8:
         SwizzleAndroidNn4dTensorToArmNn(tensor.GetShape(), input, output, armnn::GetDataTypeSize(dataType), mappings);
         break;
     default:

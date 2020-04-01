@@ -230,10 +230,7 @@ bool HalPolicy::ConvertElementwiseUnary(const Operation& operation,
 bool HalPolicy::ConvertElu(const Operation& operation, const Model& model, ConversionData& data)
 {
     ALOGV("hal_1_3::HalPolicy::ConvertElu()");
-    ActivationDescriptor desc;
-    desc.m_Function = ActivationFunction::Elu;
-
-    return ::ConvertToActivation<hal_1_3::HalPolicy>(operation, __func__, desc, model, data);
+    return ::ConvertElu<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertExpandDims(const Operation& operation, const Model& model, ConversionData& data)
