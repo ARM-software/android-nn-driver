@@ -66,6 +66,12 @@ ifeq ($(PLATFORM_VERSION),R)
 ARMNN_COMPUTE_CL_ENABLED := 0
 endif # PLATFORM_VERSION == R
 
+# Variable to control inclusion of libOpenCL shared library
+ARMNN_INCLUDE_LIBOPENCL := $(ARMNN_COMPUTE_CL_ENABLED)
+ifeq ($(ARMNN_LIBOPENCL),0)
+ARMNN_INCLUDE_LIBOPENCL := 0
+endif
+
 #######################
 # libarmnn-driver@1.0 #
 #######################
@@ -304,7 +310,7 @@ LOCAL_SHARED_LIBRARIES+= \
         android.hardware.neuralnetworks@1.3
 endif # R or later
 
-ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+ifeq ($(ARMNN_INCLUDE_LIBOPENCL),1)
 LOCAL_SHARED_LIBRARIES+= \
         libOpenCL
 endif
@@ -418,7 +424,7 @@ LOCAL_SHARED_LIBRARIES+= \
         android.hardware.neuralnetworks@1.3
 endif # R or later
 
-ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+ifeq ($(ARMNN_INCLUDE_LIBOPENCL),1)
 LOCAL_SHARED_LIBRARIES+= \
         libOpenCL
 endif
@@ -526,7 +532,7 @@ LOCAL_SHARED_LIBRARIES := \
         android.hardware.neuralnetworks@1.2 \
         android.hardware.neuralnetworks@1.3
 
-ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+ifeq ($(ARMNN_INCLUDE_LIBOPENCL),1)
 LOCAL_SHARED_LIBRARIES+= \
         libOpenCL
 endif
@@ -628,7 +634,7 @@ LOCAL_SHARED_LIBRARIES+= \
         android.hardware.neuralnetworks@1.3
 endif # R or later
 
-ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+ifeq ($(ARMNN_INCLUDE_LIBOPENCL),1)
 LOCAL_SHARED_LIBRARIES+= \
         libOpenCL
 endif
@@ -726,7 +732,7 @@ LOCAL_SHARED_LIBRARIES+= \
         android.hardware.neuralnetworks@1.3
 endif # PLATFORM_VERSION == R
 
-ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+ifeq ($(ARMNN_INCLUDE_LIBOPENCL),1)
 LOCAL_SHARED_LIBRARIES+= \
         libOpenCL
 endif
@@ -813,7 +819,7 @@ LOCAL_SHARED_LIBRARIES+= \
         android.hardware.neuralnetworks@1.3
 endif # R or later
 
-ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+ifeq ($(ARMNN_INCLUDE_LIBOPENCL),1)
 LOCAL_SHARED_LIBRARIES+= \
         libOpenCL
 endif
@@ -891,7 +897,7 @@ LOCAL_SHARED_LIBRARIES := \
         android.hardware.neuralnetworks@1.2 \
         android.hardware.neuralnetworks@1.3
 
-ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+ifeq ($(ARMNN_INCLUDE_LIBOPENCL),1)
 LOCAL_SHARED_LIBRARIES+= \
         libOpenCL
 endif
