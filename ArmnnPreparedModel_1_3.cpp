@@ -263,7 +263,7 @@ Return<void> ArmnnPreparedModel_1_3<HalVersion>::executeFenced(const V1_3::Reque
                                                                const OptionalTimeoutDuration&,
                                                                executeFenced_cb cb)
 {
-    cb(ErrorStatus::DEVICE_UNAVAILABLE, hidl_handle(nullptr), nullptr);
+    cb(ErrorStatus::INVALID_ARGUMENT, hidl_handle(nullptr), nullptr);
     return Void();
 }
 
