@@ -25,7 +25,7 @@ unsigned int TestTensor::GetNumElements() const
 
 const float * TestTensor::GetData() const
 {
-    BOOST_ASSERT(m_Data.empty() == false);
+    ARMNN_ASSERT(m_Data.empty() == false);
     return &m_Data[0];
 }
 

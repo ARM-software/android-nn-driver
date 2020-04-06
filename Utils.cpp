@@ -11,6 +11,7 @@
 #include <armnnUtils/Permute.hpp>
 
 #include <armnn/Utils.hpp>
+#include <armnn/utility/Assert.hpp>
 
 #include <cassert>
 #include <cerrno>
@@ -146,7 +147,7 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_2::Operand& operand)
     if (perChannel)
     {
         // ExtraParams is expected to be of type channelQuant
-        BOOST_ASSERT(operand.extraParams.getDiscriminator() ==
+        ARMNN_ASSERT(operand.extraParams.getDiscriminator() ==
                      V1_2::Operand::ExtraParams::hidl_discriminator::channelQuant);
 
         auto perAxisQuantParams = operand.extraParams.channelQuant();
@@ -210,7 +211,7 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_3::Operand& operand)
     if (perChannel)
     {
         // ExtraParams is expected to be of type channelQuant
-        BOOST_ASSERT(operand.extraParams.getDiscriminator() ==
+        ARMNN_ASSERT(operand.extraParams.getDiscriminator() ==
                      V1_2::Operand::ExtraParams::hidl_discriminator::channelQuant);
 
         auto perAxisQuantParams = operand.extraParams.channelQuant();
@@ -415,7 +416,7 @@ void DumpJsonProfilingIfRequired(bool gpuProfilingEnabled,
         return;
     }
 
-    BOOST_ASSERT(profiler);
+    ARMNN_ASSERT(profiler);
 
     // Set the name of the output profiling file.
     const std::string fileName = boost::str(boost::format("%1%/%2%_%3%.json")

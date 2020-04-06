@@ -31,7 +31,7 @@ bool LayerInputHandle::IsValid() const
 
 void LayerInputHandle::Connect(armnn::IInputSlot& inputSlot)
 {
-    BOOST_ASSERT(IsValid());
+    ARMNN_ASSERT(IsValid());
     if (m_OutputSlot)
     {
         m_OutputSlot->Connect(inputSlot);
@@ -103,7 +103,7 @@ armnn::IConnectableLayer* ProcessActivation(const armnn::TensorInfo& tensorInfo,
                                             armnn::IConnectableLayer* prevLayer,
                                             ConversionData& data)
 {
-    BOOST_ASSERT(prevLayer->GetNumOutputSlots() == 1);
+    ARMNN_ASSERT(prevLayer->GetNumOutputSlots() == 1);
 
     prevLayer->GetOutputSlot(0).SetTensorInfo(tensorInfo);
 

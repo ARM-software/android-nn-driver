@@ -10,6 +10,7 @@
 #include <armnn/ArmNN.hpp>
 #include <armnn/ILayerSupport.hpp>
 #include <armnn/BackendHelper.hpp>
+#include <armnn/utility/Assert.hpp>
 #include <armnn/utility/IgnoreUnused.hpp>
 
 #include <armnnUtils/DataLayoutIndexed.hpp>
@@ -21,7 +22,6 @@
 #include <CpuExecutor.h>
 #include <OperationsUtils.h>
 
-#include <boost/assert.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
@@ -269,7 +269,7 @@ armnn::IConnectableLayer& AddReshapeLayer(armnn::INetwork& network,
     reshapeDescriptor.m_TargetShape = reshapeInfo.GetShape();
 
     armnn::IConnectableLayer* reshapeLayer = network.AddReshapeLayer(reshapeDescriptor);
-    BOOST_ASSERT(reshapeLayer != nullptr);
+    ARMNN_ASSERT(reshapeLayer != nullptr);
 
     // Attach the input layer to the reshape layer
     inputLayer.Connect(reshapeLayer->GetInputSlot(0));
@@ -283,7 +283,7 @@ bool BroadcastTensor(LayerInputHandle& input0,
                      armnn::IConnectableLayer* startLayer,
                      ConversionData& data)
 {
-    BOOST_ASSERT(startLayer != nullptr);
+    ARMNN_ASSERT(startLayer != nullptr);
 
     const armnn::TensorInfo& inputInfo0 = input0.GetTensorInfo();
     const armnn::TensorInfo& inputInfo1 = input1.GetTensorInfo();
@@ -338,7 +338,7 @@ bool BroadcastTensor(LayerInputHandle& input0,
         return false;
     }
 
-    BOOST_ASSERT(data.m_Network != nullptr);
+    ARMNN_ASSERT(data.m_Network != nullptr);
     armnn::IConnectableLayer& reshapeLayer = AddReshapeLayer(*data.m_Network, smallInputHandle, reshapedInfo);
 
     if (input0IsSmaller)
@@ -498,7 +498,7 @@ armnn::IConnectableLayer& AddTransposeLayer(armnn::INetwork& network, OSlot& inp
     // Add swizzle layer
     armnn::IConnectableLayer* const layer = network.AddTransposeLayer(mappings);
 
-    BOOST_ASSERT(layer != nullptr);
+    ARMNN_ASSERT(layer != nullptr);
 
     // Connect input to swizzle layer
     input.Connect(layer->GetInputSlot(0));
@@ -619,7 +619,7 @@ bool CreateConcatPermutationParameters(const unsigned int numberOfDimensions,
                                        std::pair<armnn::PermutationVector, armnn::PermutationVector> & permutationPair)
 {
     bool needPermute = false;
-    BOOST_ASSERT(numberOfDimensions >= 3);
+    ARMNN_ASSERT(numberOfDimensions >= 3);
 
     // ArmNN uses Compute Library subtensors to perform concatenation
     // This only works when concatenating along dimension 0, 1 or 3 for a 4-D tensor,
@@ -685,7 +685,7 @@ const HalOperand* GetInputOperand(const HalOperation& operation,
     }
 
     // Model should have been validated beforehand
-    BOOST_ASSERT(operation.inputs[inputIndex] < getMainModel(model).operands.size());
+    ARMNN_ASSERT(operation.inputs[inputIndex] < getMainModel(model).operands.size());
     return &getMainModel(model).operands[operation.inputs[inputIndex]];
 }
 
@@ -704,7 +704,7 @@ const HalOperand* GetOutputOperand(const HalOperation& operation,
     }
 
     // Model should have been validated beforehand
-    BOOST_ASSERT(operation.outputs[outputIndex] < getMainModel(model).operands.size());
+    ARMNN_ASSERT(operation.outputs[outputIndex] < getMainModel(model).operands.size());
 
     return &getMainModel(model).operands[operation.outputs[outputIndex]];
 }
@@ -1453,7 +1453,7 @@ bool ConvertToActivation(const HalOperation& operation,
     }
 
     armnn::IConnectableLayer* layer = data.m_Network->AddActivationLayer(activationDesc);
-    BOOST_ASSERT(layer != nullptr);
+    ARMNN_ASSERT(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
@@ -1950,7 +1950,7 @@ bool ConvertConcatenation(const HalOperation& operation, const HalModel& model, 
         }
     }
 
-    BOOST_ASSERT(inputShapes.size() == inputHandles.size());
+    ARMNN_ASSERT(inputShapes.size() == inputHandles.size());
 
     if (inputsHaveBeenReshaped)
     {
@@ -2677,7 +2677,7 @@ DequantizeResult DequantizeIfRequired(size_t operand_index,
         }
 
         const HalOperand* operand = GetInputOperand<HalPolicy>(operationIt, 0, model);
-        BOOST_ASSERT(operand);
+        ARMNN_ASSERT(operand);
 
         if (!IsQSymm8(*operand))
         {
@@ -2701,7 +2701,7 @@ DequantizeResult DequantizeIfRequired(size_t operand_index,
         for (size_t i = 0; i < dequantizedBufferLength; ++i)
         {
             float* dstPtr = dequantizedBuffer.get();
-            BOOST_ASSERT(dstPtr);
+            ARMNN_ASSERT(dstPtr);
             *dstPtr++ = quantizedBuffer[i] * quantizationScale;
         }
 

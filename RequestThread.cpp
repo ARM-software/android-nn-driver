@@ -17,7 +17,7 @@
 #include "ArmnnPreparedModel_1_3.hpp"
 #endif
 
-#include <boost/assert.hpp>
+#include <armnn/utility/Assert.hpp>
 
 #include <log/log.h>
 
@@ -135,7 +135,7 @@ void RequestThread<PreparedModel, HalVersion, CallbackContext>::Process()
             default:
                 // this should be unreachable
                 ALOGE("RequestThread::Process() - invalid message type");
-                BOOST_ASSERT_MSG(false, "ArmNN: RequestThread: invalid message type");
+                ARMNN_ASSERT_MSG(false, "ArmNN: RequestThread: invalid message type");
         }
     }
 }

@@ -6,6 +6,8 @@
 
 #include "../ArmnnDriver.hpp"
 
+#include <armnn/utility/Assert.hpp>
+
 namespace driverTestHelpers
 {
 
@@ -17,7 +19,7 @@ public:
     : m_Shape{shape}
     , m_Data{data}
     {
-        BOOST_ASSERT(m_Shape.GetNumElements() == m_Data.size());
+        ARMNN_ASSERT(m_Shape.GetNumElements() == m_Data.size());
     }
 
     hidl_vec<uint32_t> GetDimensions() const;

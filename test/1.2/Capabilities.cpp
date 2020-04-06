@@ -7,6 +7,8 @@
 
 #include "Utils.h"
 
+#include <armnn/utility/Assert.hpp>
+
 #include <boost/test/unit_test.hpp>
 
 #include <sys/system_properties.h>
@@ -60,8 +62,8 @@ void CheckOperandType(const V1_2::Capabilities& capabilities, V1_2::OperandType 
 {
     using namespace armnn_driver::hal_1_2;
     PerformanceInfo perfInfo = android::nn::lookup(capabilities.operandPerformance, type);
-    BOOST_ASSERT(perfInfo.execTime == execTime);
-    BOOST_ASSERT(perfInfo.powerUsage == powerUsage);
+    ARMNN_ASSERT(perfInfo.execTime == execTime);
+    ARMNN_ASSERT(perfInfo.powerUsage == powerUsage);
 }
 
 BOOST_FIXTURE_TEST_SUITE(CapabilitiesTests, CapabilitiesFixture)
@@ -92,7 +94,7 @@ BOOST_AUTO_TEST_CASE(PerformanceCapabilitiesWithRuntime)
             CheckOperandType(capabilities, V1_2::OperandType::OEM, FLT_MAX, FLT_MAX);
             CheckOperandType(capabilities, V1_2::OperandType::TENSOR_OEM_BYTE, FLT_MAX, FLT_MAX);
 
-            BOOST_ASSERT(error == V1_0::ErrorStatus::NONE);
+            ARMNN_ASSERT(error == V1_0::ErrorStatus::NONE);
         };
 
     __system_property_set("Armnn.operandTypeTensorFloat32Performance.execTime", "2.0f");
@@ -153,7 +155,7 @@ BOOST_AUTO_TEST_CASE(PerformanceCapabilitiesUndefined)
             CheckOperandType(capabilities, V1_2::OperandType::OEM, FLT_MAX, FLT_MAX);
             CheckOperandType(capabilities, V1_2::OperandType::TENSOR_OEM_BYTE, FLT_MAX, FLT_MAX);
 
-            BOOST_ASSERT(error == V1_0::ErrorStatus::NONE);
+            ARMNN_ASSERT(error == V1_0::ErrorStatus::NONE);
         };
 
     armnn::IRuntime::CreationOptions options;
