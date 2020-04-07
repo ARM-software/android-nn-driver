@@ -187,7 +187,7 @@ LOCAL_SHARED_LIBRARIES+= \
         android.hardware.neuralnetworks@1.3
 endif # R or later
 
-ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+ifeq ($(ARMNN_INCLUDE_LIBOPENCL),1)
 LOCAL_SHARED_LIBRARIES+= \
         libOpenCL
 endif
