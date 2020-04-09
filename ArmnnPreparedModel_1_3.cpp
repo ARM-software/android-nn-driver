@@ -337,7 +337,7 @@ std::tuple<V1_3::ErrorStatus, hidl_vec<OutputShape>, Timing, std::string>
 {
     if (!setRunTimePoolInfosFromMemoryPools(&memPools, request.pools))
     {
-        return {ErrorStatus::GENERAL_FAILURE, {}, g_NoTiming, "ArmnnPreparedModel_1_3::execute"};
+        return {ErrorStatus::INVALID_ARGUMENT, {}, g_NoTiming, "ArmnnPreparedModel_1_3::execute"};
     }
 
     // add the inputs and outputs with their data
@@ -397,6 +397,7 @@ Return<void> ArmnnPreparedModel_1_3<HalVersion>::ExecuteSynchronously(const V1_3
                        {},
                        g_NoTiming,
                        "ArmnnPreparedModel_1_3::ExecuteSynchronously invalid request model");
+        return Void();
     }
 
 
@@ -412,6 +413,7 @@ Return<void> ArmnnPreparedModel_1_3<HalVersion>::ExecuteSynchronously(const V1_3
     if (status != V1_3::ErrorStatus::NONE)
     {
         cbCtx.callback(status, outputShapes, timing, message);
+        return Void();
     }
 
     ALOGV("ArmnnPreparedModel_1_3::ExecuteSynchronously() before Execution");
