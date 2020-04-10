@@ -661,6 +661,87 @@ bool ConvertExpandDims(const HalOperation& operation, const HalModel& model, Con
 }
 
 template<typename HalPolicy,
+        typename HalOperation = typename HalPolicy::Operation,
+        typename HalModel     = typename HalPolicy::Model>
+bool ConvertGather(const HalOperation& operation, const HalModel& model, ConversionData& data)
+{
+    using HalOperand     = typename HalPolicy::Operand;
+    using HalOperandType = typename HalPolicy::OperandType;
+
+    ALOGV("HalPolicy::ConvertGather()");
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid input", __func__);
+    }
+    auto inputDimensions = input.GetTensorInfo().GetNumDimensions();
+
+    LayerInputHandle indices = ConvertToLayerInputHandle<HalPolicy>(operation, 2, model, data);
+    if (!indices.IsValid())
+    {
+        return Fail("%s: Operation has invalid indices", __func__);
+    }
+    auto indicesDimensions = indices.GetTensorInfo().GetNumDimensions();
+
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Operation has invalid output", __func__);
+    }
+    const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    auto outputDimensions = outputInfo.GetNumDimensions();
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+    if (outputDimensions != inputDimensions + indicesDimensions - 1)
+    {
+        return Fail("%s: Operation has invalid output dimensions: %d. Output must be an (%d + %d - 1)-D tensor",
+                     __func__, outputDimensions, inputDimensions,indicesDimensions);
+    }
+
+    int32_t axis;
+    if (!GetInputScalar<HalPolicy>(operation, 1, HalOperandType::INT32, axis, model, data))
+    {
+        return Fail("%s: Operation has invalid or unsupported axis operand", __func__);
+    }
+    if (-inputDimensions <= axis || axis > inputDimensions)
+    {
+        return Fail("%s: Operation has invalid axis: %d. It is out of bounds [-&d, %d))", __func__, axis,
+                    inputDimensions,inputDimensions);
+    }
+    if (axis < 0)
+    {
+        axis += inputDimensions;
+    }
+    if (axis != 0)
+    {
+        return Fail("%s: Only axis 0 is currently supported. Axis: %d", __func__, axis);
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsGatherSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input.GetTensorInfo(),
+                               indices.GetTensorInfo(),
+                               outputInfo);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    IConnectableLayer* layer = data.m_Network->AddGatherLayer();
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+    indices.Connect(layer->GetInputSlot(1));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+}
+
+template<typename HalPolicy,
          typename HalOperation = typename HalPolicy::Operation,
          typename HalModel     = typename HalPolicy::Model>
 bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, ConversionData& data)

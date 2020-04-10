@@ -74,6 +74,8 @@ private:
 
     static bool ConvertFullyConnected(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertGather(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertGroupedConv2d(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertInstanceNormalization(const Operation& operation, const Model& model, ConversionData& data);

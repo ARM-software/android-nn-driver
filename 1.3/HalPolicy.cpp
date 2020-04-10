@@ -55,6 +55,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertFloor(operation, model, data);
         case V1_3::OperationType::FULLY_CONNECTED:
             return ConvertFullyConnected(operation, model, data);
+        case V1_3::OperationType::GATHER:
+            return ConvertGather(operation, model, data);
         case V1_3::OperationType::GREATER:
             return ConvertComparison(operation, model, data, ComparisonOperation::Greater);
         case V1_3::OperationType::GREATER_EQUAL:
@@ -251,6 +253,12 @@ bool HalPolicy::ConvertFullyConnected(const Operation& operation, const Model& m
 {
     ALOGV("hal_1_3::HalPolicy::ConvertFullyConnected()");
     return ::ConvertFullyConnected<hal_1_3::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertGather(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertGather()");
+    return ::ConvertGather<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertGroupedConv2d(const Operation& operation, const Model& model, ConversionData& data)
