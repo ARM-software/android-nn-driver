@@ -237,6 +237,12 @@ Return<void> ArmnnDriverImpl::getCapabilities_1_2(const armnn::IRuntimePtr& runt
         capabilities.relaxedFloat32toFloat16PerformanceScalar.execTime =
                 ParseSystemProperty(g_RelaxedFloat32toFloat16PerformanceExecTime, defaultValue);
 
+        capabilities.relaxedFloat32toFloat16PerformanceScalar.powerUsage =
+                ParseSystemProperty(g_RelaxedFloat32toFloat16PerformancePowerUsage, defaultValue);
+
+        capabilities.relaxedFloat32toFloat16PerformanceTensor.execTime =
+                ParseSystemProperty(g_RelaxedFloat32toFloat16PerformanceExecTime, defaultValue);
+
         capabilities.relaxedFloat32toFloat16PerformanceTensor.powerUsage =
                 ParseSystemProperty(g_RelaxedFloat32toFloat16PerformancePowerUsage, defaultValue);
 
@@ -314,8 +320,10 @@ Return<void> ArmnnDriverImpl::getCapabilities_1_2(const armnn::IRuntimePtr& runt
     }
     else
     {
-        capabilities.relaxedFloat32toFloat16PerformanceScalar.execTime = 0;
-        capabilities.relaxedFloat32toFloat16PerformanceTensor.execTime = 0;
+        capabilities.relaxedFloat32toFloat16PerformanceScalar.execTime   = 0;
+        capabilities.relaxedFloat32toFloat16PerformanceScalar.powerUsage = 0;
+        capabilities.relaxedFloat32toFloat16PerformanceTensor.execTime   = 0;
+        capabilities.relaxedFloat32toFloat16PerformanceTensor.powerUsage = 0;
 
         // Set the base value for all operand types
         #ifdef ARMNN_ANDROID_R
