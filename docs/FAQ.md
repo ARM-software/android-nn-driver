@@ -49,3 +49,25 @@ Instance Normalization test failures
 
 There is a known issue in the Android NNAPI implementation of Instance Normalization that will be fixed in an upcoming revision of Android 10. Using the Arm NN Android NNAPI driver with versions of the Android 10 VTS and CTS tests that do not have that fix will generate multiple Instance Normalization failures. 
 
+VTS and CTS test failures
+-------------------------
+
+With the release of the Android 10 R2 CTS some errors and crashes were discovered in the 19.08 and 19.11 releases of armnn, the android-nn-driver and ComputeLibrary. 19.08.01 and 19.11.01 releases of armnn, the android-nn-driver and ComputeLibrary were prepared that fix all these issues on CpuAcc and GpuAcc. If using 19.08 or 19.11 we recommend that you upgrade to the 19.08.01 or 19.11.01 releases. These issues have also been fixed in the 20.02 releases of armnn, the android-nn-driver and ComputeLibrary.
+
+These fixes also required patches to be made to the Android Q test framework. You may encounter CTS and VTS test failures when attempting to build copies of the android-nn-driver against older versions of Android Q.
+
+These test failures include:
+
+* ComputeMode/GeneratedTests.avg_pool_v1_2 Float16 tests 
+* ComputeMode/GeneratedTests.instance_normalization tests
+* TestRandomGraph/SingleOperationTest.INSTANCE_NORMALIZATION_V1_2 tests
+* TestRandomGraph/SingleOperationTest.PRELU_V1_2 tests
+* Some TestRandomGraph/RandomGraphTest tests which include avg_pool or instance_normalization operators.
+* Some TestRandomGraph/RandomGraphTest tests which use Float16 input.
+
+In order to fix these failures you will have to update to a version of Android Q that includes the following patches: https://android-review.googlesource.com/q/project:platform%252Fframeworks%252Fml+branch:android10-tests-dev+status:merged
+
+The Android 10 R3 CTS that can be downloaded from https://source.android.com/compatibility/cts/downloads contains all these patches. 
+
+There is a known issue that even with these patches CTS test "TestRandomGraph/RandomGraphTest#LargeGraph_TENSOR_FLOAT16_Rank3/41" will still fail on CpuRef. This failure is caused by a LogSoftmax layer followed by a Floor layer which blows up the slight difference between fp16 to fp32. This issue only affects CpuRef beginning with the 20.02 release. We expect that this issue will be resolved in a future release.
+
