@@ -1825,6 +1825,17 @@ bool ConvertResize(const HalOperation& operation,
         return Fail("%s: Operand has invalid data type for resizing by scale", __func__);
     }
 
+    descriptor.m_BilinearAlignCorners =  GetOptionalBool<HalPolicy>(operation, 4, model, data);
+    descriptor.m_HalfPixelCenters =  GetOptionalBool<HalPolicy>(operation, 5, model, data);
+    if (descriptor.m_BilinearAlignCorners)
+    {
+        return Fail("%s: Resize Align Corners is not currently supported", __func__);
+    }
+    if (descriptor.m_HalfPixelCenters)
+    {
+        return Fail("%s: Resize Half Pixel Centers is not currently supported", __func__);
+    }
+
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsResizeSupported,

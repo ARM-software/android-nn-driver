@@ -1052,6 +1052,43 @@ bool GetOptionalConvolutionDilationParams(const HalOperation& operation,
 }
 
 template<typename HalPolicy,
+         typename HalOperation   = typename HalPolicy::Operation,
+         typename HalModel       = typename HalPolicy::Model>
+bool GetOptionalBool(const HalOperation& operation,
+                     uint32_t inputIndex,
+                     const HalModel& model,
+                     const ConversionData& data)
+{
+    using HalOperand = typename HalPolicy::Operand;
+
+    const HalOperand* operand = GetInputOperand<HalPolicy>(operation, inputIndex, model);
+    if (!operand)
+    {
+        return false;
+    }
+
+    if (!IsBool(*operand))
+    {
+        return false;
+    }
+
+    const void* valueAddress = GetOperandValueReadOnlyAddress<HalPolicy>(*operand, model, data);
+    if (!valueAddress)
+    {
+        return false;
+    }
+
+    if (*(static_cast<const bool*>(valueAddress)))
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+template<typename HalPolicy,
          typename HalOperand = typename HalPolicy::Operand,
          typename HalModel   = typename HalPolicy::Model>
 bool GetTensorInt32Values(const HalOperand& operand,
