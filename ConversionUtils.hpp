@@ -3193,10 +3193,12 @@ bool ConvertPad(HalOperation& operation, const HalModel& model, ConversionData& 
         return Fail("%s: Could not convert paddings", __func__);
     }
 
+    // For a ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and ANEURALNETWORKS_TENSOR_QUANT8_ASYMM_SIGNED tensor,
+    // the scale and zeroPoint must be the same as input0
     // Before Android Q, the pad value for ANEURALNETWORKS_TENSOR_QUANT8_ASYMM was undefined. Since Android Q the pad
     // value must be "logical zero" we set it to be equal to the QuantizationOffset so effectively it ends up as
     // (QuantizationOffset - QuantizationOffset) * scale = 0.
-    if (inputInfo.GetDataType() == armnn::DataType::QAsymmU8)
+    if (inputInfo.GetDataType() == armnn::DataType::QAsymmU8 || inputInfo.GetDataType() == armnn::DataType::QAsymmS8)
     {
         descriptor.m_PadValue = inputInfo.GetQuantizationOffset();
     }

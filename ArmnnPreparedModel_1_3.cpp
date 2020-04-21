@@ -258,11 +258,29 @@ template<typename HalVersion>
 Return<void> ArmnnPreparedModel_1_3<HalVersion>::executeFenced(const V1_3::Request&,
                                                                const hidl_vec<hidl_handle>&,
                                                                MeasureTiming,
-                                                               const OptionalTimePoint&,
-                                                               const OptionalTimeoutDuration&,
+                                                               const OptionalTimePoint& deadline,
+                                                               const OptionalTimeoutDuration& loopTimeoutDuration,
                                                                const OptionalTimeoutDuration&,
                                                                executeFenced_cb cb)
 {
+    ALOGV("ArmnnPreparedModel_1_3::executeFenced(...)");
+    if (cb == nullptr)
+    {
+        ALOGE("ArmnnPreparedModel_1_3::executeFenced invalid callback passed");
+        cb(ErrorStatus::INVALID_ARGUMENT, hidl_handle(nullptr), nullptr);
+        return Void();
+    }
+
+    if (deadline.getDiscriminator() != OptionalTimePoint::hidl_discriminator::none)
+    {
+        ALOGW("ArmnnPreparedModel_1_3::executeFenced parameter deadline is set but not supported.");
+    }
+
+    if (loopTimeoutDuration.getDiscriminator() != OptionalTimeoutDuration::hidl_discriminator::none)
+    {
+        ALOGW("ArmnnPreparedModel_1_3::executeFenced parameter loopTimeoutDuration is set but not supported.");
+    }
+
     cb(ErrorStatus::INVALID_ARGUMENT, hidl_handle(nullptr), nullptr);
     return Void();
 }
@@ -471,16 +489,13 @@ Return<void>  ArmnnPreparedModel_1_3<HalVersion>::executeSynchronously_1_3(
 
     if (deadline.getDiscriminator() != OptionalTimePoint::hidl_discriminator::none)
     {
-        ALOGE("ArmnnPreparedModel_1_3::executeSynchronously_1_3 invalid request model");
-        cb(V1_3::ErrorStatus::INVALID_ARGUMENT, {}, g_NoTiming);
-        return Void();
+        ALOGW("ArmnnPreparedModel_1_3::executeSynchronously_1_3 parameter deadline is set but not supported.");
     }
 
     if (loopTimeoutDuration.getDiscriminator() != OptionalTimeoutDuration::hidl_discriminator::none)
-     {
-        ALOGE("ArmnnPreparedModel_1_3::executeSynchronously_1_3 invalid request model");
-        cb(V1_3::ErrorStatus::INVALID_ARGUMENT, {}, g_NoTiming);
-        return Void();
+    {
+        ALOGW(
+           "ArmnnPreparedModel_1_3::executeSynchronously_1_3 parameter loopTimeoutDuration is set but not supported.");
     }
 
     auto cbWrapper = [cb](V1_3::ErrorStatus errorStatus,
