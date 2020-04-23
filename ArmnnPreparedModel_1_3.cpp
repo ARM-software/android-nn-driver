@@ -2,6 +2,10 @@
 // Copyright © 2020 Arm Ltd. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
+// Note: the ArmnnFencedExecutionCallback and code snippet in the executeFenced() function
+//       in this file is based on Android code
+//       under the Apache 2.0 license. See comments below for details.
+//
 
 #define LOG_TAG "ArmnnDriver"
 
@@ -9,6 +13,7 @@
 #include "Utils.hpp"
 
 #include <Utils.h>
+#include <android/sync.h>
 #include <boost/format.hpp>
 #include <log/log.h>
 #include <OperationsUtils.h>
@@ -254,10 +259,31 @@ Return <V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::execute_1_3(
     return Execute(request, measureTiming, cb);
 }
 
+/// This class is inspired by the sample implementation in Android named SampleFencedExecutionCallback.
+/// The original code is licensed under Apache-2.0 and can be found at the following link:
+/// https://android.googlesource.com/platform/frameworks/ml/+/master/nn/driver/sample/SampleDriver.h
+class ArmnnFencedExecutionCallback : public V1_3::IFencedExecutionCallback
+{
+public:
+    ArmnnFencedExecutionCallback(V1_3::ErrorStatus errorStatus, Timing timing, Timing fenceTiming)
+        : m_ErrorStatus(errorStatus), m_Timing(timing), m_FenceTiming(fenceTiming) {}
+    ~ArmnnFencedExecutionCallback() {}
+
+    Return<void> getExecutionInfo(getExecutionInfo_cb callback) override
+    {
+        callback(m_ErrorStatus, m_Timing, m_FenceTiming);
+        return Void();
+    }
+private:
+    V1_3::ErrorStatus m_ErrorStatus;
+    Timing m_Timing;
+    Timing m_FenceTiming;
+};
+
 template<typename HalVersion>
-Return<void> ArmnnPreparedModel_1_3<HalVersion>::executeFenced(const V1_3::Request&,
-                                                               const hidl_vec<hidl_handle>&,
-                                                               MeasureTiming,
+Return<void> ArmnnPreparedModel_1_3<HalVersion>::executeFenced(const V1_3::Request& request,
+                                                               const hidl_vec<hidl_handle>& fenceWaitFor,
+                                                               MeasureTiming measureTiming,
                                                                const OptionalTimePoint& deadline,
                                                                const OptionalTimeoutDuration& loopTimeoutDuration,
                                                                const OptionalTimeoutDuration&,
@@ -281,7 +307,104 @@ Return<void> ArmnnPreparedModel_1_3<HalVersion>::executeFenced(const V1_3::Reque
         ALOGW("ArmnnPreparedModel_1_3::executeFenced parameter loopTimeoutDuration is set but not supported.");
     }
 
-    cb(ErrorStatus::INVALID_ARGUMENT, hidl_handle(nullptr), nullptr);
+    ExecutionContext_1_3 ctx;
+    if (measureTiming == MeasureTiming::YES)
+    {
+        ctx.measureTimings = measureTiming;
+        ctx.driverStart = Now();
+    }
+
+    ALOGV("ArmnnPreparedModel_1_3::executeFenced(): %s", GetModelSummary(m_Model).c_str());
+    m_RequestCount++;
+
+    if (!android::nn::validateRequest(request, m_Model))
+    {
+        cb(ErrorStatus::INVALID_ARGUMENT, hidl_handle(nullptr), nullptr);
+        return Void();
+    }
+
+    if (!m_RequestInputsAndOutputsDumpDir.empty())
+    {
+        ALOGD("Dumping inputs and outputs for request %" PRIuPTR, reinterpret_cast<std::uintptr_t>(&cb));
+    }
+
+    // This code snippet is inspired by the sample implementation in Android named SampleDriver::executeFenced()
+    // function. The original code is licensed under Apache-2.0 and can be found at the following link:
+    // https://android.googlesource.com/platform/frameworks/ml/+/master/nn/driver/sample/SampleDriver.cpp
+    const auto fenceSize = fenceWaitFor.size();
+    for (unsigned int index = 0; index < fenceSize; ++index)
+    {
+        auto fenceNativeHandle = fenceWaitFor[index].getNativeHandle();
+        if (!fenceNativeHandle)
+        {
+            cb(ErrorStatus::INVALID_ARGUMENT, hidl_handle(nullptr), nullptr);
+            return Void();
+        }
+
+        if (sync_wait(fenceNativeHandle->data[0], -1) < 0)
+        {
+            ALOGE("ArmnnPreparedModel_1_3::executeFenced sync fence failed.");
+            cb(ErrorStatus::GENERAL_FAILURE, hidl_handle(nullptr), nullptr);
+            return Void();
+        }
+    }
+
+    TimePoint fenceExecutionStart;
+    if (measureTiming == MeasureTiming::YES)
+    {
+        fenceExecutionStart = Now();
+    }
+
+    // map the memory pool into shared pointers
+    // use a shared memory pools vector on the heap, as it is passed to the request thread
+    auto memPools = std::make_shared<std::vector<android::nn::RunTimePoolInfo>>();
+
+    // allocate the tensors on the heap, as they are passed to the request thread
+    auto inputs = std::make_shared<armnn::InputTensors>();
+    auto outputs = std::make_shared<armnn::OutputTensors>();
+
+    auto [status, outShapes, timings, message] = PrepareMemoryForIO(*inputs, *outputs, *memPools, request);
+    if (status != V1_3::ErrorStatus::NONE)
+    {
+        cb(ErrorStatus::INVALID_ARGUMENT, hidl_handle(nullptr), nullptr);
+        return Void();
+    }
+
+    ALOGV("ArmnnPreparedModel_1_3::executeFenced(...) before ExecuteGraph");
+
+    // call it with nullCallback for now as we will report the error status from here..
+    auto nullCallback = [](V1_3::ErrorStatus, std::vector<OutputShape>, const Timing&, std::string) {};
+    CallbackContext_1_3 cbCtx;
+    cbCtx.callback = nullCallback;
+    cbCtx.ctx = ctx;
+
+    auto errorStatus = ExecuteGraph(memPools, *inputs, *outputs, cbCtx);
+    if (errorStatus != V1_3::ErrorStatus::NONE)
+    {
+        cb(errorStatus, hidl_handle(nullptr), nullptr);
+        return Void();
+    }
+    ALOGV("ArmnnPreparedModel_1_3::executeFenced(...) after ExecuteGraph");
+
+    Timing timing = g_NoTiming;
+    Timing fenceTiming = g_NoTiming;
+    if (measureTiming == MeasureTiming::YES)
+    {
+        TimePoint driverEnd = Now();
+        timing.timeOnDevice = MicrosecondsDuration(ctx.deviceEnd, ctx.deviceStart);
+        timing.timeInDriver = MicrosecondsDuration(driverEnd, ctx.driverStart);
+        ALOGV("ArmnnPreparedModel_1_2::fenceExecutionTiming - Device = %lu Driver = %lu",
+              timing.timeOnDevice, timing.timeInDriver);
+
+        fenceTiming.timeOnDevice = MicrosecondsDuration(ctx.deviceEnd, ctx.deviceStart);
+        fenceTiming.timeInDriver = MicrosecondsDuration(driverEnd, fenceExecutionStart);
+        ALOGV("ArmnnPreparedModel_1_2::fenceFinishExecutionTiming - Device = %lu Driver = %lu",
+              fenceTiming.timeOnDevice, fenceTiming.timeInDriver);
+    }
+
+    sp<ArmnnFencedExecutionCallback> armnnFencedExecutionCallback =
+        new ArmnnFencedExecutionCallback(ErrorStatus::NONE, timing, fenceTiming);
+    cb(ErrorStatus::NONE, hidl_handle(nullptr), armnnFencedExecutionCallback);
     return Void();
 }
 
@@ -540,7 +663,7 @@ Return<void> ArmnnPreparedModel_1_3<HalVersion>::configureExecutionBurst(
 
 template<typename HalVersion>
 template<typename CallbackContext>
-bool ArmnnPreparedModel_1_3<HalVersion>::ExecuteGraph(
+Return <V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::ExecuteGraph(
     std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& pMemPools,
     armnn::InputTensors& inputTensors,
     armnn::OutputTensors& outputTensors,
@@ -567,34 +690,33 @@ bool ArmnnPreparedModel_1_3<HalVersion>::ExecuteGraph(
     {
         if (cb.ctx.measureTimings == MeasureTiming::YES)
         {
-            deviceStart = Now();
+            cb.ctx.deviceStart = Now();
         }
 
         armnn::Status status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors);
 
         if (cb.ctx.measureTimings == MeasureTiming::YES)
         {
-            deviceEnd = Now();
+            cb.ctx.deviceEnd = Now();
         }
         if (status != armnn::Status::Success)
         {
             ALOGW("EnqueueWorkload failed");
-            cb.callback(V1_3::ErrorStatus::GENERAL_FAILURE, {}, g_NoTiming,
-                        "ArmnnPreparedModel_1_3::ExecuteGraph");
-            return false;
+            cb.callback(V1_3::ErrorStatus::GENERAL_FAILURE, {}, g_NoTiming, "ArmnnPreparedModel_1_3::ExecuteGraph");
+            return V1_3::ErrorStatus::GENERAL_FAILURE;
         }
     }
     catch (armnn::Exception& e)
     {
         ALOGW("armnn:Exception caught from EnqueueWorkload: %s", e.what());
         cb.callback(V1_3::ErrorStatus::GENERAL_FAILURE, {}, g_NoTiming, "ArmnnPreparedModel_1_3::ExecuteGraph");
-        return false;
+        return V1_3::ErrorStatus::GENERAL_FAILURE;
     }
     catch (std::exception& e)
     {
         ALOGE("std::exception caught from EnqueueWorkload: %s", e.what());
         cb.callback(V1_3::ErrorStatus::GENERAL_FAILURE, {}, g_NoTiming, "ArmnnPreparedModel_1_3::ExecuteGraph");
-        return false;
+        return V1_3::ErrorStatus::GENERAL_FAILURE;
     }
 
     CommitPools(*pMemPools);
@@ -605,16 +727,16 @@ bool ArmnnPreparedModel_1_3<HalVersion>::ExecuteGraph(
     {
         driverEnd = Now();
         Timing timing;
-        timing.timeOnDevice = MicrosecondsDuration(deviceEnd, deviceStart);
+        timing.timeOnDevice = MicrosecondsDuration(cb.ctx.deviceEnd, cb.ctx.deviceStart);
         timing.timeInDriver = MicrosecondsDuration(driverEnd, cb.ctx.driverStart);
         ALOGV("ArmnnPreparedModel_1_2::execute timing - Device = %lu Driver = %lu", timing.timeOnDevice,
               timing.timeInDriver);
         cb.callback(V1_3::ErrorStatus::NONE, outputShapes, timing, "ArmnnPreparedModel_1_3::ExecuteGraph");
-    } else {
+    } else
+    {
         cb.callback(V1_3::ErrorStatus::NONE, outputShapes, g_NoTiming, "ArmnnPreparedModel_1_3::ExecuteGraph");
     }
-
-    return true;
+    return V1_3::ErrorStatus::NONE;
 }
 
 template<typename HalVersion>
@@ -646,10 +768,12 @@ bool ArmnnPreparedModel_1_3<HalVersion>::ExecuteWithDummyInputs()
     callbackContext.callback = nullCallback;
     callbackContext.ctx.measureTimings = MeasureTiming::NO;
     auto memPools = std::make_shared<std::vector<::android::nn::RunTimePoolInfo>>();
-    return ExecuteGraph(memPools,
-                        inputTensors,
-                        outputTensors,
-                        callbackContext);
+
+    auto errorStatus = ExecuteGraph(memPools,
+                                    inputTensors,
+                                    outputTensors,
+                                    callbackContext);
+    return errorStatus == V1_3::ErrorStatus::NONE;
 }
 
 template<typename HalVersion>
@@ -716,7 +840,7 @@ Return <V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::Execute(const V1_
 
 #ifdef ARMNN_ANDROID_NN_V1_3
 template class ArmnnPreparedModel_1_3<hal_1_3::HalPolicy>;
-template bool ArmnnPreparedModel_1_3<hal_1_3::HalPolicy>::ExecuteGraph<CallbackContext_1_3>(
+template Return <V1_3::ErrorStatus> ArmnnPreparedModel_1_3<hal_1_3::HalPolicy>::ExecuteGraph<CallbackContext_1_3>(
         std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& pMemPools,
         armnn::InputTensors& pInputTensors,
         armnn::OutputTensors& pOutputTensors,

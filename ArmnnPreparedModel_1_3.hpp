@@ -29,6 +29,8 @@ struct ExecutionContext_1_3
     ::android::hardware::neuralnetworks::V1_2::MeasureTiming    measureTimings =
         ::android::hardware::neuralnetworks::V1_2::MeasureTiming::NO;
     TimePoint driverStart;
+    TimePoint deviceStart;
+    TimePoint deviceEnd;
 };
 
 using CallbackContext_1_3 = CallbackContext<CallbackAsync_1_3, ExecutionContext_1_3>;
@@ -74,7 +76,7 @@ public:
                                           V1_3::IPreparedModel::executeSynchronously_1_3_cb cb) override;
 
     Return<void> executeFenced(const V1_3::Request& request,
-                               const android::hardware::hidl_vec<android::hardware::hidl_handle>& wait_for,
+                               const android::hardware::hidl_vec<android::hardware::hidl_handle>& fenceWaitFor,
                                MeasureTiming measure,
                                const V1_3::OptionalTimePoint& deadline,
                                const V1_3::OptionalTimeoutDuration& loopTimeoutDuration,
@@ -92,10 +94,11 @@ public:
 
     /// execute the graph prepared from the request
     template<typename CallbackContext>
-    bool ExecuteGraph(std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& pMemPools,
-                      armnn::InputTensors& inputTensors,
-                      armnn::OutputTensors& outputTensors,
-                      CallbackContext callback);
+    Return <V1_3::ErrorStatus> ExecuteGraph(
+              std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& pMemPools,
+              armnn::InputTensors& inputTensors,
+              armnn::OutputTensors& outputTensors,
+              CallbackContext callback);
 
     /// Executes this model with dummy inputs (e.g. all zeroes).
     /// \return false on failure, otherwise true

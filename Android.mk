@@ -184,6 +184,7 @@ endif # Q or later
 
 ifeq ($(R_OR_LATER),1)
 LOCAL_SHARED_LIBRARIES+= \
+        libsync \
         android.hardware.neuralnetworks@1.3
 endif # R or later
 
@@ -307,6 +308,7 @@ endif # PLATFORM_VERSION == Q
 
 ifeq ($(R_OR_LATER),1)
 LOCAL_SHARED_LIBRARIES+= \
+        libsync \
         android.hardware.neuralnetworks@1.3
 endif # R or later
 
@@ -421,6 +423,7 @@ LOCAL_SHARED_LIBRARIES := \
 
 ifeq ($(R_OR_LATER),1)
 LOCAL_SHARED_LIBRARIES+= \
+        libsync \
         android.hardware.neuralnetworks@1.3
 endif # R or later
 
@@ -527,6 +530,7 @@ LOCAL_SHARED_LIBRARIES := \
         libcutils \
         android.hidl.allocator@1.0 \
         android.hidl.memory@1.0 \
+        libsync \
         android.hardware.neuralnetworks@1.0 \
         android.hardware.neuralnetworks@1.1 \
         android.hardware.neuralnetworks@1.2 \
@@ -631,6 +635,7 @@ endif # PLATFORM_VERSION == Q
 
 ifeq ($(R_OR_LATER),1)
 LOCAL_SHARED_LIBRARIES+= \
+        libsync \
         android.hardware.neuralnetworks@1.3
 endif # R or later
 
@@ -729,6 +734,7 @@ endif # PLATFORM_VERSION == Q
 
 ifeq ($(R_OR_LATER),1)
 LOCAL_SHARED_LIBRARIES+= \
+        libsync \
         android.hardware.neuralnetworks@1.3
 endif # PLATFORM_VERSION == R
 
@@ -816,6 +822,7 @@ LOCAL_SHARED_LIBRARIES := \
 
 ifeq ($(R_OR_LATER),1)
 LOCAL_SHARED_LIBRARIES+= \
+        libsync \
         android.hardware.neuralnetworks@1.3
 endif # R or later
 
@@ -890,6 +897,7 @@ LOCAL_SHARED_LIBRARIES := \
         libui \
         libfmq \
         libcutils \
+        libsync \
         android.hidl.allocator@1.0 \
         android.hidl.memory@1.0 \
         android.hardware.neuralnetworks@1.0 \
