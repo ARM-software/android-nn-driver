@@ -29,6 +29,7 @@ struct ExecutionContext_1_3
     ::android::hardware::neuralnetworks::V1_2::MeasureTiming    measureTimings =
         ::android::hardware::neuralnetworks::V1_2::MeasureTiming::NO;
     TimePoint driverStart;
+    TimePoint driverEnd;
     TimePoint deviceStart;
     TimePoint deviceEnd;
 };

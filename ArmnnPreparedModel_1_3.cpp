@@ -390,15 +390,9 @@ Return<void> ArmnnPreparedModel_1_3<HalVersion>::executeFenced(const V1_3::Reque
     Timing fenceTiming = g_NoTiming;
     if (measureTiming == MeasureTiming::YES)
     {
-        TimePoint driverEnd = Now();
-        timing.timeOnDevice = MicrosecondsDuration(ctx.deviceEnd, ctx.deviceStart);
-        timing.timeInDriver = MicrosecondsDuration(driverEnd, ctx.driverStart);
-        ALOGV("ArmnnPreparedModel_1_2::fenceExecutionTiming - Device = %lu Driver = %lu",
-              timing.timeOnDevice, timing.timeInDriver);
-
         fenceTiming.timeOnDevice = MicrosecondsDuration(ctx.deviceEnd, ctx.deviceStart);
-        fenceTiming.timeInDriver = MicrosecondsDuration(driverEnd, fenceExecutionStart);
-        ALOGV("ArmnnPreparedModel_1_2::fenceFinishExecutionTiming - Device = %lu Driver = %lu",
+        fenceTiming.timeInDriver = MicrosecondsDuration(ctx.driverEnd, fenceExecutionStart);
+        ALOGV("ArmnnPreparedModel_1_3::fenceFinishExecutionTiming - Device = %lu Driver = %lu",
               fenceTiming.timeOnDevice, fenceTiming.timeInDriver);
     }
 
@@ -671,8 +665,6 @@ Return <V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::ExecuteGraph(
 {
     ALOGV("ArmnnPreparedModel_1_3::ExecuteGraph(...)");
 
-    TimePoint driverEnd, deviceStart, deviceEnd;
-
     DumpTensorsIfRequired("Input", inputTensors);
 
     std::vector<OutputShape> outputShapes(outputTensors.size());
@@ -725,11 +717,11 @@ Return <V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::ExecuteGraph(
 
     if (cb.ctx.measureTimings == MeasureTiming::YES)
     {
-        driverEnd = Now();
+        cb.ctx.driverEnd = Now();
         Timing timing;
         timing.timeOnDevice = MicrosecondsDuration(cb.ctx.deviceEnd, cb.ctx.deviceStart);
-        timing.timeInDriver = MicrosecondsDuration(driverEnd, cb.ctx.driverStart);
-        ALOGV("ArmnnPreparedModel_1_2::execute timing - Device = %lu Driver = %lu", timing.timeOnDevice,
+        timing.timeInDriver = MicrosecondsDuration(cb.ctx.driverEnd, cb.ctx.driverStart);
+        ALOGV("ArmnnPreparedModel_1_3::execute timing - Device = %lu Driver = %lu", timing.timeOnDevice,
               timing.timeInDriver);
         cb.callback(V1_3::ErrorStatus::NONE, outputShapes, timing, "ArmnnPreparedModel_1_3::ExecuteGraph");
     } else
