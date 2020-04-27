@@ -89,7 +89,10 @@ void TransposeTestImpl(const TestTensor & inputs, int32_t perm[],
     android::sp<IMemory> outMemory = AddPoolAndGetData<float>(expectedOutputTensor.GetNumElements(), request);
     float* outdata = static_cast<float*>(static_cast<void*>(outMemory->getPointer()));
 
-    auto execStatus = Execute(preparedModel, request);
+    if (preparedModel.get() != nullptr)
+    {
+        auto execStatus = Execute(preparedModel, request);
+    }
 
     const float * expectedOutput = expectedOutputTensor.GetData();
     for (unsigned int i = 0; i < expectedOutputTensor.GetNumElements(); ++i)

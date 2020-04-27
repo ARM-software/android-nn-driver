@@ -77,7 +77,10 @@ BOOST_AUTO_TEST_CASE(FullyConnected)
     float* outdata = static_cast<float*>(static_cast<void*>(outMemory->getPointer()));
 
     // run the execution
-    Execute(preparedModel, request);
+    if (preparedModel.get() != nullptr)
+    {
+        Execute(preparedModel, request);
+    }
 
     // check the result
     BOOST_TEST(outdata[0] == 152);
@@ -156,7 +159,10 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInput)
     float* outdata = static_cast<float*>(static_cast<void*>(outMemory->getPointer()));
 
     // run the execution
-    Execute(preparedModel, request);
+    if (preparedModel != nullptr)
+    {
+        Execute(preparedModel, request);
+    }
 
     // check the result
     BOOST_TEST(outdata[0] == 1);
@@ -242,7 +248,10 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInputReshape)
     float* outdata = static_cast<float*>(static_cast<void*>(outMemory->getPointer()));
 
     // run the execution
-    Execute(preparedModel, request);
+    if (preparedModel != nullptr)
+    {
+        Execute(preparedModel, request);
+    }
 
     // check the result
     BOOST_TEST(outdata[0] == 1);

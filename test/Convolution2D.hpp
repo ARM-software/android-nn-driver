@@ -104,7 +104,10 @@ void PaddingTestImpl(android::nn::PaddingScheme paddingScheme, bool fp16Enabled 
     float* outdata = reinterpret_cast<float*>(static_cast<void*>(outMemory->getPointer()));
 
     // run the execution
-    Execute(preparedModel, request);
+    if (preparedModel.get() != nullptr)
+    {
+        Execute(preparedModel, request);
+    }
 
     // check the result
     switch (paddingScheme)

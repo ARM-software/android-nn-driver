@@ -51,11 +51,19 @@ BOOST_AUTO_TEST_CASE(ConcurrentExecute)
 
     // make the prepared models
     const size_t maxRequests = 5;
+    size_t preparedModelsSize = 0;
     android::sp<V1_0::IPreparedModel> preparedModels[maxRequests];
     for (size_t i = 0; i < maxRequests; ++i)
     {
-        preparedModels[i] = PrepareModel(model, *driver);
+        auto preparedModel = PrepareModel(model, *driver);
+        if (preparedModel.get() != nullptr)
+        {
+            preparedModels[i] = PrepareModel(model, *driver);
+            preparedModelsSize++;
+        }
     }
+
+    BOOST_TEST(maxRequests == preparedModelsSize);
 
     // construct the request data
     DataLocation inloc = {};

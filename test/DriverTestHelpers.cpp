@@ -182,6 +182,7 @@ V1_0::ErrorStatus Execute(android::sp<V1_0::IPreparedModel> preparedModel,
 android::sp<ExecutionCallback> ExecuteNoWait(android::sp<V1_0::IPreparedModel> preparedModel,
                                              const V1_0::Request& request)
 {
+    BOOST_TEST(preparedModel.get() != nullptr);
     android::sp<ExecutionCallback> cb(new ExecutionCallback());
     BOOST_TEST(preparedModel->execute(request, cb) == V1_0::ErrorStatus::NONE);
     ALOGI("ExecuteNoWait: returning callback object");
