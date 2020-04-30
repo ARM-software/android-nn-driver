@@ -326,6 +326,16 @@ void DumpTensor(const std::string& dumpDir,
             dumpElementFunction = &DumpTensorElement<armnn::Half>;
             break;
         }
+        case armnn::DataType::QAsymmS8:
+        {
+            dumpElementFunction = &DumpTensorElement<int8_t, int32_t>;
+            break;
+        }
+        case armnn::DataType::Boolean:
+        {
+            dumpElementFunction = &DumpTensorElement<bool>;
+            break;
+        }
         default:
         {
             dumpElementFunction = nullptr;
