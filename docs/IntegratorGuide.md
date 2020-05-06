@@ -21,19 +21,19 @@ directory. This file is normally called `device.mk`:
 
 For Android P or Q, using NN API version (1.0), the following should be added to `device.mk`:
 <pre>
-PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.0-service-armnn
+PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.0-service-arm-armnn
 </pre>
 
 For Android P or Q, a new version of the NN API is available (1.1),
 thus the following should be added to `device.mk` instead:
 <pre>
-PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.1-service-armnn
+PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.1-service-arm-armnn
 </pre> `Android.mk` contains the module definition of both versions of the ArmNN driver.
 
 For Android Q, a new version of the NN API is available (1.2),
 thus the following should be added to `device.mk` instead:
 <pre>
-PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.2-service-armnn
+PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.2-service-arm-armnn
 </pre> `Android.mk` contains the module definition of all three versions (1.0, 1.1 and 1.2) of the ArmNN driver.
 
 Similarly, the Neon, CL or reference backend can be enabled/disabled by setting ARMNN_COMPUTE_CL_ENABLE,
@@ -66,7 +66,7 @@ Android P
 </pre>
 For example, if the ArmNN driver has been built with the NN API 1.0, check for the following file:
 <pre>
-<ANDROID_ROOT>/out/target/product/<product>/system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armnn
+<ANDROID_ROOT>/out/target/product/<product>/system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-arm-armnn
 </pre>
 
 Android Q has a different path:
@@ -79,7 +79,7 @@ Android Q has a different path:
 1. Run the ArmNN driver service executable in the background.
 The following examples assume that the 1.0 version of the driver is being used:
 <pre>
-adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armnn &
+adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-arm-armnn &
 </pre>
 2. Run some code that exercises the Android Neural Networks API, for example Android's
 `NeuralNetworksTest` unit tests (note this is an optional component that must be built).
@@ -101,12 +101,12 @@ The recommended way of using it with ArmNN is to generate the tuning data during
 1. Run the ArmNN driver service executable in tuning mode. The path to the tuning data must be writable by the service.
 The following examples assume that the 1.0 version of the driver is being used:
 <pre>
-adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armnn --cl-tuned-parameters-file &lt;PATH_TO_TUNING_DATA&gt; --cl-tuned-parameters-mode UpdateTunedParameters --cl-tuning-level exhaustive &
+adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-arm-armnn --cl-tuned-parameters-file &lt;PATH_TO_TUNING_DATA&gt; --cl-tuned-parameters-mode UpdateTunedParameters --cl-tuning-level exhaustive &
 </pre>
 2. Run a representative set of Android NNAPI testing loads. In this mode of operation, each NNAPI workload will be slow the first time it is executed, as the tuning parameters are being selected. Subsequent executions will use the tuning data which has been generated.
 3. Stop the service.
 4. Deploy the tuned parameters file to a location readable by the ArmNN driver service (for example, to a location within /vendor/etc).
 5. During normal operation, pass the location of the tuning data to the driver service (this would normally be done by passing arguments via Android init in the service .rc definition):
 <pre>
-adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armnn --cl-tuned-parameters-file &lt;PATH_TO_TUNING_DATA&gt; &
+adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-arm-armnn --cl-tuned-parameters-file &lt;PATH_TO_TUNING_DATA&gt; &
 </pre>

@@ -32,7 +32,7 @@ int main(int argc, char** argv)
     android::status_t status = android::UNKNOWN_ERROR;
     try
     {
-        status = driver->registerAsService("armnn");
+        status = driver->registerAsService("arm-armnn");
     }
     catch (const std::exception& e)
     {
