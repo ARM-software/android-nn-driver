@@ -25,6 +25,7 @@ public:
     const std::vector<armnn::BackendId>& GetBackends() const { return m_Backends; }
     bool IsVerboseLoggingEnabled() const { return m_VerboseLogging; }
     const std::string& GetRequestInputsAndOutputsDumpDir() const { return m_RequestInputsAndOutputsDumpDir; }
+    const std::string& GetServiceName() const { return m_ServiceName; }
     const std::set<unsigned int>& GetForcedUnsupportedOperations() const { return m_ForcedUnsupportedOperations; }
     const std::string& GetClTunedParametersFile() const { return m_ClTunedParametersFile; }
     armnn::IGpuAccTunedParameters::Mode GetClTunedParametersMode() const { return m_ClTunedParametersMode; }
@@ -37,6 +38,7 @@ private:
     std::vector<armnn::BackendId> m_Backends;
     bool m_VerboseLogging;
     std::string m_RequestInputsAndOutputsDumpDir;
+    std::string m_ServiceName;
     std::set<unsigned int> m_ForcedUnsupportedOperations;
     std::string m_ClTunedParametersFile;
     armnn::IGpuAccTunedParameters::Mode m_ClTunedParametersMode;

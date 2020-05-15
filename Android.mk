@@ -546,12 +546,12 @@ include $(BUILD_STATIC_LIBRARY)
 endif # PLATFORM_VERSION == R
 
 #####################################################
-# android.hardware.neuralnetworks@1.0-service-arm-armnn #
+# android.hardware.neuralnetworks@1.0-service-armnn #
 #####################################################
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := android.hardware.neuralnetworks@1.0-service-arm-armnn
-LOCAL_INIT_RC := android.hardware.neuralnetworks@1.0-service-arm-armnn.rc
+LOCAL_MODULE := android.hardware.neuralnetworks@1.0-service-armnn
+LOCAL_INIT_RC := android.hardware.neuralnetworks@1.0-service-armnn.rc
 ifeq ($(Q_OR_LATER),1)
 # "eng" is deprecated in Android Q
 LOCAL_MODULE_TAGS := optional
@@ -650,12 +650,12 @@ ifeq ($(P_OR_LATER),1)
 # The following target is available starting from Android P
 
 #####################################################
-# android.hardware.neuralnetworks@1.1-service-arm-armnn #
+# android.hardware.neuralnetworks@1.1-service-armnn #
 #####################################################
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := android.hardware.neuralnetworks@1.1-service-arm-armnn
-LOCAL_INIT_RC := android.hardware.neuralnetworks@1.1-service-arm-armnn.rc
+LOCAL_MODULE := android.hardware.neuralnetworks@1.1-service-armnn
+LOCAL_INIT_RC := android.hardware.neuralnetworks@1.1-service-armnn.rc
 ifeq ($(Q_OR_LATER),1)
 # "eng" is deprecated in Android Q
 LOCAL_MODULE_TAGS := optional
@@ -751,12 +751,12 @@ ifeq ($(Q_OR_LATER),1)
 # The following target is available starting from Android Q
 
 #####################################################
-# android.hardware.neuralnetworks@1.2-service-arm-armnn #
+# android.hardware.neuralnetworks@1.2-service-armnn #
 #####################################################
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := android.hardware.neuralnetworks@1.2-service-arm-armnn
-LOCAL_INIT_RC := android.hardware.neuralnetworks@1.2-service-arm-armnn.rc
+LOCAL_MODULE := android.hardware.neuralnetworks@1.2-service-armnn
+LOCAL_INIT_RC := android.hardware.neuralnetworks@1.2-service-armnn.rc
 LOCAL_MODULE_TAGS := optional
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE_RELATIVE_PATH := hw
@@ -839,12 +839,12 @@ ifeq ($(R_OR_LATER),1)
 # The following target is available starting from Android R
 
 #####################################################
-# android.hardware.neuralnetworks@1.3-service-arm-armnn #
+# android.hardware.neuralnetworks@1.3-service-armnn #
 #####################################################
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := android.hardware.neuralnetworks@1.3-service-arm-armnn
-LOCAL_INIT_RC := android.hardware.neuralnetworks@1.3-service-arm-armnn.rc
+LOCAL_MODULE := android.hardware.neuralnetworks@1.3-service-armnn
+LOCAL_INIT_RC := android.hardware.neuralnetworks@1.3-service-armnn.rc
 LOCAL_MODULE_TAGS := optional
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE_RELATIVE_PATH := hw

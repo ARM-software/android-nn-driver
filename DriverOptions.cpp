@@ -76,6 +76,10 @@ DriverOptions::DriverOptions(int argc, char** argv)
          po::value<std::string>(&m_RequestInputsAndOutputsDumpDir)->default_value(""),
          "If non-empty, the directory where request inputs and outputs should be dumped")
 
+        ("service-name,n",
+         po::value<std::string>(&m_ServiceName)->default_value("armnn"),
+         "If non-empty, the driver service name to be registered")
+
         ("unsupported-operations,u",
          po::value<std::string>(&unsupportedOperationsAsString)->default_value(""),
          "If non-empty, a comma-separated list of operation indices which the driver will forcibly "

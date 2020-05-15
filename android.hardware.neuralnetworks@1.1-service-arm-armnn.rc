@@ -1,4 +1,0 @@
-service neuralnetworks_hal_service_armnn /vendor/bin/hw/android.hardware.neuralnetworks@1.1-service-arm-armnn
-    class hal
-    user system
-    group system

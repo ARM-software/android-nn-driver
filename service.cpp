@@ -18,6 +18,7 @@ using namespace std;
 int main(int argc, char** argv)
 {
     android::sp<ArmnnDriver> driver;
+    DriverOptions driverOptions(argc, argv);
     try
     {
         driver = new ArmnnDriver(DriverOptions(argc, argv));
@@ -32,7 +33,7 @@ int main(int argc, char** argv)
     android::status_t status = android::UNKNOWN_ERROR;
     try
     {
-        status = driver->registerAsService("arm-armnn");
+        status = driver->registerAsService(driverOptions.GetServiceName());
     }
     catch (const std::exception& e)
     {
