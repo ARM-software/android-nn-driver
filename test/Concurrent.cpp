@@ -110,6 +110,7 @@ BOOST_AUTO_TEST_CASE(ConcurrentExecute)
     ALOGI("ConcurrentExecute: waiting for callbacks");
     for (size_t i = 0; i < maxRequests; ++i)
     {
+        ARMNN_ASSERT(cb[i]);
         cb[i]->wait();
     }
 

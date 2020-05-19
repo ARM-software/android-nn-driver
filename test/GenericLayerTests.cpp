@@ -87,9 +87,19 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
     // Test Broadcast on add/mul operators
     HalPolicy::Model model2 = {};
 
-    AddInputOperand<HalPolicy>(model2, hidl_vec<uint32_t>{1, 1, 3, 4});
-    AddInputOperand<HalPolicy>(model2, hidl_vec<uint32_t>{4});
-    AddIntOperand<HalPolicy>(model2, actValue);
+    AddInputOperand<HalPolicy>(model2,
+                               hidl_vec<uint32_t>{1, 1, 3, 4},
+                               HalPolicy::OperandType::TENSOR_FLOAT32,
+                               0.0f,
+                               0,
+                               2);
+    AddInputOperand<HalPolicy>(model2,
+                               hidl_vec<uint32_t>{4},
+                               HalPolicy::OperandType::TENSOR_FLOAT32,
+                               0.0f,
+                               0,
+                               2);
+    AddIntOperand<HalPolicy>(model2, actValue, 2);
     AddOutputOperand<HalPolicy>(model2, hidl_vec<uint32_t>{1, 1, 3, 4});
     AddOutputOperand<HalPolicy>(model2, hidl_vec<uint32_t>{1, 1, 3, 4});
 
@@ -181,8 +191,16 @@ BOOST_AUTO_TEST_CASE(UnsupportedLayerContinueOnFailure)
                                HalPolicy::OperandType::TENSOR_INT32);
     AddInputOperand<HalPolicy>(model,
                                hidl_vec<uint32_t>{4},
-                               HalPolicy::OperandType::TENSOR_INT32);
-    AddInputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 1, 3, 4});
+                               HalPolicy::OperandType::TENSOR_INT32,
+                               0.0f,
+                               0,
+                               2);
+    AddInputOperand<HalPolicy>(model,
+                               hidl_vec<uint32_t>{1, 1, 3, 4},
+                               HalPolicy::OperandType::TENSOR_FLOAT32,
+                               0.0f,
+                               0,
+                               2);
 
     AddOutputOperand<HalPolicy>(model, hidl_vec<uint32_t>{1, 1, 3, 4});
     AddOutputOperand<HalPolicy>(model,

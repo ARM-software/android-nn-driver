@@ -142,7 +142,7 @@ void AddOperand(HalModel& model, const HalOperand& op)
 }
 
 template<typename HalPolicy, typename HalModel = typename HalPolicy::Model>
-void AddIntOperand(HalModel& model, int32_t value)
+void AddIntOperand(HalModel& model, int32_t value, uint32_t numberOfConsumers = 1)
 {
     using HalOperand         = typename HalPolicy::Operand;
     using HalOperandType     = typename HalPolicy::OperandType;
@@ -152,11 +152,12 @@ void AddIntOperand(HalModel& model, int32_t value)
     location.offset = model.operandValues.size();
     location.length = sizeof(int32_t);
 
-    HalOperand op    = {};
-    op.type          = HalOperandType::INT32;
-    op.dimensions    = hidl_vec<uint32_t>{};
-    op.lifetime      = HalOperandLifeTime::CONSTANT_COPY;
-    op.location      = location;
+    HalOperand op           = {};
+    op.type                 = HalOperandType::INT32;
+    op.dimensions           = hidl_vec<uint32_t>{};
+    op.lifetime             = HalOperandLifeTime::CONSTANT_COPY;
+    op.location             = location;
+    op.numberOfConsumers    = numberOfConsumers;
 
     model.operandValues.resize(model.operandValues.size() + location.length);
     *reinterpret_cast<int32_t*>(&model.operandValues[location.offset]) = value;
@@ -165,7 +166,7 @@ void AddIntOperand(HalModel& model, int32_t value)
 }
 
 template<typename HalPolicy, typename HalModel = typename HalPolicy::Model>
-void AddBoolOperand(HalModel& model, bool value)
+void AddBoolOperand(HalModel& model, bool value, uint32_t numberOfConsumers = 1)
 {
     using HalOperand         = typename HalPolicy::Operand;
     using HalOperandType     = typename HalPolicy::OperandType;
@@ -175,11 +176,12 @@ void AddBoolOperand(HalModel& model, bool value)
     location.offset = model.operandValues.size();
     location.length = sizeof(uint8_t);
 
-    HalOperand op    = {};
-    op.type          = HalOperandType::BOOL;
-    op.dimensions    = hidl_vec<uint32_t>{};
-    op.lifetime      = HalOperandLifeTime::CONSTANT_COPY;
-    op.location      = location;
+    HalOperand op           = {};
+    op.type                 = HalOperandType::BOOL;
+    op.dimensions           = hidl_vec<uint32_t>{};
+    op.lifetime             = HalOperandLifeTime::CONSTANT_COPY;
+    op.location             = location;
+    op.numberOfConsumers    = numberOfConsumers;
 
     model.operandValues.resize(model.operandValues.size() + location.length);
     *reinterpret_cast<uint8_t*>(&model.operandValues[location.offset]) = static_cast<uint8_t>(value);
@@ -207,7 +209,8 @@ void AddTensorOperand(HalModel& model,
                       HalOperandType operandType = HalOperandType::TENSOR_FLOAT32,
                       HalOperandLifeTime operandLifeTime = V1_0::OperandLifeTime::CONSTANT_COPY,
                       double scale = 0.f,
-                      int offset = 0)
+                      int offset = 0,
+                      uint32_t numberOfConsumers = 1)
 {
     using HalOperand = typename HalPolicy::Operand;
 
@@ -225,13 +228,14 @@ void AddTensorOperand(HalModel& model,
         location.offset = model.operandValues.size();
     }
 
-    HalOperand op    = {};
-    op.type          = operandType;
-    op.dimensions    = dimensions;
-    op.scale         = scale;
-    op.zeroPoint     = offset;
-    op.lifetime      = HalOperandLifeTime::CONSTANT_COPY;
-    op.location      = location;
+    HalOperand op           = {};
+    op.type                 = operandType;
+    op.dimensions           = dimensions;
+    op.scale                = scale;
+    op.zeroPoint            = offset;
+    op.lifetime             = HalOperandLifeTime::CONSTANT_COPY;
+    op.location             = location;
+    op.numberOfConsumers    = numberOfConsumers;
 
     model.operandValues.resize(model.operandValues.size() + location.length);
     for (uint32_t i = 0; i < totalElements; i++)
@@ -253,9 +257,17 @@ void AddTensorOperand(HalModel& model,
                       HalOperandType operandType = HalPolicy::OperandType::TENSOR_FLOAT32,
                       HalOperandLifeTime operandLifeTime = V1_0::OperandLifeTime::CONSTANT_COPY,
                       double scale = 0.f,
-                      int offset = 0)
+                      int offset = 0,
+                      uint32_t numberOfConsumers = 1)
 {
-    AddTensorOperand<HalPolicy, T>(model, dimensions, values.data(), operandType, operandLifeTime, scale, offset);
+    AddTensorOperand<HalPolicy, T>(model,
+                                   dimensions,
+                                   values.data(),
+                                   operandType,
+                                   operandLifeTime,
+                                   scale,
+                                   offset,
+                                   numberOfConsumers);
 }
 
 template<typename HalPolicy,
@@ -265,17 +277,19 @@ void AddInputOperand(HalModel& model,
                      const hidl_vec<uint32_t>& dimensions,
                      HalOperandType operandType = HalOperandType::TENSOR_FLOAT32,
                      double scale = 0.f,
-                     int offset = 0)
+                     int offset = 0,
+                     uint32_t numberOfConsumers = 1)
 {
     using HalOperand         = typename HalPolicy::Operand;
     using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
 
-    HalOperand op    = {};
-    op.type          = operandType;
-    op.scale         = scale;
-    op.zeroPoint     = offset;
-    op.dimensions    = dimensions;
-    op.lifetime      = HalOperandLifeTime::MODEL_INPUT;
+    HalOperand op           = {};
+    op.type                 = operandType;
+    op.scale                = scale;
+    op.zeroPoint            = offset;
+    op.dimensions           = dimensions;
+    op.lifetime             = HalOperandLifeTime::MODEL_INPUT;
+    op.numberOfConsumers    = numberOfConsumers;
 
     AddOperand<HalPolicy>(model, op);
 
@@ -290,17 +304,19 @@ void AddOutputOperand(HalModel& model,
                       const hidl_vec<uint32_t>& dimensions,
                       HalOperandType operandType = HalOperandType::TENSOR_FLOAT32,
                       double scale = 0.f,
-                      int offset = 0)
+                      int offset = 0,
+                      uint32_t numberOfConsumers = 0)
 {
     using HalOperand         = typename HalPolicy::Operand;
     using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
 
-    HalOperand op    = {};
-    op.type          = operandType;
-    op.scale         = scale;
-    op.zeroPoint     = offset;
-    op.dimensions    = dimensions;
-    op.lifetime      = HalOperandLifeTime::MODEL_OUTPUT;
+    HalOperand op           = {};
+    op.type                 = operandType;
+    op.scale                = scale;
+    op.zeroPoint            = offset;
+    op.dimensions           = dimensions;
+    op.lifetime             = HalOperandLifeTime::MODEL_OUTPUT;
+    op.numberOfConsumers    = numberOfConsumers;
 
     AddOperand<HalPolicy>(model, op);
 
