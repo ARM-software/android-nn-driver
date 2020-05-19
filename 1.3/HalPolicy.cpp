@@ -103,8 +103,10 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertPrelu(operation, model, data);
         case V1_3::OperationType::QUANTIZE:
             return ConvertQuantize(operation, model, data);
-        case V1_3::OperationType::QUANTIZED_16BIT_LSTM:
+        case V1_3::OperationType::QUANTIZED_LSTM:
             return ConvertQuantizedLstm(operation, model, data);
+        case V1_3::OperationType::QUANTIZED_16BIT_LSTM:
+            return ConvertQuantized16BitLstm(operation, model, data);
         case V1_3::OperationType::RELU:
             return ConvertReLu(operation, model, data);
         case V1_3::OperationType::RELU1:
@@ -368,6 +370,12 @@ bool HalPolicy::ConvertQuantizedLstm(const Operation& operation, const Model& mo
 {
     ALOGV("hal_1_3::HalPolicy::ConvertQuantizedLstm()");
     return ::ConvertQuantizedLstm<hal_1_3::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertQuantized16BitLstm(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertQuantized16BitLstm()");
+    return ::ConvertQuantized16BitLstm<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertReLu(const Operation& operation, const Model& model, ConversionData& data)

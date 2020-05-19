@@ -1497,11 +1497,11 @@ bool ConvertQuantize(const HalOperation& operation, const HalModel& model, Conve
 template<typename HalPolicy,
          typename HalOperation = typename HalPolicy::Operation,
          typename HalModel     = typename HalPolicy::Model>
-bool ConvertQuantizedLstm(const HalOperation& operation, const HalModel& model, ConversionData& data)
+bool ConvertQuantized16BitLstm(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
     using HalOperand = typename HalPolicy::Operand;
 
-    ALOGV("HalPolicy::ConvertQuantizedLstm()");
+    ALOGV("HalPolicy::ConvertQuantized16BitLstm()");
 
     //Inputs:
     // 0: The input: A 2-D tensor of type ANEURALNETWORKS_TENSOR_QUANT8_ASYMM and shape [numBatches, inputSize]
