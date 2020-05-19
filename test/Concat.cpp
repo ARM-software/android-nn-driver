@@ -128,6 +128,7 @@ ConcatTestImpl(const std::vector<const TestTensor*> & inputs,
     float* outdata = static_cast<float*>(static_cast<void*>(outMemory->getPointer()));
 
     // run the execution
+    ARMNN_ASSERT(preparedModel.get() != nullptr);
     auto execStatus = Execute(preparedModel, request, expectedExecStatus);
     BOOST_TEST(execStatus == expectedExecStatus);
 
