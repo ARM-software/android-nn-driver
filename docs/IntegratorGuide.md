@@ -36,6 +36,13 @@ thus the following should be added to `device.mk` instead:
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.2-service-armnn
 </pre> `Android.mk` contains the module definition of all three versions (1.0, 1.1 and 1.2) of the ArmNN driver.
 
+For android.hardware.neuralnetworks@1.3 HAL,
+thus the following should be added to `device.mk` instead:
+<pre>
+PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.3-service-armnn
+</pre>
+`Android.mk` contains the module definition of all versions (1.0, 1.1, 1.2 and 1.3) of the ArmNN driver.
+
 Similarly, the Neon, CL or reference backend can be enabled/disabled by setting ARMNN_COMPUTE_CL_ENABLE,
 ARMNN_COMPUTE_NEON_ENABLE or ARMNN_REF_ENABLE in `device.mk`:
 <pre>
@@ -44,6 +51,7 @@ ARMNN_COMPUTE_CL_ENABLE := 1
 
 For Android P and Android Q the vendor manifest.xml requires the Neural Network HAL information.
 For Android P use HAL version 1.1 as below. For Android Q substitute 1.2 where necessary.
+For pre-release support of HAL version 1.3, substitute 1.3 where necessary.
 ```xml
 <hal format="hidl">
     <name>android.hardware.neuralnetworks</name>
@@ -69,7 +77,7 @@ For example, if the ArmNN driver has been built with the NN API 1.0, check for t
 <ANDROID_ROOT>/out/target/product/<product>/system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armnn
 </pre>
 
-Android Q has a different path:
+Android Q and later has a different path:
 <pre>
 <ANDROID_ROOT>/out/target/product/<product>/vendor/bin/hw
 </pre>
