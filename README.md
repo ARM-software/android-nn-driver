@@ -1,6 +1,8 @@
 # ArmNN Android Neural Networks driver
 
-This directory contains the ArmNN driver for the Android Neural Networks API, implementing the android.hardware.neuralnetworks@1.0, android.hardware.neuralnetworks@1.1 and  android.hardware.neuralnetworks@1.2 HALs.
+This directory contains the ArmNN driver for the Android Neural Networks API, implementing the android.hardware.neuralnetworks@1.0, android.hardware.neuralnetworks@1.1, android.hardware.neuralnetworks@1.2 and android.hardware.neuralnetworks@1.3 HALs.
+
+Please Note: ArmNN Neural Networks driver does not currently support Mali OpenCL driver for android.hardware.neuralnetworks@1.3 HAL.
 
 For more information about supported operations and configurations, see [NnapiSupport.txt](NnapiSupport.txt)
 
