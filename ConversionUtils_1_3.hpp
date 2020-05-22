@@ -331,8 +331,8 @@ bool ConvertQuantizedLstm(const HalOperation& operation, const HalModel& model, 
         !GetInputScalar<HalPolicy>(operation, 27, HalOperandType::FLOAT32, matMulForgetGate, model, data) ||
         !GetInputScalar<HalPolicy>(operation, 28, HalOperandType::FLOAT32, matMulCellGate, model, data) ||
         !GetInputScalar<HalPolicy>(operation, 29, HalOperandType::FLOAT32, matMulOutputGate, model, data) ||
-        !GetInputScalar<HalPolicy>(operation, 30, HalOperandType::FLOAT32, projInputScale, model, data) ||
-        !GetInputScalar<HalPolicy>(operation, 31, HalOperandType::FLOAT32, projInputZeroPoint, model, data))
+        !GetInputScalar<HalPolicy>(operation, 30, HalOperandType::INT32, projInputZeroPoint, model, data) ||
+        !GetInputScalar<HalPolicy>(operation, 31, HalOperandType::FLOAT32, projInputScale, model, data))
     {
         return Fail("%s: Operation has invalid scalar inputs", __func__);
     }
