@@ -1,7 +1,8 @@
 ------ ArmNN for Android NNAPI supported operations ------
 
 This release of ArmNN for Android supports use as a driver for the Android Neural Networks API. It implements the
-android.hardware.neuralnetworks@1.0, android.hardware.neuralnetworks@1.1 and android.hardware.neuralnetworks@1.2
+android.hardware.neuralnetworks@1.0, android.hardware.neuralnetworks@1.1, android.hardware.neuralnetworks@1.2 and 
+android.hardware.neuralnetworks@1.3
 HAL interfaces.
 
 For more information on the Android Neural Networks API, see https://developer.android.com/ndk/guides/neuralnetworks/index.html
@@ -10,71 +11,76 @@ For integration and usage documentation, please see README.md.
 
 --- Support for Android Neural Networks HAL operations ---
 
-The following AndroidNN HAL 1.0, 1.1 and 1.2 operations are currently supported:
+The following AndroidNN HAL 1.0, 1.1, 1.2 and 1.3 operations are currently supported:
 
 AndroidNN operator           Tensor type supported
 ABS                          (FLOAT32)
-ADD                          (FLOAT32, QUANT8_ASYMM)
-ARGMAX                       (FLOAT32, QUANT8_ASYMM)
-ARGMIN                       (FLOAT32, QUANT8_ASYMM)
-AVERAGE_POOL_2D              (FLOAT32, QUANT8_ASYMM)
-BATCH_TO_SPACE_ND            (FLOAT32, QUANT8_ASYMM)
-CONCATENATION                (FLOAT32, FLOAT16, QUANT8_ASYMM)
-CONV_2D                      (FLOAT32, QUANT8_ASYMM)
-DEPTH_TO_SPACE               (FLOAT32, FLOAT16, QUANT8_ASYMM)
-DEPTHWISE_CONV_2D            (FLOAT32, QUANT8_ASYMM)
-DEQUANTIZE                   (FLOAT32 (output only), QUANT8_ASYMM (input only))
+ADD                          (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+ARGMAX                       (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+ARGMIN                       (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+AVERAGE_POOL_2D              (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+BATCH_TO_SPACE_ND            (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+CONCATENATION                (FLOAT32, FLOAT16, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+CONV_2D                      (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+DEPTH_TO_SPACE               (FLOAT32, FLOAT16, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+DEPTHWISE_CONV_2D            (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+DEQUANTIZE                   (FLOAT32 (output only), QUANT8_ASYMM and QUANT8_ASYMM_SIGNED (input only))
 DIV                          (FLOAT32, QUANT8_ASYMM)
 ELU                          (FLOAT32, QUANT8_ASYMM)
-EQUAL                        (FLOAT32, QUANT8_ASYMM)
-EXPAND_DIMS                  (FLOAT32, FLOAT16, QUANT8_ASYMM)
+EQUAL                        (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+EXPAND_DIMS                  (FLOAT32, FLOAT16, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
 FLOOR                        (FLOAT32)
-FULLY_CONNECTED              (FLOAT32, QUANT8_ASYMM)
-GREATER                      (FLOAT32, QUANT8_ASYMM)
-GREATER_EQUAL                (FLOAT32, QUANT8_ASYMM)
-GROUPED_CONV_2D              (FLOAT32, QUANT8_ASYMM)
-HARD_SWISH                   (FLOAT32, QUANT8_ASYMM)
+FULLY_CONNECTED              (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+GREATER                      (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+GREATER_EQUAL                (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+GROUPED_CONV_2D              (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+HARD_SWISH                   (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
 INSTANCE_NORMALIZATION       (FLOAT32)
 L2_NORMALIZATION             (FLOAT32)
 L2_POOL_2D                   (FLOAT32, QUANT8_ASYMM)
-LESS                         (FLOAT32, QUANT8_ASYMM)
-LESS_EQUAL                   (FLOAT32, QUANT8_ASYMM)
+LESS                         (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+LESS_EQUAL                   (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
 LOCAL_RESPONSE_NORMALIZATION (FLOAT32)
-LOGISTIC                     (FLOAT32, QUANT8_ASYMM)
+LOGISTIC                     (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
 LOG_SOFTMAX                  (FLOAT32)
 LSTM                         (FLOAT32)
-MAXIMUM                      (FLOAT32, QUANT8_ASYMM)
-MAX_POOL_2D                  (FLOAT32, QUANT8_ASYMM)
-MEAN                         (FLOAT32, QUANT8_ASYMM)
-MINIMUM                      (FLOAT32, QUANT8_ASYMM)
-MUL                          (FLOAT32, QUANT8_ASYMM)
-NOT_EQUAL                    (FLOAT32, QUANT8_ASYMM)
-PAD                          (FLOAT32, FLOAT16, QUANT8_ASYMM)
+MAXIMUM                      (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+MAX_POOL_2D                  (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+MEAN                         (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+MINIMUM                      (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+MUL                          (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+NEG                          (FLOAT32)
+NOT_EQUAL                    (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+PAD                          (FLOAT32, FLOAT16, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
 PAD_V2                       (FLOAT32, FLOAT16, QUANT8_ASYMM)
-PRELU                        (FLOAT32, QUANT8_ASYMM)
-QUANTIZE                     (FLOAT32 (input only), QUANT8_ASYMM (output only))
+PRELU                        (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+QUANTIZE                     (FLOAT32 (input only), QUANT8_ASYMM and QUANT8_ASYMM_SIGNED (output only))
 QUANTIZED_16BIT_LSTM         (QUANT8_ASYMM)
 QUANTIZED_LSTM               (QUANT8_ASYMM)
-RELU                         (FLOAT32, QUANT8_ASYMM)
-RELU1                        (FLOAT32, QUANT8_ASYMM)
-RELU6                        (FLOAT32, QUANT8_ASYMM)
-RESHAPE                      (FLOAT32, FLOAT16, QUANT8_ASYMM)
+RELU                         (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+RELU1                        (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+RELU6                        (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+RESHAPE                      (FLOAT32, FLOAT16, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
 RESIZE_BILINEAR              (FLOAT32, QUANT8_ASYMM)
 RESIZE_NEAREST_NEIGHBOR      (FLOAT32, QUANT8_ASYMM)
 RSQRT                        (FLOAT32)
-SOFTMAX                      (FLOAT32, QUANT8_ASYMM)
-SPACE_TO_BATCH_ND            (FLOAT32, QUANT8_ASYMM)
-SPACE_TO_DEPTH               (FLOAT32, FLOAT16, QUANT8_ASYMM)
+SOFTMAX                      (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+SPACE_TO_BATCH_ND            (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+SPACE_TO_DEPTH               (FLOAT32, FLOAT16, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
 SQRT                         (FLOAT32)
-SQUEEZE                      (FLOAT32, FLOAT16, QUANT8_ASYMM)
-STRIDED_SLICE                (FLOAT32, QUANT8_ASYMM)
-SUB                          (FLOAT32, QUANT8_ASYMM)
-TANH                         (FLOAT32, QUANT8_ASYMM)
-TRANSPOSE                    (FLOAT32, QUANT8_ASYMM)
-TRANSPOSE_CONV_2D            (FLOAT32, QUANT8_ASYMM)
+SQUEEZE                      (FLOAT32, FLOAT16, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+STRIDED_SLICE                (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+SUB                          (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+TANH                         (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+TRANSPOSE                    (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+TRANSPOSE_CONV_2D            (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
 
 Where operations are not supported by the ArmNN Android NN Driver, the driver indicates this to the framework
 appropriately and the framework implements those operations using a CPU implementation.
+
 NOTE: By convention, only those tensor types have been listed above, which are fully supported across all
-ArmNN backends. FLOAT16 input tensors are partially supported on most HAL 1.2 operators on the GpuAcc and
-CpuRef backends, however not on CpuAcc.
+ArmNN backends.
+    - FLOAT16 input tensors are partially supported on most HAL 1.2 operators on the GpuAcc and
+    CpuRef backends, however not on CpuAcc.
+    - QUANT8_ASYMM_SIGNED has been added to the list in spite of not being supported in GpuAcc,
+    as this data type was added as part of HAL 1.3, which is currently not supported by GpuAcc.
