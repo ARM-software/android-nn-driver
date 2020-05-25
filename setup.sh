@@ -16,8 +16,8 @@ if [ ! -d boost_1_64_0 ]; then
 
   # There is a problem with downloading boost from the external. Issue can be found here:https://github.com/boostorg/boost/issues/299.
   # Using a mirror link to download boost.
-  # curl -LOk https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.gz # Not able to download boost from this link
-  curl -LOk https://sourceforge.net/projects/boost/files/boost/1.64.0/boost_1_64_0.tar.gz
+  curl -LOk https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.gz
+  # curl -LOk https://sourceforge.net/projects/boost/files/boost/1.64.0/boost_1_64_0.tar.gz # had switched to this mirror as we were not able to download boost from boostorg.
   AssertZeroExitCode "Downloading Boost failed"
 
   tar xzf $BOOST_PKG
