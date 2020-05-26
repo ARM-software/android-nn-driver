@@ -25,7 +25,7 @@ Some users have encountered difficulties when attempting to build copies of the 
 'error: vendor/arm/android-nn-driver/Android.bp:892:1: module "libboost_program_options" variant "android_arm_variant": module source path "vendor/arm/android-nn-driver/boost_1_64_0" does not exist'
 'error: vendor/arm/android-nn-driver/Android.bp:45:1: variant "android_arm64_armv7": module "armnn-arm_compute" "module source path "vendor/arm/android-nn-driver/clframework/build/android-arm64v8a/src/core/CL" does not exist'
 
-These errors are due to missing dependencies or incompatiblities between the android-nn-driver and armnn or clframework versions. The android-nn-driver requires boost_1_40_0 to build. The versions of android-nn-driver, armnn and clframework will have to match for them to work together. So the 19.08 version of android-nn-driver, clframework and armnn will work together but none of them will work with earlier or later versions of the others. 
+These errors are due to missing dependencies or incompatiblities between the android-nn-driver and armnn or clframework versions. The android-nn-driver requires boost_1_40_0 to build. The versions of android-nn-driver, armnn and clframework will have to match for them to work together. For example, the 19.08 version of android-nn-driver, clframework and armnn will work together but none of them will work with earlier or later versions of the others. 
 
 In order to ensure that the correct versions of boost, armnn and the clframework are obtained you can do the following:
 
@@ -34,11 +34,11 @@ In order to ensure that the correct versions of boost, armnn and the clframework
 
 This will download the correct versions of boost, armnn and the clframework and the android-nn-driver should build correctly. Alternatively you can go to the GitHub pages for android-nn-driver, armnn and computelibrary (clframework) and download versions with the same release tag. 
 
-For 19.08 these would be:
+For 20.05 these would be:
 
-https://github.com/ARM-software/android-nn-driver/tree/v19.08
-https://github.com/ARM-software/armnn/tree/v19.08
-https://github.com/ARM-software/computelibrary/tree/v19.08
+https://github.com/ARM-software/android-nn-driver/tree/v20.05
+https://github.com/ARM-software/armnn/tree/v20.05
+https://github.com/ARM-software/computelibrary/tree/v20.05
 
 The correct version of boost (1_64_0) can be downloaded from:
 
@@ -52,7 +52,7 @@ There is a known issue in the Android NNAPI implementation of Instance Normaliza
 VTS and CTS test failures
 -------------------------
 
-With the release of the Android 10 R2 CTS some errors and crashes were discovered in the 19.08 and 19.11 releases of armnn, the android-nn-driver and ComputeLibrary. 19.08.01 and 19.11.01 releases of armnn, the android-nn-driver and ComputeLibrary were prepared that fix all these issues on CpuAcc and GpuAcc. If using 19.08 or 19.11 we recommend that you upgrade to the 19.08.01 or 19.11.01 releases. These issues have also been fixed in the 20.02 releases of armnn, the android-nn-driver and ComputeLibrary.
+With the release of the Android 10 R2 CTS some errors and crashes were discovered in the 19.08 and 19.11 releases of armnn, the android-nn-driver and ComputeLibrary. 19.08.01 and 19.11.01 releases of armnn, the android-nn-driver and ComputeLibrary were prepared that fix all these issues on CpuAcc and GpuAcc. If using 19.08 or 19.11 we recommend that you upgrade to the 19.08.01 or 19.11.01 releases. These issues have also been fixed in the 20.02 and later releases of armnn, the android-nn-driver and ComputeLibrary.
 
 These fixes also required patches to be made to the Android Q test framework. You may encounter CTS and VTS test failures when attempting to build copies of the android-nn-driver against older versions of Android Q.
 
