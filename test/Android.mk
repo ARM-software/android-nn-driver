@@ -334,3 +334,98 @@ endif
 include $(BUILD_EXECUTABLE)
 
 endif # PLATFORM_VERSION == Q
+
+ifeq ($(R_OR_LATER),1)
+# The following target is available starting from Android R
+
+##########################
+# armnn-driver-tests@1.3 #
+##########################
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := armnn-driver-tests@1.3
+LOCAL_MODULE_TAGS := optional
+
+LOCAL_ARM_MODE := arm
+LOCAL_PROPRIETARY_MODULE := true
+
+# Mark source files as dependent on Android.mk
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+
+LOCAL_C_INCLUDES := \
+        $(OPENCL_HEADER_PATH) \
+        $(NN_HEADER_PATH) \
+        $(ARMNN_HEADER_PATH) \
+        $(ARMNN_DRIVER_HEADER_PATH)
+
+LOCAL_CFLAGS := \
+        -std=$(CPP_VERSION) \
+        -fexceptions \
+        -Werror \
+        -O0 \
+        -UNDEBUG \
+        -DBOOST_NO_AUTO_PTR \
+        -DARMNN_ANDROID_R \
+        -DARMNN_ANDROID_NN_V1_3
+
+LOCAL_SRC_FILES := \
+        1.0/Convolution2D.cpp \
+        1.1/Convolution2D.cpp \
+        1.1/Mean.cpp \
+        1.1/Transpose.cpp \
+        1.2/Dilation.cpp \
+        1.2/Capabilities.cpp \
+        1.0/Lstm.cpp \
+        1.1/Lstm.cpp \
+        1.2/Lstm.cpp \
+        1.3/QLstm.cpp \
+        Tests.cpp \
+        UtilsTests.cpp \
+        Concurrent.cpp \
+        FullyConnected.cpp \
+        GenericLayerTests.cpp \
+        DriverTestHelpers.cpp \
+        SystemProperties.cpp \
+        Concat.cpp \
+        TestTensor.cpp
+
+LOCAL_STATIC_LIBRARIES := \
+        libneuralnetworks_common \
+        libboost_log \
+        libboost_system \
+        libboost_unit_test_framework \
+        libboost_thread \
+        libboost_filesystem \
+        arm_compute_library
+
+LOCAL_WHOLE_STATIC_LIBRARIES := \
+        libarmnn-driver@1.3
+
+LOCAL_SHARED_LIBRARIES := \
+        libbase \
+        libcutils \
+        libfmq \
+        libhidlbase \
+        libhidltransport \
+        libhidlmemory \
+        liblog \
+        libnativewindow \
+        libtextclassifier_hash \
+        libui \
+        libutils \
+        libsync \
+        android.hardware.neuralnetworks@1.0 \
+        android.hardware.neuralnetworks@1.1 \
+        android.hardware.neuralnetworks@1.2 \
+        android.hardware.neuralnetworks@1.3 \
+        android.hidl.allocator@1.0 \
+        android.hidl.memory@1.0
+
+ifeq ($(ARMNN_INCLUDE_LIBOPENCL),1)
+LOCAL_SHARED_LIBRARIES+= \
+        libOpenCL
+endif
+
+include $(BUILD_EXECUTABLE)
+
+endif # PLATFORM_VERSION == R

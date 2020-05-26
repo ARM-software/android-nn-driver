@@ -76,7 +76,7 @@ void ExecuteModel(const HalModel& model, armnn_driver::ArmnnDriver& driver, cons
     }
 }
 
-#ifdef ARMNN_ANDROID_NN_V1_2
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)
 
 template<>
 void ExecuteModel<armnn_driver::hal_1_2::HalPolicy::Model>(const armnn_driver::hal_1_2::HalPolicy::Model& model,

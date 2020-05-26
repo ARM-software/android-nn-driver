@@ -28,6 +28,16 @@ namespace V1_0
 std::ostream& operator<<(std::ostream& os, V1_0::ErrorStatus stat);
 
 } // namespace android::hardware::neuralnetworks::V1_0
+
+#ifdef ARMNN_ANDROID_NN_V1_3
+namespace V1_3
+{
+
+std::ostream& operator<<(std::ostream& os, V1_3::ErrorStatus stat);
+
+} // namespace android::hardware::neuralnetworks::V1_3
+#endif
+
 } // namespace android::hardware::neuralnetworks
 } // namespace android::hardware
 } // namespace android
@@ -36,6 +46,10 @@ namespace driverTestHelpers
 {
 
 std::ostream& operator<<(std::ostream& os, V1_0::ErrorStatus stat);
+
+#ifdef ARMNN_ANDROID_NN_V1_3
+std::ostream& operator<<(std::ostream& os, V1_3::ErrorStatus stat);
+#endif
 
 struct ExecutionCallback : public V1_0::IExecutionCallback
 {
@@ -71,7 +85,7 @@ private:
     android::sp<V1_0::IPreparedModel>  m_PreparedModel;
 };
 
-#ifdef ARMNN_ANDROID_NN_V1_2
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)
 
 class PreparedModelCallback_1_2 : public V1_2::IPreparedModelCallback
 {
@@ -97,6 +111,46 @@ private:
     V1_0::ErrorStatus                   m_ErrorStatus;
     android::sp<V1_0::IPreparedModel>  m_PreparedModel;
     android::sp<V1_2::IPreparedModel>  m_PreparedModel_1_2;
+};
+
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_3
+
+class PreparedModelCallback_1_3 : public V1_3::IPreparedModelCallback
+{
+public:
+    PreparedModelCallback_1_3()
+            : m_1_0_ErrorStatus(V1_0::ErrorStatus::NONE)
+            , m_1_3_ErrorStatus(V1_3::ErrorStatus::NONE)
+            , m_PreparedModel()
+            , m_PreparedModel_1_2()
+            , m_PreparedModel_1_3()
+    { }
+    ~PreparedModelCallback_1_3() override { }
+
+    Return<void> notify(V1_0::ErrorStatus status, const android::sp<V1_0::IPreparedModel>& preparedModel) override;
+
+    Return<void> notify_1_2(V1_0::ErrorStatus status, const android::sp<V1_2::IPreparedModel>& preparedModel) override;
+
+    Return<void> notify_1_3(V1_3::ErrorStatus status, const android::sp<V1_3::IPreparedModel>& preparedModel) override;
+
+    V1_0::ErrorStatus GetErrorStatus() { return m_1_0_ErrorStatus; }
+
+    V1_3::ErrorStatus Get_1_3_ErrorStatus() { return m_1_3_ErrorStatus; }
+
+    android::sp<V1_0::IPreparedModel> GetPreparedModel() { return m_PreparedModel; }
+
+    android::sp<V1_2::IPreparedModel> GetPreparedModel_1_2() { return m_PreparedModel_1_2; }
+
+    android::sp<V1_3::IPreparedModel> GetPreparedModel_1_3() { return m_PreparedModel_1_3; }
+
+private:
+    V1_0::ErrorStatus                   m_1_0_ErrorStatus;
+    V1_3::ErrorStatus                   m_1_3_ErrorStatus;
+    android::sp<V1_0::IPreparedModel>  m_PreparedModel;
+    android::sp<V1_2::IPreparedModel>  m_PreparedModel_1_2;
+    android::sp<V1_3::IPreparedModel>  m_PreparedModel_1_3;
 };
 
 #endif
@@ -142,30 +196,6 @@ void AddOperand(HalModel& model, const HalOperand& op)
 }
 
 template<typename HalPolicy, typename HalModel = typename HalPolicy::Model>
-void AddIntOperand(HalModel& model, int32_t value, uint32_t numberOfConsumers = 1)
-{
-    using HalOperand         = typename HalPolicy::Operand;
-    using HalOperandType     = typename HalPolicy::OperandType;
-    using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
-
-    DataLocation location = {};
-    location.offset = model.operandValues.size();
-    location.length = sizeof(int32_t);
-
-    HalOperand op           = {};
-    op.type                 = HalOperandType::INT32;
-    op.dimensions           = hidl_vec<uint32_t>{};
-    op.lifetime             = HalOperandLifeTime::CONSTANT_COPY;
-    op.location             = location;
-    op.numberOfConsumers    = numberOfConsumers;
-
-    model.operandValues.resize(model.operandValues.size() + location.length);
-    *reinterpret_cast<int32_t*>(&model.operandValues[location.offset]) = value;
-
-    AddOperand<HalPolicy>(model, op);
-}
-
-template<typename HalPolicy, typename HalModel = typename HalPolicy::Model>
 void AddBoolOperand(HalModel& model, bool value, uint32_t numberOfConsumers = 1)
 {
     using HalOperand         = typename HalPolicy::Operand;
@@ -199,10 +229,179 @@ template<>
 OperandType TypeToOperandType<int32_t>();
 
 template<typename HalPolicy,
-         typename T,
-         typename HalModel           = typename HalPolicy::Model,
-         typename HalOperandType     = typename HalPolicy::OperandType,
-         typename HalOperandLifeTime = typename HalPolicy::OperandLifeTime>
+    typename HalModel       = typename HalPolicy::Model,
+    typename HalOperandType = typename HalPolicy::OperandType>
+void AddInputOperand(HalModel& model,
+                     const hidl_vec<uint32_t>& dimensions,
+                     HalOperandType operandType = HalOperandType::TENSOR_FLOAT32,
+                     double scale = 0.f,
+                     int offset = 0,
+                     uint32_t numberOfConsumers = 1)
+{
+    using HalOperand         = typename HalPolicy::Operand;
+    using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
+
+    HalOperand op           = {};
+    op.type                 = operandType;
+    op.scale                = scale;
+    op.zeroPoint            = offset;
+    op.dimensions           = dimensions;
+    op.lifetime             = HalOperandLifeTime::MODEL_INPUT;
+    op.numberOfConsumers    = numberOfConsumers;
+
+    AddOperand<HalPolicy>(model, op);
+
+    model.inputIndexes.resize(model.inputIndexes.size() + 1);
+    model.inputIndexes[model.inputIndexes.size() - 1] = model.operands.size() - 1;
+}
+
+template<typename HalPolicy,
+    typename HalModel       = typename HalPolicy::Model,
+    typename HalOperandType = typename HalPolicy::OperandType>
+void AddOutputOperand(HalModel& model,
+                      const hidl_vec<uint32_t>& dimensions,
+                      HalOperandType operandType = HalOperandType::TENSOR_FLOAT32,
+                      double scale = 0.f,
+                      int offset = 0,
+                      uint32_t numberOfConsumers = 0)
+{
+    using HalOperand         = typename HalPolicy::Operand;
+    using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
+
+    HalOperand op           = {};
+    op.type                 = operandType;
+    op.scale                = scale;
+    op.zeroPoint            = offset;
+    op.dimensions           = dimensions;
+    op.lifetime             = HalOperandLifeTime::MODEL_OUTPUT;
+    op.numberOfConsumers    = numberOfConsumers;
+
+    AddOperand<HalPolicy>(model, op);
+
+    model.outputIndexes.resize(model.outputIndexes.size() + 1);
+    model.outputIndexes[model.outputIndexes.size() - 1] = model.operands.size() - 1;
+}
+
+android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_0::Model& model,
+                                                         armnn_driver::ArmnnDriver& driver,
+                                                         V1_0::ErrorStatus& prepareStatus,
+                                                         V1_0::ErrorStatus expectedStatus = V1_0::ErrorStatus::NONE);
+
+#if defined(ARMNN_ANDROID_NN_V1_1) || defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)
+
+android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_1::Model& model,
+                                                         armnn_driver::ArmnnDriver& driver,
+                                                         V1_0::ErrorStatus& prepareStatus,
+                                                         V1_0::ErrorStatus expectedStatus = V1_0::ErrorStatus::NONE);
+
+#endif
+
+template<typename HalModel>
+android::sp<V1_0::IPreparedModel> PrepareModel(const HalModel& model,
+                                               armnn_driver::ArmnnDriver& driver)
+{
+    V1_0::ErrorStatus prepareStatus = V1_0::ErrorStatus::NONE;
+    return PrepareModelWithStatus(model, driver, prepareStatus);
+}
+
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)
+
+android::sp<V1_2::IPreparedModel> PrepareModelWithStatus_1_2(const armnn_driver::hal_1_2::HalPolicy::Model& model,
+                                                            armnn_driver::ArmnnDriver& driver,
+                                                            V1_0::ErrorStatus& prepareStatus,
+                                                            V1_0::ErrorStatus expectedStatus = V1_0::ErrorStatus::NONE);
+
+template<typename HalModel>
+android::sp<V1_2::IPreparedModel> PrepareModel_1_2(const HalModel& model,
+                                                   armnn_driver::ArmnnDriver& driver)
+{
+    V1_0::ErrorStatus prepareStatus = V1_0::ErrorStatus::NONE;
+    return PrepareModelWithStatus_1_2(model, driver, prepareStatus);
+}
+
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_3
+
+template<typename HalPolicy>
+void AddOperand(armnn_driver::hal_1_3::HalPolicy::Model& model,
+                const armnn_driver::hal_1_3::HalPolicy::Operand& op)
+{
+    model.main.operands.resize(model.main.operands.size() + 1);
+    model.main.operands[model.main.operands.size() - 1] = op;
+}
+
+template<typename HalPolicy>
+void AddInputOperand(armnn_driver::hal_1_3::HalPolicy::Model& model,
+                     const hidl_vec<uint32_t>& dimensions,
+                     armnn_driver::hal_1_3::HalPolicy::OperandType operandType =
+                     armnn_driver::hal_1_3::HalPolicy::OperandType::TENSOR_FLOAT32,
+                     double scale = 0.f,
+                     int offset = 0,
+                     uint32_t numberOfConsumers = 1)
+{
+    using HalOperand         = typename armnn_driver::hal_1_3::HalPolicy::Operand;
+    using HalOperandLifeTime = typename armnn_driver::hal_1_3::HalPolicy::OperandLifeTime;
+
+    HalOperand op           = {};
+    op.type                 = operandType;
+    op.scale                = scale;
+    op.zeroPoint            = offset;
+    op.dimensions           = dimensions;
+    op.lifetime             = HalOperandLifeTime::SUBGRAPH_INPUT;
+    op.numberOfConsumers    = numberOfConsumers;
+
+    AddOperand<HalPolicy>(model, op);
+
+    model.main.inputIndexes.resize(model.main.inputIndexes.size() + 1);
+    model.main.inputIndexes[model.main.inputIndexes.size() - 1] = model.main.operands.size() - 1;
+}
+
+template<typename HalPolicy>
+void AddOutputOperand(armnn_driver::hal_1_3::HalPolicy::Model& model,
+                      const hidl_vec<uint32_t>& dimensions,
+                      armnn_driver::hal_1_3::HalPolicy::OperandType operandType =
+                      armnn_driver::hal_1_3::HalPolicy::OperandType::TENSOR_FLOAT32,
+                      double scale = 0.f,
+                      int offset = 0,
+                      uint32_t numberOfConsumers = 0)
+{
+    using HalOperand         = typename armnn_driver::hal_1_3::HalPolicy::Operand;
+    using HalOperandLifeTime = typename armnn_driver::hal_1_3::HalPolicy::OperandLifeTime;
+
+    HalOperand op           = {};
+    op.type                 = operandType;
+    op.scale                = scale;
+    op.zeroPoint            = offset;
+    op.dimensions           = dimensions;
+    op.lifetime             = HalOperandLifeTime::SUBGRAPH_OUTPUT;
+    op.numberOfConsumers    = numberOfConsumers;
+
+    AddOperand<HalPolicy>(model, op);
+
+    model.main.outputIndexes.resize(model.main.outputIndexes.size() + 1);
+    model.main.outputIndexes[model.main.outputIndexes.size() - 1] = model.main.operands.size() - 1;
+}
+
+android::sp<V1_3::IPreparedModel> PrepareModelWithStatus_1_3(const armnn_driver::hal_1_3::HalPolicy::Model& model,
+                                                            armnn_driver::ArmnnDriver& driver,
+                                                            V1_3::ErrorStatus& prepareStatus);
+
+template<typename HalModel>
+android::sp<V1_3::IPreparedModel> PrepareModel_1_3(const HalModel& model,
+                                                   armnn_driver::ArmnnDriver& driver)
+{
+    V1_3::ErrorStatus prepareStatus = V1_3::ErrorStatus::NONE;
+    return PrepareModelWithStatus_1_3(model, driver, prepareStatus);
+}
+
+#endif
+
+template<typename HalPolicy,
+    typename T,
+    typename HalModel           = typename HalPolicy::Model,
+    typename HalOperandType     = typename HalPolicy::OperandType,
+    typename HalOperandLifeTime = typename HalPolicy::OperandLifeTime>
 void AddTensorOperand(HalModel& model,
                       const hidl_vec<uint32_t>& dimensions,
                       const T* values,
@@ -247,10 +446,10 @@ void AddTensorOperand(HalModel& model,
 }
 
 template<typename HalPolicy,
-         typename T,
-         typename HalModel           = typename HalPolicy::Model,
-         typename HalOperandType     = typename HalPolicy::OperandType,
-         typename HalOperandLifeTime = typename HalPolicy::OperandLifeTime>
+    typename T,
+    typename HalModel           = typename HalPolicy::Model,
+    typename HalOperandType     = typename HalPolicy::OperandType,
+    typename HalOperandLifeTime = typename HalPolicy::OperandLifeTime>
 void AddTensorOperand(HalModel& model,
                       const hidl_vec<uint32_t>& dimensions,
                       const std::vector<T>& values,
@@ -270,99 +469,55 @@ void AddTensorOperand(HalModel& model,
                                    numberOfConsumers);
 }
 
-template<typename HalPolicy,
-         typename HalModel       = typename HalPolicy::Model,
-         typename HalOperandType = typename HalPolicy::OperandType>
-void AddInputOperand(HalModel& model,
-                     const hidl_vec<uint32_t>& dimensions,
-                     HalOperandType operandType = HalOperandType::TENSOR_FLOAT32,
-                     double scale = 0.f,
-                     int offset = 0,
+template<typename HalPolicy, typename HalModel = typename HalPolicy::Model>
+void AddIntOperand(HalModel& model, int32_t value, uint32_t numberOfConsumers = 1)
+{
+    using HalOperand         = typename HalPolicy::Operand;
+    using HalOperandType     = typename HalPolicy::OperandType;
+    using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
+
+    DataLocation location = {};
+    location.offset = model.operandValues.size();
+    location.length = sizeof(int32_t);
+
+    HalOperand op           = {};
+    op.type                 = HalOperandType::INT32;
+    op.dimensions           = hidl_vec<uint32_t>{};
+    op.lifetime             = HalOperandLifeTime::CONSTANT_COPY;
+    op.location             = location;
+    op.numberOfConsumers    = numberOfConsumers;
+
+    model.operandValues.resize(model.operandValues.size() + location.length);
+    *reinterpret_cast<int32_t*>(&model.operandValues[location.offset]) = value;
+
+    AddOperand<HalPolicy>(model, op);
+}
+
+template<typename HalPolicy, typename HalModel = typename HalPolicy::Model>
+void AddFloatOperand(HalModel& model,
+                     float value,
                      uint32_t numberOfConsumers = 1)
 {
     using HalOperand         = typename HalPolicy::Operand;
+    using HalOperandType     = typename HalPolicy::OperandType;
     using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
 
-    HalOperand op           = {};
-    op.type                 = operandType;
-    op.scale                = scale;
-    op.zeroPoint            = offset;
-    op.dimensions           = dimensions;
-    op.lifetime             = HalOperandLifeTime::MODEL_INPUT;
-    op.numberOfConsumers    = numberOfConsumers;
-
-    AddOperand<HalPolicy>(model, op);
-
-    model.inputIndexes.resize(model.inputIndexes.size() + 1);
-    model.inputIndexes[model.inputIndexes.size() - 1] = model.operands.size() - 1;
-}
-
-template<typename HalPolicy,
-         typename HalModel       = typename HalPolicy::Model,
-         typename HalOperandType = typename HalPolicy::OperandType>
-void AddOutputOperand(HalModel& model,
-                      const hidl_vec<uint32_t>& dimensions,
-                      HalOperandType operandType = HalOperandType::TENSOR_FLOAT32,
-                      double scale = 0.f,
-                      int offset = 0,
-                      uint32_t numberOfConsumers = 0)
-{
-    using HalOperand         = typename HalPolicy::Operand;
-    using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
+    DataLocation location = {};
+    location.offset = model.operandValues.size();
+    location.length = sizeof(float);
 
     HalOperand op           = {};
-    op.type                 = operandType;
-    op.scale                = scale;
-    op.zeroPoint            = offset;
-    op.dimensions           = dimensions;
-    op.lifetime             = HalOperandLifeTime::MODEL_OUTPUT;
+    op.type                 = HalOperandType::FLOAT32;
+    op.dimensions           = hidl_vec<uint32_t>{};
+    op.lifetime             = HalOperandLifeTime::CONSTANT_COPY;
+    op.location             = location;
     op.numberOfConsumers    = numberOfConsumers;
 
+    model.operandValues.resize(model.operandValues.size() + location.length);
+    *reinterpret_cast<float*>(&model.operandValues[location.offset]) = value;
+
     AddOperand<HalPolicy>(model, op);
-
-    model.outputIndexes.resize(model.outputIndexes.size() + 1);
-    model.outputIndexes[model.outputIndexes.size() - 1] = model.operands.size() - 1;
 }
-
-android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_0::Model& model,
-                                                         armnn_driver::ArmnnDriver& driver,
-                                                         V1_0::ErrorStatus& prepareStatus,
-                                                         V1_0::ErrorStatus expectedStatus = V1_0::ErrorStatus::NONE);
-
-#if defined(ARMNN_ANDROID_NN_V1_1) || defined(ARMNN_ANDROID_NN_V1_2)
-
-android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_1::Model& model,
-                                                         armnn_driver::ArmnnDriver& driver,
-                                                         V1_0::ErrorStatus& prepareStatus,
-                                                         V1_0::ErrorStatus expectedStatus = V1_0::ErrorStatus::NONE);
-
-#endif
-
-template<typename HalModel>
-android::sp<V1_0::IPreparedModel> PrepareModel(const HalModel& model,
-                                               armnn_driver::ArmnnDriver& driver)
-{
-    V1_0::ErrorStatus prepareStatus = V1_0::ErrorStatus::NONE;
-    return PrepareModelWithStatus(model, driver, prepareStatus);
-}
-
-#ifdef ARMNN_ANDROID_NN_V1_2
-
-android::sp<V1_2::IPreparedModel> PrepareModelWithStatus_1_2(const armnn_driver::hal_1_2::HalPolicy::Model& model,
-                                                            armnn_driver::ArmnnDriver& driver,
-                                                            V1_0::ErrorStatus& prepareStatus,
-                                                            V1_0::ErrorStatus expectedStatus = V1_0::ErrorStatus::NONE);
-
-template<typename HalModel>
-android::sp<V1_2::IPreparedModel> PrepareModel_1_2(const HalModel& model,
-                                                   armnn_driver::ArmnnDriver& driver)
-{
-    V1_0::ErrorStatus prepareStatus = V1_0::ErrorStatus::NONE;
-    return PrepareModelWithStatus_1_2(model, driver, prepareStatus);
-}
-
-#endif
-
 
 V1_0::ErrorStatus Execute(android::sp<V1_0::IPreparedModel> preparedModel,
                           const V1_0::Request& request,

@@ -61,7 +61,7 @@ Return<void> PreparedModelCallback::notify(V1_0::ErrorStatus status,
     return Void();
 }
 
-#ifdef ARMNN_ANDROID_NN_V1_2
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)
 
 Return<void> PreparedModelCallback_1_2::notify(V1_0::ErrorStatus status,
                                                const android::sp<V1_0::IPreparedModel>& preparedModel)
@@ -76,6 +76,34 @@ Return<void> PreparedModelCallback_1_2::notify_1_2(V1_0::ErrorStatus status,
 {
     m_ErrorStatus = status;
     m_PreparedModel_1_2 = preparedModel;
+    return Void();
+}
+
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_3
+
+Return<void> PreparedModelCallback_1_3::notify(V1_0::ErrorStatus status,
+                                               const android::sp<V1_0::IPreparedModel>& preparedModel)
+{
+    m_1_0_ErrorStatus = status;
+    m_PreparedModel = preparedModel;
+    return Void();
+}
+
+Return<void> PreparedModelCallback_1_3::notify_1_2(V1_0::ErrorStatus status,
+                                                   const android::sp<V1_2::IPreparedModel>& preparedModel)
+{
+    m_1_0_ErrorStatus = status;
+    m_PreparedModel_1_2 = preparedModel;
+    return Void();
+}
+
+Return<void> PreparedModelCallback_1_3::notify_1_3(V1_3::ErrorStatus status,
+                                                   const android::sp<V1_3::IPreparedModel>& preparedModel)
+{
+    m_1_3_ErrorStatus = status;
+    m_PreparedModel_1_3 = preparedModel;
     return Void();
 }
 
@@ -119,7 +147,7 @@ android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_0::Model& mode
     return cb->GetPreparedModel();
 }
 
-#if defined(ARMNN_ANDROID_NN_V1_1) || defined(ARMNN_ANDROID_NN_V1_2)
+#if defined(ARMNN_ANDROID_NN_V1_1) || defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)
 
 android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_1::Model& model,
                                                          armnn_driver::ArmnnDriver& driver,
@@ -140,7 +168,7 @@ android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_1::Model& mode
 
 #endif
 
-#ifdef ARMNN_ANDROID_NN_V1_2
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)
 
 android::sp<V1_2::IPreparedModel> PrepareModelWithStatus_1_2(const armnn_driver::hal_1_2::HalPolicy::Model& model,
                                                              armnn_driver::ArmnnDriver& driver,
@@ -162,6 +190,37 @@ android::sp<V1_2::IPreparedModel> PrepareModelWithStatus_1_2(const armnn_driver:
         BOOST_TEST((cb->GetPreparedModel_1_2() != nullptr));
     }
     return cb->GetPreparedModel_1_2();
+}
+
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_3
+
+android::sp<V1_3::IPreparedModel> PrepareModelWithStatus_1_3(const armnn_driver::hal_1_3::HalPolicy::Model& model,
+                                                             armnn_driver::ArmnnDriver& driver,
+                                                             V1_3::ErrorStatus& prepareStatus)
+{
+    android::sp<PreparedModelCallback_1_3> cb(new PreparedModelCallback_1_3());
+
+    android::hardware::hidl_vec<android::hardware::hidl_handle> emptyHandle1;
+    android::hardware::hidl_vec<android::hardware::hidl_handle> emptyHandle2;
+    armnn_driver::ArmnnDriver::HidlToken emptyToken;
+
+    driver.prepareModel_1_3(model,
+                            V1_1::ExecutionPreference::LOW_POWER,
+                            V1_3::Priority::LOW,
+                            {},
+                            emptyHandle1,
+                            emptyHandle2,
+                            emptyToken,
+                            cb);
+
+    prepareStatus = cb->Get_1_3_ErrorStatus();
+    if (prepareStatus == V1_3::ErrorStatus::NONE)
+    {
+        BOOST_TEST((cb->GetPreparedModel_1_3() != nullptr));
+    }
+    return cb->GetPreparedModel_1_3();
 }
 
 #endif
