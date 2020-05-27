@@ -865,11 +865,11 @@ void QLstmWithNoProjection(armnn::Compute compute)
 
 } // anonymous namespace
 
-BOOST_DATA_TEST_CASE(QLSTMWithProjectionTest, COMPUTE_DEVICES)
-{
-    // Support is not added yet
-    // QLstmWithProjection(sample);
-}
+// Support is not added yet
+//BOOST_DATA_TEST_CASE(QLSTMWithProjectionTest, COMPUTE_DEVICES)
+//{
+//     QLstmWithProjection(sample);
+//}
 
 BOOST_DATA_TEST_CASE(QLSTMWithNoProjectionTest, COMPUTE_DEVICES)
 {
