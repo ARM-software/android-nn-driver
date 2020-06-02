@@ -9,6 +9,7 @@ LOCAL_PATH := $(ANDROID_NN_DRIVER_LOCAL_PATH)
 P_OR_LATER := 0
 Q_OR_LATER := 0
 R_OR_LATER := 0
+ANDROID_R  := 0
 
 ifeq ($(PLATFORM_VERSION),9)
 P_OR_LATER := 1
@@ -30,7 +31,15 @@ ifeq ($(PLATFORM_VERSION),R)
 P_OR_LATER := 1
 Q_OR_LATER := 1
 R_OR_LATER := 1
+ANDROID_R  := 1
 endif # PLATFORM_VERSION == R
+
+ifeq ($(PLATFORM_VERSION),11)
+P_OR_LATER := 1
+Q_OR_LATER := 1
+R_OR_LATER := 1
+ANDROID_R  := 1
+endif # PLATFORM_VERSION == 11
 
 CPP_VERSION := c++14
 
@@ -62,9 +71,9 @@ ifeq ($(ARMNN_REF_ENABLE),0)
 ARMNN_REF_ENABLED := 0
 endif
 
-ifeq ($(PLATFORM_VERSION),R)
+ifeq ($(ANDROID_R),1)
 ARMNN_COMPUTE_CL_ENABLED := 0
-endif # PLATFORM_VERSION == R
+endif
 
 # Variable to control inclusion of libOpenCL shared library
 ARMNN_INCLUDE_LIBOPENCL := $(ARMNN_COMPUTE_CL_ENABLED)
@@ -105,10 +114,10 @@ LOCAL_CFLAGS := \
         -Wno-format-security
 
 # Required to build with the changes made to the Android ML framework specific to Android R
-ifeq ($(PLATFORM_VERSION),R)
+ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
-endif # R or later
+endif
 
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS+= \
@@ -243,10 +252,10 @@ LOCAL_CFLAGS += \
 endif # PLATFORM_VERSION == Q or later
 
 # Required to build with the changes made to the Android ML framework specific to Android R
-ifeq ($(PLATFORM_VERSION),R)
+ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
-endif # R or later
+endif
 
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_CFLAGS += \
@@ -359,10 +368,10 @@ LOCAL_CFLAGS+= \
 endif # ARMNN_DRIVER_DEBUG == 1
 
 # Required to build with the changes made to the Android ML framework specific to Android R
-ifeq ($(PLATFORM_VERSION),R)
+ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
-endif # R or later
+endif
 
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_CFLAGS += \
@@ -590,10 +599,10 @@ LOCAL_CFLAGS += \
 endif # PLATFORM_VERSION == Q or later
 
 # Required to build with the changes made to the Android ML framework specific to Android R
-ifeq ($(PLATFORM_VERSION),R)
+ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
-endif # R or later
+endif
 
 LOCAL_SRC_FILES := \
         service.cpp
@@ -695,10 +704,10 @@ LOCAL_CFLAGS += \
 endif # PLATFORM_VERSION == Q or later
 
 # Required to build with the changes made to the Android ML framework specific to Android R
-ifeq ($(PLATFORM_VERSION),R)
+ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
-endif # R or later
+endif
 
 LOCAL_SRC_FILES := \
         service.cpp
@@ -787,10 +796,10 @@ LOCAL_CFLAGS += \
 endif # ARMNN_DRIVER_DEBUG == 1
 
 # Required to build with the changes made to the Android ML framework specific to Android R
-ifeq ($(PLATFORM_VERSION),R)
+ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
-endif # R or later
+endif
 
 LOCAL_SRC_FILES := \
         service.cpp
