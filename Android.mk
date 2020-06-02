@@ -72,6 +72,9 @@ ifeq ($(ARMNN_LIBOPENCL),0)
 ARMNN_INCLUDE_LIBOPENCL := 0
 endif
 
+# Variable to control retire rate of priority queue
+RETIRE_RATE := 3
+
 #######################
 # libarmnn-driver@1.0 #
 #######################
@@ -486,6 +489,9 @@ LOCAL_CFLAGS += \
         -DARMNNREF_ENABLED
 endif # ARMNN_REF_ENABLED == 1
 
+LOCAL_CFLAGS += \
+        -DRETIRE_RATE=$(RETIRE_RATE)
+
 LOCAL_SRC_FILES := \
         1.0/ArmnnDriverImpl.cpp \
         1.0/HalPolicy.cpp \
@@ -504,6 +510,7 @@ LOCAL_SRC_FILES := \
         DriverOptions.cpp \
         ModelToINetworkConverter.cpp \
         RequestThread.cpp \
+        RequestThread_1_3.cpp \
         Utils.cpp
 
 LOCAL_STATIC_LIBRARIES := \

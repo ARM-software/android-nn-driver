@@ -101,7 +101,8 @@ Return<V1_3::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_3(
        const DriverOptions& options,
        const V1_3::Model& model,
        const sp<V1_3::IPreparedModelCallback>& cb,
-       bool float32ToFloat16)
+       bool float32ToFloat16,
+       V1_3::Priority priority)
 {
     ALOGV("ArmnnDriverImpl::prepareArmnnModel_1_3()");
 
@@ -204,7 +205,8 @@ Return<V1_3::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_3(
                     runtime.get(),
                     model,
                     options.GetRequestInputsAndOutputsDumpDir(),
-                    options.IsGpuProfilingEnabled()));
+                    options.IsGpuProfilingEnabled(),
+                    priority));
 
     // Run a single 'dummy' inference of the model. This means that CL kernels will get compiled (and tuned if
     // this is enabled) before the first 'real' inference which removes the overhead of the first inference.

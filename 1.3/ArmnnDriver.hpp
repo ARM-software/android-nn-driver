@@ -206,7 +206,8 @@ public:
                                                       model,
                                                       cb,
                                                       model.relaxComputationFloat32toFloat16
-                                                      && m_Options.GetFp16Enabled());
+                                                      && m_Options.GetFp16Enabled(),
+                                                      priority);
     }
 
     Return<void> getSupportedExtensions(getSupportedExtensions_cb cb)

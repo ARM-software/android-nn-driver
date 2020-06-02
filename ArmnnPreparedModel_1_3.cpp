@@ -138,7 +138,7 @@ namespace armnn_driver
 {
 
 template<typename HalVersion>
-RequestThread<ArmnnPreparedModel_1_3, HalVersion, CallbackContext_1_3>
+RequestThread_1_3<ArmnnPreparedModel_1_3, HalVersion, CallbackContext_1_3>
         ArmnnPreparedModel_1_3<HalVersion>::m_RequestThread;
 
 template<typename HalVersion>
@@ -164,13 +164,15 @@ ArmnnPreparedModel_1_3<HalVersion>::ArmnnPreparedModel_1_3(armnn::NetworkId netw
                                                            armnn::IRuntime* runtime,
                                                            const V1_3::Model& model,
                                                            const std::string& requestInputsAndOutputsDumpDir,
-                                                           const bool gpuProfilingEnabled)
+                                                           const bool gpuProfilingEnabled,
+                                                           V1_3::Priority priority)
     : m_NetworkId(networkId)
     , m_Runtime(runtime)
     , m_Model(model)
     , m_RequestCount(0)
     , m_RequestInputsAndOutputsDumpDir(requestInputsAndOutputsDumpDir)
     , m_GpuProfilingEnabled(gpuProfilingEnabled)
+    , m_ModelPriority(priority)
 {
     // Enable profiling if required.
     m_Runtime->GetProfiler(m_NetworkId)->EnableProfiling(m_GpuProfilingEnabled);
@@ -828,6 +830,12 @@ Return <V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::Execute(const V1_
     m_RequestThread.PostMsg(this, memPools, inputTensors, outputTensors, cb);
     ALOGV("ArmnnPreparedModel_1_3::execute(...) after PostMsg");
     return V1_3::ErrorStatus::NONE;
+}
+
+template<typename HalVersion>
+V1_3::Priority ArmnnPreparedModel_1_3<HalVersion>::GetModelPriority()
+{
+    return m_ModelPriority;
 }
 
 #ifdef ARMNN_ANDROID_NN_V1_3

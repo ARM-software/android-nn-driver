@@ -30,7 +30,8 @@ public:
                                                            const DriverOptions& options,
                                                            const V1_3::Model& model,
                                                            const android::sp<V1_3::IPreparedModelCallback>& cb,
-                                                           bool float32ToFloat16 = false);
+                                                           bool float32ToFloat16 = false,
+                                                           V1_3::Priority priority = V1_3::Priority::MEDIUM);
 
     static Return<void> getCapabilities_1_3(const armnn::IRuntimePtr& runtime,
                                             V1_3::IDevice::getCapabilities_1_3_cb cb);

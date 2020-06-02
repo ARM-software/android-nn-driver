@@ -7,7 +7,7 @@
 
 #include "ArmnnDriver.hpp"
 #include "ArmnnDriverImpl.hpp"
-#include "RequestThread.hpp"
+#include "RequestThread_1_3.hpp"
 #include "ModelToINetworkConverter.hpp"
 
 #include <NeuralNetworks.h>
@@ -50,7 +50,8 @@ public:
                            armnn::IRuntime* runtime,
                            const HalModel& model,
                            const std::string& requestInputsAndOutputsDumpDir,
-                           const bool gpuProfilingEnabled);
+                           const bool gpuProfilingEnabled,
+                           V1_3::Priority priority = V1_3::Priority::MEDIUM);
 
     virtual ~ArmnnPreparedModel_1_3();
 
@@ -105,6 +106,8 @@ public:
     /// \return false on failure, otherwise true
     bool ExecuteWithDummyInputs();
 
+    V1_3::Priority GetModelPriority();
+
 private:
     Return <V1_3::ErrorStatus> Execute(const V1_3::Request& request,
                                        MeasureTiming measureTiming,
@@ -135,10 +138,11 @@ private:
     V1_3::Model                                                                 m_Model;
     // There must be a single RequestThread for all ArmnnPreparedModel objects to ensure serial execution of workloads
     // It is specific to this class, so it is declared as static here
-    static RequestThread<ArmnnPreparedModel_1_3, HalVersion, CallbackContext_1_3> m_RequestThread;
+    static RequestThread_1_3<ArmnnPreparedModel_1_3, HalVersion, CallbackContext_1_3> m_RequestThread;
     uint32_t                                                                    m_RequestCount;
     const std::string&                                                          m_RequestInputsAndOutputsDumpDir;
     const bool                                                                  m_GpuProfilingEnabled;
+    V1_3::Priority                                                              m_ModelPriority;
 };
 
 }

@@ -1,21 +1,13 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2020 Arm Ltd. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
 #define LOG_TAG "ArmnnDriver"
 
-#include "RequestThread.hpp"
-#include "ArmnnPreparedModel.hpp"
+#include "RequestThread_1_3.hpp"
 
-#ifdef ARMNN_ANDROID_NN_V1_2
-#include "ArmnnPreparedModel_1_2.hpp"
-#endif
-
-#ifdef ARMNN_ANDROID_NN_V1_3
-#include "ArmnnPreparedModel_1_2.hpp"
 #include "ArmnnPreparedModel_1_3.hpp"
-#endif
 
 #include <armnn/utility/Assert.hpp>
 
@@ -27,16 +19,16 @@ namespace armnn_driver
 {
 
 template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename CallbackContext>
-RequestThread<PreparedModel, HalVersion, CallbackContext>::RequestThread()
+RequestThread_1_3<PreparedModel, HalVersion, CallbackContext>::RequestThread_1_3()
 {
-    ALOGV("RequestThread::RequestThread()");
-    m_Thread = std::make_unique<std::thread>(&RequestThread::Process, this);
+    ALOGV("RequestThread_1_3::RequestThread_1_3()");
+    m_Thread = std::make_unique<std::thread>(&RequestThread_1_3::Process, this);
 }
 
 template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename CallbackContext>
-RequestThread<PreparedModel, HalVersion, CallbackContext>::~RequestThread()
+RequestThread_1_3<PreparedModel, HalVersion, CallbackContext>::~RequestThread_1_3()
 {
-    ALOGV("RequestThread::~RequestThread()");
+    ALOGV("RequestThread_1_3::~RequestThread_1_3()");
 
     try
     {
@@ -60,36 +52,50 @@ RequestThread<PreparedModel, HalVersion, CallbackContext>::~RequestThread()
 }
 
 template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename CallbackContext>
-void RequestThread<PreparedModel, HalVersion, CallbackContext>::PostMsg(PreparedModel<HalVersion>* model,
+void RequestThread_1_3<PreparedModel, HalVersion, CallbackContext>::PostMsg(PreparedModel<HalVersion>* model,
         std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>>& memPools,
         std::shared_ptr<armnn::InputTensors>& inputTensors,
         std::shared_ptr<armnn::OutputTensors>& outputTensors,
         CallbackContext callbackContext)
 {
-    ALOGV("RequestThread::PostMsg(...)");
+    ALOGV("RequestThread_1_3::PostMsg(...)");
     auto data = std::make_shared<AsyncExecuteData>(model,
                                                    memPools,
                                                    inputTensors,
                                                    outputTensors,
                                                    callbackContext);
     auto pMsg = std::make_shared<ThreadMsg>(ThreadMsgType::REQUEST, data);
-    PostMsg(pMsg);
+    PostMsg(pMsg, model->GetModelPriority());
 }
 
 template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename CallbackContext>
-void RequestThread<PreparedModel, HalVersion, CallbackContext>::PostMsg(std::shared_ptr<ThreadMsg>& pMsg)
+void RequestThread_1_3<PreparedModel, HalVersion, CallbackContext>::PostMsg(std::shared_ptr<ThreadMsg>& pMsg,
+                                                                        V1_3::Priority priority)
 {
-    ALOGV("RequestThread::PostMsg(pMsg)");
+    ALOGV("RequestThread_1_3::PostMsg(pMsg)");
     // Add a message to the queue and notify the request thread
     std::unique_lock<std::mutex> lock(m_Mutex);
-    m_Queue.push(pMsg);
+    switch (priority) {
+        case V1_3::Priority::HIGH:
+            m_HighPriorityQueue.push(pMsg);
+            break;
+        case V1_3::Priority::LOW:
+            m_LowPriorityQueue.push(pMsg);
+            break;
+        case V1_3::Priority::MEDIUM:
+        default:
+            m_MediumPriorityQueue.push(pMsg);
+    }
     m_Cv.notify_one();
 }
 
 template <template <typename HalVersion> class PreparedModel, typename HalVersion, typename CallbackContext>
-void RequestThread<PreparedModel, HalVersion, CallbackContext>::Process()
+void RequestThread_1_3<PreparedModel, HalVersion, CallbackContext>::Process()
 {
-    ALOGV("RequestThread::Process()");
+    ALOGV("RequestThread_1_3::Process()");
+    int retireRate = RETIRE_RATE;
+    int highPriorityCount = 0;
+    int mediumPriorityCount = 0;
     while (true)
     {
         std::shared_ptr<ThreadMsg> pMsg(nullptr);
@@ -97,20 +103,50 @@ void RequestThread<PreparedModel, HalVersion, CallbackContext>::Process()
             // Wait for a message to be added to the queue
             // This is in a separate scope to minimise the lifetime of the lock
             std::unique_lock<std::mutex> lock(m_Mutex);
-            while (m_Queue.empty())
+            while (m_HighPriorityQueue.empty() && m_MediumPriorityQueue.empty() && m_LowPriorityQueue.empty())
             {
                 m_Cv.wait(lock);
             }
-            // get the message to process from the front of the queue
-            pMsg = m_Queue.front();
-            m_Queue.pop();
+            // Get the message to process from the front of each queue based on priority from high to low
+            // Get high priority first if it does not exceed the retire rate
+            if (!m_HighPriorityQueue.empty() && highPriorityCount < retireRate)
+            {
+                pMsg = m_HighPriorityQueue.front();
+                m_HighPriorityQueue.pop();
+                highPriorityCount += 1;
+            }
+            // If high priority queue is empty or the count exceeds the retire rate, get medium priority message
+            else if (!m_MediumPriorityQueue.empty() && mediumPriorityCount < retireRate)
+            {
+                pMsg = m_MediumPriorityQueue.front();
+                m_MediumPriorityQueue.pop();
+                mediumPriorityCount += 1;
+                // Reset high priority count
+                highPriorityCount = 0;
+            }
+            // If medium priority queue is empty or the count exceeds the retire rate, get low priority message
+            else if (!m_LowPriorityQueue.empty())
+            {
+                pMsg = m_LowPriorityQueue.front();
+                m_LowPriorityQueue.pop();
+                // Reset high and medium priority count
+                highPriorityCount = 0;
+                mediumPriorityCount = 0;
+            }
+            else
+            {
+                // Reset high and medium priority count
+                highPriorityCount = 0;
+                mediumPriorityCount = 0;
+                continue;
+            }
         }
 
         switch (pMsg->type)
         {
             case ThreadMsgType::REQUEST:
             {
-                ALOGV("RequestThread::Process() - request");
+                ALOGV("RequestThread_1_3::Process() - request");
                 // invoke the asynchronous execution method
                 PreparedModel<HalVersion>* model = pMsg->data->m_Model;
                 model->ExecuteGraph(pMsg->data->m_MemPools,
@@ -122,20 +158,28 @@ void RequestThread<PreparedModel, HalVersion, CallbackContext>::Process()
 
             case ThreadMsgType::EXIT:
             {
-                ALOGV("RequestThread::Process() - exit");
+                ALOGV("RequestThread_1_3::Process() - exit");
                 // delete all remaining messages (there should not be any)
                 std::unique_lock<std::mutex> lock(m_Mutex);
-                while (!m_Queue.empty())
+                while (!m_HighPriorityQueue.empty())
                 {
-                    m_Queue.pop();
+                    m_HighPriorityQueue.pop();
+                }
+                while (!m_MediumPriorityQueue.empty())
+                {
+                    m_MediumPriorityQueue.pop();
+                }
+                while (!m_LowPriorityQueue.empty())
+                {
+                    m_LowPriorityQueue.pop();
                 }
                 return;
             }
 
             default:
                 // this should be unreachable
-                ALOGE("RequestThread::Process() - invalid message type");
-                ARMNN_ASSERT_MSG(false, "ArmNN: RequestThread: invalid message type");
+                ALOGE("RequestThread_1_3::Process() - invalid message type");
+                ARMNN_ASSERT_MSG(false, "ArmNN: RequestThread_1_3: invalid message type");
         }
     }
 }
@@ -144,23 +188,6 @@ void RequestThread<PreparedModel, HalVersion, CallbackContext>::Process()
 /// Class template specializations
 ///
 
-template class RequestThread<ArmnnPreparedModel, hal_1_0::HalPolicy, CallbackContext_1_0>;
-
-#ifdef ARMNN_ANDROID_NN_V1_1
-template class RequestThread<armnn_driver::ArmnnPreparedModel, hal_1_1::HalPolicy, CallbackContext_1_0>;
-#endif
-
-#ifdef ARMNN_ANDROID_NN_V1_2
-template class RequestThread<ArmnnPreparedModel, hal_1_1::HalPolicy, CallbackContext_1_0>;
-template class RequestThread<ArmnnPreparedModel, hal_1_2::HalPolicy, CallbackContext_1_0>;
-template class RequestThread<ArmnnPreparedModel_1_2, hal_1_2::HalPolicy, CallbackContext_1_2>;
-#endif
-
-#ifdef ARMNN_ANDROID_NN_V1_3
-template class RequestThread<ArmnnPreparedModel, hal_1_1::HalPolicy, CallbackContext_1_0>;
-template class RequestThread<ArmnnPreparedModel, hal_1_2::HalPolicy, CallbackContext_1_0>;
-template class RequestThread<ArmnnPreparedModel, hal_1_3::HalPolicy, CallbackContext_1_0>;
-template class RequestThread<ArmnnPreparedModel_1_2, hal_1_2::HalPolicy, CallbackContext_1_2>;
-#endif
+template class RequestThread_1_3<ArmnnPreparedModel_1_3, hal_1_3::HalPolicy, CallbackContext_1_3>;
 
 } // namespace armnn_driver
