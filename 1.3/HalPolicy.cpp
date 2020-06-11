@@ -111,6 +111,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertQuantizedLstm(operation, model, data);
         case V1_3::OperationType::QUANTIZED_16BIT_LSTM:
             return ConvertQuantized16BitLstm(operation, model, data);
+        case V1_3::OperationType::RANK:
+            return ConvertRank(operation, model, data);
         case V1_3::OperationType::RELU:
             return ConvertReLu(operation, model, data);
         case V1_3::OperationType::RELU1:
@@ -392,6 +394,12 @@ bool HalPolicy::ConvertQuantized16BitLstm(const Operation& operation, const Mode
 {
     ALOGV("hal_1_3::HalPolicy::ConvertQuantized16BitLstm()");
     return ::ConvertQuantized16BitLstm<hal_1_3::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertRank(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertRank()");
+    return ::ConvertRank<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertReLu(const Operation& operation, const Model& model, ConversionData& data)

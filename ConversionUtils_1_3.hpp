@@ -642,4 +642,49 @@ bool ConvertQuantizedLstm(const HalOperation& operation, const HalModel& model, 
              SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 2, *layer, 2, model, data, &constOutputInfo));
 }
 
+template<typename HalPolicy,
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertRank(const HalOperation& operation, const HalModel& model, ConversionData& data)
+{
+    using HalOperand = typename HalPolicy::Operand;
+
+    const HalOperand* inputOperand = GetInputOperand<HalPolicy>(operation, 0, model);
+    const HalOperand* outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
+
+    if (inputOperand == nullptr || outputOperand == nullptr)
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const Shape inputOperandShape = GetOperandShape(*inputOperand);
+    const Shape outputOperandShape = GetOperandShape(*outputOperand);
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Could not read input 0", __func__);
+    }
+
+    armnn::TensorInfo outInfo = GetTensorInfoForOperand(*outputOperand);
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsRankSupported,
+                               data.m_Backends,
+                               isSupported,
+                               input.GetTensorInfo(),
+                               outInfo);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* layer = data.m_Network->AddRankLayer();
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, &outInfo);
+}
+
 } // armnn_driver namespace

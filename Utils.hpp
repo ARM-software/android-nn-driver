@@ -150,18 +150,24 @@ inline V1_2::OutputShape ComputeShape(const armnn::TensorInfo& info)
 {
     V1_2::OutputShape shape;
 
-    android::hardware::hidl_vec<uint32_t> dimensions;
-
     armnn::TensorShape tensorShape = info.GetShape();
-    const unsigned int numDims = tensorShape.GetNumDimensions();
-    dimensions.resize(numDims);
-
-    for (unsigned int outputIdx = 0u; outputIdx < numDims; ++outputIdx)
+    // Android will expect scalars as a zero dimensional tensor
+    if(tensorShape.GetDimensionality() == armnn::Dimensionality::Scalar)
     {
-        dimensions[outputIdx] = tensorShape[outputIdx];
+         shape.dimensions = android::hardware::hidl_vec<uint32_t>{};
+    }
+    else
+    {
+        android::hardware::hidl_vec<uint32_t> dimensions;
+        const unsigned int numDims = tensorShape.GetNumDimensions();
+        dimensions.resize(numDims);
+        for (unsigned int outputIdx = 0u; outputIdx < numDims; ++outputIdx)
+        {
+            dimensions[outputIdx] = tensorShape[outputIdx];
+        }
+        shape.dimensions = dimensions;
     }
 
-    shape.dimensions = dimensions;
     shape.isSufficient = true;
 
     return shape;

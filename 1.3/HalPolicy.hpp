@@ -123,6 +123,8 @@ private:
 
     static bool ConvertQuantized16BitLstm(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertRank(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertReLu(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertReLu1(const Operation& operation, const Model& model, ConversionData& data);

@@ -1451,14 +1451,16 @@ bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
                                   uint32_t outputIndex,
                                   armnn::IConnectableLayer& layer,
                                   const HalModel& model,
-                                  ConversionData& data)
+                                  ConversionData& data,
+                                  const armnn::TensorInfo* overrideOutputInfo = nullptr)
 {
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation,
                                                    outputIndex,
                                                    layer,
                                                    outputIndex,
                                                    model,
-                                                   data);
+                                                   data,
+                                                   overrideOutputInfo);
 }
 
 template<typename HalPolicy,
