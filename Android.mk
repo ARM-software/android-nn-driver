@@ -58,6 +58,7 @@ NN_HEADER_PATH := $(LOCAL_PATH)/../../../frameworks/ml/nn/runtime/include
 ARMNN_COMPUTE_CL_ENABLED := 1
 ARMNN_COMPUTE_NEON_ENABLED := 1
 ARMNN_REF_ENABLED := 1
+ARMNN_ETHOSN_ENABLED := 1
 
 ifeq ($(ARMNN_COMPUTE_CL_ENABLE),0)
 ARMNN_COMPUTE_CL_ENABLED := 0
@@ -69,6 +70,10 @@ endif
 
 ifeq ($(ARMNN_REF_ENABLE),0)
 ARMNN_REF_ENABLED := 0
+endif
+
+ifeq ($(ARMNN_ETHOSN_ENABLE),0)
+ARMNN_ETHOSN_ENABLED := 0
 endif
 
 ifeq ($(ANDROID_R),1)
@@ -143,6 +148,11 @@ ifeq ($(ARMNN_REF_ENABLED),1)
 LOCAL_CFLAGS += \
         -DARMNNREF_ENABLED
 endif # ARMNN_REF_ENABLED == 1
+
+ifeq ($(ARMNN_ETHOSN_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMNNETHOSN_ENABLED
+endif # ARMNN_ETHOSN_ENABLED == 1
 
 LOCAL_SRC_FILES := \
         1.0/ArmnnDriverImpl.cpp \
@@ -272,6 +282,11 @@ LOCAL_CFLAGS += \
         -DARMNNREF_ENABLED
 endif # ARMNN_REF_ENABLED == 1
 
+ifeq ($(ARMNN_ETHOSN_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMNNETHOSN_ENABLED
+endif # ARMNN_ETHOSN_ENABLED == 1
+
 LOCAL_SRC_FILES := \
         1.0/ArmnnDriverImpl.cpp \
         1.0/HalPolicy.cpp \
@@ -388,6 +403,11 @@ LOCAL_CFLAGS += \
         -DARMNNREF_ENABLED
 endif # ARMNN_REF_ENABLED == 1
 
+ifeq ($(ARMNN_ETHOSN_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMNNETHOSN_ENABLED
+endif # ARMNN_ETHOSN_ENABLED == 1
+
 LOCAL_SRC_FILES := \
         1.0/ArmnnDriverImpl.cpp \
         1.0/HalPolicy.cpp \
@@ -497,6 +517,11 @@ ifeq ($(ARMNN_REF_ENABLED),1)
 LOCAL_CFLAGS += \
         -DARMNNREF_ENABLED
 endif # ARMNN_REF_ENABLED == 1
+
+ifeq ($(ARMNN_ETHOSN_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMNNETHOSN_ENABLED
+endif # ARMNN_ETHOSN_ENABLED == 1
 
 LOCAL_CFLAGS += \
         -DRETIRE_RATE=$(RETIRE_RATE)
