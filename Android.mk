@@ -76,10 +76,6 @@ ifeq ($(ARMNN_ETHOSN_ENABLE),0)
 ARMNN_ETHOSN_ENABLED := 0
 endif
 
-ifeq ($(ANDROID_R),1)
-ARMNN_COMPUTE_CL_ENABLED := 0
-endif
-
 # Variable to control inclusion of libOpenCL shared library
 ARMNN_INCLUDE_LIBOPENCL := $(ARMNN_COMPUTE_CL_ENABLED)
 ifeq ($(ARMNN_LIBOPENCL),0)
