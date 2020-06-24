@@ -51,6 +51,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertComparison(operation, model, data, ComparisonOperation::Equal);
         case V1_3::OperationType::EXPAND_DIMS:
             return ConvertExpandDims(operation, model, data);
+        case V1_3::OperationType::FILL:
+            return ConvertFill(operation, model, data);
         case V1_3::OperationType::FLOOR:
             return ConvertFloor(operation, model, data);
         case V1_3::OperationType::FULLY_CONNECTED:
@@ -241,6 +243,12 @@ bool HalPolicy::ConvertExpandDims(const Operation& operation, const Model& model
 {
     ALOGV("hal_1_3::HalPolicy::ConvertExpandDims()");
     return ::ConvertExpandDims<hal_1_3::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertFill(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertFill()");
+    return ::ConvertFill<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertFloor(const Operation& operation, const Model& model, ConversionData& data)

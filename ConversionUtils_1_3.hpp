@@ -66,6 +66,92 @@ bool ConvertElu(const HalOperation& operation, const HalModel& model, Conversion
 }
 
 template<typename HalPolicy,
+    typename HalOperation = typename HalPolicy::Operation,
+    typename HalModel     = typename HalPolicy::Model>
+bool ConvertFill(const HalOperation& operation, const HalModel& model, ConversionData& data)
+{
+    using HalOperand     = typename HalPolicy::Operand;
+    using HalOperandType = typename HalPolicy::OperandType;
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output", __func__);
+    }
+
+    const TensorInfo& inputInfo  = input.GetTensorInfo();
+    const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    if (IsDynamicTensor(outputInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
+
+    // Determine data type of output tensor
+    HalOperandType outputType = output->type;
+    FillDescriptor descriptor;
+    // Read the scalar fill value
+    if (outputType == HalOperandType::TENSOR_FLOAT16)
+    {
+        Half value;
+
+        if (!GetInputScalar<HalPolicy>(operation, 1, HalOperandType::FLOAT16, value, model, data))
+        {
+            return Fail("%s: Operation has invalid inputs %d", __func__, outputType);
+        }
+
+        descriptor.m_Value = static_cast<float>(value);
+    }
+    else if (outputType == HalOperandType::TENSOR_FLOAT32)
+    {
+        if (!GetInputScalar<HalPolicy>(operation, 1, HalOperandType::FLOAT32, descriptor.m_Value, model, data))
+        {
+            return Fail("%s: Operation has invalid inputs %d", __func__, outputType);
+        }
+    }
+    else if (outputType == HalOperandType::TENSOR_INT32)
+    {
+        int32_t value;
+
+        if (!GetInputScalar<HalPolicy>(operation, 1, HalOperandType::INT32, value, model, data))
+        {
+            return Fail("%s: Operation has invalid inputs %d", __func__, outputType);
+        }
+
+        descriptor.m_Value = static_cast<float>(value);
+    }
+    else
+    {
+        return Fail("%s: Unsupported input tensor type: %d", __func__, outputType);
+    }
+
+    bool isSupported = false;
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsFillSupported,
+                               data.m_Backends,
+                               isSupported,
+                               inputInfo,
+                               outputInfo,
+                               descriptor);
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    IConnectableLayer* const layer = data.m_Network->AddFillLayer(descriptor);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+    layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+}
+
+template<typename HalPolicy,
          typename HalOperation = typename HalPolicy::Operation,
          typename HalModel     = typename HalPolicy::Model>
 bool ConvertQuantizedLstm(const HalOperation& operation, const HalModel& model, ConversionData& data)

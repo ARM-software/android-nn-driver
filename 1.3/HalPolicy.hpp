@@ -73,6 +73,8 @@ private:
 
     static bool ConvertExpandDims(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertFill(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertFloor(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertFullyConnected(const Operation& operation, const Model& model, ConversionData& data);
