@@ -3629,6 +3629,11 @@ bool ConvertStridedSlice(const HalOperation& operation, const HalModel& model, C
             {
                 return Fail("%s: StridedSlice: Output will not be large enough to hold the slice", __func__);
             }
+
+            if(stride < 0)
+            {
+                return Fail("%s: StridedSlice: Stride can not be negative while ShrinkAxisMask is set.", __func__);
+            }
         }
     }
 
