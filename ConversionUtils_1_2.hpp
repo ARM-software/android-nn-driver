@@ -2613,6 +2613,19 @@ bool ConvertTransposeConv2d(const HalOperation& operation, const HalModel& model
             return Fail("%s: Negative padding values are not supported", __func__);
         }
 
+        // If output shape has been specified as a parameter then extract it and make it available.
+        const HalOperand* outputShapeOperand = GetInputOperand<HalPolicy>(operation, 3, model, false);
+        std::vector<int32_t> outputShape;
+        if ((outputShapeOperand) && (GetTensorInt32Values<HalPolicy>(*outputShapeOperand, outputShape, model, data)))
+        {
+            // Change from signed to unsigned int to store in TransposeConvolution2dDescriptor.
+            for (int dimension : outputShape)
+            {
+                desc.m_OutputShape.push_back(static_cast<unsigned int>(dimension));
+            }
+            desc.m_OutputShapeEnabled = true;
+        }
+
         desc.m_StrideX   = boost::numeric_cast<uint32_t>(strideX);
         desc.m_StrideY   = boost::numeric_cast<uint32_t>(strideY);
         desc.m_PadLeft   = boost::numeric_cast<uint32_t>(padLeft);
