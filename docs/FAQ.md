@@ -69,5 +69,5 @@ In order to fix these failures you will have to update to a version of Android Q
 
 The Android 10 R3 CTS that can be downloaded from https://source.android.com/compatibility/cts/downloads contains all these patches. 
 
-There is a known issue that even with these patches CTS test "TestRandomGraph/RandomGraphTest#LargeGraph_TENSOR_FLOAT16_Rank3/41" will still fail on CpuRef. This failure is caused by a LogSoftmax layer followed by a Floor layer which blows up the slight difference between fp16 to fp32. This issue only affects CpuRef beginning with the 20.02 release. We expect that this issue will be resolved in a future release.
+There is a known issue that even with these patches CTS tests "TestRandomGraph/RandomGraphTest#LargeGraph_TENSOR_FLOAT16_Rank3/41" and "TestRandomGraph/RandomGraphTest#LargeGraph_TENSOR_FLOAT16_Rank2/20 " will still fail on CpuRef. These failures are caused by a LogSoftmax layer followed by a Floor layer which blows up the slight difference between fp16 to fp32. This issue only affects CpuRef with Android Q. These tests are not failing for Android R.
 
