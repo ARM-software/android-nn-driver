@@ -38,6 +38,15 @@ void LayerInputHandle::Connect(armnn::IInputSlot& inputSlot)
     }
 }
 
+void LayerInputHandle::Disconnect(armnn::IInputSlot& inputSlot)
+{
+    ARMNN_ASSERT(IsValid());
+    if (m_OutputSlot)
+    {
+        m_OutputSlot->Disconnect(inputSlot);
+    }
+}
+
 const armnn::TensorInfo& LayerInputHandle::GetTensorInfo() const
 {
     return m_TensorInfo;

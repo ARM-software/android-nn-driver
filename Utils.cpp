@@ -80,7 +80,8 @@ void* GetMemoryFromPool(DataLocation location, const std::vector<android::nn::Ru
 
 armnn::TensorInfo GetTensorInfoForOperand(const V1_0::Operand& operand)
 {
-    armnn::DataType type;
+    using namespace armnn;
+    DataType type;
 
     switch (operand.type)
     {
@@ -97,7 +98,30 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_0::Operand& operand)
             throw UnsupportedOperand<V1_0::OperandType>(operand.type);
     }
 
-    armnn::TensorInfo ret(operand.dimensions.size(), operand.dimensions.data(), type);
+    TensorInfo ret;
+    if (operand.dimensions.size() == 0)
+    {
+        TensorShape tensorShape(Dimensionality::NotSpecified);
+        ret = TensorInfo(tensorShape, type);
+    }
+    else
+    {
+        bool dimensionsSpecificity[5] = { true, true, true, true, true };
+        int count = 0;
+        std::for_each(operand.dimensions.data(),
+                      operand.dimensions.data() +  operand.dimensions.size(),
+                      [&](const unsigned int val)
+                      {
+                          if (val == 0)
+                          {
+                              dimensionsSpecificity[count] = false;
+                          }
+                          count++;
+                      });
+
+        TensorShape tensorShape(operand.dimensions.size(), operand.dimensions.data(), dimensionsSpecificity);
+        ret = TensorInfo(tensorShape, type);
+    }
 
     ret.SetQuantizationScale(operand.scale);
     ret.SetQuantizationOffset(operand.zeroPoint);
@@ -143,7 +167,31 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_2::Operand& operand)
             throw UnsupportedOperand<V1_2::OperandType>(operand.type);
     }
 
-    TensorInfo ret(operand.dimensions.size(), operand.dimensions.data(), type);
+    TensorInfo ret;
+    if (operand.dimensions.size() == 0)
+    {
+        TensorShape tensorShape(Dimensionality::NotSpecified);
+        ret = TensorInfo(tensorShape, type);
+    }
+    else
+    {
+        bool dimensionsSpecificity[5] = { true, true, true, true, true };
+        int count = 0;
+        std::for_each(operand.dimensions.data(),
+                      operand.dimensions.data() +  operand.dimensions.size(),
+                      [&](const unsigned int val)
+                      {
+                          if (val == 0)
+                          {
+                              dimensionsSpecificity[count] = false;
+                          }
+                          count++;
+                      });
+
+        TensorShape tensorShape(operand.dimensions.size(), operand.dimensions.data(), dimensionsSpecificity);
+        ret = TensorInfo(tensorShape, type);
+    }
+
     if (perChannel)
     {
         // ExtraParams is expected to be of type channelQuant
@@ -219,7 +267,29 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_3::Operand& operand)
     }
     else
     {
-        ret = TensorInfo(operand.dimensions.size(), operand.dimensions.data(), type);
+        if (operand.dimensions.size() == 0)
+        {
+            TensorShape tensorShape(Dimensionality::NotSpecified);
+            ret = TensorInfo(tensorShape, type);
+        }
+        else
+        {
+            bool dimensionsSpecificity[5] = { true, true, true, true, true };
+            int count = 0;
+            std::for_each(operand.dimensions.data(),
+                          operand.dimensions.data() +  operand.dimensions.size(),
+                          [&](const unsigned int val)
+                          {
+                              if (val == 0)
+                              {
+                                  dimensionsSpecificity[count] = false;
+                              }
+                              count++;
+                          });
+
+            TensorShape tensorShape(operand.dimensions.size(), operand.dimensions.data(), dimensionsSpecificity);
+            ret = TensorInfo(tensorShape, type);
+        }
     }
 
     if (perChannel)
@@ -501,10 +571,22 @@ std::string ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimize
     return fileName;
 }
 
-bool IsDynamicTensor(const armnn::TensorInfo& outputInfo)
+bool IsDynamicTensor(const armnn::TensorInfo& tensorInfo)
 {
-    // Dynamic tensors have at least one 0-sized dimension
-    return outputInfo.GetNumElements() == 0u;
+    if (tensorInfo.GetShape().GetDimensionality() == armnn::Dimensionality::NotSpecified)
+    {
+        return true;
+    }
+    return !tensorInfo.GetShape().AreAllDimensionsSpecified();
+}
+
+bool AreDynamicTensorsSupported()
+{
+#if defined(ARMNN_ANDROID_NN_V1_3)
+    return true;
+#else
+    return false;
+#endif
 }
 
 std::string GetFileTimestamp()
@@ -568,7 +650,4 @@ void CommitPools(std::vector<::android::nn::RunTimePoolInfo>& memPools)
 #endif
     }
 }
-
-
-
 } // namespace armnn_driver

@@ -143,6 +143,9 @@ void RenameGraphDotFile(const std::string& oldName, const std::string& dumpDir, 
 /// Checks if a tensor info represents a dynamic tensor
 bool IsDynamicTensor(const armnn::TensorInfo& outputInfo);
 
+/// Checks for ArmNN support of dynamic tensors.
+bool AreDynamicTensorsSupported(void);
+
 std::string GetFileTimestamp();
 
 #if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)

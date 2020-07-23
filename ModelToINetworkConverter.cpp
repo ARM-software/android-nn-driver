@@ -59,8 +59,17 @@ void ModelToINetworkConverter<HalPolicy>::Convert()
         totalPoolSize += pool.size();
     }
 
+    using NetworkOptions = std::vector<armnn::BackendOptions>;
+    NetworkOptions networkOptions;
+    armnn::BackendOptions shapeInferenceMethodOption("ShapeInferenceMethod",
+                                                    {
+                                                            { "InferAndValidate", true }
+                                                    });
+
+    networkOptions.push_back(shapeInferenceMethodOption);
+
     // Create armnn::INetwork
-    m_Data.m_Network = armnn::INetwork::Create();
+    m_Data.m_Network = armnn::INetwork::Create(networkOptions);
 
     // add operations to it
     // track which layer outputs each operand

@@ -80,7 +80,7 @@ bool ValidateRequestArgument(const RequestArgument& requestArg, const armnn::Ten
 
         for (unsigned int d = 0; d < tensorInfo.GetNumDimensions(); ++d)
         {
-            if (requestArg.dimensions[d] != tensorInfo.GetShape()[d])
+            if (requestArg.dimensions[d] != 0 && requestArg.dimensions[d] != tensorInfo.GetShape()[d])
             {
                 ALOGE("Mismatched size for dimension %d (request argument: %u, expected %u)",
                       d, requestArg.dimensions[d], tensorInfo.GetShape()[d]);
@@ -259,10 +259,17 @@ Return<V1_0::ErrorStatus> ArmnnPreparedModel_1_2<HalVersion>::PrepareMemoryForOu
         }
 
         const size_t outputSize = outputTensorInfo.GetNumBytes();
+
+        if (outputArg.location.length < outputSize)
+        {
+            ALOGW("ArmnnPreparedModel_1_2::Execute failed: outputArg.location.length < outputSize");
+            return V1_0::ErrorStatus::OUTPUT_INSUFFICIENT_SIZE;
+        }
+
         const size_t bufferSize = memPools.at(outputArg.location.poolIndex).getHidlMemory().size();
         if (bufferSize < outputSize)
         {
-            ALOGW("ArmnnPreparedModel_1_2::Execute failed");
+            ALOGW("ArmnnPreparedModel_1_2::Execute failed: bufferSize < outputSize");
             return V1_0::ErrorStatus::OUTPUT_INSUFFICIENT_SIZE;
         }
 

@@ -101,7 +101,7 @@ bool ValidateRequestArgument(const RequestArgument& requestArg, const armnn::Ten
 
         for (unsigned int d = 0; d < tensorInfo.GetNumDimensions(); ++d)
         {
-            if (requestArg.dimensions[d] != tensorInfo.GetShape()[d])
+            if (requestArg.dimensions[d] != 0 && requestArg.dimensions[d] != tensorInfo.GetShape()[d])
             {
                 ALOGE("Mismatched size for dimension %d (request argument: %u, expected %u)",
                       d, requestArg.dimensions[d], tensorInfo.GetShape()[d]);
@@ -309,6 +309,13 @@ Return<void> ArmnnPreparedModel_1_3<HalVersion>::executeFenced(const V1_3::Reque
         ALOGW("ArmnnPreparedModel_1_3::executeFenced parameter loopTimeoutDuration is set but not supported.");
     }
 
+    if (!android::nn::validateRequest(request, m_Model, /*allowUnspecifiedOutput=*/false))
+    {
+        ALOGV("ArmnnPreparedModel_1_3::executeFenced outputs must be specified for fenced execution ");
+        cb(ErrorStatus::INVALID_ARGUMENT, hidl_handle(nullptr), nullptr);
+        return Void();
+    }
+
     ExecutionContext_1_3 ctx;
     if (measureTiming == MeasureTiming::YES)
     {
@@ -318,12 +325,6 @@ Return<void> ArmnnPreparedModel_1_3<HalVersion>::executeFenced(const V1_3::Reque
 
     ALOGV("ArmnnPreparedModel_1_3::executeFenced(): %s", GetModelSummary(m_Model).c_str());
     m_RequestCount++;
-
-    if (!android::nn::validateRequest(request, m_Model))
-    {
-        cb(ErrorStatus::INVALID_ARGUMENT, hidl_handle(nullptr), nullptr);
-        return Void();
-    }
 
     if (!m_RequestInputsAndOutputsDumpDir.empty())
     {
@@ -442,7 +443,7 @@ Return<V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::PrepareMemoryForOu
     {
         const auto& outputArg = request.outputs[i];
 
-        const armnn::TensorInfo outputTensorInfo = m_Runtime->GetOutputTensorInfo(m_NetworkId, i);
+        armnn::TensorInfo outputTensorInfo = m_Runtime->GetOutputTensorInfo(m_NetworkId, i);
         const armnn::Tensor outputTensor = GetTensorForRequestArgument(outputArg, outputTensorInfo, memPools);
         if (outputTensor.GetMemoryArea() == nullptr)
         {
@@ -450,16 +451,40 @@ Return<V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::PrepareMemoryForOu
             return V1_3::ErrorStatus::GENERAL_FAILURE;
         }
 
+        unsigned int count = 0;
+        std::for_each(outputArg.dimensions.begin(), outputArg.dimensions.end(), [&](auto dim)
+        {
+            if (dim != 0)
+            {
+                outputTensorInfo.GetShape()[count] = dim;
+            }
+            else
+            {
+                outputTensorInfo.GetShape()[count] = outputArg.dimensions.size();
+            }
+
+            count++;
+        });
+
         const size_t outputSize = outputTensorInfo.GetNumBytes();
+
+        outputs.emplace_back(i, outputTensor);
+        outputShapes[i] = ComputeShape(outputTensorInfo);
+
+        if (outputArg.location.length < outputSize)
+        {
+            ALOGW("ArmnnPreparedModel_1_3::Execute failed");
+            outputShapes[i].isSufficient = false;
+            return V1_3::ErrorStatus::OUTPUT_INSUFFICIENT_SIZE;
+        }
+
         const size_t bufferSize = memPools.at(outputArg.location.poolIndex).getHidlMemory().size();
         if (bufferSize < outputSize)
         {
             ALOGW("ArmnnPreparedModel_1_3::Execute failed");
+            outputShapes[i].isSufficient = false;
             return V1_3::ErrorStatus::OUTPUT_INSUFFICIENT_SIZE;
         }
-
-        outputs.emplace_back(i, outputTensor);
-        outputShapes[i] = ComputeShape(outputTensorInfo);
     }
 
     return V1_3::ErrorStatus::NONE;

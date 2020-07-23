@@ -48,7 +48,7 @@ bool ValidateRequestArgument(const RequestArgument& requestArg, const armnn::Ten
 
         for (unsigned int d = 0; d < tensorInfo.GetNumDimensions(); ++d)
         {
-            if (requestArg.dimensions[d] != tensorInfo.GetShape()[d])
+            if (requestArg.dimensions[d] != 0 && requestArg.dimensions[d] != tensorInfo.GetShape()[d])
             {
                 ALOGE("Mismatched size for dimension %d (request argument: %u, expected %u)",
                     d, requestArg.dimensions[d], tensorInfo.GetShape()[d]);
