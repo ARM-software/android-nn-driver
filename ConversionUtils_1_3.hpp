@@ -146,7 +146,6 @@ bool ConvertFill(const HalOperation& operation, const HalModel& model, Conversio
     IConnectableLayer* const layer = data.m_Network->AddFillLayer(descriptor);
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
-    layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
 }
@@ -667,6 +666,10 @@ bool ConvertRank(const HalOperation& operation, const HalModel& model, Conversio
     }
 
     armnn::TensorInfo outInfo = GetTensorInfoForOperand(*outputOperand);
+    if (IsDynamicTensor(outInfo))
+    {
+        return Fail("%s: Dynamic output tensors are not supported", __func__);
+    }
 
     bool isSupported = false;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,

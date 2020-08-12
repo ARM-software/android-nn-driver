@@ -451,6 +451,8 @@ Return<V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::PrepareMemoryForOu
             return V1_3::ErrorStatus::GENERAL_FAILURE;
         }
 
+        const size_t outputSize = outputTensorInfo.GetNumBytes();
+
         unsigned int count = 0;
         std::for_each(outputArg.dimensions.begin(), outputArg.dimensions.end(), [&](auto dim)
         {
@@ -466,14 +468,13 @@ Return<V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::PrepareMemoryForOu
             count++;
         });
 
-        const size_t outputSize = outputTensorInfo.GetNumBytes();
-
         outputs.emplace_back(i, outputTensor);
         outputShapes[i] = ComputeShape(outputTensorInfo);
 
         if (outputArg.location.length < outputSize)
         {
-            ALOGW("ArmnnPreparedModel_1_3::Execute failed");
+            ALOGW("ArmnnPreparedModel_1_3::Execute failed outputArg.location.length (%s) < outputSize (%s)",
+                std::to_string(outputArg.location.length).c_str(), std::to_string(outputSize).c_str());
             outputShapes[i].isSufficient = false;
             return V1_3::ErrorStatus::OUTPUT_INSUFFICIENT_SIZE;
         }
@@ -481,7 +482,8 @@ Return<V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::PrepareMemoryForOu
         const size_t bufferSize = memPools.at(outputArg.location.poolIndex).getHidlMemory().size();
         if (bufferSize < outputSize)
         {
-            ALOGW("ArmnnPreparedModel_1_3::Execute failed");
+            ALOGW("ArmnnPreparedModel_1_3::Execute failed bufferSize (%s) < outputSize (%s)",
+                  std::to_string(bufferSize).c_str(), std::to_string(outputSize).c_str());
             outputShapes[i].isSufficient = false;
             return V1_3::ErrorStatus::OUTPUT_INSUFFICIENT_SIZE;
         }

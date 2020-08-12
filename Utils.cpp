@@ -577,6 +577,11 @@ bool IsDynamicTensor(const armnn::TensorInfo& tensorInfo)
     {
         return true;
     }
+    // Account for the usage of the TensorShape empty constructor
+    if (tensorInfo.GetNumDimensions() == 0)
+    {
+        return true;
+    }
     return !tensorInfo.GetShape().AreAllDimensionsSpecified();
 }
 

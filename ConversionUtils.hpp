@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -1395,12 +1395,30 @@ bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
 
     armnn::IOutputSlot& outputSlot = layer.GetOutputSlot(layerOutputIndex);
 
+    if (overrideOutputInfo == nullptr)
+    {
+        outputSlot.SetTensorInfo(GetTensorInfoForOperand(*outputOperand));
+    }
+    else
+    {
+        outputSlot.SetTensorInfo(*overrideOutputInfo);
+    }
+
+    // Type one dynamic tensors require the previous layer's output shape for inference
+    if (!layer.GetInputSlot(0).GetConnection() &&
+        IsDynamicTensor(outputSlot.GetTensorInfo()))
+    {
+        return false;
+    }
+
     bool isSupported = false;
     if (validateFunc &&
         layer.GetInputSlot(0).GetConnection() &&
         IsDynamicTensor(outputSlot.GetTensorInfo()))
     {
+        // IsTensorInfoSet will infer the dynamic output shape
         outputSlot.IsTensorInfoSet();
+        // Once the shape is inferred we can validate it
         validateFunc(outputSlot.GetTensorInfo(), isSupported);
 
        if(!isSupported)
@@ -1412,17 +1430,6 @@ bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
 
            return false;
        }
-    }
-    else
-    {
-        if (overrideOutputInfo == nullptr)
-        {
-            outputSlot.SetTensorInfo(GetTensorInfoForOperand(*outputOperand));
-        }
-        else
-        {
-            outputSlot.SetTensorInfo(*overrideOutputInfo);
-        }
     }
 
     const uint32_t operandIndex = operation.outputs[operationOutputIndex];
@@ -1810,19 +1817,28 @@ bool ConvertAdd(const HalOperation& operation, const HalModel& model, Conversion
     const armnn::TensorInfo& inputInfo1 = input1.GetTensorInfo();
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsAdditionSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo0,
-                               inputInfo1,
-                               outputInfo);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsAdditionSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo0,
+                                   inputInfo1,
+                                   outputInfo);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
     if (!isSupported)
     {
         return false;
@@ -1839,7 +1855,7 @@ bool ConvertAdd(const HalOperation& operation, const HalModel& model, Conversion
             return false;
         }
 
-        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
+        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
     }
     else
     {
@@ -1961,7 +1977,6 @@ bool ConvertConcatenation(const HalOperation& operation, const HalModel& model, 
     {
         return Fail("%s: Operation has no outputs", __func__);
     }
-
 
     armnn::TensorInfo  outputInfo  = GetTensorInfoForOperand(*outputOperand);
     armnn::TensorShape outputShape = outputInfo.GetShape();
@@ -2247,11 +2262,6 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
-
     // ArmNN does not currently support non-fixed weights or bias
     const ConstTensorPin weightsPin = ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 1, model, data);
     const ConstTensorPin biasPin    = ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 2, model, data);
@@ -2310,15 +2320,28 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
     armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsConvolution2dSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               outputInfo,
-                               desc,
-                               weights.GetInfo(),
-                               biases);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsConvolution2dSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputInfo,
+                                   desc,
+                                   weights.GetInfo(),
+                                   biases);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
     if (!isSupported)
     {
         return false;
@@ -2341,7 +2364,7 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
 
     input.Connect(startLayer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
 }
 
 template<typename HalPolicy,
@@ -2372,10 +2395,6 @@ bool ConvertDepthToSpace(const HalOperation& operation, const HalModel& model, C
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
 
     armnn::DepthToSpaceDescriptor descriptor;
 
@@ -2392,13 +2411,26 @@ bool ConvertDepthToSpace(const HalOperation& operation, const HalModel& model, C
     }
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsDepthToSpaceSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               outputInfo,
-                               descriptor);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsDepthToSpaceSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputInfo,
+                                   descriptor);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
     if (!isSupported)
     {
         return false;
@@ -2408,7 +2440,7 @@ bool ConvertDepthToSpace(const HalOperation& operation, const HalModel& model, C
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
 }
 
 template<typename HalPolicy,
@@ -2435,11 +2467,6 @@ bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model
 
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
 
     // ArmNN does not currently support non-fixed weights or bias
     // Find the shape of the weights tensor. In AndroidNN this will be [ 1, H, W, I * M ]
@@ -2524,15 +2551,29 @@ bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model
     armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsDepthwiseConvolutionSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               outputInfo,
-                               desc,
-                               weights.GetInfo(),
-                               biases);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsDepthwiseConvolutionSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputInfo,
+                                   desc,
+                                   weights.GetInfo(),
+                                   biases);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
+
     if (!isSupported)
     {
         return false;
@@ -2553,7 +2594,7 @@ bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model
 
     input.Connect(startLayer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
 }
 
 template<typename HalPolicy,
@@ -2583,18 +2624,27 @@ bool ConvertDequantize(const HalOperation& operation, const HalModel& model, Con
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsDequantizeSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               outputInfo);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsDequantizeSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputInfo);
+    };
+
+    if(IsDynamicTensor(outputInfo))
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+    else
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+
     if (!isSupported)
     {
         return false;
@@ -2604,7 +2654,7 @@ bool ConvertDequantize(const HalOperation& operation, const HalModel& model, Con
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
 }
 
 template<typename HalPolicy,
@@ -2637,19 +2687,28 @@ bool ConvertDiv(const HalOperation& operation, const HalModel& model, Conversion
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsDivisionSupported,
-                               data.m_Backends,
-                               isSupported,
-                               input0.GetTensorInfo(),
-                               input1.GetTensorInfo(),
-                               outputInfo);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsDivisionSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   input0.GetTensorInfo(),
+                                   input1.GetTensorInfo(),
+                                   outputInfo);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
     if (!isSupported)
     {
         return false;
@@ -2666,7 +2725,7 @@ bool ConvertDiv(const HalOperation& operation, const HalModel& model, Conversion
             return false;
         }
 
-        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
+        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
     }
     return Fail("%s: ProcessActivation failed", __func__);
 }
@@ -2691,18 +2750,27 @@ bool ConvertFloor(const HalOperation& operation, const HalModel& model, Conversi
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsFloorSupported,
-                               data.m_Backends,
-                               isSupported,
-                               input.GetTensorInfo(),
-                               outputInfo);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsFloorSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   input.GetTensorInfo(),
+                                   outputInfo);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
     if (!isSupported)
     {
         return false;
@@ -2712,7 +2780,7 @@ bool ConvertFloor(const HalOperation& operation, const HalModel& model, Conversi
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
 }
 
 inline bool IsQSymm8(const V1_0::Operand&)
@@ -2891,11 +2959,6 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
-
     ConstTensorPin weightsPin = DequantizeAndMakeConstTensorPin<HalPolicy>(operation, model, data, 1);
     ConstTensorPin biasPin    = ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 2, model, data); // 1D
 
@@ -2944,7 +3007,9 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
     }
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsFullyConnectedSupported,
                                data.m_Backends,
                                isSupported,
@@ -2953,6 +3018,17 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
                                weights.GetInfo(),
                                bias.GetInfo(),
                                desc);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
     if (!isSupported)
     {
         return false;
@@ -2980,7 +3056,7 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
             input.Connect(startLayer->GetInputSlot(0));
         }
 
-        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
+        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
     }
     else
     {
@@ -3015,10 +3091,6 @@ bool ConvertL2Normalization(const HalOperation& operation, const HalModel& model
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
     if (outputInfo.GetNumDimensions() != 4u)
     {
         return Fail("%s: Tensor Rank other than 4 is not supported", __func__);
@@ -3028,13 +3100,26 @@ bool ConvertL2Normalization(const HalOperation& operation, const HalModel& model
     desc.m_DataLayout = armnn::DataLayout::NHWC;
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsL2NormalizationSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               outputInfo,
-                               desc);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsL2NormalizationSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputInfo,
+                                   desc);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
     if (!isSupported)
     {
         return false;
@@ -3044,7 +3129,7 @@ bool ConvertL2Normalization(const HalOperation& operation, const HalModel& model
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
 }
 
 template<typename HalPolicy,
@@ -3077,10 +3162,6 @@ bool ConvertLocalResponseNormalization(const HalOperation& operation,
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
     if (outputInfo.GetNumDimensions() != 4u)
     {
         return Fail("%s: Tensor Rank other than 4 is not supported", __func__);
@@ -3105,13 +3186,26 @@ bool ConvertLocalResponseNormalization(const HalOperation& operation,
     descriptor.m_NormSize = 1 + (2 * descriptor.m_NormSize);
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsNormalizationSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               outputInfo,
-                               descriptor);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsNormalizationSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputInfo,
+                                   descriptor);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
     if (!isSupported)
     {
         return false;
@@ -3122,7 +3216,7 @@ bool ConvertLocalResponseNormalization(const HalOperation& operation,
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
 }
 
 template<typename HalPolicy,
@@ -3156,10 +3250,6 @@ bool ConvertMean(const HalOperation& operation, const HalModel& model, Conversio
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
 
     const HalOperand* axisOperand = GetInputOperand<HalPolicy>(operation, 1, model);
     if (!axisOperand)
@@ -3194,13 +3284,26 @@ bool ConvertMean(const HalOperation& operation, const HalModel& model, Conversio
     descriptor.m_KeepDims = keepDims > 0;
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsMeanSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               outputInfo,
-                               descriptor);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsMeanSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputInfo,
+                                   descriptor);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
     if (!isSupported)
     {
         return false;
@@ -3210,7 +3313,7 @@ bool ConvertMean(const HalOperation& operation, const HalModel& model, Conversio
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
 }
 
 template<typename HalPolicy,
@@ -3244,19 +3347,28 @@ bool ConvertMul(const HalOperation& operation, const HalModel& model, Conversion
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsMultiplicationSupported,
-                               data.m_Backends,
-                               isSupported,
-                               input0.GetTensorInfo(),
-                               input1.GetTensorInfo(),
-                               outputInfo);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsMultiplicationSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   input0.GetTensorInfo(),
+                                   input1.GetTensorInfo(),
+                                   outputInfo);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
     if (!isSupported)
     {
         return false;
@@ -3276,7 +3388,7 @@ bool ConvertMul(const HalOperation& operation, const HalModel& model, Conversion
             return false;
         }
 
-        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
+        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
     }
     else
     {
@@ -3323,19 +3435,28 @@ bool ConvertPad(HalOperation& operation, const HalModel& model, ConversionData& 
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsPadSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               outputInfo,
-                               descriptor);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsPadSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputInfo,
+                                   descriptor);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
     if (!isSupported)
     {
         return false;
@@ -3344,9 +3465,8 @@ bool ConvertPad(HalOperation& operation, const HalModel& model, ConversionData& 
     armnn::IConnectableLayer* const layer = data.m_Network->AddPadLayer(descriptor);
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
-    layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
 }
 
 template<typename HalPolicy,
@@ -3389,12 +3509,6 @@ bool ConvertReshape(const HalOperation& operation, const HalModel& model, Conver
         return Fail("%s: Failed to resolve the requested shape", __func__);
     }
 
-    const Shape outputOperandShape = GetOperandShape(*outputOperand);
-    if (!SameShape(requestedShape, outputOperandShape))
-    {
-        return Fail("%s: Shape of output operand does not match resolved requested shape", __func__);
-    }
-
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
     {
@@ -3405,14 +3519,29 @@ bool ConvertReshape(const HalOperation& operation, const HalModel& model, Conver
     reshapeDescriptor.m_TargetShape = armnn::TensorShape(requestedShape.dimensions.size(),
                                                          requestedShape.dimensions.data());
 
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
+
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsReshapeSupported,
-                               data.m_Backends,
-                               isSupported,
-                               input.GetTensorInfo(),
-                               GetTensorInfoForOperand(*outputOperand),
-                               reshapeDescriptor);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsReshapeSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   input.GetTensorInfo(),
+                                   outputInfo,
+                                   reshapeDescriptor);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
     if (!isSupported)
     {
         return false;
@@ -3422,7 +3551,7 @@ bool ConvertReshape(const HalOperation& operation, const HalModel& model, Conver
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
 }
 
 template<typename HalPolicy,
@@ -3455,19 +3584,28 @@ bool ConvertSub(const HalOperation& operation, const HalModel& model, Conversion
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsSubtractionSupported,
-                               data.m_Backends,
-                               isSupported,
-                               input0.GetTensorInfo(),
-                               input1.GetTensorInfo(),
-                               outputInfo);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsSubtractionSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   input0.GetTensorInfo(),
+                                   input1.GetTensorInfo(),
+                                   outputInfo);
+    };
+
+    if(IsDynamicTensor(outputInfo))
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+    else
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+
     if (!isSupported)
     {
         return false;
@@ -3486,7 +3624,7 @@ bool ConvertSub(const HalOperation& operation, const HalModel& model, Conversion
         {
             return false;
         }
-        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
+        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
     }
 
     return Fail("%s: ProcessActivation failed", __func__);
@@ -3517,7 +3655,6 @@ bool ConvertSqueeze(const HalOperation& operation, const HalModel& model, Conver
     {
         return Fail("%s: Could not read output 0", __func__);
     }
-
     if (IsDynamicTensor(GetTensorInfoForOperand(*output)))
     {
         return Fail("%s: Dynamic output tensors are not supported", __func__);
@@ -3567,6 +3704,7 @@ bool ConvertSqueeze(const HalOperation& operation, const HalModel& model, Conver
                                inputInfo,
                                outputInfo,
                                reshapeDesc);
+
     if (!isSupported)
     {
         return false;
@@ -3606,10 +3744,6 @@ bool ConvertStridedSlice(const HalOperation& operation, const HalModel& model, C
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
 
     const HalOperand* beginOperand   = GetInputOperand<HalPolicy>(operation, 1, model);
     const HalOperand* endOperand     = GetInputOperand<HalPolicy>(operation, 2, model);
@@ -3663,13 +3797,26 @@ bool ConvertStridedSlice(const HalOperation& operation, const HalModel& model, C
     }
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsStridedSliceSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               outputInfo,
-                               descriptor);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsStridedSliceSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputInfo,
+                                   descriptor);
+    };
+
+    if(IsDynamicTensor(outputInfo))
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+    else
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+
     if (!isSupported)
     {
         return false;
@@ -3704,7 +3851,7 @@ bool ConvertStridedSlice(const HalOperation& operation, const HalModel& model, C
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
 }
 
 template<typename HalPolicy,
@@ -3757,20 +3904,28 @@ bool ConvertTranspose(const HalOperation& operation, const HalModel& model, Conv
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
-
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsTransposeSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               outputInfo,
-                               transposeDesc);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsTransposeSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputInfo,
+                                   transposeDesc);
+        };
+
+    if(IsDynamicTensor(outputInfo))
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+    else
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+
     if (!isSupported)
     {
         return false;
@@ -3780,7 +3935,7 @@ bool ConvertTranspose(const HalOperation& operation, const HalModel& model, Conv
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
 }
 
 template<typename HalPolicy,
@@ -3805,10 +3960,6 @@ bool ConvertBatchToSpaceNd(const HalOperation& operation,
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
 
     const HalOperand* blockOperand = GetInputOperand<HalPolicy>(operation, 1, model);
     if (!blockOperand)
@@ -3849,13 +4000,27 @@ bool ConvertBatchToSpaceNd(const HalOperation& operation,
     batchToSpaceNdDesc.m_Crops = {{0, 0}, {0, 0}};
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsBatchToSpaceNdSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               outputInfo,
-                               batchToSpaceNdDesc);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsBatchToSpaceNdSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputInfo,
+                                   batchToSpaceNdDesc);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
+
     if (!isSupported)
     {
         return false;
@@ -3865,7 +4030,7 @@ bool ConvertBatchToSpaceNd(const HalOperation& operation,
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
 }
 
 template<typename HalPolicy,
@@ -3896,10 +4061,6 @@ bool ConvertSpaceToBatchNd(const HalOperation& operation, const HalModel& model,
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-    if (IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported", __func__);
-    }
 
     const HalOperand* blockShapeOperand = GetInputOperand<HalPolicy>(operation, 1, model);
     const HalOperand* paddingsOperand   = GetInputOperand<HalPolicy>(operation, 2, model);
@@ -3955,13 +4116,26 @@ bool ConvertSpaceToBatchNd(const HalOperation& operation, const HalModel& model,
     }
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsSpaceToBatchNdSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               outputInfo,
-                               descriptor);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsSpaceToBatchNdSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputInfo,
+                                   descriptor);
+    };
+
+    if(IsDynamicTensor(outputInfo))
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+    else
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+
     if (!isSupported)
     {
         return false;
@@ -3971,7 +4145,7 @@ bool ConvertSpaceToBatchNd(const HalOperation& operation, const HalModel& model,
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
 }
 
 } // namespace armnn_driver
