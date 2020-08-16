@@ -177,8 +177,11 @@ bool ConvertComparison_1_2(const HalOperation& operation,
         return false;
     }
 
-    input0.Connect(layer->GetInputSlot(0));
-    input1.Connect(layer->GetInputSlot(1));
+    if(IsDynamicTensor(outputInfo))
+    {
+        input0.Connect(layer->GetInputSlot(0));
+        input1.Connect(layer->GetInputSlot(1));
+    }
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
 }
