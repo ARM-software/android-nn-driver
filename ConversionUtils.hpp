@@ -1287,10 +1287,22 @@ LayerInputHandle ConvertToLayerInputHandle(const ::android::hardware::neuralnetw
     try
     {
         armnn::TensorInfo operandTensorInfo = GetTensorInfoForOperand(*operand);
+
         if (IsDynamicTensor(operandTensorInfo))
         {
-            Fail("%s: dynamic input tensors are not supported", __func__);
-            return LayerInputHandle();
+            const uint32_t operandIndex = operation.inputs[inputIndex];
+
+            // Check if the dynamic input tensors have been inferred by one of the previous layers
+            // If not we can't support them
+            if(data.m_OutputSlotForOperand.size() >= operandIndex && data.m_OutputSlotForOperand[operandIndex])
+            {
+                operandTensorInfo = data.m_OutputSlotForOperand[operandIndex]->GetTensorInfo();
+            }
+            else
+            {
+                Fail("%s: Type 2 dynamic input tensors are not supported", __func__);
+                return LayerInputHandle();
+            }
         }
 
         switch (operand->lifetime)
