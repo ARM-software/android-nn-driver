@@ -110,7 +110,7 @@ void ModelToINetworkConverter<HalPolicy>::Convert()
         Fail("%s: Failed to convert input operand to TensorShape: %s", __func__, e.what());
         m_ConversionResult = ConversionResult::UnsupportedFeature;
     }
-
+    bool UnsupportedDynamicOperation = false;
     for (uint32_t operationIdx = 0; operationIdx < getMainModel(m_Model).operations.size(); operationIdx++)
     {
         const auto& operation = getMainModel(m_Model).operations[operationIdx];
@@ -147,9 +147,33 @@ void ModelToINetworkConverter<HalPolicy>::Convert()
         // We still need to continue and check the other ones.
         if (!ok)
         {
+            if (m_Data.m_DynamicInputsEncountered)
+            {
+                Fail("%s: The unsupported operation at index %i has dynamic inputs.", __func__, operationIdx);
+                UnsupportedDynamicOperation = true;
+            }
+
             m_ConversionResult = ConversionResult::UnsupportedFeature;
         }
+        m_Data.m_DynamicInputsEncountered = false;
     }
+
+    // Due to the NNAPI partitioner not supporting partition boundaries of unknown size,
+    // any operations who's outputs connect to an unsupported operation with with dynamic inputs
+    // will cause a failure.
+
+    // The simplest solution to this problem is to not support any operations in a model containing
+    // an unsupported operation with with dynamic inputs.
+    if (UnsupportedDynamicOperation)
+    {
+        Fail("%s: Unsupported operation with dynamic inputs found. Retroactively setting all operations to unsupported",
+             __func__);
+        for (auto& operation : m_OperationSupported)
+        {
+            operation.second = false;
+        }
+    }
+
     try
     {
         if (m_ConversionResult == ConversionResult::Success)

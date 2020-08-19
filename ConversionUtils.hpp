@@ -44,12 +44,14 @@ struct ConversionData
     ConversionData(const std::vector<armnn::BackendId>& backends)
     : m_Backends(backends)
     , m_Network(nullptr, nullptr)
+    , m_DynamicInputsEncountered(false)
     {}
 
     const std::vector<armnn::BackendId>       m_Backends;
     armnn::INetworkPtr                        m_Network;
     std::vector<armnn::IOutputSlot*>          m_OutputSlotForOperand;
     std::vector<android::nn::RunTimePoolInfo> m_MemPools;
+    bool m_DynamicInputsEncountered;
 };
 
 class LayerInputHandle
@@ -1290,11 +1292,13 @@ LayerInputHandle ConvertToLayerInputHandle(const ::android::hardware::neuralnetw
 
         if (IsDynamicTensor(operandTensorInfo))
         {
+            data.m_DynamicInputsEncountered = true;
+
             const uint32_t operandIndex = operation.inputs[inputIndex];
 
             // Check if the dynamic input tensors have been inferred by one of the previous layers
             // If not we can't support them
-            if(data.m_OutputSlotForOperand.size() >= operandIndex && data.m_OutputSlotForOperand[operandIndex])
+            if (data.m_OutputSlotForOperand.size() >= operandIndex && data.m_OutputSlotForOperand[operandIndex])
             {
                 operandTensorInfo = data.m_OutputSlotForOperand[operandIndex]->GetTensorInfo();
             }
