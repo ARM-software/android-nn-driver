@@ -3872,6 +3872,7 @@ template<typename HalPolicy,
 bool ConvertTranspose(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
     using HalOperand = typename HalPolicy::Operand;
+    using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
 
     LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     if (!input.IsValid())
@@ -3891,9 +3892,8 @@ bool ConvertTranspose(const HalOperation& operation, const HalModel& model, Conv
     const HalOperand* permOperand = GetInputOperand<HalPolicy>(operation, 1, model, false);
 
     std::vector<int32_t> perm(rank);
-    if (!permOperand)
+    if (!permOperand || (permOperand->lifetime == HalOperandLifeTime::NO_VALUE))
     {
-        // NOTE: If perm is not given, it is set to (n-1...0), where n is the rank of the tensor
         for (unsigned int i = rank; i > 0; i--)
         {
             perm[rank - i] = boost::numeric_cast<int> (i - 1);
