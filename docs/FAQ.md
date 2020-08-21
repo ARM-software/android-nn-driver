@@ -25,7 +25,7 @@ Some users have encountered difficulties when attempting to build copies of the 
 'error: vendor/arm/android-nn-driver/Android.bp:892:1: module "libboost_program_options" variant "android_arm_variant": module source path "vendor/arm/android-nn-driver/boost_1_64_0" does not exist'
 'error: vendor/arm/android-nn-driver/Android.bp:45:1: variant "android_arm64_armv7": module "armnn-arm_compute" "module source path "vendor/arm/android-nn-driver/clframework/build/android-arm64v8a/src/core/CL" does not exist'
 
-These errors are due to missing dependencies or incompatiblities between the android-nn-driver and armnn or clframework versions. The android-nn-driver requires boost_1_40_0 to build. The versions of android-nn-driver, armnn and clframework will have to match for them to work together. For example, the 19.08 version of android-nn-driver, clframework and armnn will work together but none of them will work with earlier or later versions of the others. 
+These errors are due to missing dependencies or incompatiblities between the android-nn-driver and armnn or clframework versions. The android-nn-driver requires boost_1_64_0 to build. The versions of android-nn-driver, armnn and clframework will have to match for them to work together. For example, the 19.08 version of android-nn-driver, clframework and armnn will work together but none of them will work with earlier or later versions of the others. 
 
 In order to ensure that the correct versions of boost, armnn and the clframework are obtained you can do the following:
 
