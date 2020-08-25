@@ -34,7 +34,7 @@ In order to ensure that the correct versions of boost, armnn and the clframework
 
 This will download the correct versions of boost, armnn and the clframework and the android-nn-driver should build correctly. Alternatively you can go to the GitHub pages for android-nn-driver, armnn and computelibrary (clframework) and download versions with the same release tag. 
 
-For 20.05 these would be:
+As an example, for 20.05 these would be:
 
 https://github.com/ARM-software/android-nn-driver/tree/v20.05
 https://github.com/ARM-software/armnn/tree/v20.05
