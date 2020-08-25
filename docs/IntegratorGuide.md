@@ -5,9 +5,11 @@ This document describes how to integrate the Arm NN Android NNAPI driver into an
 
 ### Prerequisites
 
-1. Android source tree for Android P FSK-R3 or later, in the directory `<ANDROID_ROOT>`
-2. Android source tree for Android Q FSK-2 or later, in the directory `<ANDROID_ROOT>`
+1. Android source tree for Android P (we have tested against Android P version 9.0.0_r3) , in the directory `<ANDROID_ROOT>`
+2. Android source tree for Android Q (we have tested against Android Q version 10.0.0_r39), in the directory `<ANDROID_ROOT>`
 3. Mali OpenCL driver integrated into the Android source tree
+
+Note: Arm NN Android NNAPI driver also supports pre-release version of Android R.
 
 ### Procedure
 
@@ -85,9 +87,15 @@ Android Q and later has a different path:
 ### Testing
 
 1. Run the ArmNN driver service executable in the background.
-The following examples assume that the 1.0 version of the driver is being used:
+Use the corresponding version of the driver for the Android version you are running.
+i.e
+android.hardware.neuralnetworks@1.1-service-armnn for Android P,
+android.hardware.neuralnetworks@1.2-service-armnn for Android Q and
+android.hardware.neuralnetworks@1.3-service-armnn for Android R
 <pre>
-adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.0-service-armnn &
+It is also possible to use a specific backend by using the -c option.
+The following is an example of using the CpuAcc backend for Android Q:
+adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.2-service-armnn -c CpuAcc &
 </pre>
 2. Run some code that exercises the Android Neural Networks API, for example Android's
 `NeuralNetworksTest` unit tests (note this is an optional component that must be built).
