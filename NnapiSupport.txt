@@ -83,5 +83,3 @@ NOTE: By convention, only those tensor types have been listed above, which are f
 ArmNN backends.
     - FLOAT16 input tensors are partially supported on most HAL 1.2 operators on the GpuAcc and
     CpuRef backends, however not on CpuAcc.
-    - QUANT8_ASYMM_SIGNED has been added to the list in spite of not being supported in GpuAcc,
-    as this data type was added as part of HAL 1.3, which is currently not supported by GpuAcc.
