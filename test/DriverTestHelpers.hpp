@@ -385,7 +385,8 @@ void AddOutputOperand(armnn_driver::hal_1_3::HalPolicy::Model& model,
 
 android::sp<V1_3::IPreparedModel> PrepareModelWithStatus_1_3(const armnn_driver::hal_1_3::HalPolicy::Model& model,
                                                             armnn_driver::ArmnnDriver& driver,
-                                                            V1_3::ErrorStatus& prepareStatus);
+                                                            V1_3::ErrorStatus& prepareStatus,
+                                                            V1_3::Priority priority = V1_3::Priority::LOW);
 
 template<typename HalModel>
 android::sp<V1_3::IPreparedModel> PrepareModel_1_3(const HalModel& model,

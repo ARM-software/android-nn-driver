@@ -198,7 +198,8 @@ android::sp<V1_2::IPreparedModel> PrepareModelWithStatus_1_2(const armnn_driver:
 
 android::sp<V1_3::IPreparedModel> PrepareModelWithStatus_1_3(const armnn_driver::hal_1_3::HalPolicy::Model& model,
                                                              armnn_driver::ArmnnDriver& driver,
-                                                             V1_3::ErrorStatus& prepareStatus)
+                                                             V1_3::ErrorStatus& prepareStatus,
+                                                             V1_3::Priority priority)
 {
     android::sp<PreparedModelCallback_1_3> cb(new PreparedModelCallback_1_3());
 
@@ -208,7 +209,7 @@ android::sp<V1_3::IPreparedModel> PrepareModelWithStatus_1_3(const armnn_driver:
 
     driver.prepareModel_1_3(model,
                             V1_1::ExecutionPreference::LOW_POWER,
-                            V1_3::Priority::LOW,
+                            priority,
                             {},
                             emptyHandle1,
                             emptyHandle2,

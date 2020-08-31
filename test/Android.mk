@@ -379,6 +379,7 @@ LOCAL_SRC_FILES := \
         1.1/Lstm.cpp \
         1.2/Lstm.cpp \
         1.3/QLstm.cpp \
+        1.3/QosTests.cpp \
         Tests.cpp \
         UtilsTests.cpp \
         Concurrent.cpp \
