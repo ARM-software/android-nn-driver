@@ -3671,7 +3671,8 @@ bool ConvertSqueeze(const HalOperation& operation, const HalModel& model, Conver
     {
         return Fail("%s: Could not read output 0", __func__);
     }
-    if (IsDynamicTensor(GetTensorInfoForOperand(*output)))
+
+    if (IsDynamicTensor(GetTensorInfoForOperand(*output)) && !(AreDynamicTensorsSupported()))
     {
         return Fail("%s: Dynamic output tensors are not supported", __func__);
     }
