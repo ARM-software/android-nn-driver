@@ -2522,36 +2522,6 @@ bool ConvertLstm(const HalOperation& operation, const HalModel& model, Conversio
     const TensorInfo& cellStateOutInfo   = GetTensorInfoForOperand(*cellStateOut);
     const TensorInfo& outputInfo         = GetTensorInfoForOperand(*output);
 
-    // Check if the scratch buffer shape was initialized,
-    // In some cases the shape could be (0,0) which requires the driver
-    // to infer the shape and set it up accordingly.
-    // The code below does that.
-    TensorInfo fixSbInfo = scratchBufferInfo;
-    if (IsDynamicTensor(scratchBufferInfo))
-    {
-        auto & s = fixSbInfo.GetShape();
-        s[0] = outputStateInInfo.GetShape()[0];
-        if (desc.m_CifgEnabled)
-        {
-            // 2D tensor with dimensions [num_units * 3, batch_size] with CIFG
-            s[1] = cellStateOutInfo.GetShape()[1]*3;
-        }
-        else
-        {
-            // scratch_buffer [num_units * 4, batch_size] without CIFG
-            s[1] = cellStateOutInfo.GetShape()[1]*4;
-        }
-    }
-
-    if (IsDynamicTensor(outputStateOutInfo) ||
-        IsDynamicTensor(cellStateOutInfo)   ||
-        IsDynamicTensor(outputInfo))
-    {
-        return Fail("%s: Dynamic output tensors are not supported %d %d %d %d", __func__,
-                    IsDynamicTensor(scratchBufferInfo), IsDynamicTensor(outputStateOutInfo),
-                    IsDynamicTensor(cellStateOutInfo), IsDynamicTensor(outputInfo));
-    }
-
     // Basic parameters
     LstmInputParamsInfo paramsInfo;
     paramsInfo.m_InputToForgetWeights     = &(params.m_InputToForgetWeights->GetInfo());
@@ -2603,20 +2573,36 @@ bool ConvertLstm(const HalOperation& operation, const HalModel& model, Conversio
     }
 
     bool isSupported = false;
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsLstmSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputStateInInfo,
+                                   cellStateInInfo,
+                                   scratchBufferInfo,
+                                   outputStateOutInfo,
+                                   cellStateOutInfo,
+                                   outputInfo,
+                                   desc,
+                                   paramsInfo);
+    };
 
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsLstmSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               outputStateInInfo,
-                               cellStateInInfo,
-                               fixSbInfo,
-                               outputStateOutInfo,
-                               cellStateOutInfo,
-                               outputInfo,
-                               desc,
-                               paramsInfo);
+    bool isDynamic = false;
+    if (!IsDynamicTensor(outputStateOutInfo) &&
+        !IsDynamicTensor(scratchBufferInfo)  &&
+        !IsDynamicTensor(cellStateOutInfo)   &&
+        !IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isDynamic = true;
+        isSupported = AreDynamicTensorsSupported();
+    }
 
     if (!isSupported)
     {
@@ -2630,15 +2616,24 @@ bool ConvertLstm(const HalOperation& operation, const HalModel& model, Conversio
     outputStateIn.Connect(layer->GetInputSlot(1));
     cellStateIn.Connect(layer->GetInputSlot(2));
 
-    return (
-        (IsDynamicTensor(scratchBufferInfo)?
-         SetupAndTrackLayerOutputSlotAndOverrideTensorInfo<HalPolicy>(
-             operation, 0, *layer, 0, model, data,fixSbInfo):
-         SetupAndTrackLayerOutputSlot<HalPolicy>(
-             operation, 0, *layer, 0, model, data)) &&
-        SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 1, *layer, 1, model, data) &&
-        SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 2, *layer, 2, model, data) &&
-        SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 3, *layer, 3, model, data));
+    if (!isDynamic)
+    {
+        return (
+             SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, 0, model, data) &&
+             SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 1, *layer, 1, model, data) &&
+             SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 2, *layer, 2, model, data) &&
+             SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 3, *layer, 3, model, data));
+    }
+    else
+    {
+        return (
+             SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, 0, model, data) &&
+             SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 1, *layer, 1, model, data) &&
+             SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 2, *layer, 2, model, data) &&
+             SetupAndTrackLayerOutputSlot<HalPolicy>(
+                 operation, 3, *layer, 3, model, data, nullptr, validateFunc, true));
+    }
+
 }
 
 template<typename HalPolicy,
