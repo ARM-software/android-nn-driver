@@ -1879,16 +1879,31 @@ bool ConvertQuantized16BitLstm(const HalOperation& operation, const HalModel& mo
     paramsInfo.m_OutputGateBias           = &(params.m_OutputGateBias->GetInfo());
 
     bool isSupported = false;
-    FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                               IsQuantizedLstmSupported,
-                               data.m_Backends,
-                               isSupported,
-                               inputInfo,
-                               previousCellStateInInfo,
-                               previousOutputInInfo,
-                               cellStateOutInfo,
-                               outputInfo,
-                               paramsInfo);
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsQuantizedLstmSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   previousCellStateInInfo,
+                                   previousOutputInInfo,
+                                   cellStateOutInfo,
+                                   outputInfo,
+                                   paramsInfo);
+    };
+
+    bool isDynamic = false;
+    if (!IsDynamicTensor(cellStateOutInfo) &&
+        !IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isDynamic = true;
+        isSupported = AreDynamicTensorsSupported();
+    }
 
     if (!isSupported)
     {
@@ -1900,8 +1915,18 @@ bool ConvertQuantized16BitLstm(const HalOperation& operation, const HalModel& mo
     previousCellStateIn.Connect(layer->GetInputSlot(1));
     previousOutputIn.Connect(layer->GetInputSlot(2));
 
-    return (SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, 0, model, data) &&
-            SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 1, *layer, 1, model, data));
+    if (!isDynamic)
+    {
+        return (SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, 0, model, data) &&
+                SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 1, *layer, 1, model, data));
+    }
+    else
+    {
+        return (SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, 0, model, data) &&
+                SetupAndTrackLayerOutputSlot<HalPolicy>(
+                    operation, 1, *layer, 1, model, data, nullptr, validateFunc, true));
+    }
+
 }
 
 template<typename HalPolicy,
