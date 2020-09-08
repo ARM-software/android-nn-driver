@@ -341,16 +341,10 @@ bool ConvertConv2d_1_2(const HalOperation& operation, const HalModel& model, Con
         return Fail("%s: AddConvolution2dLayer failed", __func__);
     }
 
-    IConnectableLayer* endLayer = ProcessActivation(outputInfo, activation, startLayer, data);
-
-    if (!endLayer)
-    {
-        return Fail("%s: ProcessActivation failed", __func__);
-    }
-
     input.Connect(startLayer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
+                                                   data, nullptr, validateFunc, activation);
 }
 
 template<typename HalPolicy,
@@ -527,15 +521,10 @@ bool ConvertDepthwiseConv2d_1_2(const HalOperation& operation, const HalModel& m
         return Fail("%s: AddDepthwiseConvolution2dLayer failed", __func__);
     }
 
-    IConnectableLayer* endLayer = ProcessActivation(outputInfo, activation, startLayer, data);
-    if (!endLayer)
-    {
-        return Fail("%s: ProcessActivation failed", __func__);
-    }
-
     input.Connect(startLayer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
+                                                   data, nullptr, validateFunc, activation);
 }
 
 template<typename HalPolicy,
@@ -1124,16 +1113,8 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
     }
     concatLayer->GetOutputSlot(0).SetTensorInfo(outputInfo);
 
-    //
-    // Set up Activation layer (if it is set)
-    //
-    IConnectableLayer* endLayer = ProcessActivation(outputInfo, activation, concatLayer, data);
-    if (!endLayer)
-    {
-        return Fail("%s: ProcessActivation failed", __func__);
-    }
-
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *concatLayer, model,
+                                                   data, nullptr, validateFunc, activation);
 }
 
 template<typename HalPolicy,
@@ -1924,7 +1905,7 @@ bool ConvertQuantized16BitLstm(const HalOperation& operation, const HalModel& mo
     {
         return (SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, 0, model, data) &&
                 SetupAndTrackLayerOutputSlot<HalPolicy>(
-                    operation, 1, *layer, 1, model, data, nullptr, validateFunc, true));
+                    operation, 1, *layer, 1, model, data, nullptr, validateFunc, ActivationFn::kActivationNone, true));
     }
 
 }
@@ -2656,7 +2637,7 @@ bool ConvertLstm(const HalOperation& operation, const HalModel& model, Conversio
              SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 1, *layer, 1, model, data) &&
              SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 2, *layer, 2, model, data) &&
              SetupAndTrackLayerOutputSlot<HalPolicy>(
-                 operation, 3, *layer, 3, model, data, nullptr, validateFunc, true));
+                 operation, 3, *layer, 3, model, data, nullptr, validateFunc, ActivationFn::kActivationNone, true));
     }
 
 }
@@ -2851,15 +2832,10 @@ bool ConvertTransposeConv2d(const HalOperation& operation, const HalModel& model
         return Fail("%s: AddTransposeConvolution2dLayer failed", __func__);
     }
 
-    IConnectableLayer* endLayer = ProcessActivation(outputInfo, activation, startLayer, data);
-    if (!endLayer)
-    {
-        return Fail("%s: ProcessActivation failed", __func__);
-    }
-
     input.Connect(startLayer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
+                                                   data, nullptr, validateFunc, activation);
 }
 
 } // armnn_driver namespace

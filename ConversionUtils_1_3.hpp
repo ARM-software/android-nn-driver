@@ -654,7 +654,8 @@ bool ConvertQuantizedLstm(const HalOperation& operation, const HalModel& model, 
         return ( SetupAndTrackLayerOutputSlot<HalPolicy>(
                        operation, 0, *layer, 0, model, data, &constOutputStateOutInfo) &&
                  SetupAndTrackLayerOutputSlot<HalPolicy>(
-                       operation, 1, *layer, 1, model, data, nullptr, validateFunc, true) &&
+                       operation, 1, *layer, 1, model, data, nullptr, validateFunc,
+                       ActivationFn::kActivationNone, true) &&
                  SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 2, *layer, 2, model, data, &constOutputInfo));
     }
 }

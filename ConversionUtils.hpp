@@ -1400,6 +1400,7 @@ bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
                                   ConversionData& data,
                                   const armnn::TensorInfo* overrideOutputInfo = nullptr,
                                   const std::function <void (const armnn::TensorInfo&, bool&)>& validateFunc = nullptr,
+                                  const ActivationFn& activationFunction = ActivationFn::kActivationNone,
                                   bool inferOutputShapes = false)
 {
     using HalOperand = typename HalPolicy::Operand;
@@ -1447,7 +1448,25 @@ bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
     }
 
     const uint32_t operandIndex = operation.outputs[operationOutputIndex];
-    data.m_OutputSlotForOperand[operandIndex] = &outputSlot;
+
+    if (activationFunction != ActivationFn::kActivationNone)
+    {
+        const armnn::TensorInfo& activationOutputInfo = outputSlot.GetTensorInfo();
+        armnn::IConnectableLayer* const endLayer = ProcessActivation(activationOutputInfo, activationFunction,
+                                                                     &layer, data);
+
+        if (!endLayer)
+        {
+            return Fail("%s: ProcessActivation failed", __func__);
+        }
+
+        armnn::IOutputSlot& activationOutputSlot = endLayer->GetOutputSlot(layerOutputIndex);
+        data.m_OutputSlotForOperand[operandIndex] = &activationOutputSlot;
+    }
+    else
+    {
+        data.m_OutputSlotForOperand[operandIndex] = &outputSlot;
+    }
 
     return true;
 }
@@ -1498,7 +1517,8 @@ bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
                                   const HalModel& model,
                                   ConversionData& data,
                                   const armnn::TensorInfo* overrideOutputInfo = nullptr,
-                                  const std::function <void (const armnn::TensorInfo&, bool&)>& validateFunc = nullptr)
+                                  const std::function <void (const armnn::TensorInfo&, bool&)>& validateFunc = nullptr,
+                                  const ActivationFn& activationFunction = ActivationFn::kActivationNone)
 {
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation,
                                                    outputIndex,
@@ -1507,7 +1527,8 @@ bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
                                                    model,
                                                    data,
                                                    overrideOutputInfo,
-                                                   validateFunc);
+                                                   validateFunc,
+                                                   activationFunction);
 }
 
 template<typename HalPolicy,
@@ -1782,12 +1803,6 @@ bool ConvertPooling2d(const HalOperation& operation,
         return Fail("%s: AddPooling2dLayer failed", __func__);
     }
 
-    armnn::IConnectableLayer* endLayer = ProcessActivation(outputInfo, activation, pooling2dLayer, data);
-    if (!endLayer)
-    {
-        return Fail("%s: ProcessActivation failed", __func__);
-    }
-
     input.Connect(pooling2dLayer->GetInputSlot(0));
 
     if (!isSupported)
@@ -1795,7 +1810,8 @@ bool ConvertPooling2d(const HalOperation& operation,
         return false;
     }
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *pooling2dLayer, model,
+                                                   data, nullptr, validateFunc, activation);
 }
 
 template<typename HalPolicy,
@@ -1859,22 +1875,16 @@ bool ConvertAdd(const HalOperation& operation, const HalModel& model, Conversion
     }
 
     armnn::IConnectableLayer* const startLayer = data.m_Network->AddAdditionLayer();
-    armnn::IConnectableLayer* const endLayer   = ProcessActivation(outputInfo, activationFunction, startLayer, data);
 
-    if (endLayer != nullptr)
+    bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
+    if (!isReshapeSupported)
     {
-        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
-        if (!isReshapeSupported)
-        {
-            return false;
-        }
+        return false;
+    }
 
-        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
-    }
-    else
-    {
-        return Fail("%s: ProcessActivation failed", __func__);
-    }
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
+                                                   data, nullptr, validateFunc, activationFunction);
+
 }
 
 template<typename HalPolicy,
@@ -2426,16 +2436,10 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
         return Fail("%s: AddConvolution2dLayer failed", __func__);
     }
 
-    armnn::IConnectableLayer* endLayer = ProcessActivation(outputInfo, activation, startLayer, data);
-
-    if (!endLayer)
-    {
-        return Fail("%s: ProcessActivation failed", __func__);
-    }
-
     input.Connect(startLayer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
+                                                   data, nullptr, validateFunc, activation);
 }
 
 template<typename HalPolicy,
@@ -2657,15 +2661,10 @@ bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model
         return Fail("%s: AddDepthwiseConvolution2dLayer failed", __func__);
     }
 
-    armnn::IConnectableLayer* endLayer = ProcessActivation(outputInfo, activation, startLayer, data);
-    if (!endLayer)
-    {
-        return Fail("%s: ProcessActivation failed", __func__);
-    }
-
     input.Connect(startLayer->GetInputSlot(0));
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
+                                                   data, nullptr, validateFunc, activation);
 }
 
 template<typename HalPolicy,
@@ -2786,19 +2785,16 @@ bool ConvertDiv(const HalOperation& operation, const HalModel& model, Conversion
     }
 
     armnn::IConnectableLayer* const startLayer = data.m_Network->AddDivisionLayer();
-    armnn::IConnectableLayer* const endLayer   = ProcessActivation(outputInfo, activationFunction, startLayer, data);
 
-    if (endLayer)
+    bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
+    if (!isReshapeSupported)
     {
-        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
-        if (!isReshapeSupported)
-        {
-            return false;
-        }
-
-        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
+        return false;
     }
-    return Fail("%s: ProcessActivation failed", __func__);
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
+                                                   data, nullptr, validateFunc, activationFunction);
+
 }
 
 template<typename HalPolicy,
@@ -3107,32 +3103,25 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
 
     armnn::IConnectableLayer* startLayer =
             data.m_Network->AddFullyConnectedLayer(desc, weights, armnn::Optional<armnn::ConstTensor>(bias));
-    armnn::IConnectableLayer* endLayer = ProcessActivation(outputInfo, activationFunction, startLayer, data);
 
-    if (endLayer != nullptr)
+    if (inputInfo.GetNumDimensions() > 2U)
     {
-        if (inputInfo.GetNumDimensions() > 2U)
-        {
-            armnn::ReshapeDescriptor reshapeDescriptor;
-            reshapeDescriptor.m_TargetShape = reshapedInfo.GetShape();
+        armnn::ReshapeDescriptor reshapeDescriptor;
+        reshapeDescriptor.m_TargetShape = reshapedInfo.GetShape();
 
-            armnn::IConnectableLayer* reshapeLayer = data.m_Network->AddReshapeLayer(reshapeDescriptor);
-            assert(reshapeLayer != nullptr);
-            input.Connect(reshapeLayer->GetInputSlot(0));
-            reshapeLayer->GetOutputSlot(0).SetTensorInfo(reshapedInfo);
-            reshapeLayer->GetOutputSlot(0).Connect(startLayer->GetInputSlot(0));
-        }
-        else
-        {
-            input.Connect(startLayer->GetInputSlot(0));
-        }
-
-        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
+        armnn::IConnectableLayer* reshapeLayer = data.m_Network->AddReshapeLayer(reshapeDescriptor);
+        assert(reshapeLayer != nullptr);
+        input.Connect(reshapeLayer->GetInputSlot(0));
+        reshapeLayer->GetOutputSlot(0).SetTensorInfo(reshapedInfo);
+        reshapeLayer->GetOutputSlot(0).Connect(startLayer->GetInputSlot(0));
     }
     else
     {
-        return Fail("%s: ProcessActivation failed", __func__);
+        input.Connect(startLayer->GetInputSlot(0));
     }
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
+                                                   data, nullptr, validateFunc, activationFunction);
 }
 
 template<typename HalPolicy,
@@ -3446,25 +3435,18 @@ bool ConvertMul(const HalOperation& operation, const HalModel& model, Conversion
     }
 
     armnn::IConnectableLayer* const startLayer = data.m_Network->AddMultiplicationLayer();
-    armnn::IConnectableLayer* const endLayer   = ProcessActivation(outputInfo, activationFunction, startLayer, data);
 
     const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
     const armnn::TensorInfo& inputTensorInfo1 = input1.GetTensorInfo();
 
-    if (endLayer != nullptr)
+    bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
+    if (!isReshapeSupported)
     {
-        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
-        if (!isReshapeSupported)
-        {
-            return false;
-        }
+        return false;
+    }
 
-        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
-    }
-    else
-    {
-        return Fail("%s: ProcessActivation failed", __func__);
-    }
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
+                                                   data, nullptr, validateFunc, activationFunction);
 }
 
 template<typename HalPolicy,
@@ -3683,22 +3665,17 @@ bool ConvertSub(const HalOperation& operation, const HalModel& model, Conversion
     }
 
     armnn::IConnectableLayer* const startLayer = data.m_Network->AddSubtractionLayer();
-    armnn::IConnectableLayer* const endLayer = ProcessActivation(outputInfo, activationFunction, startLayer, data);
 
     const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
     const armnn::TensorInfo& inputTensorInfo1 = input1.GetTensorInfo();
 
-    if (endLayer)
+    bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
+    if (!isReshapeSupported)
     {
-        bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
-        if (!isReshapeSupported)
-        {
-            return false;
-        }
-        return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *endLayer, model, data, nullptr, validateFunc);
+        return false;
     }
-
-    return Fail("%s: ProcessActivation failed", __func__);
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
+                                                   data, nullptr, validateFunc, activationFunction);
 }
 
 template<typename HalPolicy,
