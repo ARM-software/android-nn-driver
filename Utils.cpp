@@ -12,6 +12,8 @@
 
 #include <armnn/Utils.hpp>
 #include <armnn/utility/Assert.hpp>
+#include <Filesystem.hpp>
+#include <log/log.h>
 
 #include <cassert>
 #include <cerrno>
@@ -374,10 +376,11 @@ void DumpTensor(const std::string& dumpDir,
     const armnn::ConstTensor& tensor)
 {
     // The dump directory must exist in advance.
-    const std::string fileName = boost::str(boost::format("%1%/%2%_%3%.dump") % dumpDir % requestName % tensorName);
+    fs::path dumpPath = dumpDir;
+    const fs::path fileName = dumpPath / (requestName + "_" + tensorName + ".dump");
 
     std::ofstream fileStream;
-    fileStream.open(fileName, std::ofstream::out | std::ofstream::trunc);
+    fileStream.open(fileName.c_str(), std::ofstream::out | std::ofstream::trunc);
 
     if (!fileStream.good())
     {
@@ -512,14 +515,12 @@ void DumpJsonProfilingIfRequired(bool gpuProfilingEnabled,
     ARMNN_ASSERT(profiler);
 
     // Set the name of the output profiling file.
-    const std::string fileName = boost::str(boost::format("%1%/%2%_%3%.json")
-                                            % dumpDir
-                                            % std::to_string(networkId)
-                                            % "profiling");
+    fs::path dumpPath = dumpDir;
+    const fs::path fileName = dumpPath / (std::to_string(networkId) + "_profiling.json");
 
     // Open the ouput file for writing.
     std::ofstream fileStream;
-    fileStream.open(fileName, std::ofstream::out | std::ofstream::trunc);
+    fileStream.open(fileName.c_str(), std::ofstream::out | std::ofstream::trunc);
 
     if (!fileStream.good())
     {
@@ -548,9 +549,9 @@ std::string ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimize
     }
 
     // Set the name of the output .dot file.
-    fileName = boost::str(boost::format("%1%/%2%_networkgraph.dot")
-                          % dumpDir
-                          % timestamp);
+    fs::path dumpPath = dumpDir;
+    fs::path tempFilePath = dumpPath / (timestamp + "_networkgraph.dot");
+    fileName = tempFilePath.string();
 
     ALOGV("Exporting the optimized network graph to file: %s", fileName.c_str());
 
@@ -622,9 +623,9 @@ void RenameGraphDotFile(const std::string& oldName, const std::string& dumpDir, 
     {
         return;
     }
-    const std::string newFileName = boost::str(boost::format("%1%/%2%_networkgraph.dot")
-                                               % dumpDir
-                                               % std::to_string(networkId));
+    fs::path dumpPath = dumpDir;
+    const fs::path newFileName = dumpPath / (std::to_string(networkId) + "_networkgraph.dot");
+
     int iRet = rename(oldName.c_str(), newFileName.c_str());
     if (iRet != 0)
     {

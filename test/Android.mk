@@ -10,6 +10,8 @@ LOCAL_PATH := $(call my-dir)
 OPENCL_HEADER_PATH := $(LOCAL_PATH)/../../mali/product/khronos/original
 NN_HEADER_PATH := $(LOCAL_PATH)/../../../../frameworks/ml/nn/runtime/include
 ARMNN_HEADER_PATH := $(LOCAL_PATH)/../armnn/include
+ARMNN_THIRD_PARTY_PATH   := $(LOCAL_PATH)/../armnn/third-party
+ARMNN_UTILS_HEADER_PATH := $(LOCAL_PATH)/../armnn/src/armnnUtils
 ARMNN_DRIVER_HEADER_PATH := $(LOCAL_PATH)/..
 
 ##########################
@@ -33,6 +35,8 @@ LOCAL_C_INCLUDES := \
         $(OPENCL_HEADER_PATH) \
         $(NN_HEADER_PATH) \
         $(ARMNN_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
+        $(ARMNN_UTILS_HEADER_PATH) \
         $(ARMNN_DRIVER_HEADER_PATH)
 
 LOCAL_CFLAGS := \
@@ -145,6 +149,8 @@ LOCAL_C_INCLUDES := \
         $(OPENCL_HEADER_PATH) \
         $(NN_HEADER_PATH) \
         $(ARMNN_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
+        $(ARMNN_UTILS_HEADER_PATH) \
         $(ARMNN_DRIVER_HEADER_PATH)
 
 LOCAL_CFLAGS := \
@@ -253,6 +259,8 @@ LOCAL_C_INCLUDES := \
         $(OPENCL_HEADER_PATH) \
         $(NN_HEADER_PATH) \
         $(ARMNN_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
+        $(ARMNN_UTILS_HEADER_PATH) \
         $(ARMNN_DRIVER_HEADER_PATH)
 
 LOCAL_CFLAGS := \
@@ -356,6 +364,8 @@ LOCAL_C_INCLUDES := \
         $(OPENCL_HEADER_PATH) \
         $(NN_HEADER_PATH) \
         $(ARMNN_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
+        $(ARMNN_UTILS_HEADER_PATH) \
         $(ARMNN_DRIVER_HEADER_PATH)
 
 LOCAL_CFLAGS := \

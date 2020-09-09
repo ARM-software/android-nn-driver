@@ -49,6 +49,7 @@ endif
 
 # Configure these paths if you move the source or Khronos headers
 ARMNN_HEADER_PATH := $(LOCAL_PATH)/armnn/include
+ARMNN_THIRD_PARTY_PATH := $(LOCAL_PATH)/armnn/third-party
 ARMNN_UTILS_HEADER_PATH := $(LOCAL_PATH)/armnn/src/armnnUtils
 OPENCL_HEADER_PATH := $(LOCAL_PATH)/clframework/include
 NN_HEADER_PATH := $(LOCAL_PATH)/../../../frameworks/ml/nn/runtime/include
@@ -104,6 +105,7 @@ LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
 LOCAL_C_INCLUDES := \
         $(ARMNN_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
         $(ARMNN_UTILS_HEADER_PATH) \
         $(OPENCL_HEADER_PATH) \
         $(NN_HEADER_PATH)
@@ -236,6 +238,7 @@ LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
 LOCAL_C_INCLUDES := \
         $(ARMNN_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
         $(ARMNN_UTILS_HEADER_PATH) \
         $(OPENCL_HEADER_PATH) \
         $(NN_HEADER_PATH)
@@ -361,6 +364,7 @@ LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
 LOCAL_C_INCLUDES := \
         $(ARMNN_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
         $(ARMNN_UTILS_HEADER_PATH) \
         $(OPENCL_HEADER_PATH) \
         $(NN_HEADER_PATH)
@@ -481,6 +485,7 @@ LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
 LOCAL_C_INCLUDES := \
         $(ARMNN_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
         $(ARMNN_UTILS_HEADER_PATH) \
         $(OPENCL_HEADER_PATH) \
         $(NN_HEADER_PATH)
@@ -603,6 +608,7 @@ LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
 LOCAL_C_INCLUDES := \
         $(ARMNN_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
         $(NN_HEADER_PATH)
 
 LOCAL_CFLAGS := \
@@ -707,6 +713,7 @@ LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
 LOCAL_C_INCLUDES := \
         $(ARMNN_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
         $(NN_HEADER_PATH)
 
 LOCAL_CFLAGS := \
@@ -803,6 +810,7 @@ LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
 LOCAL_C_INCLUDES := \
         $(ARMNN_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
         $(NN_HEADER_PATH)
 
 LOCAL_CFLAGS := \
@@ -891,6 +899,7 @@ LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
 LOCAL_C_INCLUDES := \
         $(ARMNN_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
         $(NN_HEADER_PATH)
 
 LOCAL_CFLAGS := \

@@ -11,8 +11,9 @@
 
 #include <fstream>
 #include <iomanip>
-#include <boost/format.hpp>
 #include <armnn/INetwork.hpp>
+
+#include <Filesystem.hpp>
 
 BOOST_AUTO_TEST_SUITE(UtilsTests)
 
@@ -42,9 +43,7 @@ public:
         // NOTE: the export now uses a time stamp to name the file so we
         //       can't predict ahead of time what the file name will be.
         std::string timestamp = "dummy";
-        m_FileName = boost::str(boost::format("%1%/%2%_networkgraph.dot")
-                                % m_RequestInputsAndOutputsDumpDir
-                                % timestamp);
+        m_FileName = m_RequestInputsAndOutputsDumpDir / (timestamp + "_networkgraph.dot");
     }
 
     // Teardown: delete the dump file regardless of the outcome of the tests.
@@ -96,8 +95,8 @@ public:
                            (std::istreambuf_iterator<char>()));
     }
 
-    std::string m_RequestInputsAndOutputsDumpDir;
-    std::string m_FileName;
+    fs::path m_RequestInputsAndOutputsDumpDir;
+    fs::path m_FileName;
 
 private:
     std::ifstream m_FileStream;

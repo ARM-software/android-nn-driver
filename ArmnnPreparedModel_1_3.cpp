@@ -14,7 +14,6 @@
 
 #include <Utils.h>
 #include <android/sync.h>
-#include <boost/format.hpp>
 #include <log/log.h>
 #include <OperationsUtils.h>
 #include <ExecutionBurstServer.h>
@@ -148,7 +147,7 @@ void ArmnnPreparedModel_1_3<HalVersion>::DumpTensorsIfRequired(char const* tenso
 {
     if (!m_RequestInputsAndOutputsDumpDir.empty())
     {
-        const std::string requestName = boost::str(boost::format("%1%_%2%.dump") % m_NetworkId % m_RequestCount);
+        const std::string requestName = std::to_string(m_NetworkId) + "_" + std::to_string(m_RequestCount) + ".dump";
         for (std::size_t i = 0u; i < tensorBindings.size(); ++i)
         {
             DumpTensor(m_RequestInputsAndOutputsDumpDir,

@@ -10,9 +10,6 @@
 #include <HalInterfaces.h>
 #include <NeuralNetworks.h>
 
-#include <boost/format.hpp>
-#include <log/log.h>
-
 #include <vector>
 #include <string>
 #include <fstream>

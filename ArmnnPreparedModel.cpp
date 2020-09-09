@@ -8,11 +8,9 @@
 #include "ArmnnPreparedModel.hpp"
 #include "Utils.hpp"
 
-#include <boost/format.hpp>
 #include <log/log.h>
 #include <OperationsUtils.h>
 #include <ValidateHal.h>
-
 
 #include <cassert>
 #include <cinttypes>
@@ -94,7 +92,7 @@ void ArmnnPreparedModel<HalVersion>::DumpTensorsIfRequired(char const* tensorNam
 {
     if (!m_RequestInputsAndOutputsDumpDir.empty())
     {
-        const std::string requestName = boost::str(boost::format("%1%_%2%.dump") % m_NetworkId % m_RequestCount);
+        const std::string requestName = std::to_string(m_NetworkId) + "_" + std::to_string(m_RequestCount) + ".dump";
         for (std::size_t i = 0u; i < tensorBindings.size(); ++i)
         {
             DumpTensor(m_RequestInputsAndOutputsDumpDir,

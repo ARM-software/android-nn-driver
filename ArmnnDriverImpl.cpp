@@ -20,6 +20,7 @@
 
 #include "ModelToINetworkConverter.hpp"
 #include "SystemPropertiesUtils.hpp"
+
 #include <ValidateHal.h>
 #include <log/log.h>
 
@@ -219,11 +220,11 @@ Return<void> ArmnnDriverImpl<HalPolicy>::getSupportedOperations(const armnn::IRu
     std::string timestamp;
     if (!options.GetRequestInputsAndOutputsDumpDir().empty())
     {
-        timestamp = GetFileTimestamp();
-        fileName = boost::str(boost::format("%1%/%2%_getSupportedOperations.txt")
-                          % options.GetRequestInputsAndOutputsDumpDir()
-                          % timestamp);
-        ss << " : " << fileName;
+        ss << " : "
+           << options.GetRequestInputsAndOutputsDumpDir()
+           << "/"
+           << GetFileTimestamp()
+           << "_getSupportedOperations.txt";
     }
     ALOGV(ss.str().c_str());
 
