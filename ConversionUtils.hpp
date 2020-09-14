@@ -12,6 +12,7 @@
 #include <armnn/BackendHelper.hpp>
 #include <armnn/utility/Assert.hpp>
 #include <armnn/utility/IgnoreUnused.hpp>
+#include <armnn/utility/NumericCast.hpp>
 
 #include <armnnUtils/DataLayoutIndexed.hpp>
 #include <armnnUtils/Transpose.hpp>
@@ -22,7 +23,6 @@
 #include <CpuExecutor.h>
 #include <OperationsUtils.h>
 
-#include <boost/numeric/conversion/cast.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
 #include <log/log.h>
@@ -308,8 +308,8 @@ bool BroadcastTensor(LayerInputHandle& input0,
     // to the "smaller" tensor using a reshape, while keeping the order of the inputs.
 
     unsigned int maxInputDimensions = std::max(inputDimensions0, inputDimensions1);
-    unsigned int sizeDifference = std::abs(boost::numeric_cast<int>(inputDimensions0) -
-                                           boost::numeric_cast<int>(inputDimensions1));
+    unsigned int sizeDifference = std::abs(armnn::numeric_cast<int>(inputDimensions0) -
+                                           armnn::numeric_cast<int>(inputDimensions1));
 
     bool input0IsSmaller = inputDimensions0 < inputDimensions1;
     LayerInputHandle& smallInputHandle = input0IsSmaller ? input0 : input1;
@@ -323,7 +323,7 @@ bool BroadcastTensor(LayerInputHandle& input0,
     }
 
     armnn::TensorInfo reshapedInfo = smallInfo;
-    reshapedInfo.SetShape(armnn::TensorShape{ boost::numeric_cast<unsigned int>(reshapedDimensions.size()),
+    reshapedInfo.SetShape(armnn::TensorShape{ armnn::numeric_cast<unsigned int>(reshapedDimensions.size()),
                                               reshapedDimensions.data() });
 
     // RehsapeDescriptor that is ignored in the IsReshapeSupported function
@@ -385,8 +385,8 @@ void CalcPadding(uint32_t input,
     int32_t padHead;
     int32_t padTail;
     calculateExplicitPadding(input, stride, kernel, scheme, &padHead, &padTail);
-    outPadHead = boost::numeric_cast<uint32_t>(padHead);
-    outPadTail = boost::numeric_cast<uint32_t>(padTail);
+    outPadHead = armnn::numeric_cast<uint32_t>(padHead);
+    outPadTail = armnn::numeric_cast<uint32_t>(padTail);
 }
 
 #if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)
@@ -397,8 +397,8 @@ void CalcPadding(uint32_t input, uint32_t kernel, uint32_t stride, uint32_t dila
     int32_t padHead;
     int32_t padTail;
     calculateExplicitPadding(input, stride, dilation, kernel, scheme, &padHead, &padTail);
-    outPadHead = boost::numeric_cast<uint32_t>(padHead);
-    outPadTail = boost::numeric_cast<uint32_t>(padTail);
+    outPadHead = armnn::numeric_cast<uint32_t>(padHead);
+    outPadTail = armnn::numeric_cast<uint32_t>(padTail);
 }
 
 void CalcPaddingTransposeConv(uint32_t output, uint32_t kernel, int32_t stride, int32_t& outPadHead,
@@ -3933,7 +3933,7 @@ bool ConvertTranspose(const HalOperation& operation, const HalModel& model, Conv
     {
         for (unsigned int i = rank; i > 0; i--)
         {
-            perm[rank - i] = boost::numeric_cast<int> (i - 1);
+            perm[rank - i] = armnn::numeric_cast<int> (i - 1);
         }
     }
     else if (!GetTensorInt32Values<HalPolicy>(*permOperand, perm, model, data))

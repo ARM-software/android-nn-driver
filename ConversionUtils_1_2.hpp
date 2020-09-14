@@ -8,6 +8,8 @@
 #include "Utils.hpp"
 
 #include "ConversionUtils.hpp"
+
+#include <armnn/utility/NumericCast.hpp>
 #include <armnnUtils/TensorUtils.hpp>
 
 #include <half/half.hpp>
@@ -2769,12 +2771,12 @@ bool ConvertTransposeConv2d(const HalOperation& operation, const HalModel& model
             desc.m_OutputShapeEnabled = true;
         }
 
-        desc.m_StrideX   = boost::numeric_cast<uint32_t>(strideX);
-        desc.m_StrideY   = boost::numeric_cast<uint32_t>(strideY);
-        desc.m_PadLeft   = boost::numeric_cast<uint32_t>(padLeft);
-        desc.m_PadRight  = boost::numeric_cast<uint32_t>(padRight);
-        desc.m_PadTop    = boost::numeric_cast<uint32_t>(padTop);
-        desc.m_PadBottom = boost::numeric_cast<uint32_t>(padBottom);
+        desc.m_StrideX   = armnn::numeric_cast<uint32_t>(strideX);
+        desc.m_StrideY   = armnn::numeric_cast<uint32_t>(strideY);
+        desc.m_PadLeft   = armnn::numeric_cast<uint32_t>(padLeft);
+        desc.m_PadRight  = armnn::numeric_cast<uint32_t>(padRight);
+        desc.m_PadTop    = armnn::numeric_cast<uint32_t>(padTop);
+        desc.m_PadBottom = armnn::numeric_cast<uint32_t>(padBottom);
     }
     else if (operation.inputs.size() == 11)
     {
