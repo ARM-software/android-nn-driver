@@ -35,6 +35,7 @@ DriverOptions::DriverOptions(armnn::Compute computeDevice, bool fp16Enabled)
     , m_ClTuningLevel(armnn::IGpuAccTunedParameters::TuningLevel::Rapid)
     , m_EnableGpuProfiling(false)
     , m_fp16Enabled(fp16Enabled)
+    , m_FastMathEnabled(false)
 {
 }
 
@@ -45,6 +46,7 @@ DriverOptions::DriverOptions(const std::vector<armnn::BackendId>& backends, bool
     , m_ClTuningLevel(armnn::IGpuAccTunedParameters::TuningLevel::Rapid)
     , m_EnableGpuProfiling(false)
     , m_fp16Enabled(fp16Enabled)
+    , m_FastMathEnabled(false)
 {
 }
 
@@ -54,6 +56,7 @@ DriverOptions::DriverOptions(int argc, char** argv)
     , m_ClTuningLevel(armnn::IGpuAccTunedParameters::TuningLevel::Rapid)
     , m_EnableGpuProfiling(false)
     , m_fp16Enabled(false)
+    , m_FastMathEnabled(false)
 {
     namespace po = boost::program_options;
 
@@ -103,6 +106,10 @@ DriverOptions::DriverOptions(int argc, char** argv)
          "normal: reduced number of lws values but enough to still have the performance really close to the "
          "exhaustive approach "
          "rapid: only 3 lws values should be tested for each kernel ")
+
+        ("fast-math,a",
+         po::bool_switch(&m_FastMathEnabled),
+         "Turns FastMath on")
 
         ("gpu-profiling,p",
          po::bool_switch(&m_EnableGpuProfiling),

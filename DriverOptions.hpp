@@ -31,6 +31,7 @@ public:
     armnn::IGpuAccTunedParameters::Mode GetClTunedParametersMode() const { return m_ClTunedParametersMode; }
     armnn::IGpuAccTunedParameters::TuningLevel GetClTuningLevel() const { return m_ClTuningLevel; }
     bool IsGpuProfilingEnabled() const { return m_EnableGpuProfiling; }
+    bool IsFastMathEnabled() const { return m_FastMathEnabled; }
     bool GetFp16Enabled() const { return m_fp16Enabled; }
     void SetBackends(const std::vector<armnn::BackendId>& backends) { m_Backends = backends; }
 
@@ -45,6 +46,7 @@ private:
     armnn::IGpuAccTunedParameters::TuningLevel m_ClTuningLevel;
     bool m_EnableGpuProfiling;
     bool m_fp16Enabled;
+    bool m_FastMathEnabled;
 };
 
 } // namespace armnn_driver

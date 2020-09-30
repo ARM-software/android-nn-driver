@@ -130,6 +130,17 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(
     armnn::OptimizerOptions OptOptions;
     OptOptions.m_ReduceFp32ToFp16 = float32ToFloat16;
 
+    armnn::BackendOptions gpuAcc("GpuAcc",
+    {
+        { "FastMathEnabled", options.IsFastMathEnabled() }
+    });
+    armnn::BackendOptions cpuAcc("CpuAcc",
+    {
+        { "FastMathEnabled", options.IsFastMathEnabled() }
+    });
+    OptOptions.m_ModelOptions.push_back(gpuAcc);
+    OptOptions.m_ModelOptions.push_back(cpuAcc);
+
     std::vector<std::string> errMessages;
     try
     {
