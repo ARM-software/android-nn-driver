@@ -47,6 +47,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertDiv(operation, model, data);
         case V1_2::OperationType::EQUAL:
             return ConvertComparison(operation, model, data, ComparisonOperation::Equal);
+        case V1_2::OperationType::EXP:
+            return ConvertElementwiseUnary(operation, model, data, UnaryOperation::Exp);
         case V1_2::OperationType::EXPAND_DIMS:
             return ConvertExpandDims(operation, model, data);
         case V1_2::OperationType::FLOOR:

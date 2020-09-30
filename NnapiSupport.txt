@@ -28,6 +28,7 @@ DEQUANTIZE                   (FLOAT32 (output only), QUANT8_ASYMM and QUANT8_ASY
 DIV                          (FLOAT32, QUANT8_ASYMM)
 ELU                          (FLOAT32, QUANT8_ASYMM)
 EQUAL                        (FLOAT32, INT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+EXP                          (FLOAT32, FLOAT16)
 EXPAND_DIMS                  (FLOAT32, FLOAT16, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
 FILL                         (FLOAT32, FLOAT16, INT32)
 FLOOR                        (FLOAT32)
