@@ -3065,17 +3065,19 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
     desc.m_TransposeWeightMatrix = true;
     desc.m_BiasEnabled           = true;
 
-    if (!VerifyFullyConnectedShapes(reshapedInfo.GetShape(),
-                                    weights.GetInfo().GetShape(),
-                                    outputInfo.GetShape(),
-                                    desc.m_TransposeWeightMatrix))
-    {
-        return Fail("%s: Expected outputShape does not match actual outputShape", __func__);
-    }
-
     bool isSupported = false;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
+        if (!VerifyFullyConnectedShapes(reshapedInfo.GetShape(),
+                                        weights.GetInfo().GetShape(),
+                                        outputInfo.GetShape(),
+                                        desc.m_TransposeWeightMatrix))
+        {
+            isSupported = false;
+            Fail("%s: Expected outputShape does not match actual outputShape", __func__);
+            return;
+        }
+
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsFullyConnectedSupported,
                                data.m_Backends,
