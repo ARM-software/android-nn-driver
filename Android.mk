@@ -51,6 +51,7 @@ endif
 ARMNN_HEADER_PATH := $(LOCAL_PATH)/armnn/include
 ARMNN_THIRD_PARTY_PATH := $(LOCAL_PATH)/armnn/third-party
 ARMNN_UTILS_HEADER_PATH := $(LOCAL_PATH)/armnn/src/armnnUtils
+ARMNN_THIRD_PARTY_PATH := $(LOCAL_PATH)/armnn/third-party
 OPENCL_HEADER_PATH := $(LOCAL_PATH)/clframework/include
 NN_HEADER_PATH := $(LOCAL_PATH)/../../../frameworks/ml/nn/runtime/include
 
@@ -107,6 +108,7 @@ LOCAL_C_INCLUDES := \
         $(ARMNN_HEADER_PATH) \
         $(ARMNN_THIRD_PARTY_PATH) \
         $(ARMNN_UTILS_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
         $(OPENCL_HEADER_PATH) \
         $(NN_HEADER_PATH)
 
@@ -240,6 +242,7 @@ LOCAL_C_INCLUDES := \
         $(ARMNN_HEADER_PATH) \
         $(ARMNN_THIRD_PARTY_PATH) \
         $(ARMNN_UTILS_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
         $(OPENCL_HEADER_PATH) \
         $(NN_HEADER_PATH)
 
@@ -366,6 +369,7 @@ LOCAL_C_INCLUDES := \
         $(ARMNN_HEADER_PATH) \
         $(ARMNN_THIRD_PARTY_PATH) \
         $(ARMNN_UTILS_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
         $(OPENCL_HEADER_PATH) \
         $(NN_HEADER_PATH)
 
@@ -487,6 +491,7 @@ LOCAL_C_INCLUDES := \
         $(ARMNN_HEADER_PATH) \
         $(ARMNN_THIRD_PARTY_PATH) \
         $(ARMNN_UTILS_HEADER_PATH) \
+        $(ARMNN_THIRD_PARTY_PATH) \
         $(OPENCL_HEADER_PATH) \
         $(NN_HEADER_PATH)
 

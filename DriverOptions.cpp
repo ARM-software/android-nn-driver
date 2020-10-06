@@ -13,8 +13,7 @@
 
 #include <OperationsUtils.h>
 
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/program_options.hpp>
+#include <cxxopts/cxxopts.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -58,79 +57,84 @@ DriverOptions::DriverOptions(int argc, char** argv)
     , m_fp16Enabled(false)
     , m_FastMathEnabled(false)
 {
-    namespace po = boost::program_options;
-
     std::string unsupportedOperationsAsString;
     std::string clTunedParametersModeAsString;
     std::string clTuningLevelAsString;
+    std::vector<std::string> backends;
 
-    po::options_description optionsDesc("Options");
-    optionsDesc.add_options()
-        ("compute,c",
-         po::value<std::vector<std::string>>()->
-            multitoken()->default_value(std::vector<std::string>{"GpuAcc"}, "{GpuAcc}"),
-         "Which backend to run layers on. Examples of possible values are: CpuRef, CpuAcc, GpuAcc")
+    cxxopts::Options optionsDesc("Options");
+    try
+    {
+        optionsDesc.add_options()
+        ("c,compute",
+         "Comma separated list of backends to run layers on. Examples of possible values are: CpuRef, CpuAcc, GpuAcc",
+         cxxopts::value<std::vector<std::string>>(backends))
 
-        ("verbose-logging,v",
-         po::bool_switch(&m_VerboseLogging),
-         "Turns verbose logging on")
+        ("v,verbose-logging", "Turns verbose logging on",
+         cxxopts::value<bool>(m_VerboseLogging)->default_value("false"))
 
-        ("request-inputs-and-outputs-dump-dir,d",
-         po::value<std::string>(&m_RequestInputsAndOutputsDumpDir)->default_value(""),
-         "If non-empty, the directory where request inputs and outputs should be dumped")
+        ("d,request-inputs-and-outputs-dump-dir",
+         "If non-empty, the directory where request inputs and outputs should be dumped",
+         cxxopts::value<std::string>(m_RequestInputsAndOutputsDumpDir)->default_value(""))
 
-        ("service-name,n",
-         po::value<std::string>(&m_ServiceName)->default_value("armnn"),
-         "If non-empty, the driver service name to be registered")
+        ("n,service-name",
+         "If non-empty, the driver service name to be registered",
+         cxxopts::value<std::string>(m_ServiceName)->default_value("armnn"))
 
-        ("unsupported-operations,u",
-         po::value<std::string>(&unsupportedOperationsAsString)->default_value(""),
+        ("u,unsupported-operations",
          "If non-empty, a comma-separated list of operation indices which the driver will forcibly "
-         "consider unsupported")
+         "consider unsupported",
+         cxxopts::value<std::string>(unsupportedOperationsAsString)->default_value(""))
 
-        ("cl-tuned-parameters-file,t",
-         po::value<std::string>(&m_ClTunedParametersFile)->default_value(""),
+        ("t,cl-tuned-parameters-file",
          "If non-empty, the given file will be used to load/save CL tuned parameters. "
-         "See also --cl-tuned-parameters-mode")
+         "See also --cl-tuned-parameters-mode",
+         cxxopts::value<std::string>(m_ClTunedParametersFile)->default_value(""))
 
-        ("cl-tuned-parameters-mode,m",
-         po::value<std::string>(&clTunedParametersModeAsString)->default_value("UseTunedParameters"),
+        ("m,cl-tuned-parameters-mode",
          "If 'UseTunedParameters' (the default), will read CL tuned parameters from the file specified by "
          "--cl-tuned-parameters-file. "
          "If 'UpdateTunedParameters', will also find the optimum parameters when preparing new networks and update "
-         "the file accordingly.")
+         "the file accordingly.",
+         cxxopts::value<std::string>(clTunedParametersModeAsString)->default_value("UseTunedParameters"))
 
-        ("cl-tuning-level,o",
-         po::value<std::string>(&clTuningLevelAsString)->default_value("rapid"),
+        ("o,cl-tuning-level",
          "exhaustive: all lws values are tested "
          "normal: reduced number of lws values but enough to still have the performance really close to the "
          "exhaustive approach "
-         "rapid: only 3 lws values should be tested for each kernel ")
+         "rapid: only 3 lws values should be tested for each kernel ",
+         cxxopts::value<std::string>(clTuningLevelAsString)->default_value("rapid"))
 
-        ("fast-math,a",
-         po::bool_switch(&m_FastMathEnabled),
-         "Turns FastMath on")
+        ("a,fast-math", "Turns FastMath on",
+         cxxopts::value<bool>(m_FastMathEnabled)->default_value("false"))
 
-        ("gpu-profiling,p",
-         po::bool_switch(&m_EnableGpuProfiling),
-         "Turns GPU profiling on")
+        ("p,gpu-profiling", "Turns GPU profiling on",
+         cxxopts::value<bool>(m_EnableGpuProfiling)->default_value("false"))
 
-        ("fp16-enabled,f",
-         po::bool_switch(&m_fp16Enabled),
-         "Enables support for relaxed computation from Float32 to Float16");
+        ("fp16-enabled,f", "Enables support for relaxed computation from Float32 to Float16",
+         cxxopts::value<bool>(m_fp16Enabled)->default_value("false"));
+    }
+    catch (const std::exception& e)
+    {
+        ALOGW("An error occurred attempting to construct options: %s", e.what());
+    }
 
-    po::variables_map variablesMap;
+
     try
     {
-        po::store(po::parse_command_line(argc, argv, optionsDesc), variablesMap);
-        po::notify(variablesMap);
+        cxxopts::ParseResult result = optionsDesc.parse(argc, argv);
+        // If no backends have been specified then the default value is GpuAcc.
+        if (backends.empty())
+        {
+            backends.push_back("GpuAcc");
+        }
     }
-    catch (const po::error& e)
+    catch (const cxxopts::OptionException& e)
     {
         ALOGW("An error occurred attempting to parse program options: %s", e.what());
     }
 
-    const std::vector<std::string> backends = variablesMap["compute"].as<std::vector<std::string>>();
+    // Convert the string backend names into backendId's.
     m_Backends.reserve(backends.size());
     for (auto&& backend : backends)
     {
