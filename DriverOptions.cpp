@@ -111,7 +111,7 @@ DriverOptions::DriverOptions(int argc, char** argv)
         ("p,gpu-profiling", "Turns GPU profiling on",
          cxxopts::value<bool>(m_EnableGpuProfiling)->default_value("false"))
 
-        ("fp16-enabled,f", "Enables support for relaxed computation from Float32 to Float16",
+        ("f,fp16-enabled", "Enables support for relaxed computation from Float32 to Float16",
          cxxopts::value<bool>(m_fp16Enabled)->default_value("false"));
     }
     catch (const std::exception& e)
