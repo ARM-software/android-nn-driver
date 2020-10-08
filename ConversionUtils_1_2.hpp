@@ -805,7 +805,7 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
     {
         return Fail("%s: Could not read output 0", __func__);
     }
-    const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+    TensorInfo outputInfo = GetTensorInfoForOperand(*output);
 
     // Look ahead to determine data layout
     DataLayout dataLayout = DataLayout::NHWC;
@@ -896,7 +896,8 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
         return Fail("%s: Unsupported number of operation inputs", __func__);
     }
 
-    const unsigned int outputChannels = outputShape[channelsIndex];
+    // Equivalent to outputShape[channelsIndex], but we can't know the outputShape in the case of dynamic tensors
+    const unsigned int outputChannels = weightsShape[0];
 
     const unsigned int channelsPerGroup  = weightsShape[channelsIndex];
     const unsigned int channelMultiplier = outputChannels / numGroups;
@@ -971,9 +972,6 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
     TensorShape groupInputShape(inputShape);
     groupInputShape[channelsIndex] = channelsPerGroup;
 
-    TensorShape groupOutputShape(outputShape);
-    groupOutputShape[channelsIndex] = 1;
-
     TensorShape groupWeightsShape(weightsShape);
     groupWeightsShape[0] /= channelMultiplier * numGroups;
 
@@ -992,6 +990,13 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
     groupBiasesInfo.SetShape(groupBiasesShape);
 
     TensorInfo groupOutputInfo(outputInfo);
+
+    TensorShape groupOutputShape(outputShape);
+    const bool isDynamic = IsDynamicTensor(outputInfo);
+    if (!isDynamic)
+    {
+        groupOutputShape[channelsIndex] = 1;
+    }
     groupOutputInfo.SetShape(groupOutputShape);
 
     const unsigned int weightsDataTypeSize = GetDataTypeSize(groupWeightsInfo.GetDataType());
@@ -1031,15 +1036,28 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
                                                               biasesDataOffset));
 
             isSupported = false;
-            FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                                       IsConvolution2dSupported,
-                                       data.m_Backends,
-                                       isSupported,
-                                       groupInputInfo,
-                                       groupOutputInfo,
-                                       desc,
-                                       groupWeightsInfo,
-                                       Optional<TensorInfo>(groupBiasesInfo));
+            auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+            {
+                FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                           IsConvolution2dSupported,
+                                           data.m_Backends,
+                                           isSupported,
+                                           groupInputInfo,
+                                           outputInfo,
+                                           desc,
+                                           groupWeightsInfo,
+                                           Optional<TensorInfo>(groupBiasesInfo));
+            };
+
+            if(!isDynamic)
+            {
+                validateFunc(groupOutputInfo, isSupported);
+            }
+            else
+            {
+                isSupported = AreDynamicTensorsSupported();
+            }
+
             if (!isSupported)
             {
                 return false;
@@ -1055,6 +1073,20 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
             splitterLayer->GetOutputSlot(group).Connect(convLayer->GetInputSlot(0));
             convLayer->GetOutputSlot(0).SetTensorInfo(groupOutputInfo);
 
+            if(isDynamic)
+            {
+                convLayer->GetOutputSlot(0).IsTensorInfoSet();
+
+                validateFunc(convLayer->GetOutputSlot(0).GetTensorInfo(), isSupported);
+
+                outputInfo = convLayer->GetOutputSlot(0).GetTensorInfo();
+
+                if (!isSupported)
+                {
+                    return false;
+                }
+            }
+
             convLayers[index] = convLayer;
         }
     }
@@ -1062,7 +1094,9 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
     //
     // Set up Concat layer
     //
-    ConcatDescriptor concatDescriptor(outputInfo.GetShape()[channelsIndex]);
+    ConcatDescriptor concatDescriptor;
+    // Equivalent to outputShape[channelsIndex], but we can't know the outputShape in the case of dynamic tensors
+    concatDescriptor = ConcatDescriptor(weightsShape[0]);
     for (unsigned int group = 0u; group < numGroups; ++group)
     {
         for (unsigned int m = 0u; m < channelMultiplier; ++m)
@@ -1074,25 +1108,13 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
     }
 
     isSupported = false;
-    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
-    {
-        FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                                   IsConcatSupported,
-                                   data.m_Backends,
-                                   isSupported,
-                                   std::vector<const TensorInfo*>(numGroups * channelMultiplier, &groupOutputInfo),
-                                   outputInfo,
-                                   concatDescriptor);
-    };
-
-    if(!IsDynamicTensor(outputInfo))
-    {
-        validateFunc(outputInfo, isSupported);
-    }
-    else
-    {
-        isSupported = AreDynamicTensorsSupported();
-    }
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsConcatSupported,
+                               data.m_Backends,
+                               isSupported,
+                               std::vector<const TensorInfo*>(numGroups * channelMultiplier, &groupOutputInfo),
+                               outputInfo,
+                               concatDescriptor);
 
     if (!isSupported)
     {
@@ -1116,7 +1138,7 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
     concatLayer->GetOutputSlot(0).SetTensorInfo(outputInfo);
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *concatLayer, model,
-                                                   data, nullptr, validateFunc, activation);
+                                                   data, nullptr, nullptr, activation);
 }
 
 template<typename HalPolicy,
