@@ -2767,18 +2767,6 @@ bool ConvertTransposeConv2d(const HalOperation& operation, const HalModel& model
 
         const uint32_t kernelX = weights.GetShape()[widthIndex];
         const uint32_t kernelY = weights.GetShape()[heightIndex];
-        const uint32_t outputX = outputInfo.GetShape()[widthIndex];
-        const uint32_t outputY = outputInfo.GetShape()[heightIndex];
-
-        CalcPaddingTransposeConv(outputX, kernelX, strideX, padLeft, padRight, paddingScheme);
-        CalcPaddingTransposeConv(outputY, kernelY, strideY, padTop, padBottom, paddingScheme);
-
-        // NOTE: The Android NN API allows for negative padding values in TransposeConv2d,
-        // but Arm NN only supports values >= 0
-        if (padLeft < 0 || padRight < 0 || padTop < 0 || padBottom < 0)
-        {
-            return Fail("%s: Negative padding values are not supported", __func__);
-        }
 
         // If output shape has been specified as a parameter then extract it and make it available.
         const HalOperand* outputShapeOperand = GetInputOperand<HalPolicy>(operation, 3, model, false);
@@ -2791,6 +2779,35 @@ bool ConvertTransposeConv2d(const HalOperation& operation, const HalModel& model
                 desc.m_OutputShape.push_back(static_cast<unsigned int>(dimension));
             }
             desc.m_OutputShapeEnabled = true;
+        }
+
+        uint32_t outputX;
+        uint32_t outputY;
+
+        if (IsDynamicTensor(outputInfo))
+        {
+            if (outputShape.size() == 0)
+            {
+                return Fail("%s: Padding sizes cannot be inferred", __func__);
+            }
+
+            outputX = outputShape[widthIndex];
+            outputY = outputShape[heightIndex];
+        }
+        else
+        {
+            outputX = outputInfo.GetShape()[widthIndex];
+            outputY = outputInfo.GetShape()[heightIndex];
+        }
+
+        CalcPaddingTransposeConv(outputX, kernelX, strideX, padLeft, padRight, paddingScheme);
+        CalcPaddingTransposeConv(outputY, kernelY, strideY, padTop, padBottom, paddingScheme);
+
+        // NOTE: The Android NN API allows for negative padding values in TransposeConv2d,
+        // but Arm NN only supports values >= 0
+        if (padLeft < 0 || padRight < 0 || padTop < 0 || padBottom < 0)
+        {
+            return Fail("%s: Negative padding values are not supported", __func__);
         }
 
         desc.m_StrideX   = armnn::numeric_cast<uint32_t>(strideX);
