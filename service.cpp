@@ -19,6 +19,11 @@ int main(int argc, char** argv)
 {
     android::sp<ArmnnDriver> driver;
     DriverOptions driverOptions(argc, argv);
+
+    if (driverOptions.ShouldExit())
+    {
+        return driverOptions.GetExitCode();
+    }
     try
     {
         driver = new ArmnnDriver(DriverOptions(argc, argv));
@@ -26,6 +31,8 @@ int main(int argc, char** argv)
     catch (const std::exception& e)
     {
         ALOGE("Could not create driver: %s", e.what());
+        std::cout << "Unable to start:" << std::endl
+                  << "Could not create driver: " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -38,15 +45,19 @@ int main(int argc, char** argv)
     catch (const std::exception& e)
     {
         ALOGE("Could not register service: %s", e.what());
-        return EXIT_FAILURE;
-    }
-    if (status != android::OK)
-    {
-        ALOGE("Could not register service");
+        std::cout << "Unable to start:" << std::endl
+                  << "Could not register service: " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
 
+    if (status != android::OK)
+    {
+        ALOGE("Could not register service");
+        std::cout << "Unable to start:" << std::endl
+                  << "Could not register service" << std::endl;
+        return EXIT_FAILURE;
+    }
     android::hardware::joinRpcThreadpool();
-    ALOGE("Service exited!");
-    return EXIT_FAILURE;
+    ALOGW("Service exited!");
+    return EXIT_SUCCESS;
 }

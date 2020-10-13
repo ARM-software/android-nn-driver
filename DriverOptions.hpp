@@ -34,6 +34,8 @@ public:
     bool IsFastMathEnabled() const { return m_FastMathEnabled; }
     bool GetFp16Enabled() const { return m_fp16Enabled; }
     void SetBackends(const std::vector<armnn::BackendId>& backends) { m_Backends = backends; }
+    bool ShouldExit() const { return m_ShouldExit; }
+    int GetExitCode() const { return m_ExitCode; }
 
 private:
     std::vector<armnn::BackendId> m_Backends;
@@ -47,6 +49,8 @@ private:
     bool m_EnableGpuProfiling;
     bool m_fp16Enabled;
     bool m_FastMathEnabled;
+    bool m_ShouldExit;
+    int m_ExitCode;
 };
 
 } // namespace armnn_driver
