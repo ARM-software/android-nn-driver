@@ -146,6 +146,9 @@ DriverOptions::DriverOptions(int argc, char** argv)
         std::cout << optionsDesc.help() << std::endl
                   << "An exception occurred while parsing program options: " << std::endl
                   << e.what() << std::endl;
+        m_ShouldExit = true;
+        m_ExitCode = EXIT_FAILURE;
+        return;
     }
     if (showHelp)
     {
