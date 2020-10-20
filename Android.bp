@@ -108,38 +108,6 @@ cc_library_static {
     ],
 }
 
-cc_library_static {
-    name: "libboost_program_options",
-    defaults: ["libboost-defaults"],
-    srcs: [
-        "boost_1_64_0/libs/program_options/src/cmdline.cpp",
-        "boost_1_64_0/libs/program_options/src/config_file.cpp",
-        "boost_1_64_0/libs/program_options/src/convert.cpp",
-        "boost_1_64_0/libs/program_options/src/options_description.cpp",
-        "boost_1_64_0/libs/program_options/src/parsers.cpp",
-        "boost_1_64_0/libs/program_options/src/positional_options.cpp",
-        "boost_1_64_0/libs/program_options/src/split.cpp",
-        "boost_1_64_0/libs/program_options/src/utf8_codecvt_facet.cpp",
-        "boost_1_64_0/libs/program_options/src/value_semantic.cpp",
-        "boost_1_64_0/libs/program_options/src/variables_map.cpp",
-        "boost_1_64_0/libs/program_options/src/winmain.cpp",
-    ],
-}
-
-cc_library_static {
-    name: "libboost_filesystem",
-    defaults: ["libboost-defaults"],
-    srcs: [
-        "boost_1_64_0/libs/filesystem/src/codecvt_error_category.cpp",
-        "boost_1_64_0/libs/filesystem/src/operations.cpp",
-        "boost_1_64_0/libs/filesystem/src/path.cpp",
-        "boost_1_64_0/libs/filesystem/src/path_traits.cpp",
-        "boost_1_64_0/libs/filesystem/src/portability.cpp",
-        "boost_1_64_0/libs/filesystem/src/unique_path.cpp",
-        "boost_1_64_0/libs/filesystem/src/utf8_codecvt_facet.cpp",
-        "boost_1_64_0/libs/filesystem/src/windows_file_codecvt.cpp",
-    ],
-}
 
 subdirs = [
     "armnn",

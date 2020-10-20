@@ -23,7 +23,7 @@
 #include <CpuExecutor.h>
 #include <OperationsUtils.h>
 
-#include <boost/test/tools/floating_point_comparison.hpp>
+#include <armnnUtils/FloatingPointComparison.hpp>
 
 #include <log/log.h>
 #include <vector>
@@ -477,8 +477,7 @@ void SanitizeBiasQuantizationScale(armnn::TensorInfo& biasInfo,
         const float expectedBiasScale = weightInfo.GetQuantizationScale() * inputInfo.GetQuantizationScale();
         if (biasInfo.GetQuantizationScale() != expectedBiasScale)
         {
-            boost::math::fpc::close_at_tolerance<float> comparer(boost::math::fpc::percent_tolerance(1.0f));
-            if (comparer(biasInfo.GetQuantizationScale(), expectedBiasScale))
+            if (armnnUtils::within_percentage_tolerance(biasInfo.GetQuantizationScale(), expectedBiasScale, 1.0f))
             {
                 ALOGW("Bias quantization scale has been modified to match input * weights");
                 biasInfo.SetQuantizationScale(expectedBiasScale);
@@ -1209,7 +1208,7 @@ LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
                     return LayerInputHandle();
                 }
 
-                BOOST_FALLTHROUGH; // intentional fallthrough
+                [[clang::fallthrough]]; // intentional fallthrough
             }
             case HalOperandLifeTime::TEMPORARY_VARIABLE: // intentional fallthrough
             case HalOperandLifeTime::MODEL_OUTPUT:
@@ -1336,7 +1335,7 @@ LayerInputHandle ConvertToLayerInputHandle(const ::android::hardware::neuralnetw
                     return LayerInputHandle();
                 }
 
-                BOOST_FALLTHROUGH; // intentional fallthrough
+                [[clang::fallthrough]]; // intentional fallthrough
             }
             case HalOperandLifeTime::TEMPORARY_VARIABLE: // intentional fallthrough
             case HalOperandLifeTime::SUBGRAPH_OUTPUT:

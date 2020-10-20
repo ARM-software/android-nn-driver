@@ -73,11 +73,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_log \
-        libboost_system \
         libboost_unit_test_framework \
-        libboost_thread \
-        libboost_filesystem \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -191,11 +187,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_log \
-        libboost_system \
         libboost_unit_test_framework \
-        libboost_thread \
-        libboost_filesystem \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -300,11 +292,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_log \
-        libboost_system \
         libboost_unit_test_framework \
-        libboost_thread \
-        libboost_filesystem \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -402,11 +390,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_log \
-        libboost_system \
         libboost_unit_test_framework \
-        libboost_thread \
-        libboost_filesystem \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \

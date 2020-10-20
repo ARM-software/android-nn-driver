@@ -129,11 +129,6 @@ LOCAL_CFLAGS+= \
         -UNDEBUG
 endif # ARMNN_DRIVER_DEBUG == 1
 
-ifeq ($(Q_OR_LATER),1)
-LOCAL_CFLAGS += \
-        -DBOOST_NO_AUTO_PTR
-endif # PLATFORM_VERSION == Q or later
-
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_CFLAGS += \
         -DARMCOMPUTECL_ENABLED
@@ -168,11 +163,6 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_log \
-        libboost_program_options \
-        libboost_system \
-        libboost_thread \
-        libboost_filesystem \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
@@ -258,11 +248,6 @@ LOCAL_CFLAGS+= \
         -UNDEBUG
 endif # ARMNN_DRIVER_DEBUG == 1
 
-ifeq ($(Q_OR_LATER),1)
-LOCAL_CFLAGS += \
-        -DBOOST_NO_AUTO_PTR
-endif # PLATFORM_VERSION == Q or later
-
 # Required to build with the changes made to the Android ML framework specific to Android R
 ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
@@ -305,11 +290,6 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_log \
-        libboost_program_options \
-        libboost_system \
-        libboost_thread \
-        libboost_filesystem \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
@@ -378,7 +358,6 @@ LOCAL_CFLAGS := \
         -fexceptions \
         -Werror \
         -Wno-format-security \
-        -DBOOST_NO_AUTO_PTR \
         -DARMNN_ANDROID_NN_V1_2
 
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
@@ -431,11 +410,6 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_log \
-        libboost_program_options \
-        libboost_system \
-        libboost_thread \
-        libboost_filesystem \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
@@ -500,7 +474,6 @@ LOCAL_CFLAGS := \
         -fexceptions \
         -Werror \
         -Wno-format-security \
-        -DBOOST_NO_AUTO_PTR \
         -DARMNN_ANDROID_NN_V1_3 \
         -DARMNN_ANDROID_R
 
@@ -555,11 +528,6 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_log \
-        libboost_program_options \
-        libboost_system \
-        libboost_thread \
-        libboost_filesystem \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
@@ -625,11 +593,6 @@ LOCAL_CFLAGS += \
         -UNDEBUG
 endif # ARMNN_DRIVER_DEBUG == 1
 
-ifeq ($(Q_OR_LATER),1)
-LOCAL_CFLAGS += \
-        -DBOOST_NO_AUTO_PTR
-endif # PLATFORM_VERSION == Q or later
-
 # Required to build with the changes made to the Android ML framework specific to Android R
 ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
@@ -641,11 +604,6 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_log \
-        libboost_program_options \
-        libboost_system \
-        libboost_thread \
-        libboost_filesystem \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -731,11 +689,6 @@ LOCAL_CFLAGS += \
         -UNDEBUG
 endif # ARMNN_DRIVER_DEBUG == 1
 
-ifeq ($(Q_OR_LATER),1)
-LOCAL_CFLAGS += \
-        -DBOOST_NO_AUTO_PTR
-endif # PLATFORM_VERSION == Q or later
-
 # Required to build with the changes made to the Android ML framework specific to Android R
 ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
@@ -747,11 +700,6 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_log \
-        libboost_program_options \
-        libboost_system \
-        libboost_thread \
-        libboost_filesystem \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -822,7 +770,6 @@ LOCAL_CFLAGS := \
         -std=$(CPP_VERSION) \
         -fexceptions \
         -DARMNN_ANDROID_NN_V1_2 \
-        -DBOOST_NO_AUTO_PTR
 
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS += \
@@ -840,11 +787,6 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_log \
-        libboost_program_options \
-        libboost_system \
-        libboost_thread \
-        libboost_filesystem \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -911,7 +853,6 @@ LOCAL_CFLAGS := \
         -std=$(CPP_VERSION) \
         -fexceptions \
         -DARMNN_ANDROID_NN_V1_3 \
-        -DBOOST_NO_AUTO_PTR \
         -DARMNN_ANDROID_R
 
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
@@ -924,11 +865,6 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_log \
-        libboost_program_options \
-        libboost_system \
-        libboost_thread \
-        libboost_filesystem \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
