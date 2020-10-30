@@ -25,63 +25,6 @@ cc_defaults {
 }
 
 cc_library_static {
-    name: "libboost_log",
-    defaults: ["libboost-defaults"],
-    srcs: [
-        "boost_1_64_0/libs/log/src/attribute_name.cpp",
-        "boost_1_64_0/libs/log/src/default_sink.cpp",
-        "boost_1_64_0/libs/log/src/global_logger_storage.cpp",
-        "boost_1_64_0/libs/log/src/record_ostream.cpp",
-        "boost_1_64_0/libs/log/src/thread_id.cpp",
-        "boost_1_64_0/libs/log/src/attribute_set.cpp",
-        "boost_1_64_0/libs/log/src/named_scope.cpp",
-        "boost_1_64_0/libs/log/src/severity_level.cpp",
-        "boost_1_64_0/libs/log/src/threadsafe_queue.cpp",
-        "boost_1_64_0/libs/log/src/attribute_value_set.cpp",
-        "boost_1_64_0/libs/log/src/dump.cpp",
-        "boost_1_64_0/libs/log/src/named_scope_format_parser.cpp",
-        "boost_1_64_0/libs/log/src/spirit_encoding.cpp",
-        "boost_1_64_0/libs/log/src/thread_specific.cpp",
-        "boost_1_64_0/libs/log/src/code_conversion.cpp",
-        "boost_1_64_0/libs/log/src/once_block.cpp",
-        "boost_1_64_0/libs/log/src/syslog_backend.cpp",
-        "boost_1_64_0/libs/log/src/timer.cpp",
-        "boost_1_64_0/libs/log/src/core.cpp",
-        "boost_1_64_0/libs/log/src/event.cpp",
-        "boost_1_64_0/libs/log/src/permissions.cpp",
-        "boost_1_64_0/libs/log/src/text_file_backend.cpp",
-        "boost_1_64_0/libs/log/src/timestamp.cpp",
-        "boost_1_64_0/libs/log/src/date_time_format_parser.cpp",
-        "boost_1_64_0/libs/log/src/exceptions.cpp",
-        "boost_1_64_0/libs/log/src/process_id.cpp",
-        "boost_1_64_0/libs/log/src/text_multifile_backend.cpp",
-        "boost_1_64_0/libs/log/src/trivial.cpp",
-        "boost_1_64_0/libs/log/src/default_attribute_names.cpp",
-        "boost_1_64_0/libs/log/src/format_parser.cpp",
-        "boost_1_64_0/libs/log/src/process_name.cpp",
-        "boost_1_64_0/libs/log/src/text_ostream_backend.cpp",
-        "boost_1_64_0/libs/log/src/unhandled_exception_count.cpp",
-    ],
-}
-cc_library_static {
-    name: "libboost_system",
-    defaults: ["libboost-defaults"],
-    srcs: [ "boost_1_64_0/libs/system/src/error_code.cpp", ],
-}
-
-cc_library_static {
-    name: "libboost_thread",
-    defaults: ["libboost-defaults"],
-    srcs: [
-        "boost_1_64_0/libs/thread/src/pthread/thread.cpp",
-        "boost_1_64_0/libs/thread/src/pthread/once_atomic.cpp",
-        "boost_1_64_0/libs/thread/src/pthread/once.cpp",
-        "boost_1_64_0/libs/thread/src/future.cpp",
-        "boost_1_64_0/libs/thread/src/tss_null.cpp",
-    ],
-}
-
-cc_library_static {
     name: "libboost_unit_test_framework",
     defaults: ["libboost-defaults"],
     srcs: [
@@ -107,7 +50,6 @@ cc_library_static {
         "boost_1_64_0/libs/test/src/xml_report_formatter.cpp",
     ],
 }
-
 
 subdirs = [
     "armnn",
