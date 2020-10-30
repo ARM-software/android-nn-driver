@@ -10,10 +10,11 @@
 
 #include <armnn/utility/IgnoreUnused.hpp>
 
-#include <boost/array.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/math/special_functions/relative_difference.hpp>
+
+#include <array>
 
 BOOST_AUTO_TEST_SUITE(QLSTMTests)
 
@@ -85,9 +86,9 @@ void ExecuteModel(const armnn_driver::hal_1_3::HalPolicy::Model& model,
 }
 
 #ifndef ARMCOMPUTECL_ENABLED
-static const boost::array<armnn::Compute, 1> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef }};
+static const std::array<armnn::Compute, 1> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef }};
 #else
-static const boost::array<armnn::Compute, 2> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef, armnn::Compute::CpuAcc }};
+static const std::array<armnn::Compute, 2> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef, armnn::Compute::CpuAcc }};
 #endif
 
 // Add our own tests here since we skip the qlstm tests which Google supplies (because of non-const weights)

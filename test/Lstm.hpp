@@ -9,8 +9,9 @@
 
 #include <armnn/utility/IgnoreUnused.hpp>
 
-#include <boost/array.hpp>
 #include <boost/math/special_functions/relative_difference.hpp>
+
+#include <array>
 
 using ArmnnDriver   = armnn_driver::ArmnnDriver;
 using DriverOptions = armnn_driver::DriverOptions;
@@ -95,9 +96,9 @@ void ExecuteModel<armnn_driver::hal_1_2::HalPolicy::Model>(const armnn_driver::h
 } // anonymous namespace
 
 #ifndef ARMCOMPUTECL_ENABLED
-static const boost::array<armnn::Compute, 1> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef }};
+static const std::array<armnn::Compute, 1> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef }};
 #else
-static const boost::array<armnn::Compute, 2> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef, armnn::Compute::GpuAcc }};
+static const std::array<armnn::Compute, 2> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef, armnn::Compute::GpuAcc }};
 #endif
 
 // Add our own tests here since we fail the lstm tests which Google supplies (because of non-const weights)

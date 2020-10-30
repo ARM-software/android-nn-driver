@@ -7,11 +7,12 @@
 
 #include "../1.0/HalPolicy.hpp"
 
-#include <boost/array.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
 
+#include <array>
 #include <log/log.h>
+
 
 BOOST_AUTO_TEST_SUITE(ConcatTests)
 
@@ -25,9 +26,9 @@ namespace
 {
 
 #ifndef ARMCOMPUTECL_ENABLED
-    static const boost::array<armnn::Compute, 1> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef }};
+    static const std::array<armnn::Compute, 1> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef }};
 #else
-    static const boost::array<armnn::Compute, 2> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef, armnn::Compute::GpuAcc }};
+    static const std::array<armnn::Compute, 2> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef, armnn::Compute::GpuAcc }};
 #endif
 
 void

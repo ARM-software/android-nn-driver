@@ -8,8 +8,9 @@
 
 #include "../1.1/HalPolicy.hpp"
 
-#include <boost/array.hpp>
 #include <boost/test/data/test_case.hpp>
+
+#include <array>
 
 BOOST_AUTO_TEST_SUITE(MeanTests)
 
@@ -23,9 +24,9 @@ namespace
 {
 
 #ifndef ARMCOMPUTECL_ENABLED
-    static const boost::array<armnn::Compute, 1> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef }};
+    static const std::array<armnn::Compute, 1> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef }};
 #else
-    static const boost::array<armnn::Compute, 2> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef, armnn::Compute::GpuAcc }};
+    static const std::array<armnn::Compute, 2> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef, armnn::Compute::GpuAcc }};
 #endif
 
 void MeanTestImpl(const TestTensor& input,
