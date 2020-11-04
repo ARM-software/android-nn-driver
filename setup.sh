@@ -59,8 +59,13 @@ fi
 # This is required for the Android build system to build clframework (see below)
 pushd clframework
 scons os=android build=embed_only neon=0 opencl=1 embed_kernels=1 validation_tests=0 \
+    arch=arm64-v8.2-a build_dir=android-arm64v8.2-a benchmark_tests=0 -j16 \
+    build/android-arm64v8.2-a/src/core/arm_compute_version.embed build/android-arm64v8.2-a/src/core/CL/cl_kernels
+AssertZeroExitCode "Precompiling clframework failed for v82.a"
+
+scons os=android build=embed_only neon=0 opencl=1 embed_kernels=1 validation_tests=0 \
     arch=arm64-v8a build_dir=android-arm64v8a benchmark_tests=0 -j16 \
     build/android-arm64v8a/src/core/arm_compute_version.embed build/android-arm64v8a/src/core/CL/cl_kernels
-AssertZeroExitCode "Precompiling clframework failed"
+AssertZeroExitCode "Precompiling clframework failed for v8a."
 popd
 
