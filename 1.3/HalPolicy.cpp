@@ -81,6 +81,12 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertComparison(operation, model, data, ComparisonOperation::LessOrEqual);
         case V1_3::OperationType::LOCAL_RESPONSE_NORMALIZATION:
             return ConvertLocalResponseNormalization(operation, model, data);
+        case V1_3::OperationType::LOGICAL_AND:
+            return ConvertLogicalBinary(operation, model, data, LogicalBinaryOperation::LogicalAnd);
+        case V1_3::OperationType::LOGICAL_NOT:
+            return ConvertElementwiseUnary(operation, model, data, UnaryOperation::LogicalNot);
+        case V1_3::OperationType::LOGICAL_OR:
+            return ConvertLogicalBinary(operation, model, data, LogicalBinaryOperation::LogicalOr);
         case V1_3::OperationType::LOGISTIC:
             return ConvertLogistic(operation, model, data);
         case V1_3::OperationType::LOG_SOFTMAX:
@@ -312,6 +318,15 @@ bool HalPolicy::ConvertLocalResponseNormalization(const Operation& operation,
 {
     ALOGV("hal_1_3::HalPolicy::ConvertLocalResponseNormalization()");
     return ::ConvertLocalResponseNormalization<hal_1_3::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertLogicalBinary(const Operation& operation,
+                                     const Model& model,
+                                     ConversionData& data,
+                                     armnn::LogicalBinaryOperation logicalOperation)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertLogicalBinary()");
+    return ::ConvertLogicalBinary<hal_1_3::HalPolicy>(operation, model, data, logicalOperation);
 }
 
 bool HalPolicy::ConvertLogistic(const Operation& operation, const Model& model, ConversionData& data)

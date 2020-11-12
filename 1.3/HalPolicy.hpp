@@ -95,6 +95,11 @@ private:
                                                   const Model& model,
                                                   ConversionData& data);
 
+    static bool ConvertLogicalBinary(const Operation& operation,
+                                     const Model& model,
+                                     ConversionData& data,
+                                     armnn::LogicalBinaryOperation logicalOperation);
+
     static bool ConvertLogistic(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertLogSoftmax(const Operation& operation, const Model& model, ConversionData& data);
