@@ -355,7 +355,7 @@ bool HalPolicy::ConvertMaxPool2d(const Operation& operation, const Model& model,
 
 bool HalPolicy::ConvertMaximum(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_3::HalPolicy::ConvertConvertMaximumMaximum()");
+    ALOGV("hal_1_3::HalPolicy::ConvertMaximum()");
     return ::ConvertMaximum<hal_1_3::HalPolicy>(operation, model, data);
 }
 
