@@ -20,19 +20,18 @@ An acceptable workaround is to increase the timeout defined in AndroidTest.xml, 
 Problems seen when trying to build the android-nn-driver obtained from GitHub
 -----------------------------------------------------------------------------
 
-Some users have encountered difficulties when attempting to build copies of the android-nn-driver obtained from GitHub. The build reports missing module source paths from boost_1_64_0, clframework or armnn. These errors can look like this:
+Some users have encountered difficulties when attempting to build copies of the android-nn-driver obtained from GitHub. The build reports missing module source paths from armnn, clframework or boost_1_64_0. These errors can look like this:
 
-'error: vendor/arm/android-nn-driver/Android.bp:892:1: module "libboost_program_options" variant "android_arm_variant": module source path "vendor/arm/android-nn-driver/boost_1_64_0" does not exist'
 'error: vendor/arm/android-nn-driver/Android.bp:45:1: variant "android_arm64_armv7": module "armnn-arm_compute" "module source path "vendor/arm/android-nn-driver/clframework/build/android-arm64v8a/src/core/CL" does not exist'
 
-These errors are due to missing dependencies or incompatiblities between the android-nn-driver and armnn or clframework versions. The android-nn-driver requires boost_1_64_0 to build. The versions of android-nn-driver, armnn and clframework will have to match for them to work together. For example, the 19.08 version of android-nn-driver, clframework and armnn will work together but none of them will work with earlier or later versions of the others. 
+These errors are due to missing dependencies or incompatiblities between the android-nn-driver and armnn or clframework versions. The android-nn-driver requires boost_1_64_0 to build unit tests. The versions of android-nn-driver, armnn and clframework will have to match for them to work together. For example, the 19.08 version of android-nn-driver, clframework and armnn will work together but none of them will work with earlier or later versions of the others.
 
 In order to ensure that the correct versions of boost, armnn and the clframework are obtained you can do the following:
 
 1. Delete or move any boost, armnn or clframework directories from the android-nn-driver directory.
 2. Run the setup.sh script in the android-nn-driver directory. 
 
-This will download the correct versions of boost, armnn and the clframework and the android-nn-driver should build correctly. Alternatively you can go to the GitHub pages for android-nn-driver, armnn and computelibrary (clframework) and download versions with the same release tag. 
+This will download the correct versions of boost, armnn and the clframework and the android-nn-driver should build correctly. Alternatively you can go to the GitHub pages for android-nn-driver, armnn and computelibrary (clframework) and download versions with the same release tag.
 
 As an example, for 20.05 these would be:
 
@@ -47,7 +46,7 @@ https://www.boost.org/
 Instance Normalization test failures 
 ------------------------------------
 
-There is a known issue in the Android NNAPI implementation of Instance Normalization that will be fixed in an upcoming revision of Android 10. Using the Arm NN Android NNAPI driver with versions of the Android 10 VTS and CTS tests that do not have that fix will generate multiple Instance Normalization failures. 
+There is a known issue in the Android NNAPI implementation of Instance Normalization that has been verified as fixed from Android 10 r39 onwards. Using the Arm NN Android NNAPI driver with versions of the Android 10 VTS and CTS tests that do not have that fix will generate multiple Instance Normalization test failures. 
 
 VTS and CTS test failures
 -------------------------
