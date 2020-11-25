@@ -7,9 +7,8 @@ This document describes how to integrate the Arm NN Android NNAPI driver into an
 
 1. Android source tree for Android P (we have tested against Android P version 9.0.0_r3) , in the directory `<ANDROID_ROOT>`
 2. Android source tree for Android Q (we have tested against Android Q version 10.0.0_r39), in the directory `<ANDROID_ROOT>`
+2. Android source tree for Android R (we have tested against Android R version 11.0.0_r3), in the directory `<ANDROID_ROOT>`
 3. Mali OpenCL driver integrated into the Android source tree
-
-Note: Arm NN Android NNAPI driver also supports pre-release version of Android R.
 
 ### Procedure
 
@@ -21,12 +20,12 @@ To update the build environment, add to the contents of the variable `PRODUCT_PA
 within the device-specific makefile that is located in the `<ANDROID_ROOT>/device/<manufacturer>/<product>`
 directory. This file is normally called `device.mk`:
 
-For Android P or Q, using NN API version (1.0), the following should be added to `device.mk`:
+For Android P, Q or R, using NN API version (1.0), the following should be added to `device.mk`:
 <pre>
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.0-service-armnn
 </pre>
 
-For Android P or Q, a new version of the NN API is available (1.1),
+For Android P, Q or R, a new version of the NN API is available (1.1),
 thus the following should be added to `device.mk` instead:
 <pre>
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.1-service-armnn
@@ -38,7 +37,7 @@ thus the following should be added to `device.mk` instead:
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.2-service-armnn
 </pre> `Android.mk` contains the module definition of all three versions (1.0, 1.1 and 1.2) of the ArmNN driver.
 
-For android.hardware.neuralnetworks@1.3 HAL,
+For Android R, new version of the NN API is available (1.3),
 thus the following should be added to `device.mk` instead:
 <pre>
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.3-service-armnn
@@ -51,9 +50,8 @@ ARMNN_COMPUTE_NEON_ENABLE or ARMNN_REF_ENABLE in `device.mk`:
 ARMNN_COMPUTE_CL_ENABLE := 1
 </pre>
 
-For Android P and Android Q the vendor manifest.xml requires the Neural Network HAL information.
-For Android P use HAL version 1.1 as below. For Android Q substitute 1.2 where necessary.
-For pre-release support of HAL version 1.3, substitute 1.3 where necessary.
+For Android P, Q and R the vendor manifest.xml requires the Neural Network HAL information.
+For Android P use HAL version 1.1 as below. For Android Q substitute 1.2 where necessary. For Android R substitute 1.3 where necessary.
 ```xml
 <hal format="hidl">
     <name>android.hardware.neuralnetworks</name>
