@@ -36,6 +36,8 @@ public:
     void SetBackends(const std::vector<armnn::BackendId>& backends) { m_Backends = backends; }
     bool ShouldExit() const { return m_ShouldExit; }
     int GetExitCode() const { return m_ExitCode; }
+    const std::string& GetCachedNetworkFilePath() const { return m_CachedNetworkFilePath; }
+    bool SaveCachedNetwork() const { return m_SaveCachedNetwork; }
 
 private:
     std::vector<armnn::BackendId> m_Backends;
@@ -51,6 +53,8 @@ private:
     bool m_FastMathEnabled;
     bool m_ShouldExit;
     int m_ExitCode;
+    std::string m_CachedNetworkFilePath;
+    bool m_SaveCachedNetwork;
 };
 
 } // namespace armnn_driver

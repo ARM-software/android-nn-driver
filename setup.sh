@@ -26,6 +26,21 @@ if [ ! -d boost_1_64_0 ]; then
   rm -rf $BOOST_PKG
 fi
 
+
+if [ ! -d v1.12.0 ]; then
+  echo "++ Downloading FlatBuffers"
+
+  FLATBUFFERS_PKG=v1.12.0.tar.gz
+
+  curl -LOk https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz
+  AssertZeroExitCode "Downloading FlatBuffers failed"
+
+  tar xzf $FLATBUFFERS_PKG
+  AssertZeroExitCode "Unpacking FlatBuffers failed"
+
+  rm -rf $FLATBUFFERS_PKG
+fi
+
 if [ ! -d armnn ]; then
   echo "++ Downloading armnn"
 

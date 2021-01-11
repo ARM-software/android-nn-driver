@@ -163,6 +163,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
+        libflatbuffers-framework \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
@@ -290,6 +291,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
+        libflatbuffers-framework \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
@@ -410,6 +412,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
+        libflatbuffers-framework \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
@@ -528,6 +531,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
+        libflatbuffers-framework \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := libarmnn
@@ -604,6 +608,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
+        libflatbuffers-framework \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -700,6 +705,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
+        libflatbuffers-framework \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -787,6 +793,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
+        libflatbuffers-framework \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -865,6 +872,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
+        libflatbuffers-framework \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \

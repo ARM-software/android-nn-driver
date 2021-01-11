@@ -36,6 +36,8 @@ DriverOptions::DriverOptions(armnn::Compute computeDevice, bool fp16Enabled)
     , m_EnableGpuProfiling(false)
     , m_fp16Enabled(fp16Enabled)
     , m_FastMathEnabled(false)
+    , m_ShouldExit(false)
+    , m_SaveCachedNetwork(false)
 {
 }
 
@@ -47,6 +49,8 @@ DriverOptions::DriverOptions(const std::vector<armnn::BackendId>& backends, bool
     , m_EnableGpuProfiling(false)
     , m_fp16Enabled(fp16Enabled)
     , m_FastMathEnabled(false)
+    , m_ShouldExit(false)
+    , m_SaveCachedNetwork(false)
 {
 }
 
@@ -58,6 +62,7 @@ DriverOptions::DriverOptions(int argc, char** argv)
     , m_fp16Enabled(false)
     , m_FastMathEnabled(false)
     , m_ShouldExit(false)
+    , m_SaveCachedNetwork(false)
 {
     std::string unsupportedOperationsAsString;
     std::string clTunedParametersModeAsString;
@@ -111,6 +116,16 @@ DriverOptions::DriverOptions(int argc, char** argv)
 
         ("p,gpu-profiling", "Turns GPU profiling on",
          cxxopts::value<bool>(m_EnableGpuProfiling)->default_value("false"))
+
+        ("q,cached-network-file", "If non-empty, the given file will be used to load/save cached network. "
+                                   "If save-cached-network option is given will save the cached network to given file."
+                                   "If save-cached-network option is not given will load the cached network from given "
+                                   "file.",
+        cxxopts::value<std::string>(m_CachedNetworkFilePath)->default_value(""))
+
+        ("s,save-cached-network", "Enables saving the cached network to the file given with cached-network-file option."
+                                  " See also --cached-network-file",
+        cxxopts::value<bool>(m_SaveCachedNetwork)->default_value("false"))
 
         ("t,cl-tuned-parameters-file",
          "If non-empty, the given file will be used to load/save CL tuned parameters. "

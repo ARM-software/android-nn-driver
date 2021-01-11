@@ -132,7 +132,9 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(
 
     armnn::BackendOptions gpuAcc("GpuAcc",
     {
-        { "FastMathEnabled", options.IsFastMathEnabled() }
+        { "FastMathEnabled", options.IsFastMathEnabled() },
+        { "SaveCachedNetwork", options.SaveCachedNetwork() },
+        { "CachedNetworkFilePath", options.GetCachedNetworkFilePath() }
     });
     armnn::BackendOptions cpuAcc("CpuAcc",
     {

@@ -74,6 +74,7 @@ LOCAL_SRC_FILES := \
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
         libboost_unit_test_framework \
+        libflatbuffers-framework \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -188,6 +189,7 @@ LOCAL_SRC_FILES := \
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
         libboost_unit_test_framework \
+        libflatbuffers-framework \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -293,6 +295,7 @@ LOCAL_SRC_FILES := \
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
         libboost_unit_test_framework \
+        libflatbuffers-framework \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -391,6 +394,7 @@ LOCAL_SRC_FILES := \
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
         libboost_unit_test_framework \
+        libflatbuffers-framework \
         arm_compute_library
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \

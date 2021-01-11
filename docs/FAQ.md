@@ -20,18 +20,21 @@ An acceptable workaround is to increase the timeout defined in AndroidTest.xml, 
 Problems seen when trying to build the android-nn-driver obtained from GitHub
 -----------------------------------------------------------------------------
 
-Some users have encountered difficulties when attempting to build copies of the android-nn-driver obtained from GitHub. The build reports missing module source paths from armnn, clframework or boost_1_64_0. These errors can look like this:
+Some users have encountered difficulties when attempting to build copies of the android-nn-driver obtained from GitHub. The build reports missing module source paths from armnn, clframework, flatbuffers-1.12.0 or boost_1_64_0.
+These errors can look
+like this:
 
 'error: vendor/arm/android-nn-driver/Android.bp:45:1: variant "android_arm64_armv7": module "armnn-arm_compute" "module source path "vendor/arm/android-nn-driver/clframework/build/android-arm64v8a/src/core/CL" does not exist'
 
 These errors are due to missing dependencies or incompatiblities between the android-nn-driver and armnn or clframework versions. The android-nn-driver requires boost_1_64_0 to build unit tests. The versions of android-nn-driver, armnn and clframework will have to match for them to work together. For example, the 19.08 version of android-nn-driver, clframework and armnn will work together but none of them will work with earlier or later versions of the others.
 
-In order to ensure that the correct versions of boost, armnn and the clframework are obtained you can do the following:
+In order to ensure that the correct versions of flatbuffers, boost, armnn and the clframework are obtained you can do the following:
 
-1. Delete or move any boost, armnn or clframework directories from the android-nn-driver directory.
+1. Delete or move any flatbuffers, boost, armnn or clframework directories from the android-nn-driver directory.
 2. Run the setup.sh script in the android-nn-driver directory. 
 
-This will download the correct versions of boost, armnn and the clframework and the android-nn-driver should build correctly. Alternatively you can go to the GitHub pages for android-nn-driver, armnn and computelibrary (clframework) and download versions with the same release tag.
+This will download the correct versions of flatbuffers, boost, armnn and the clframework and the android-nn-driver should build
+correctly. Alternatively you can go to the GitHub pages for android-nn-driver, armnn and computelibrary (clframework) and download versions with the same release tag.
 
 As an example, for 20.05 these would be:
 
@@ -42,6 +45,10 @@ https://github.com/ARM-software/computelibrary/tree/v20.05
 The correct version of boost (1_64_0) can be downloaded from:
 
 https://www.boost.org/
+
+The correct version of flatbuffers (1.12.0) can be downloaded from:
+
+https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz
 
 Instance Normalization test failures 
 ------------------------------------
@@ -69,4 +76,3 @@ In order to fix these failures you will have to update to a version of Android Q
 The Android 10 R3 CTS that can be downloaded from https://source.android.com/compatibility/cts/downloads contains all these patches. 
 
 There is a known issue that even with these patches CTS tests "TestRandomGraph/RandomGraphTest#LargeGraph_TENSOR_FLOAT16_Rank3/41" and "TestRandomGraph/RandomGraphTest#LargeGraph_TENSOR_FLOAT16_Rank2/20 " will still fail on CpuRef. These failures are caused by a LogSoftmax layer followed by a Floor layer which blows up the slight difference between fp16 to fp32. This issue only affects CpuRef with Android Q. These tests are not failing for Android R.
-
