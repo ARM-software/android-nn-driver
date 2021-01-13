@@ -136,6 +136,11 @@ Return<V1_3::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_3(
         return V1_3::ErrorStatus::NONE;
     }
 
+    // Serialize the network graph to a .armnn file if an output directory
+    // has been specified in the drivers' arguments.
+    auto serializedNetworkFileName =
+        SerializeNetwork(*modelConverter.GetINetwork(), options.GetRequestInputsAndOutputsDumpDir());
+
     // Optimize the network
     armnn::IOptimizedNetworkPtr optNet(nullptr, nullptr);
     armnn::OptimizerOptions OptOptions;
@@ -206,11 +211,12 @@ Return<V1_3::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_3(
         return V1_3::ErrorStatus::NONE;
     }
 
-    // Now that we have a networkId for the graph rename the dump file to use it
-    // so that we can associate the graph file and the input/output tensor dump files
-    RenameGraphDotFile(dotGraphFileName,
-                       options.GetRequestInputsAndOutputsDumpDir(),
-                       netId);
+    // Now that we have a networkId for the graph rename the exported files to use it
+    // so that we can associate the graph file and the input/output tensor exported files
+    RenameExportedFiles(serializedNetworkFileName,
+                        dotGraphFileName,
+                        options.GetRequestInputsAndOutputsDumpDir(),
+                        netId);
 
     std::unique_ptr<ArmnnPreparedModel_1_3<hal_1_3::HalPolicy>> preparedModel(
             new ArmnnPreparedModel_1_3<hal_1_3::HalPolicy>(

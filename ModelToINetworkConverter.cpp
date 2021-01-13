@@ -87,8 +87,9 @@ void ModelToINetworkConverter<HalPolicy>::Convert()
             const HalOperand& operand = getMainModel(m_Model).operands[inputIndex];
             ALOGV("ModelToINetworkConverter::Convert(): GetTensorInfoForOperand(operand)");
             const armnn::TensorInfo& tensor = GetTensorInfoForOperand(operand);
-            ALOGV("ModelToINetworkConverter::Convert(): m_Data.m_Network->AddInputLayer(i)");
-            armnn::IConnectableLayer* layer = m_Data.m_Network->AddInputLayer(i);
+            const std::string layerName = "Input_" + std::to_string(i);
+            ALOGV("ModelToINetworkConverter::Convert(): m_Data.m_Network->AddInputLayer(i, layerName.c_str())");
+            armnn::IConnectableLayer* layer = m_Data.m_Network->AddInputLayer(i, layerName.c_str());
 
             ALOGV("ModelToINetworkConverter::Convert(): layer->GetOutputSlot(0)");
             armnn::IOutputSlot& outputSlot = layer->GetOutputSlot(0);
@@ -184,7 +185,8 @@ void ModelToINetworkConverter<HalPolicy>::Convert()
                 uint32_t outputIndex = getMainModel(m_Model).outputIndexes[i];
                 const HalOperand& operand = getMainModel(m_Model).operands[outputIndex];
                 const armnn::TensorInfo& tensor = GetTensorInfoForOperand(operand);
-                armnn::IConnectableLayer* layer = m_Data.m_Network->AddOutputLayer(i);
+                const std::string layerName = "Output_" + std::to_string(i);
+                armnn::IConnectableLayer* layer = m_Data.m_Network->AddOutputLayer(i, layerName.c_str());
 
                 assert(m_Data.m_OutputSlotForOperand[outputIndex]);
                 m_Data.m_OutputSlotForOperand[outputIndex]->Connect(layer->GetInputSlot(0));

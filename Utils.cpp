@@ -8,6 +8,7 @@
 #include "Utils.hpp"
 #include "Half.hpp"
 
+#include <armnnSerializer/ISerializer.hpp>
 #include <armnnUtils/Permute.hpp>
 
 #include <armnn/Utils.hpp>
@@ -21,8 +22,6 @@
 #include <sstream>
 #include <cstdio>
 #include <time.h>
-
-
 
 using namespace android;
 using namespace android::hardware;
@@ -572,6 +571,41 @@ std::string ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimize
     return fileName;
 }
 
+std::string SerializeNetwork(const armnn::INetwork& network, const std::string& dumpDir)
+{
+    std::string fileName;
+    // The dump directory must exist in advance.
+    if (dumpDir.empty())
+    {
+        return fileName;
+    }
+
+    std::string timestamp = GetFileTimestamp();
+    if (timestamp.empty())
+    {
+        return fileName;
+    }
+
+    auto serializer(armnnSerializer::ISerializer::Create());
+
+    // Serialize the Network
+    serializer->Serialize(network);
+
+    // Set the name of the output .armnn file.
+    fs::path dumpPath = dumpDir;
+    fs::path tempFilePath = dumpPath / (timestamp + "_network.armnn");
+    fileName = tempFilePath.string();
+
+    // Save serialized network to a file
+    std::ofstream serializedFile(fileName, std::ios::out | std::ios::binary);
+    bool serialized = serializer->SaveSerializedToStream(serializedFile);
+    if (!serialized)
+    {
+        ALOGW("An error occurred when serializing to file %s", fileName.c_str());
+    }
+    return fileName;
+}
+
 bool IsDynamicTensor(const armnn::TensorInfo& tensorInfo)
 {
     if (tensorInfo.GetShape().GetDimensionality() == armnn::Dimensionality::NotSpecified)
@@ -613,25 +647,37 @@ std::string GetFileTimestamp()
     return ss.str();
 }
 
-void RenameGraphDotFile(const std::string& oldName, const std::string& dumpDir, const armnn::NetworkId networkId)
+void RenameExportedFiles(const std::string& existingSerializedFileName,
+                         const std::string& existingDotFileName,
+                         const std::string& dumpDir,
+                         const armnn::NetworkId networkId)
 {
     if (dumpDir.empty())
     {
         return;
     }
-    if (oldName.empty())
+    RenameFile(existingSerializedFileName, std::string("_network.armnn"), dumpDir, networkId);
+    RenameFile(existingDotFileName, std::string("_networkgraph.dot"), dumpDir, networkId);
+}
+
+void RenameFile(const std::string& existingName,
+                const std::string& extension,
+                const std::string& dumpDir,
+                const armnn::NetworkId networkId)
+{
+    if (existingName.empty() || dumpDir.empty())
     {
         return;
     }
-    fs::path dumpPath = dumpDir;
-    const fs::path newFileName = dumpPath / (std::to_string(networkId) + "_networkgraph.dot");
 
-    int iRet = rename(oldName.c_str(), newFileName.c_str());
+    fs::path dumpPath = dumpDir;
+    const fs::path newFileName = dumpPath / (std::to_string(networkId) + extension);
+    int iRet = rename(existingName.c_str(), newFileName.c_str());
     if (iRet != 0)
     {
         std::stringstream ss;
-        ss << "rename of [" << oldName << "] to [" << newFileName << "] failed with errno " << std::to_string(errno)
-           << " : " << std::strerror(errno);
+        ss << "rename of [" << existingName << "] to [" << newFileName << "] failed with errno "
+           << std::to_string(errno) << " : " << std::strerror(errno);
         ALOGW(ss.str().c_str());
     }
 }
