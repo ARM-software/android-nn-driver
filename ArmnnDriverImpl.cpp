@@ -118,7 +118,8 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
     });
     armnn::BackendOptions cpuAcc("CpuAcc",
     {
-        { "FastMathEnabled", options.IsFastMathEnabled() }
+        { "FastMathEnabled", options.IsFastMathEnabled() },
+        { "NumberOfThreads", options.GetNumberOfThreads() }
     });
     OptOptions.m_ModelOptions.push_back(gpuAcc);
     OptOptions.m_ModelOptions.push_back(cpuAcc);

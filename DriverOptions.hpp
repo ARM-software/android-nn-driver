@@ -38,6 +38,7 @@ public:
     int GetExitCode() const { return m_ExitCode; }
     const std::string& GetCachedNetworkFilePath() const { return m_CachedNetworkFilePath; }
     bool SaveCachedNetwork() const { return m_SaveCachedNetwork; }
+    unsigned int GetNumberOfThreads() const { return m_NumberOfThreads; }
 
 private:
     std::vector<armnn::BackendId> m_Backends;
@@ -55,6 +56,7 @@ private:
     int m_ExitCode;
     std::string m_CachedNetworkFilePath;
     bool m_SaveCachedNetwork;
+    unsigned int m_NumberOfThreads;
 };
 
 } // namespace armnn_driver

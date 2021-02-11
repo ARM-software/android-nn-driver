@@ -38,6 +38,7 @@ DriverOptions::DriverOptions(armnn::Compute computeDevice, bool fp16Enabled)
     , m_FastMathEnabled(false)
     , m_ShouldExit(false)
     , m_SaveCachedNetwork(false)
+    , m_NumberOfThreads(0)
 {
 }
 
@@ -51,6 +52,7 @@ DriverOptions::DriverOptions(const std::vector<armnn::BackendId>& backends, bool
     , m_FastMathEnabled(false)
     , m_ShouldExit(false)
     , m_SaveCachedNetwork(false)
+    , m_NumberOfThreads(0)
 {
 }
 
@@ -63,6 +65,7 @@ DriverOptions::DriverOptions(int argc, char** argv)
     , m_FastMathEnabled(false)
     , m_ShouldExit(false)
     , m_SaveCachedNetwork(false)
+    , m_NumberOfThreads(0)
 {
     std::string unsupportedOperationsAsString;
     std::string clTunedParametersModeAsString;
@@ -126,6 +129,12 @@ DriverOptions::DriverOptions(int argc, char** argv)
         ("s,save-cached-network", "Enables saving the cached network to the file given with cached-network-file option."
                                   " See also --cached-network-file",
         cxxopts::value<bool>(m_SaveCachedNetwork)->default_value("false"))
+
+        ("number-of-threads",
+         "Assign the number of threads used by the CpuAcc backend. "
+         "Input value must be between 1 and 64. "
+         "Default is set to 0 (Backend will decide number of threads to use).",
+         cxxopts::value<unsigned int>(m_NumberOfThreads)->default_value("0"))
 
         ("t,cl-tuned-parameters-file",
          "If non-empty, the given file will be used to load/save CL tuned parameters. "
