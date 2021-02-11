@@ -98,7 +98,7 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
         case V1_3::OperationType::MAXIMUM:
             return ConvertMaximum(operation, model, data);
         case V1_3::OperationType::MEAN:
-            return ConvertMean(operation, model, data);
+            return ConvertReduce(operation, model, data, ReduceOperation::Mean);
         case V1_3::OperationType::MINIMUM:
             return ConvertMinimum(operation, model, data);
         case V1_3::OperationType::MUL:
@@ -121,6 +121,12 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertQuantized16BitLstm(operation, model, data);
         case V1_3::OperationType::RANK:
             return ConvertRank(operation, model, data);
+        case V1_3::OperationType::REDUCE_MAX:
+            return ConvertReduce(operation, model, data, ReduceOperation::Max);
+        case V1_3::OperationType::REDUCE_MIN:
+            return ConvertReduce(operation, model, data, ReduceOperation::Min);
+        case V1_3::OperationType::REDUCE_SUM:
+            return ConvertReduce(operation, model, data, ReduceOperation::Sum);
         case V1_3::OperationType::RELU:
             return ConvertReLu(operation, model, data);
         case V1_3::OperationType::RELU1:
@@ -359,10 +365,11 @@ bool HalPolicy::ConvertMaximum(const Operation& operation, const Model& model, C
     return ::ConvertMaximum<hal_1_3::HalPolicy>(operation, model, data);
 }
 
-bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, ConversionData& data)
+bool HalPolicy::ConvertReduce(const Operation& operation, const Model& model, ConversionData& data,
+                              ReduceOperation reduceOperation)
 {
-    ALOGV("hal_1_3::HalPolicy::ConvertMean()");
-    return ::ConvertMean<hal_1_3::HalPolicy>(operation, model, data);
+    ALOGV("hal_1_3::HalPolicy::ConvertReduce()");
+    return ::ConvertReduce<hal_1_3::HalPolicy>(operation, model, data, reduceOperation);
 }
 
 bool HalPolicy::ConvertMinimum(const Operation& operation, const Model& model, ConversionData& data)

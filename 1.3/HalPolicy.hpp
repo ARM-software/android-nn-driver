@@ -110,7 +110,8 @@ private:
 
     static bool ConvertMaximum(const Operation& operation, const Model& model, ConversionData& data);
 
-    static bool ConvertMean(const Operation& operation, const Model& model, ConversionData& data);
+    static bool ConvertReduce(const Operation& operation, const Model& model, ConversionData& data,
+                              ReduceOperation reduceOperation);
 
     static bool ConvertMinimum(const Operation& operation, const Model& model, ConversionData& data);
 

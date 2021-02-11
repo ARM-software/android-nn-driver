@@ -1937,6 +1937,92 @@ bool ConvertQuantized16BitLstm(const HalOperation& operation, const HalModel& mo
 template<typename HalPolicy,
          typename HalOperation = typename HalPolicy::Operation,
          typename HalModel     = typename HalPolicy::Model>
+bool ConvertReduce(const HalOperation& operation,
+                   const HalModel& model,
+                   ConversionData& data,
+                   ReduceOperation reduceOperation)
+{
+    using HalOperand     = typename HalPolicy::Operand;
+    using HalOperandType = typename HalPolicy::OperandType;
+
+    armnn::ReduceDescriptor descriptor;
+    descriptor.m_ReduceOperation = reduceOperation;
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+    const armnn::TensorInfo& inputInfo = input.GetTensorInfo();
+
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    const HalOperand* axisOperand = GetInputOperand<HalPolicy>(operation, 1, model);
+    if (!axisOperand)
+    {
+        return Fail("%s: Could not read input 1", __func__);
+    }
+    std::vector<int32_t> axis;
+    if (!GetTensorInt32Values<HalPolicy>(*axisOperand, axis, model, data))
+    {
+        return Fail("%s: Input 1 has invalid values", __func__);
+    }
+
+    // Convert the axis to unsigned int and remove duplicates.
+    unsigned int rank = inputInfo.GetNumDimensions();
+    std::set<unsigned int> uniqueAxis;
+    std::transform(axis.begin(), axis.end(),
+                   std::inserter(uniqueAxis, uniqueAxis.begin()),
+                   [rank](int i) -> unsigned int { return (i + rank) % rank; });
+    descriptor.m_vAxis.assign(uniqueAxis.begin(), uniqueAxis.end());
+
+    // Get the "keep dims" flag.
+    if (!GetInputScalar<HalPolicy>(operation, 2, HalOperandType::BOOL, descriptor.m_KeepDims, model, data))
+    {
+        return Fail("%s: Could not read input 2", __func__);
+    }
+
+    bool isSupported = false;
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsReduceSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputInfo,
+                                   descriptor);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    armnn::IConnectableLayer* const layer = data.m_Network->AddReduceLayer(descriptor);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
+}
+
+template<typename HalPolicy,
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
 bool ConvertResize(const HalOperation& operation,
                    const HalModel& model,
                    ConversionData& data,
