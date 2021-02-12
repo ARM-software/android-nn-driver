@@ -139,8 +139,10 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(
     {
         { "FastMathEnabled", options.IsFastMathEnabled() },
         { "SaveCachedNetwork", options.SaveCachedNetwork() },
-        { "CachedNetworkFilePath", options.GetCachedNetworkFilePath() }
+        { "CachedNetworkFilePath", options.GetCachedNetworkFilePath() },
+        { "MLGOTuningFilePath", options.GetClMLGOTunedParametersFile() }
     });
+
     armnn::BackendOptions cpuAcc("CpuAcc",
     {
         { "FastMathEnabled", options.IsFastMathEnabled() },

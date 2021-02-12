@@ -28,6 +28,7 @@ public:
     const std::string& GetServiceName() const { return m_ServiceName; }
     const std::set<unsigned int>& GetForcedUnsupportedOperations() const { return m_ForcedUnsupportedOperations; }
     const std::string& GetClTunedParametersFile() const { return m_ClTunedParametersFile; }
+    const std::string& GetClMLGOTunedParametersFile() const { return m_ClMLGOTunedParametersFile; }
     armnn::IGpuAccTunedParameters::Mode GetClTunedParametersMode() const { return m_ClTunedParametersMode; }
     armnn::IGpuAccTunedParameters::TuningLevel GetClTuningLevel() const { return m_ClTuningLevel; }
     bool IsGpuProfilingEnabled() const { return m_EnableGpuProfiling; }
@@ -47,6 +48,7 @@ private:
     std::string m_ServiceName;
     std::set<unsigned int> m_ForcedUnsupportedOperations;
     std::string m_ClTunedParametersFile;
+    std::string m_ClMLGOTunedParametersFile;
     armnn::IGpuAccTunedParameters::Mode m_ClTunedParametersMode;
     armnn::IGpuAccTunedParameters::TuningLevel m_ClTuningLevel;
     bool m_EnableGpuProfiling;

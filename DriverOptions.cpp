@@ -106,6 +106,10 @@ DriverOptions::DriverOptions(int argc, char** argv)
          "the file accordingly.",
          cxxopts::value<std::string>(clTunedParametersModeAsString)->default_value("UseTunedParameters"))
 
+        ("g,mlgo-cl-tuned-parameters-file",
+        "If non-empty, the given file will be used to load/save MLGO CL tuned parameters. ",
+        cxxopts::value<std::string>(m_ClMLGOTunedParametersFile)->default_value(""))
+
         ("n,service-name",
          "If non-empty, the driver service name to be registered",
          cxxopts::value<std::string>(m_ServiceName)->default_value("armnn"))
