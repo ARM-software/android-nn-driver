@@ -8,19 +8,63 @@
 #include <log/log.h>
 
 #include "../Utils.hpp"
+#include <armnn/src/armnn/OptimizedNetworkImpl.hpp>
 
 #include <fstream>
 #include <iomanip>
+#include <memory>
 #include <armnn/INetwork.hpp>
+#include "armnn/NetworkFwd.hpp"
 
 #include <Filesystem.hpp>
 
-BOOST_AUTO_TEST_SUITE(UtilsTests)
 
 using namespace android;
 using namespace android::nn;
 using namespace android::hardware;
 using namespace armnn_driver;
+
+namespace armnn
+{
+
+class Graph
+{
+public:
+    Graph(Graph&& graph) = default;
+};
+
+class MockOptimizedNetworkImpl final : public ::armnn::OptimizedNetworkImpl
+{
+public:
+    MockOptimizedNetworkImpl(const std::string& mockSerializedContent, std::unique_ptr<armnn::Graph>)
+        : ::armnn::OptimizedNetworkImpl(nullptr)
+        , m_MockSerializedContent(mockSerializedContent)
+    {}
+    ~MockOptimizedNetworkImpl() {}
+
+    ::armnn::Status PrintGraph() override { return ::armnn::Status::Failure; }
+    ::armnn::Status SerializeToDot(std::ostream& stream) const override
+    {
+        stream << m_MockSerializedContent;
+
+        return stream.good() ? ::armnn::Status::Success : ::armnn::Status::Failure;
+    }
+
+    ::armnn::profiling::ProfilingGuid GetGuid() const final { return ::armnn::profiling::ProfilingGuid(0); }
+
+    void UpdateMockSerializedContent(const std::string& mockSerializedContent)
+    {
+        this->m_MockSerializedContent = mockSerializedContent;
+    }
+
+private:
+    std::string m_MockSerializedContent;
+};
+
+
+} // armnn namespace
+
+BOOST_AUTO_TEST_SUITE(UtilsTests)
 
 // The following are helpers for writing unit tests for the driver.
 namespace
@@ -102,32 +146,7 @@ private:
     std::ifstream m_FileStream;
 };
 
-class MockOptimizedNetwork final : public armnn::IOptimizedNetwork
-{
-public:
-    MockOptimizedNetwork(const std::string& mockSerializedContent)
-        : m_MockSerializedContent(mockSerializedContent)
-    {}
-    ~MockOptimizedNetwork() {}
 
-    armnn::Status PrintGraph() override { return armnn::Status::Failure; }
-    armnn::Status SerializeToDot(std::ostream& stream) const override
-    {
-        stream << m_MockSerializedContent;
-
-        return stream.good() ? armnn::Status::Success : armnn::Status::Failure;
-    }
-
-    armnn::profiling::ProfilingGuid GetGuid() const final { return armnn::profiling::ProfilingGuid(0); }
-
-    void UpdateMockSerializedContent(const std::string& mockSerializedContent)
-    {
-        this->m_MockSerializedContent = mockSerializedContent;
-    }
-
-private:
-    std::string m_MockSerializedContent;
-};
 
 } // namespace
 
@@ -140,7 +159,11 @@ BOOST_AUTO_TEST_CASE(ExportToEmptyDirectory)
     std::string mockSerializedContent = "This is a mock serialized content.";
 
     // Set a mock optimized network.
-    MockOptimizedNetwork mockOptimizedNetwork(mockSerializedContent);
+    std::unique_ptr<armnn::Graph> graphPtr;
+
+    std::unique_ptr<::armnn::OptimizedNetworkImpl> mockImpl(
+        new armnn::MockOptimizedNetworkImpl(mockSerializedContent, std::move(graphPtr)));
+    ::armnn::IOptimizedNetwork mockOptimizedNetwork(std::move(mockImpl));
 
     // Export the mock optimized network.
     fixture.m_FileName = armnn_driver::ExportNetworkGraphToDotFile(mockOptimizedNetwork,
@@ -159,7 +182,12 @@ BOOST_AUTO_TEST_CASE(ExportNetwork)
     std::string mockSerializedContent = "This is a mock serialized content.";
 
     // Set a mock optimized network.
-    MockOptimizedNetwork mockOptimizedNetwork(mockSerializedContent);
+    std::unique_ptr<armnn::Graph> graphPtr;
+
+    std::unique_ptr<::armnn::OptimizedNetworkImpl> mockImpl(
+        new armnn::MockOptimizedNetworkImpl(mockSerializedContent, std::move(graphPtr)));
+    ::armnn::IOptimizedNetwork mockOptimizedNetwork(std::move(mockImpl));
+
 
     // Export the mock optimized network.
     fixture.m_FileName = armnn_driver::ExportNetworkGraphToDotFile(mockOptimizedNetwork,
@@ -181,7 +209,11 @@ BOOST_AUTO_TEST_CASE(ExportNetworkOverwriteFile)
     std::string mockSerializedContent = "This is a mock serialized content.";
 
     // Set a mock optimized network.
-    MockOptimizedNetwork mockOptimizedNetwork(mockSerializedContent);
+    std::unique_ptr<armnn::Graph> graphPtr;
+
+    std::unique_ptr<::armnn::OptimizedNetworkImpl> mockImpl(
+        new armnn::MockOptimizedNetworkImpl(mockSerializedContent, std::move(graphPtr)));
+    ::armnn::IOptimizedNetwork mockOptimizedNetwork(std::move(mockImpl));
 
     // Export the mock optimized network.
     fixture.m_FileName = armnn_driver::ExportNetworkGraphToDotFile(mockOptimizedNetwork,
@@ -195,10 +227,14 @@ BOOST_AUTO_TEST_CASE(ExportNetworkOverwriteFile)
 
     // Update the mock serialized content of the network.
     mockSerializedContent = "This is ANOTHER mock serialized content!";
-    mockOptimizedNetwork.UpdateMockSerializedContent(mockSerializedContent);
+    std::unique_ptr<armnn::Graph> graphPtr2;
+    std::unique_ptr<::armnn::OptimizedNetworkImpl> mockImpl2(
+        new armnn::MockOptimizedNetworkImpl(mockSerializedContent, std::move(graphPtr2)));
+    static_cast<armnn::MockOptimizedNetworkImpl*>(mockImpl2.get())->UpdateMockSerializedContent(mockSerializedContent);
+    ::armnn::IOptimizedNetwork mockOptimizedNetwork2(std::move(mockImpl2));
 
     // Export the mock optimized network.
-    fixture.m_FileName = armnn_driver::ExportNetworkGraphToDotFile(mockOptimizedNetwork,
+    fixture.m_FileName = armnn_driver::ExportNetworkGraphToDotFile(mockOptimizedNetwork2,
                                               fixture.m_RequestInputsAndOutputsDumpDir);
 
     // Check that the output file still exists and that it has the correct name.
@@ -219,7 +255,11 @@ BOOST_AUTO_TEST_CASE(ExportMultipleNetworks)
     std::string mockSerializedContent = "This is a mock serialized content.";
 
     // Set a mock optimized network.
-    MockOptimizedNetwork mockOptimizedNetwork(mockSerializedContent);
+    std::unique_ptr<armnn::Graph> graphPtr;
+
+    std::unique_ptr<::armnn::OptimizedNetworkImpl> mockImpl(
+        new armnn::MockOptimizedNetworkImpl(mockSerializedContent, std::move(graphPtr)));
+    ::armnn::IOptimizedNetwork mockOptimizedNetwork(std::move(mockImpl));
 
     // Export the mock optimized network.
     fixture1.m_FileName = armnn_driver::ExportNetworkGraphToDotFile(mockOptimizedNetwork,
