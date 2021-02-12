@@ -8,11 +8,15 @@ LOCAL_PATH := $(call my-dir)
 # Configure these paths if you move the source or Khronos headers
 #
 OPENCL_HEADER_PATH := $(LOCAL_PATH)/../../mali/product/khronos/original
-NN_HEADER_PATH := $(LOCAL_PATH)/../../../../frameworks/ml/nn/runtime/include
 ARMNN_HEADER_PATH := $(LOCAL_PATH)/../armnn/include
 ARMNN_THIRD_PARTY_PATH   := $(LOCAL_PATH)/../armnn/third-party
 ARMNN_UTILS_HEADER_PATH := $(LOCAL_PATH)/../armnn/src/armnnUtils
 ARMNN_DRIVER_HEADER_PATH := $(LOCAL_PATH)/..
+
+NN_HEADER_PATH := $(LOCAL_PATH)/../../../../frameworks/ml/nn/runtime/include
+ifeq ($(S_OR_LATER),1)
+NN_HEADER_PATH := $(LOCAL_PATH)/../../../../packages/modules/NeuralNetworks/runtime/include
+endif
 
 ##########################
 # armnn-driver-tests@1.0 #
@@ -47,10 +51,15 @@ LOCAL_CFLAGS := \
         -UNDEBUG
 
 # Required to build with the changes made to the Android ML framework specific to Android R
-ifeq ($(R_OR_LATER),1)
+ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
 endif # R or later
+
+ifeq ($(ANDROID_S),1)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_S
+endif # S or later
 
 ifeq ($(Q_OR_LATER),1)
 LOCAL_CFLAGS += \
@@ -159,10 +168,15 @@ LOCAL_CFLAGS := \
         -DARMNN_ANDROID_NN_V1_1
 
 # Required to build with the changes made to the Android ML framework specific to Android R
-ifeq ($(R_OR_LATER),1)
+ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
 endif # R or later
+
+ifeq ($(ANDROID_S),1)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_S
+endif # S or later
 
 ifeq ($(Q_OR_LATER),1)
 LOCAL_CFLAGS += \
@@ -267,10 +281,15 @@ LOCAL_CFLAGS := \
         -DARMNN_ANDROID_NN_V1_2
 
 # Required to build with the changes made to the Android ML framework specific to Android R
-ifeq ($(R_OR_LATER),1)
+ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
 endif # R or later
+
+ifeq ($(ANDROID_S),1)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_S
+endif # S or later
 
 LOCAL_SRC_FILES := \
         1.0/Convolution2D.cpp \
@@ -366,8 +385,17 @@ LOCAL_CFLAGS := \
         -O0 \
         -UNDEBUG \
         -DBOOST_NO_AUTO_PTR \
-        -DARMNN_ANDROID_R \
         -DARMNN_ANDROID_NN_V1_3
+
+ifeq ($(ANDROID_R),1)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_R
+endif
+
+ifeq ($(ANDROID_S),1)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_S
+endif
 
 LOCAL_SRC_FILES := \
         1.0/Convolution2D.cpp \

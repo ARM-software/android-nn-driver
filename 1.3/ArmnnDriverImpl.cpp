@@ -66,9 +66,9 @@ const char *g_OperandTypeInt32PerformanceExecTime           = "Armnn.operandType
 const char *g_OperandTypeInt32PerformancePowerUsage         = "Armnn.operandTypeInt32Performance.powerUsage";
 
 
-void NotifyCallbackAndCheck(const sp<V1_3::IPreparedModelCallback>& callback,
+void NotifyCallbackAndCheck(const android::sp<V1_3::IPreparedModelCallback>& callback,
                             V1_3::ErrorStatus errorStatus,
-                            const sp<V1_3::IPreparedModel>& preparedModelPtr)
+                            const android::sp<V1_3::IPreparedModel>& preparedModelPtr)
 {
     Return<void> returned = callback->notify_1_3(errorStatus, preparedModelPtr);
     // This check is required, if the callback fails and it isn't checked it will bring down the service
@@ -81,7 +81,7 @@ void NotifyCallbackAndCheck(const sp<V1_3::IPreparedModelCallback>& callback,
 
 Return<V1_3::ErrorStatus> FailPrepareModel(V1_3::ErrorStatus error,
                                            const std::string& message,
-                                           const sp<V1_3::IPreparedModelCallback>& callback)
+                                           const android::sp<V1_3::IPreparedModelCallback>& callback)
 {
     ALOGW("ArmnnDriverImpl::prepareModel: %s", message.c_str());
     NotifyCallbackAndCheck(callback, error, nullptr);
@@ -100,7 +100,7 @@ Return<V1_3::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_3(
        const armnn::IGpuAccTunedParametersPtr& clTunedParameters,
        const DriverOptions& options,
        const V1_3::Model& model,
-       const sp<V1_3::IPreparedModelCallback>& cb,
+       const android::sp<V1_3::IPreparedModelCallback>& cb,
        bool float32ToFloat16,
        V1_3::Priority priority)
 {

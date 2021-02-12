@@ -21,6 +21,7 @@ using namespace driverTestHelpers;
 using namespace armnn_driver;
 
 using HalPolicy = hal_1_0::HalPolicy;
+using RequestArgument = V1_0::RequestArgument;
 
 namespace
 {
@@ -89,7 +90,7 @@ ConcatTestImpl(const std::vector<const TestTensor*> & inputs,
     // the inputs
     for (uint32_t i = 0; i<inputs.size(); ++i)
     {
-        DataLocation inloc = {};
+        V1_0::DataLocation inloc = {};
         inloc.poolIndex = i;
         inloc.offset = 0;
         inloc.length = inputs[i]->GetNumElements() * sizeof(float);
@@ -101,7 +102,7 @@ ConcatTestImpl(const std::vector<const TestTensor*> & inputs,
 
     // and an additional memory pool is needed for the output
     {
-        DataLocation outloc = {};
+        V1_0::DataLocation outloc = {};
         outloc.poolIndex = inputs.size();
         outloc.offset = 0;
         outloc.length = expectedOutputTensor.GetNumElements() * sizeof(float);

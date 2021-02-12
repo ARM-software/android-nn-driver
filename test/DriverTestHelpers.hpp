@@ -14,7 +14,10 @@
 
 #include <android/hidl/allocator/1.0/IAllocator.h>
 
+using RequestArgument = V1_0::RequestArgument;
 using ::android::hidl::allocator::V1_0::IAllocator;
+
+using ::android::hidl::memory::V1_0::IMemory;
 
 namespace android
 {
@@ -202,7 +205,7 @@ void AddBoolOperand(HalModel& model, bool value, uint32_t numberOfConsumers = 1)
     using HalOperandType     = typename HalPolicy::OperandType;
     using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
 
-    DataLocation location = {};
+    V1_0::DataLocation location = {};
     location.offset = model.operandValues.size();
     location.length = sizeof(uint8_t);
 
@@ -420,7 +423,7 @@ void AddTensorOperand(HalModel& model,
         totalElements *= dim;
     }
 
-    DataLocation location = {};
+    V1_0::DataLocation location = {};
     location.length = totalElements * sizeof(T);
 
     if(operandLifeTime == HalOperandLifeTime::CONSTANT_COPY)
@@ -477,7 +480,7 @@ void AddIntOperand(HalModel& model, int32_t value, uint32_t numberOfConsumers = 
     using HalOperandType     = typename HalPolicy::OperandType;
     using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
 
-    DataLocation location = {};
+    V1_0::DataLocation location = {};
     location.offset = model.operandValues.size();
     location.length = sizeof(int32_t);
 
@@ -503,7 +506,7 @@ void AddFloatOperand(HalModel& model,
     using HalOperandType     = typename HalPolicy::OperandType;
     using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
 
-    DataLocation location = {};
+    V1_0::DataLocation location = {};
     location.offset = model.operandValues.size();
     location.length = sizeof(float);
 

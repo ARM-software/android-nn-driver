@@ -13,6 +13,10 @@
 using namespace android::nn::hal;
 #endif
 
+#ifdef ARMNN_ANDROID_S
+using namespace android::hardware;
+#endif
+
 namespace V1_0 = ::android::hardware::neuralnetworks::V1_0;
 namespace V1_1 = ::android::hardware::neuralnetworks::V1_1;
 
@@ -57,7 +61,7 @@ public:
             const android::sp<V1_0::IPreparedModelCallback>& cb,
             bool float32ToFloat16 = false);
 
-    static Return<DeviceStatus> getStatus();
+    static Return<V1_0::DeviceStatus> getStatus();
 
 };
 

@@ -65,7 +65,7 @@ void SwizzleAndroidNn4dTensorToArmNn(const armnn::TensorInfo& tensor, const void
     }
 }
 
-void* GetMemoryFromPool(DataLocation location, const std::vector<android::nn::RunTimePoolInfo>& memPools)
+void* GetMemoryFromPool(V1_0::DataLocation location, const std::vector<android::nn::RunTimePoolInfo>& memPools)
 {
     // find the location within the pool
     assert(location.poolIndex < memPools.size());
@@ -695,7 +695,7 @@ void CommitPools(std::vector<::android::nn::RunTimePoolInfo>& memPools)
     {
         // Type android::nn::RunTimePoolInfo has changed between Android P & Q and Android R, where
         // update() has been removed and flush() added.
-#if defined(ARMNN_ANDROID_R) // Use the new Android implementation.
+#if defined(ARMNN_ANDROID_R) || defined(ARMNN_ANDROID_S) // Use the new Android implementation.
         pool.flush();
 #else
         pool.update();

@@ -15,6 +15,10 @@
 using namespace android::nn::hal;
 #endif
 
+#ifdef ARMNN_ANDROID_S
+using namespace android::hardware;
+#endif
+
 
 namespace V1_0 = ::android::hardware::neuralnetworks::V1_0;
 namespace V1_1 = ::android::hardware::neuralnetworks::V1_1;

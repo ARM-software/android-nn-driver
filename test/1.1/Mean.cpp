@@ -19,6 +19,7 @@ using namespace driverTestHelpers;
 using namespace armnn_driver;
 
 using HalPolicy = hal_1_1::HalPolicy;
+using RequestArgument = V1_0::RequestArgument;
 
 namespace
 {
@@ -61,22 +62,22 @@ void MeanTestImpl(const TestTensor& input,
     android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, *driver);
 
     // The request's memory pools will follow the same order as the inputs
-    DataLocation inLoc    = {};
-    inLoc.poolIndex       = 0;
-    inLoc.offset          = 0;
-    inLoc.length          = input.GetNumElements() * sizeof(float);
-    RequestArgument inArg = {};
-    inArg.location        = inLoc;
-    inArg.dimensions      = input.GetDimensions();
+    V1_0::DataLocation inLoc = {};
+    inLoc.poolIndex          = 0;
+    inLoc.offset             = 0;
+    inLoc.length             = input.GetNumElements() * sizeof(float);
+    RequestArgument inArg    = {};
+    inArg.location           = inLoc;
+    inArg.dimensions         = input.GetDimensions();
 
     // An additional memory pool is needed for the output
-    DataLocation outLoc    = {};
-    outLoc.poolIndex       = 1;
-    outLoc.offset          = 0;
-    outLoc.length          = expectedOutput.GetNumElements() * sizeof(float);
-    RequestArgument outArg = {};
-    outArg.location        = outLoc;
-    outArg.dimensions      = expectedOutput.GetDimensions();
+    V1_0::DataLocation outLoc = {};
+    outLoc.poolIndex          = 1;
+    outLoc.offset             = 0;
+    outLoc.length             = expectedOutput.GetNumElements() * sizeof(float);
+    RequestArgument outArg    = {};
+    outArg.location           = outLoc;
+    outArg.dimensions         = expectedOutput.GetDimensions();
 
     // Make the request based on the arguments
     V1_0::Request request = {};

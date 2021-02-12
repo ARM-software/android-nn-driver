@@ -61,7 +61,7 @@ struct CapabilitiesFixture
 void CheckOperandType(const V1_2::Capabilities& capabilities, V1_2::OperandType type, float execTime, float powerUsage)
 {
     using namespace armnn_driver::hal_1_2;
-    PerformanceInfo perfInfo = android::nn::lookup(capabilities.operandPerformance, type);
+    V1_0::PerformanceInfo perfInfo = android::nn::lookup(capabilities.operandPerformance, type);
     ARMNN_ASSERT(perfInfo.execTime == execTime);
     ARMNN_ASSERT(perfInfo.powerUsage == powerUsage);
 }

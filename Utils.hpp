@@ -9,6 +9,7 @@
 #include <CpuExecutor.h>
 #include <HalInterfaces.h>
 #include <NeuralNetworks.h>
+#include <Utils.h>
 
 #include <vector>
 #include <string>
@@ -63,7 +64,7 @@ void SwizzleAndroidNn4dTensorToArmNn(const armnn::TensorInfo& tensor, const void
                                      const armnn::PermutationVector& mappings);
 
 /// Returns a pointer to a specific location in a pool
-void* GetMemoryFromPool(DataLocation location,
+void* GetMemoryFromPool(V1_0::DataLocation location,
                         const std::vector<android::nn::RunTimePoolInfo>& memPools);
 
 /// Can throw UnsupportedOperand

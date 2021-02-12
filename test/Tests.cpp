@@ -20,9 +20,9 @@ BOOST_AUTO_TEST_CASE(Init)
     // Making the driver object on the stack causes a weird libc error, so make it on the heap instead
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
-    DeviceStatus status = driver->getStatus();
+    V1_0::DeviceStatus status = driver->getStatus();
     // Note double-parentheses to avoid compile error from Boost trying to printf the DeviceStatus
-    BOOST_TEST((status == DeviceStatus::AVAILABLE));
+    BOOST_TEST((status == V1_0::DeviceStatus::AVAILABLE));
 }
 
 BOOST_AUTO_TEST_CASE(TestCapabilities)

@@ -24,6 +24,7 @@ using namespace driverTestHelpers;
 using namespace armnn_driver;
 
 using HalPolicy = hal_1_1::HalPolicy;
+using RequestArgument = V1_0::RequestArgument;
 
 namespace
 {
@@ -58,22 +59,22 @@ void TransposeTestImpl(const TestTensor & inputs, int32_t perm[],
 
     // the request's memory pools will follow the same order as
     // the inputs
-    DataLocation inloc = {};
-    inloc.poolIndex = 0;
-    inloc.offset = 0;
-    inloc.length = inputs.GetNumElements() * sizeof(float);
-    RequestArgument input = {};
-    input.location = inloc;
-    input.dimensions = inputs.GetDimensions();
+    V1_0::DataLocation inloc = {};
+    inloc.poolIndex          = 0;
+    inloc.offset             = 0;
+    inloc.length             = inputs.GetNumElements() * sizeof(float);
+    RequestArgument input    = {};
+    input.location           = inloc;
+    input.dimensions         = inputs.GetDimensions();
 
     // and an additional memory pool is needed for the output
-    DataLocation outloc = {};
-    outloc.poolIndex = 1;
-    outloc.offset = 0;
-    outloc.length = expectedOutputTensor.GetNumElements() * sizeof(float);
-    RequestArgument output = {};
-    output.location = outloc;
-    output.dimensions = expectedOutputTensor.GetDimensions();
+    V1_0::DataLocation outloc = {};
+    outloc.poolIndex          = 1;
+    outloc.offset             = 0;
+    outloc.length             = expectedOutputTensor.GetNumElements() * sizeof(float);
+    RequestArgument output    = {};
+    output.location           = outloc;
+    output.dimensions         = expectedOutputTensor.GetDimensions();
 
     // make the request based on the arguments
     V1_0::Request request = {};

@@ -105,21 +105,21 @@ BOOST_AUTO_TEST_CASE(ConcurrentExecuteWithQosPriority)
     BOOST_TEST(maxRequests == preparedModelsSize);
 
     // construct the request data
-    DataLocation inloc = {};
-    inloc.poolIndex = 0;
-    inloc.offset    = 0;
-    inloc.length    = 3 * sizeof(float);
-    RequestArgument input = {};
-    input.location = inloc;
-    input.dimensions = hidl_vec<uint32_t>{};
+    V1_0::DataLocation inloc = {};
+    inloc.poolIndex          = 0;
+    inloc.offset             = 0;
+    inloc.length             = 3 * sizeof(float);
+    RequestArgument input    = {};
+    input.location           = inloc;
+    input.dimensions         = hidl_vec<uint32_t>{};
 
-    DataLocation outloc = {};
-    outloc.poolIndex = 1;
-    outloc.offset    = 0;
-    outloc.length    = 1 * sizeof(float);
-    RequestArgument output = {};
-    output.location  = outloc;
-    output.dimensions = hidl_vec<uint32_t>{};
+    V1_0::DataLocation outloc = {};
+    outloc.poolIndex          = 1;
+    outloc.offset             = 0;
+    outloc.length             = 1 * sizeof(float);
+    RequestArgument output    = {};
+    output.location           = outloc;
+    output.dimensions         = hidl_vec<uint32_t>{};
 
     // build the requests
     V1_0::Request requests[maxRequests];

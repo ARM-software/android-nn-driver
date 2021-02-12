@@ -11,6 +11,10 @@
 #include <log/log.h>
 #include <type_traits>
 
+#ifdef ARMNN_ANDROID_S
+#include <LegacyUtils.h>
+#endif
+
 namespace armnn_driver
 {
 
@@ -46,12 +50,17 @@ void ModelToINetworkConverter<HalPolicy>::Convert()
 
     // map the memory pool into shared pointers
     m_Data.m_MemPools.clear();
+#if !defined(ARMNN_ANDROID_S)
     if (!setRunTimePoolInfosFromHidlMemories(&m_Data.m_MemPools, m_Model.pools))
+#else
+    if (!setRunTimePoolInfosFromCanonicalMemories(&m_Data.m_MemPools, uncheckedConvert(m_Model.pools)))
+#endif
     {
         Fail("%s: Setting of run time pool infos from Hidl Memories has failed.", __func__);
         m_ConversionResult = ConversionResult::ErrorMappingPools;
         return;
     }
+
 
     uint32_t totalPoolSize = 0;
     for (auto&& pool : m_Model.pools)

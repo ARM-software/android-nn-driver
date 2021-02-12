@@ -88,9 +88,9 @@ public:
     {
         ALOGV("hal_1_1::ArmnnDriver::prepareModel_1_1()");
 
-        if (!(preference == ExecutionPreference::LOW_POWER ||
-              preference == ExecutionPreference::FAST_SINGLE_ANSWER ||
-              preference == ExecutionPreference::SUSTAINED_SPEED))
+        if (!(preference == V1_1::ExecutionPreference::LOW_POWER ||
+              preference == V1_1::ExecutionPreference::FAST_SINGLE_ANSWER ||
+              preference == V1_1::ExecutionPreference::SUSTAINED_SPEED))
         {
             ALOGV("hal_1_1::ArmnnDriver::prepareModel_1_1: Invalid execution preference");
             cb->notify(V1_0::ErrorStatus::INVALID_ARGUMENT, nullptr);
@@ -106,7 +106,7 @@ public:
                                                                                && m_Options.GetFp16Enabled());
     }
 
-    Return<DeviceStatus> getStatus() override
+    Return<V1_0::DeviceStatus> getStatus() override
     {
         ALOGV("hal_1_1::ArmnnDriver::getStatus()");
 

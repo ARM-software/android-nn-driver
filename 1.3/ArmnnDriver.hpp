@@ -95,9 +95,9 @@ public:
     {
         ALOGV("hal_1_3::ArmnnDriver::prepareModel_1_1()");
 
-        if (!(preference == ExecutionPreference::LOW_POWER ||
-              preference == ExecutionPreference::FAST_SINGLE_ANSWER ||
-              preference == ExecutionPreference::SUSTAINED_SPEED))
+        if (!(preference == V1_1::ExecutionPreference::LOW_POWER ||
+              preference == V1_1::ExecutionPreference::FAST_SINGLE_ANSWER ||
+              preference == V1_1::ExecutionPreference::SUSTAINED_SPEED))
         {
             ALOGV("hal_1_3::ArmnnDriver::prepareModel_1_1: Invalid execution preference");
             cb->notify(V1_0::ErrorStatus::INVALID_ARGUMENT, nullptr);
@@ -138,9 +138,9 @@ public:
     {
         ALOGV("hal_1_3::ArmnnDriver::prepareModel_1_2()");
 
-        if (!(preference == ExecutionPreference::LOW_POWER ||
-              preference == ExecutionPreference::FAST_SINGLE_ANSWER ||
-              preference == ExecutionPreference::SUSTAINED_SPEED))
+        if (!(preference == V1_1::ExecutionPreference::LOW_POWER ||
+              preference == V1_1::ExecutionPreference::FAST_SINGLE_ANSWER ||
+              preference == V1_1::ExecutionPreference::SUSTAINED_SPEED))
         {
             ALOGV("hal_1_3::ArmnnDriver::prepareModel_1_2: Invalid execution preference");
             cb->notify(V1_0::ErrorStatus::INVALID_ARGUMENT, nullptr);
@@ -185,9 +185,9 @@ public:
     {
         ALOGV("hal_1_3::ArmnnDriver::prepareModel_1_3()");
 
-        if (!(preference == ExecutionPreference::LOW_POWER ||
-              preference == ExecutionPreference::FAST_SINGLE_ANSWER ||
-              preference == ExecutionPreference::SUSTAINED_SPEED))
+        if (!(preference == V1_1::ExecutionPreference::LOW_POWER ||
+              preference == V1_1::ExecutionPreference::FAST_SINGLE_ANSWER ||
+              preference == V1_1::ExecutionPreference::SUSTAINED_SPEED))
         {
             ALOGV("hal_1_3::ArmnnDriver::prepareModel_1_3: Invalid execution preference");
             cb->notify_1_3(V1_3::ErrorStatus::INVALID_ARGUMENT, nullptr);
@@ -226,7 +226,7 @@ public:
         return Void();
     }
 
-    Return<DeviceStatus> getStatus() override
+    Return<V1_0::DeviceStatus> getStatus() override
     {
         ALOGV("hal_1_3::ArmnnDriver::getStatus()");
 
@@ -253,32 +253,32 @@ public:
         const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
         const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
         const HidlToken&,
-        const sp<V1_2::IPreparedModelCallback>& callback)
+        const android::sp<V1_2::IPreparedModelCallback>& callback)
     {
         ALOGV("hal_1_3::ArmnnDriver::prepareModelFromCache()");
         callback->notify_1_2(V1_0::ErrorStatus::GENERAL_FAILURE, nullptr);
         return V1_0::ErrorStatus::GENERAL_FAILURE;
     }
 
-    Return<ErrorStatus> prepareModelFromCache_1_3(
+    Return<V1_3::ErrorStatus> prepareModelFromCache_1_3(
         const V1_3::OptionalTimePoint&,
         const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
         const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
         const HidlToken&,
-        const sp<V1_3::IPreparedModelCallback>& callback)
+        const android::sp<V1_3::IPreparedModelCallback>& callback)
     {
         ALOGV("hal_1_3::ArmnnDriver::prepareModelFromCache()");
-        callback->notify_1_3(ErrorStatus::GENERAL_FAILURE, nullptr);
-        return ErrorStatus::GENERAL_FAILURE;
+        callback->notify_1_3(V1_3::ErrorStatus::GENERAL_FAILURE, nullptr);
+        return V1_3::ErrorStatus::GENERAL_FAILURE;
     }
 
     Return<void> allocate(const V1_3::BufferDesc& /*desc*/,
-                          const hidl_vec<sp<V1_3::IPreparedModel>>& /*preparedModels*/,
+                          const hidl_vec<android::sp<V1_3::IPreparedModel>>& /*preparedModels*/,
                           const hidl_vec<V1_3::BufferRole>& /*inputRoles*/,
                           const hidl_vec<V1_3::BufferRole>& /*outputRoles*/,
                           allocate_cb cb) {
         ALOGV("hal_1_3::ArmnnDriver::allocate()");
-        cb(ErrorStatus::GENERAL_FAILURE, nullptr, 0);
+        cb(V1_3::ErrorStatus::GENERAL_FAILURE, nullptr, 0);
         return Void();
     }
 

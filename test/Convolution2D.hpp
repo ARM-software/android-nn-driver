@@ -18,6 +18,8 @@ using namespace android::hardware;
 using namespace driverTestHelpers;
 using namespace armnn_driver;
 
+using RequestArgument = V1_0::RequestArgument;
+
 namespace driverTestHelpers
 {
 #define ARMNN_ANDROID_FP16_TEST(result, fp16Expectation, fp32Expectation, fp16Enabled) \
@@ -75,21 +77,21 @@ void PaddingTestImpl(android::nn::PaddingScheme paddingScheme, bool fp16Enabled 
     android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, *driver);
 
     // construct the request
-    DataLocation inloc    = {};
-    inloc.poolIndex       = 0;
-    inloc.offset          = 0;
-    inloc.length          = 6 * sizeof(float);
-    RequestArgument input = {};
-    input.location        = inloc;
-    input.dimensions      = hidl_vec<uint32_t>{};
+    V1_0::DataLocation inloc = {};
+    inloc.poolIndex          = 0;
+    inloc.offset             = 0;
+    inloc.length             = 6 * sizeof(float);
+    RequestArgument input    = {};
+    input.location           = inloc;
+    input.dimensions         = hidl_vec<uint32_t>{};
 
-    DataLocation outloc    = {};
-    outloc.poolIndex       = 1;
-    outloc.offset          = 0;
-    outloc.length          = outSize * sizeof(float);
-    RequestArgument output = {};
-    output.location        = outloc;
-    output.dimensions      = hidl_vec<uint32_t>{};
+    V1_0::DataLocation outloc = {};
+    outloc.poolIndex          = 1;
+    outloc.offset             = 0;
+    outloc.length             = outSize * sizeof(float);
+    RequestArgument output    = {};
+    output.location           = outloc;
+    output.dimensions         = hidl_vec<uint32_t>{};
 
     V1_0::Request request = {};
     request.inputs  = hidl_vec<RequestArgument>{input};

@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(FullyConnected)
     android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, *driver);
 
     // construct the request
-    DataLocation inloc = {};
+    V1_0::DataLocation inloc = {};
     inloc.poolIndex = 0;
     inloc.offset    = 0;
     inloc.length    = 3 * sizeof(float);
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(FullyConnected)
     input.location = inloc;
     input.dimensions = hidl_vec<uint32_t>{};
 
-    DataLocation outloc = {};
+    V1_0::DataLocation outloc = {};
     outloc.poolIndex = 1;
     outloc.offset    = 0;
     outloc.length    = 1 * sizeof(float);
@@ -130,21 +130,21 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInput)
     android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, *driver);
 
     // construct the request
-    DataLocation inloc = {};
-    inloc.poolIndex = 0;
-    inloc.offset    = 0;
-    inloc.length    = 8 * sizeof(float);
-    RequestArgument input = {};
-    input.location = inloc;
-    input.dimensions = hidl_vec<uint32_t>{};
+    V1_0::DataLocation inloc = {};
+    inloc.poolIndex          = 0;
+    inloc.offset             = 0;
+    inloc.length             = 8 * sizeof(float);
+    RequestArgument input    = {};
+    input.location           = inloc;
+    input.dimensions         = hidl_vec<uint32_t>{};
 
-    DataLocation outloc = {};
-    outloc.poolIndex = 1;
-    outloc.offset    = 0;
-    outloc.length    = 8 * sizeof(float);
-    RequestArgument output = {};
-    output.location  = outloc;
-    output.dimensions = hidl_vec<uint32_t>{};
+    V1_0::DataLocation outloc = {};
+    outloc.poolIndex          = 1;
+    outloc.offset             = 0;
+    outloc.length             = 8 * sizeof(float);
+    RequestArgument output    = {};
+    output.location           = outloc;
+    output.dimensions         = hidl_vec<uint32_t>{};
 
     V1_0::Request request = {};
     request.inputs  = hidl_vec<RequestArgument>{input};
@@ -219,21 +219,21 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInputReshape)
     android::sp<V1_0::IPreparedModel> preparedModel = PrepareModel(model, *driver);
 
     // construct the request
-    DataLocation inloc = {};
-    inloc.poolIndex = 0;
-    inloc.offset    = 0;
-    inloc.length    = 8 * sizeof(float);
-    RequestArgument input = {};
-    input.location = inloc;
-    input.dimensions = hidl_vec<uint32_t>{};
+    V1_0::DataLocation inloc = {};
+    inloc.poolIndex          = 0;
+    inloc.offset             = 0;
+    inloc.length             = 8 * sizeof(float);
+    RequestArgument input    = {};
+    input.location           = inloc;
+    input.dimensions         = hidl_vec<uint32_t>{};
 
-    DataLocation outloc = {};
-    outloc.poolIndex = 1;
-    outloc.offset    = 0;
-    outloc.length    = 8 * sizeof(float);
-    RequestArgument output = {};
-    output.location  = outloc;
-    output.dimensions = hidl_vec<uint32_t>{};
+    V1_0::DataLocation outloc = {};
+    outloc.poolIndex          = 1;
+    outloc.offset             = 0;
+    outloc.length             = 8 * sizeof(float);
+    RequestArgument output    = {};
+    output.location           = outloc;
+    output.dimensions         = hidl_vec<uint32_t>{};
 
     V1_0::Request request = {};
     request.inputs  = hidl_vec<RequestArgument>{input};

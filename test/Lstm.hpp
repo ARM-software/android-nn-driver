@@ -15,6 +15,11 @@
 
 using ArmnnDriver   = armnn_driver::ArmnnDriver;
 using DriverOptions = armnn_driver::DriverOptions;
+using RequestArgument = V1_0::RequestArgument;
+
+#ifdef ARMNN_ANDROID_S
+#include <nnapi/Types.h>
+#endif
 
 using namespace driverTestHelpers;
 using namespace android::hardware;
@@ -25,7 +30,7 @@ namespace
 template<typename T>
 RequestArgument CreateRequestArgument(const std::vector<T>& value, unsigned int poolIndex)
 {
-    DataLocation inputInloc = {};
+    V1_0::DataLocation inputInloc = {};
     inputInloc.poolIndex = poolIndex;
     inputInloc.offset = 0;
     inputInloc.length = value.size() * sizeof(T);

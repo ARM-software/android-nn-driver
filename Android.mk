@@ -9,7 +9,9 @@ LOCAL_PATH := $(ANDROID_NN_DRIVER_LOCAL_PATH)
 P_OR_LATER := 0
 Q_OR_LATER := 0
 R_OR_LATER := 0
+S_OR_LATER := 0
 ANDROID_R  := 0
+ANDROID_S  := 0
 
 ifeq ($(PLATFORM_VERSION),9)
 P_OR_LATER := 1
@@ -41,6 +43,24 @@ R_OR_LATER := 1
 ANDROID_R  := 1
 endif # PLATFORM_VERSION == 11
 
+ifeq ($(PLATFORM_VERSION),S)
+P_OR_LATER := 1
+Q_OR_LATER := 1
+R_OR_LATER := 1
+S_OR_LATER := 1
+ANDROID_R  := 0
+ANDROID_S  := 1
+endif # PLATFORM_VERSION == S
+
+ifeq ($(PLATFORM_VERSION),12)
+P_OR_LATER := 1
+Q_OR_LATER := 1
+R_OR_LATER := 1
+S_OR_LATER := 1
+ANDROID_R  := 0
+ANDROID_S  := 1
+endif # PLATFORM_VERSION == 12
+
 CPP_VERSION := c++14
 
 ifeq ($(Q_OR_LATER),1)
@@ -54,6 +74,9 @@ ARMNN_UTILS_HEADER_PATH := $(LOCAL_PATH)/armnn/src/armnnUtils
 ARMNN_THIRD_PARTY_PATH := $(LOCAL_PATH)/armnn/third-party
 OPENCL_HEADER_PATH := $(LOCAL_PATH)/clframework/include
 NN_HEADER_PATH := $(LOCAL_PATH)/../../../frameworks/ml/nn/runtime/include
+ifeq ($(S_OR_LATER),1)
+NN_HEADER_PATH := $(LOCAL_PATH)/../../../packages/modules/NeuralNetworks/runtime/include
+endif
 
 # Variables to control CL/NEON/reference backend support
 # Set them to '0' to disable support for a specific backend
@@ -122,6 +145,11 @@ LOCAL_CFLAGS := \
 ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
+endif
+
+ifeq ($(ANDROID_S),1)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_S
 endif
 
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
@@ -255,6 +283,11 @@ LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
 endif
 
+ifeq ($(ANDROID_S),1)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_S
+endif
+
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_CFLAGS += \
         -DARMCOMPUTECL_ENABLED
@@ -373,6 +406,11 @@ LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
 endif
 
+ifeq ($(ANDROID_S),1)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_S
+endif
+
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
 LOCAL_CFLAGS += \
         -DARMCOMPUTECL_ENABLED
@@ -478,7 +516,16 @@ LOCAL_CFLAGS := \
         -Werror \
         -Wno-format-security \
         -DARMNN_ANDROID_NN_V1_3 \
+
+ifeq ($(ANDROID_R),1)
+LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
+endif
+
+ifeq ($(ANDROID_S),1)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_S
+endif
 
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS+= \
@@ -603,6 +650,11 @@ LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
 endif
 
+ifeq ($(ANDROID_S),1)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_S
+endif
+
 LOCAL_SRC_FILES := \
         service.cpp
 
@@ -700,6 +752,11 @@ LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
 endif
 
+ifeq ($(ANDROID_S),1)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_S
+endif
+
 LOCAL_SRC_FILES := \
         service.cpp
 
@@ -788,6 +845,11 @@ LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
 endif
 
+ifeq ($(ANDROID_S),1)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_S
+endif
+
 LOCAL_SRC_FILES := \
         service.cpp
 
@@ -860,7 +922,16 @@ LOCAL_CFLAGS := \
         -std=$(CPP_VERSION) \
         -fexceptions \
         -DARMNN_ANDROID_NN_V1_3 \
+
+ifeq ($(ANDROID_R),1)
+LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_R
+endif
+
+ifeq ($(ANDROID_S),1)
+LOCAL_CFLAGS+= \
+        -DARMNN_ANDROID_S
+endif
 
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS += \

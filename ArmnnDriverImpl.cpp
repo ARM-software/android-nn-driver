@@ -292,11 +292,11 @@ Return<void> ArmnnDriverImpl<HalPolicy>::getSupportedOperations(const armnn::IRu
 }
 
 template<typename HalPolicy>
-Return<DeviceStatus> ArmnnDriverImpl<HalPolicy>::getStatus()
+Return<V1_0::DeviceStatus> ArmnnDriverImpl<HalPolicy>::getStatus()
 {
     ALOGV("ArmnnDriver::getStatus()");
 
-    return DeviceStatus::AVAILABLE;
+    return V1_0::DeviceStatus::AVAILABLE;
 }
 
 ///

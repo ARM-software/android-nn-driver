@@ -49,17 +49,17 @@ public:
     virtual ~ArmnnPreparedModel_1_2();
 
     virtual Return<V1_0::ErrorStatus> execute(const V1_0::Request& request,
-                                              const sp<V1_0::IExecutionCallback>& callback) override;
+                                              const ::android::sp<V1_0::IExecutionCallback>& callback) override;
 
-    virtual Return<V1_0::ErrorStatus> execute_1_2(const V1_0::Request& request, MeasureTiming measure,
-                                                  const sp<V1_2::IExecutionCallback>& callback) override;
+    virtual Return<V1_0::ErrorStatus> execute_1_2(const V1_0::Request& request, V1_2::MeasureTiming measure,
+                                                  const ::android::sp<V1_2::IExecutionCallback>& callback) override;
 
     virtual Return<void> executeSynchronously(const V1_0::Request &request,
-                                              MeasureTiming measure,
+                                              V1_2::MeasureTiming measure,
                                               V1_2::IPreparedModel::executeSynchronously_cb cb) override;
 
     virtual Return<void> configureExecutionBurst(
-            const sp<V1_2::IBurstCallback>& callback,
+            const ::android::sp<V1_2::IBurstCallback>& callback,
             const android::hardware::MQDescriptorSync<V1_2::FmqRequestDatum>& requestChannel,
             const android::hardware::MQDescriptorSync<V1_2::FmqResultDatum>& resultChannel,
             configureExecutionBurst_cb cb) override;
@@ -77,7 +77,7 @@ public:
 
 private:
     Return<V1_0::ErrorStatus> Execute(const V1_0::Request& request,
-                                      MeasureTiming measureTiming,
+                                      V1_2::MeasureTiming measureTiming,
                                       CallbackAsync_1_2 callback);
 
     Return<V1_0::ErrorStatus> PrepareMemoryForInputs(
@@ -87,7 +87,7 @@ private:
 
     Return<V1_0::ErrorStatus> PrepareMemoryForOutputs(
             armnn::OutputTensors& outputs,
-            std::vector<OutputShape> &outputShapes,
+            std::vector<V1_2::OutputShape> &outputShapes,
             const V1_0::Request& request,
             const std::vector<android::nn::RunTimePoolInfo>& memPools);
 

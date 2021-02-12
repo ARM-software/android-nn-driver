@@ -39,6 +39,11 @@ namespace armnn_driver
 using OperandType = android::nn::hal::OperandType;
 #endif
 
+#ifdef ARMNN_ANDROID_S
+#include <nnapi/Types.h>
+#endif
+
+
 struct ConversionData
 {
     ConversionData(const std::vector<armnn::BackendId>& backends)
@@ -965,8 +970,8 @@ bool GetInputActivationFunctionImpl(const HalOperation& operation,
         return Fail("%s: unexpected operand type: %s (should be %s or %s)",
                     __func__,
                     toString(type).c_str(),
-                    toString(OperandType::INT32).c_str(),
-                    toString(OperandType::TENSOR_INT32).c_str());
+                    toString(HalOperandType::INT32).c_str(),
+                    toString(HalOperandType::TENSOR_INT32).c_str());
     }
 
     int32_t activationFunctionAsInt;
@@ -3441,9 +3446,6 @@ bool ConvertMul(const HalOperation& operation, const HalModel& model, Conversion
 
     armnn::IConnectableLayer* const startLayer = data.m_Network->AddMultiplicationLayer();
 
-    const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
-    const armnn::TensorInfo& inputTensorInfo1 = input1.GetTensorInfo();
-
     bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
     if (!isReshapeSupported)
     {
@@ -3671,9 +3673,6 @@ bool ConvertSub(const HalOperation& operation, const HalModel& model, Conversion
 
     armnn::IConnectableLayer* const startLayer = data.m_Network->AddSubtractionLayer();
 
-    const armnn::TensorInfo& inputTensorInfo0 = input0.GetTensorInfo();
-    const armnn::TensorInfo& inputTensorInfo1 = input1.GetTensorInfo();
-
     bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
     if (!isReshapeSupported)
     {
@@ -3881,8 +3880,6 @@ bool ConvertStridedSlice(const HalOperation& operation, const HalModel& model, C
     for (unsigned int i = 0; i < inputShape.GetNumDimensions(); i++)
     {
         int stride = descriptor.m_Stride[i];
-        int start  = descriptor.GetStartForAxis(inputShape, i);
-        int stop   = descriptor.GetStopForAxis(inputShape, i, start);
 
         if (descriptor.m_ShrinkAxisMask & (1 << i))
         {

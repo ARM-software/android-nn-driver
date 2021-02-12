@@ -56,37 +56,37 @@ public:
     virtual ~ArmnnPreparedModel_1_3();
 
     Return<V1_0::ErrorStatus> execute(const V1_0::Request& request,
-                                      const sp<V1_0::IExecutionCallback>& callback) override;
+                                      const ::android::sp<V1_0::IExecutionCallback>& callback) override;
 
-    Return<V1_0::ErrorStatus> execute_1_2(const V1_0::Request& request, MeasureTiming measure,
-                                          const sp<V1_2::IExecutionCallback>& callback) override;
+    Return<V1_0::ErrorStatus> execute_1_2(const V1_0::Request& request, V1_2::MeasureTiming measure,
+                                          const ::android::sp<V1_2::IExecutionCallback>& callback) override;
 
     Return<V1_3::ErrorStatus> execute_1_3(const V1_3::Request& request,
                                           V1_2::MeasureTiming measure,
                                           const V1_3::OptionalTimePoint&,
                                           const V1_3::OptionalTimeoutDuration&,
-                                          const sp<V1_3::IExecutionCallback>& callback) override;
+                                          const ::android::sp<V1_3::IExecutionCallback>& callback) override;
 
     Return<void> executeSynchronously(const V1_0::Request &request,
-                                      MeasureTiming measure,
+                                      V1_2::MeasureTiming measure,
                                       V1_3::IPreparedModel::executeSynchronously_cb cb) override;
 
     Return<void> executeSynchronously_1_3(const V1_3::Request &request,
-                                          MeasureTiming measure,
+                                          V1_2::MeasureTiming measure,
                                           const V1_3::OptionalTimePoint& deadline,
                                           const V1_3::OptionalTimeoutDuration& loopTimeoutDuration,
                                           V1_3::IPreparedModel::executeSynchronously_1_3_cb cb) override;
 
     Return<void> executeFenced(const V1_3::Request& request,
                                const android::hardware::hidl_vec<android::hardware::hidl_handle>& fenceWaitFor,
-                               MeasureTiming measure,
+                               V1_2::MeasureTiming measure,
                                const V1_3::OptionalTimePoint& deadline,
                                const V1_3::OptionalTimeoutDuration& loopTimeoutDuration,
                                const V1_3::OptionalTimeoutDuration& duration,
                                executeFenced_cb callback) override;
 
     Return<void> configureExecutionBurst(
-            const sp<V1_2::IBurstCallback>& callback,
+            const ::android::sp<V1_2::IBurstCallback>& callback,
             const android::hardware::MQDescriptorSync<V1_2::FmqRequestDatum>& requestChannel,
             const android::hardware::MQDescriptorSync<V1_2::FmqResultDatum>& resultChannel,
             configureExecutionBurst_cb cb) override;
@@ -110,7 +110,7 @@ public:
 
 private:
     Return <V1_3::ErrorStatus> Execute(const V1_3::Request& request,
-                                       MeasureTiming measureTiming,
+                                       V1_2::MeasureTiming measureTiming,
                                        CallbackAsync_1_3 callback);
 
     Return<V1_3::ErrorStatus> PrepareMemoryForInputs(
@@ -120,11 +120,11 @@ private:
 
     Return<V1_3::ErrorStatus> PrepareMemoryForOutputs(
         armnn::OutputTensors& outputs,
-        std::vector<OutputShape> &outputShapes,
+        std::vector<V1_2::OutputShape> &outputShapes,
         const V1_3::Request& request,
         const std::vector<android::nn::RunTimePoolInfo>& memPools);
 
-    std::tuple<V1_3::ErrorStatus, hidl_vec<OutputShape>, Timing, std::string> PrepareMemoryForIO(
+    std::tuple<V1_3::ErrorStatus, hidl_vec<V1_2::OutputShape>, V1_2::Timing, std::string> PrepareMemoryForIO(
         armnn::InputTensors& inputs,
         armnn::OutputTensors& outputs,
         std::vector<android::nn::RunTimePoolInfo>& memPools,

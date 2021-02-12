@@ -93,9 +93,9 @@ public:
     {
         ALOGV("hal_1_2::ArmnnDriver::prepareModel_1_1()");
 
-        if (!(preference == ExecutionPreference::LOW_POWER ||
-              preference == ExecutionPreference::FAST_SINGLE_ANSWER ||
-              preference == ExecutionPreference::SUSTAINED_SPEED))
+        if (!(preference == V1_1::ExecutionPreference::LOW_POWER ||
+              preference == V1_1::ExecutionPreference::FAST_SINGLE_ANSWER ||
+              preference == V1_1::ExecutionPreference::SUSTAINED_SPEED))
         {
             ALOGV("hal_1_2::ArmnnDriver::prepareModel_1_1: Invalid execution preference");
             cb->notify(V1_0::ErrorStatus::INVALID_ARGUMENT, nullptr);
@@ -111,7 +111,7 @@ public:
                                                                                && m_Options.GetFp16Enabled());
     }
 
-    Return<DeviceStatus> getStatus() override
+    Return<V1_0::DeviceStatus> getStatus() override
     {
         ALOGV("hal_1_2::ArmnnDriver::getStatus()");
 
@@ -138,7 +138,7 @@ public:
             const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
             const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
             const HidlToken&,
-            const sp<V1_2::IPreparedModelCallback>& callback)
+            const android::sp<V1_2::IPreparedModelCallback>& callback)
     {
         ALOGV("hal_1_2::ArmnnDriver::prepareModelFromCache()");
         callback->notify_1_2(V1_0::ErrorStatus::GENERAL_FAILURE, nullptr);
@@ -152,9 +152,9 @@ public:
     {
         ALOGV("hal_1_2::ArmnnDriver::prepareModel_1_2()");
 
-        if (!(preference == ExecutionPreference::LOW_POWER ||
-              preference == ExecutionPreference::FAST_SINGLE_ANSWER ||
-              preference == ExecutionPreference::SUSTAINED_SPEED))
+        if (!(preference == V1_1::ExecutionPreference::LOW_POWER ||
+              preference == V1_1::ExecutionPreference::FAST_SINGLE_ANSWER ||
+              preference == V1_1::ExecutionPreference::SUSTAINED_SPEED))
         {
             ALOGV("hal_1_2::ArmnnDriver::prepareModel_1_2: Invalid execution preference");
             cb->notify(V1_0::ErrorStatus::INVALID_ARGUMENT, nullptr);

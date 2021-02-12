@@ -15,6 +15,10 @@
 #include <cassert>
 #include <cinttypes>
 
+#ifdef ARMNN_ANDROID_S
+#include <LegacyUtils.h>
+#endif
+
 using namespace android;
 
 namespace
@@ -33,7 +37,7 @@ void NotifyCallbackAndCheck(const ::android::sp<V1_0::IExecutionCallback>& callb
     }
 }
 
-bool ValidateRequestArgument(const RequestArgument& requestArg, const armnn::TensorInfo& tensorInfo)
+bool ValidateRequestArgument(const V1_0::RequestArgument& requestArg, const armnn::TensorInfo& tensorInfo)
 {
     if (requestArg.dimensions.size() != 0)
     {
@@ -58,7 +62,7 @@ bool ValidateRequestArgument(const RequestArgument& requestArg, const armnn::Ten
     return true;
 }
 
-armnn::Tensor GetTensorForRequestArgument(const RequestArgument& requestArg,
+armnn::Tensor GetTensorForRequestArgument(const V1_0::RequestArgument& requestArg,
     const armnn::TensorInfo& tensorInfo,
     const std::vector<::android::nn::RunTimePoolInfo>& requestPools)
 {
@@ -164,12 +168,15 @@ Return<V1_0::ErrorStatus> ArmnnPreparedModel<HalVersion>::execute(
     // map the memory pool into shared pointers
     // use a shared memory pools vector on the heap, as it is passed to the request thread
     auto pMemPools = std::make_shared<std::vector<android::nn::RunTimePoolInfo>>();
+#if !defined(ARMNN_ANDROID_S)
     if (!setRunTimePoolInfosFromHidlMemories(pMemPools.get(), request.pools))
+#else
+    if (!setRunTimePoolInfosFromCanonicalMemories(pMemPools.get(), uncheckedConvert(request.pools)))
+#endif
     {
         NotifyCallbackAndCheck(callback, V1_0::ErrorStatus::GENERAL_FAILURE, "ArmnnPreparedModel::execute");
         return V1_0::ErrorStatus::GENERAL_FAILURE;
     }
-
     // add the inputs and outputs with their data
     try
     {
@@ -277,7 +284,7 @@ void ArmnnPreparedModel<HalVersion>::ExecuteGraph(
     {
         // Type android::nn::RunTimePoolInfo has changed between Android P & Q and Android R, where
         // update() has been removed and flush() added.
-        #if defined(ARMNN_ANDROID_R) // Use the new Android implementation.
+        #if defined(ARMNN_ANDROID_R) || defined(ARMNN_ANDROID_S) // Use the new Android implementation.
             pool.flush();
         #else
             pool.update();

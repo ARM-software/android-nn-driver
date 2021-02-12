@@ -58,7 +58,7 @@ public:
                                                                       cb);
     }
 
-    Return<DeviceStatus> getStatus() override
+    Return<V1_0::DeviceStatus> getStatus() override
     {
         ALOGV("hal_1_0::ArmnnDriver::getStatus()");
 

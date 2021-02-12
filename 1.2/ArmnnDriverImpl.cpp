@@ -56,9 +56,9 @@ const char *g_OperandTypeInt32PerformanceExecTime           = "Armnn.operandType
 const char *g_OperandTypeInt32PerformancePowerUsage         = "Armnn.operandTypeInt32Performance.powerUsage";
 
 
-void NotifyCallbackAndCheck(const sp<V1_2::IPreparedModelCallback>& callback,
+void NotifyCallbackAndCheck(const android::sp<V1_2::IPreparedModelCallback>& callback,
                             V1_0::ErrorStatus errorStatus,
-                            const sp<V1_2::IPreparedModel>& preparedModelPtr)
+                            const android::sp<V1_2::IPreparedModel>& preparedModelPtr)
 {
     Return<void> returned = callback->notify_1_2(errorStatus, preparedModelPtr);
     // This check is required, if the callback fails and it isn't checked it will bring down the service
@@ -71,7 +71,7 @@ void NotifyCallbackAndCheck(const sp<V1_2::IPreparedModelCallback>& callback,
 
 Return<V1_0::ErrorStatus> FailPrepareModel(V1_0::ErrorStatus error,
                                            const std::string& message,
-                                           const sp<V1_2::IPreparedModelCallback>& callback)
+                                           const android::sp<V1_2::IPreparedModelCallback>& callback)
 {
     ALOGW("ArmnnDriverImpl::prepareModel: %s", message.c_str());
     NotifyCallbackAndCheck(callback, error, nullptr);
@@ -90,7 +90,7 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(
        const armnn::IGpuAccTunedParametersPtr& clTunedParameters,
        const DriverOptions& options,
        const V1_2::Model& model,
-       const sp<V1_2::IPreparedModelCallback>& cb,
+       const android::sp<V1_2::IPreparedModelCallback>& cb,
        bool float32ToFloat16)
 {
     ALOGV("ArmnnDriverImpl::prepareArmnnModel_1_2()");
@@ -267,7 +267,7 @@ Return<void> ArmnnDriverImpl::getCapabilities_1_2(const armnn::IRuntimePtr& runt
                 ParseSystemProperty(g_RelaxedFloat32toFloat16PerformancePowerUsage, defaultValue);
 
         // Set the base value for all operand types
-        #ifdef ARMNN_ANDROID_R
+        #if defined(ARMNN_ANDROID_R) || defined(ARMNN_ANDROID_S)
         capabilities.operandPerformance = nonExtensionOperandPerformance<HalVersion::V1_2>({FLT_MAX, FLT_MAX});
         #else
         capabilities.operandPerformance = nonExtensionOperandPerformance({FLT_MAX, FLT_MAX});
@@ -346,7 +346,7 @@ Return<void> ArmnnDriverImpl::getCapabilities_1_2(const armnn::IRuntimePtr& runt
         capabilities.relaxedFloat32toFloat16PerformanceTensor.powerUsage = 0;
 
         // Set the base value for all operand types
-        #ifdef ARMNN_ANDROID_R
+        #if defined(ARMNN_ANDROID_R) || defined(ARMNN_ANDROID_S)
         capabilities.operandPerformance = nonExtensionOperandPerformance<HalVersion::V1_2>({0.f, 0.0f});
         #else
         capabilities.operandPerformance = nonExtensionOperandPerformance({0.f, 0.0f});

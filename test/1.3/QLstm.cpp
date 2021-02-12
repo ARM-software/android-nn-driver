@@ -32,7 +32,7 @@ namespace
 template<typename T>
 RequestArgument CreateRequestArgument(const std::vector<T>& value, unsigned int poolIndex)
 {
-    DataLocation inputInloc = {};
+    V1_0::DataLocation inputInloc = {};
     inputInloc.poolIndex = poolIndex;
     inputInloc.offset = 0;
     inputInloc.length = value.size() * sizeof(T);
