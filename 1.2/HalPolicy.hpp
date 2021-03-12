@@ -98,8 +98,7 @@ private:
 
     static bool ConvertMaximum(const Operation& operation, const Model& model, ConversionData& data);
 
-    static bool ConvertReduce(const Operation& operation, const Model& model, ConversionData& data,
-                              ReduceOperation reduce_operation);
+    static bool ConvertMean(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertMinimum(const Operation& operation, const Model& model, ConversionData& data);
 
@@ -114,6 +113,11 @@ private:
     static bool ConvertQuantize(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertQuantized16BitLstm(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertReduce(const Operation& operation,
+                              const Model& model,
+                              ConversionData& data,
+                              ReduceOperation reduce_operation);
 
     static bool ConvertReLu(const Operation& operation, const Model& model, ConversionData& data);
 

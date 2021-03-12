@@ -98,7 +98,7 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
         case V1_3::OperationType::MAXIMUM:
             return ConvertMaximum(operation, model, data);
         case V1_3::OperationType::MEAN:
-            return ConvertReduce(operation, model, data, ReduceOperation::Mean);
+            return ConvertMean(operation, model, data);
         case V1_3::OperationType::MINIMUM:
             return ConvertMinimum(operation, model, data);
         case V1_3::OperationType::MUL:
@@ -365,11 +365,10 @@ bool HalPolicy::ConvertMaximum(const Operation& operation, const Model& model, C
     return ::ConvertMaximum<hal_1_3::HalPolicy>(operation, model, data);
 }
 
-bool HalPolicy::ConvertReduce(const Operation& operation, const Model& model, ConversionData& data,
-                              ReduceOperation reduceOperation)
+bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_3::HalPolicy::ConvertReduce()");
-    return ::ConvertReduce<hal_1_3::HalPolicy>(operation, model, data, reduceOperation);
+    ALOGV("hal_1_3::HalPolicy::ConvertMean()");
+    return ::ConvertMean<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertMinimum(const Operation& operation, const Model& model, ConversionData& data)
@@ -424,6 +423,15 @@ bool HalPolicy::ConvertRank(const Operation& operation, const Model& model, Conv
 {
     ALOGV("hal_1_3::HalPolicy::ConvertRank()");
     return ::ConvertRank<hal_1_3::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertReduce(const Operation& operation,
+                              const Model& model,
+                              ConversionData& data,
+                              ReduceOperation reduceOperation)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertReduce()");
+    return ::ConvertReduce<hal_1_3::HalPolicy>(operation, model, data, reduceOperation);
 }
 
 bool HalPolicy::ConvertReLu(const Operation& operation, const Model& model, ConversionData& data)

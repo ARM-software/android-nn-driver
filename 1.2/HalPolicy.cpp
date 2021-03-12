@@ -86,7 +86,7 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
         case V1_2::OperationType::MAXIMUM:
             return ConvertMaximum(operation, model, data);
         case V1_2::OperationType::MEAN:
-            return ConvertReduce(operation, model, data, ReduceOperation::Mean);
+            return ConvertMean(operation, model, data);
         case V1_2::OperationType::MINIMUM:
             return ConvertMinimum(operation, model, data);
         case V1_2::OperationType::MUL:
@@ -312,11 +312,10 @@ bool HalPolicy::ConvertMaximum(const Operation& operation, const Model& model, C
     return ::ConvertMaximum<hal_1_2::HalPolicy>(operation, model, data);
 }
 
-bool HalPolicy::ConvertReduce(const Operation& operation, const Model& model, ConversionData& data,
-                              ReduceOperation reduceOperation)
+bool HalPolicy::ConvertMean(const Operation& operation, const Model& model, ConversionData& data)
 {
-    ALOGV("hal_1_2::HalPolicy::ConvertReduce()");
-    return ::ConvertReduce<hal_1_2::HalPolicy>(operation, model, data, reduceOperation);
+    ALOGV("hal_1_2::HalPolicy::ConvertMean()");
+    return ::ConvertMean<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertMinimum(const Operation& operation, const Model& model, ConversionData& data)
@@ -359,6 +358,15 @@ bool HalPolicy::ConvertQuantized16BitLstm(const Operation& operation, const Mode
 {
     ALOGV("hal_1_2::HalPolicy::ConvertQuantized16BitLstm()");
     return ::ConvertQuantized16BitLstm<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertReduce(const Operation& operation,
+                              const Model& model,
+                              ConversionData& data,
+                              ReduceOperation reduceOperation)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertReduce()");
+    return ::ConvertReduce<hal_1_2::HalPolicy>(operation, model, data, reduceOperation);
 }
 
 bool HalPolicy::ConvertReLu(const Operation& operation, const Model& model, ConversionData& data)

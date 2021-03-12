@@ -110,8 +110,7 @@ private:
 
     static bool ConvertMaximum(const Operation& operation, const Model& model, ConversionData& data);
 
-    static bool ConvertReduce(const Operation& operation, const Model& model, ConversionData& data,
-                              ReduceOperation reduceOperation);
+    static bool ConvertMean(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertMinimum(const Operation& operation, const Model& model, ConversionData& data);
 
@@ -130,6 +129,11 @@ private:
     static bool ConvertQuantized16BitLstm(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertRank(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertReduce(const Operation& operation,
+                              const Model& model,
+                              ConversionData& data,
+                              ReduceOperation reduceOperation);
 
     static bool ConvertReLu(const Operation& operation, const Model& model, ConversionData& data);
 
