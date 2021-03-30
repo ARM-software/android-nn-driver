@@ -2559,6 +2559,14 @@ bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model
     {
         return Fail("%s: Operand is invalid", __func__);
     }
+    // Basic sanity check on the weights shape.
+    // ANEURALNETWORKS_DEPTHWISE_CONV_2D specifies a 4-D tensor, of shape
+    // [1, filter_height, filter_width, depth_out]
+    if (weightsOperand->dimensions[0] != 1)
+    {
+        return Fail("%s: Filter operand dimension 0 is invalid, should be 1", __func__);
+    }
+
     armnn::DepthwiseConvolution2dDescriptor desc;
     desc.m_DataLayout = armnn::DataLayout::NHWC;
 

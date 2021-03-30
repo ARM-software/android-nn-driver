@@ -62,7 +62,10 @@ ConstTensorPin::ConstTensorPin(const armnn::TensorInfo& tensorInfo,
                                const armnn::PermutationVector& mappings)
 {
     armnn::IgnoreUnused(numBytes);
-    assert(tensorInfo.GetNumBytes() == numBytes);
+    if (tensorInfo.GetNumBytes() != numBytes)
+    {
+        ALOGW("The size of ConstTensor does not match its TensorInfo.");
+    }
 
     const bool needsSwizzling = (mappings.GetSize() > 0);
     if (needsSwizzling)
