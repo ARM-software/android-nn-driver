@@ -653,11 +653,6 @@ bool ConvertExpandDims(const HalOperation& operation, const HalModel& model, Con
         return Fail("%s: %s", __func__, e.what());
     }
 
-    if (targetShape != outputInfo.GetShape())
-    {
-        return Fail("%s: Shape of the output operand does not match the resolved expanded shape", __func__);
-    }
-
     ReshapeDescriptor reshapeDescriptor;
     reshapeDescriptor.m_TargetShape = targetShape;
 
@@ -675,6 +670,10 @@ bool ConvertExpandDims(const HalOperation& operation, const HalModel& model, Con
 
     if(!IsDynamicTensor(outputInfo))
     {
+        if (targetShape != outputInfo.GetShape())
+        {
+            return Fail("%s: Shape of the output operand does not match the resolved expanded shape", __func__);
+        }
         validateFunc(outputInfo, isSupported);
     }
     else
