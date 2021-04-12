@@ -56,7 +56,7 @@ ConstTensorPin::ConstTensorPin(bool optional)
     : m_Optional(optional)
 {}
 
-ConstTensorPin::ConstTensorPin(const armnn::TensorInfo& tensorInfo,
+ConstTensorPin::ConstTensorPin(armnn::TensorInfo& tensorInfo,
                                const void* valueStart,
                                uint32_t numBytes,
                                const armnn::PermutationVector& mappings)
@@ -73,7 +73,7 @@ ConstTensorPin::ConstTensorPin(const armnn::TensorInfo& tensorInfo,
         m_SwizzledTensorData.resize(tensorInfo.GetNumBytes());
         SwizzleAndroidNn4dTensorToArmNn(tensorInfo, valueStart, m_SwizzledTensorData.data(), mappings);
 
-        m_ConstTensor = armnn::ConstTensor(armnnUtils::Permuted(tensorInfo, mappings), m_SwizzledTensorData.data());
+        m_ConstTensor = armnn::ConstTensor(tensorInfo, m_SwizzledTensorData.data());
     }
     else
     {

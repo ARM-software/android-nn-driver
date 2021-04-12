@@ -90,7 +90,7 @@ public:
     // @param valueStart Start address of tensor data. Belongs to one of the memory pools associated with
     // the model being converted.
     // @param numBytes Number of bytes for the tensor data.
-    ConstTensorPin(const armnn::TensorInfo& tensorInfo, const void* valueStart, uint32_t numBytes,
+    ConstTensorPin(armnn::TensorInfo& tensorInfo, const void* valueStart, uint32_t numBytes,
                    const armnn::PermutationVector& mappings);
 
     ConstTensorPin(const ConstTensorPin& other) = delete;
@@ -843,11 +843,6 @@ ConstTensorPin ConvertOperandToConstTensorPin(const HalOperand& operand,
     }
 
     armnn::TensorInfo tensorInfo = GetTensorInfoForOperand(operand);
-    // Android datalayout might be different than armnn datalayout, e.g. the kernel for the depthwise convolution.
-    if (tensorInfo.HasPerAxisQuantization())
-    {
-        tensorInfo.SetQuantizationDim(dimensionMappings[tensorInfo.GetQuantizationDim().value()]);
-    }
 
     if (overrideTensorShape != nullptr)
     {

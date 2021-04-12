@@ -60,7 +60,7 @@ public:
 };
 
 /// Swizzles tensor data in @a input according to the dimension mappings.
-void SwizzleAndroidNn4dTensorToArmNn(const armnn::TensorInfo& tensor, const void* input, void* output,
+void SwizzleAndroidNn4dTensorToArmNn(armnn::TensorInfo& tensor, const void* input, void* output,
                                      const armnn::PermutationVector& mappings);
 
 /// Returns a pointer to a specific location in a pool
