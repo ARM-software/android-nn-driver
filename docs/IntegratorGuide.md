@@ -118,3 +118,26 @@ adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.1-service-armn
 <pre>
 adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.1-service-armnn --cl-tuned-parameters-file &lt;PATH_TO_TUNING_DATA&gt; &
 </pre>
+
+
+
+### Troubleshooting
+
+The guide assumes you have the knowledge of how to build Android from source and where to find certain files in Android source tree. But if you are having any trouble:
+
+1. The vendor manifest.xml file for a hikey960 is located at android/device/linaro/hikey/manifest.xml
+2. The device.mk file for a hikey960 is located at device/linaro/hikey/hikey960/device-hikey960.mk
+
+If you are running any tests you can also add them to the device-hikey960.mk file so that you have access to the test executable in your hikey. For example, if you are running VTS tests for Android R Hal version 1.3:
+
+PRODUCT_PACKAGES += VtsHalNeuralnetworksV1_3TargetTest
+
+Or if you are running NeuralNetworksTest:
+
+PRODUCT_PACKAGES += NeuralNetworksTest_static
+
+In some hikey960 boards you may need to set LD_LIBRARY_PATH before running the Arm NN driver service:
+export LD_LIBRARY_PATH=/vendor/lib64/egl:/vendor/lib/egl/
+
+
+The guide was tested on Ubuntu 16.04. If you are using a docker you may see some build issues. Explicitly setting the USER variable may help resolve these when building Android inside docker.
