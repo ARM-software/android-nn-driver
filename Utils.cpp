@@ -408,7 +408,18 @@ void DumpTensor(const std::string& dumpDir,
         const unsigned int numDimensions = tensor.GetNumDimensions();
         const armnn::TensorShape shape = tensor.GetShape();
 
+        if (!shape.AreAllDimensionsSpecified())
+        {
+            fileStream << "Cannot dump tensor elements: not all dimensions are specified" << std::endl;
+            return;
+        }
         fileStream << "# Number of elements " << tensor.GetNumElements() << std::endl;
+
+        if (numDimensions == 0)
+        {
+            fileStream << "# Shape []" << std::endl;
+            return;
+        }
         fileStream << "# Shape [" << shape[0];
         for (unsigned int d = 1; d < numDimensions; ++d)
         {
