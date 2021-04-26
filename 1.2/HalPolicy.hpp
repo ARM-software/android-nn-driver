@@ -46,6 +46,8 @@ private:
 
     static bool ConvertBatchToSpaceNd(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertCast(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertComparison(const Operation& operation,
                                   const Model& model,
                                   ConversionData& data,

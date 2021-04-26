@@ -33,6 +33,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertAveragePool2d(operation, model, data);
         case V1_3::OperationType::BATCH_TO_SPACE_ND:
             return ConvertBatchToSpaceNd(operation, model, data);
+        case V1_3::OperationType::CAST:
+            return ConvertCast(operation, model, data);
         case V1_3::OperationType::CONCATENATION:
             return ConvertConcatenation(operation, model, data);
         case V1_3::OperationType::CONV_2D:
@@ -192,6 +194,12 @@ bool HalPolicy::ConvertBatchToSpaceNd(const Operation& operation, const Model& m
 {
     ALOGV("hal_1_3::HalPolicy::ConvertBatchToSpaceNd()");
     return ::ConvertBatchToSpaceNd<hal_1_3::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertCast(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertCast()");
+    return ::ConvertCast<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertComparison(const Operation& operation,

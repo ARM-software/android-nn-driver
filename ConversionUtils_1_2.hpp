@@ -110,6 +110,66 @@ bool SetupAndTrackLayerOutputSlotAndOverrideTensorInfo(const HalOperation& opera
 }
 
 template<typename HalPolicy,
+    typename HalOperation = typename HalPolicy::Operation,
+    typename HalModel     = typename HalPolicy::Model>
+bool ConvertCast(const HalOperation& operation,
+                 const HalModel& model,
+                 ConversionData& data)
+{
+    using HalOperand = typename HalPolicy::Operand;
+
+    ALOGV("HalPolicy::ConvertCast()");
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const TensorInfo& inputInfo  = input.GetTensorInfo();
+    const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    bool isSupported = false;
+
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsCastSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputInfo);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    IConnectableLayer* layer = data.m_Network->AddCastLayer();
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
+}
+
+template<typename HalPolicy,
          typename HalOperation = typename HalPolicy::Operation,
          typename HalModel     = typename HalPolicy::Model>
 bool ConvertComparison_1_2(const HalOperation& operation,
