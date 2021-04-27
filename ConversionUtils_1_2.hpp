@@ -467,22 +467,12 @@ bool ConvertDepthwiseConv2d_1_2(const HalOperation& operation, const HalModel& m
     unsigned int widthIndex = dataLayoutIndexed.GetWidthIndex();
     unsigned int heightIndex = dataLayoutIndexed.GetHeightIndex();
 
-    // Reinterpret weight data as [ H, W, I, M ]
-    TensorShape weightsShape({ weightsOperand->dimensions[1],
-                               weightsOperand->dimensions[2],
-                               inputInfo.GetShape()[channelsIndex],
-                               weightsOperand->dimensions[3] / inputInfo.GetShape()[channelsIndex] });
-
-    // Swizzle weight data [ H, W, I, M ] -> [ M, I, H, W ]
-    const PermutationVector HWIMToMIHW = { 2U, 3U, 1U, 0U };
-
+    // The layout for weights in depthwise is [ 1, H, W, O] and it's the same in ArmNN. No need to permute anything.
     const ConstTensorPin weightsPin =
         ConvertOperationInputToConstTensorPin<HalPolicy>(operation,
                                                          1,
                                                          model,
-                                                         data,
-                                                         HWIMToMIHW,
-                                                         &weightsShape);
+                                                         data);
 
     // Bias is a 1D tensor
     const ConstTensorPin biasPin =
@@ -516,8 +506,8 @@ bool ConvertDepthwiseConv2d_1_2(const HalOperation& operation, const HalModel& m
             return Fail("%s: Operation has invalid inputs (implicit padding)", __func__);
         }
 
-        const uint32_t kernelX = weights.GetShape()[3];
-        const uint32_t kernelY = weights.GetShape()[2];
+        const uint32_t kernelX = weights.GetShape()[2];
+        const uint32_t kernelY = weights.GetShape()[1];
         const uint32_t inputX  = inputInfo.GetShape()[widthIndex];
         const uint32_t inputY  = inputInfo.GetShape()[heightIndex];
 

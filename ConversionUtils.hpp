@@ -472,7 +472,8 @@ void SanitizeBiasQuantizationScale(armnn::TensorInfo& biasInfo,
         std::transform(biasScales.begin(), biasScales.end(), biasScales.begin(), UpdateBiasScaleValue);
 
         biasInfo.SetQuantizationScales(biasScales);
-        biasInfo.SetQuantizationDim(weightInfo.GetQuantizationDim());
+        // bias is expected to be a 1d tensor, set qdim=0
+        biasInfo.SetQuantizationDim(0);
 
         ALOGV("Bias quantization params have been updated for per-axis quantization");
     }
@@ -2564,22 +2565,12 @@ bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model
     armnn::DepthwiseConvolution2dDescriptor desc;
     desc.m_DataLayout = armnn::DataLayout::NHWC;
 
-    // Reinterpret weight data as [ H, W, I, M ]
-    armnn::TensorShape weightsShape({ weightsOperand->dimensions[1],
-                                      weightsOperand->dimensions[2],
-                                      inputInfo.GetShape()[3],
-                                      weightsOperand->dimensions[3] / inputInfo.GetShape()[3] });
-
-    // Swizzle weight data [ H, W, I, M ] -> [ M, I, H, W ]
-    const armnn::PermutationVector HWIMToMIHW = { 2U, 3U, 1U, 0U };
-
+    // The layout for weights in depthwise is [ 1, H, W, O] and it's the same in ArmNN. No need to permute anything.
     const ConstTensorPin weightsPin =
         ConvertOperationInputToConstTensorPin<HalPolicy>(operation,
                                                          1,
                                                          model,
-                                                         data,
-                                                         HWIMToMIHW,
-                                                         &weightsShape);
+                                                         data);
 
     // Bias is a 1D tensor
     const ConstTensorPin biasPin = ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 2, model, data);
@@ -2619,8 +2610,8 @@ bool ConvertDepthwiseConv2d(const HalOperation& operation, const HalModel& model
             return Fail("%s: Operation has invalid inputs", __func__);
         }
 
-        const uint32_t kernelX = weights.GetShape()[3];
-        const uint32_t kernelY = weights.GetShape()[2];
+        const uint32_t kernelX = weights.GetShape()[2];
+        const uint32_t kernelY = weights.GetShape()[1];
         const uint32_t inputX  = inputInfo.GetShape()[2];
         const uint32_t inputY  = inputInfo.GetShape()[1];
 
