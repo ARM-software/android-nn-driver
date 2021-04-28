@@ -8,7 +8,6 @@
 #include "Utils.hpp"
 
 #include <armnn/ArmNN.hpp>
-#include <armnn/ILayerSupport.hpp>
 #include <armnn/BackendHelper.hpp>
 #include <armnn/utility/Assert.hpp>
 #include <armnn/utility/IgnoreUnused.hpp>
