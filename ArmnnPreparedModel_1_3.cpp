@@ -857,6 +857,8 @@ Return <V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::Execute(const V1_
             return V1_3::ErrorStatus::NONE;
         case V1_3::ErrorStatus::GENERAL_FAILURE:
             return V1_3::ErrorStatus::GENERAL_FAILURE;
+        case V1_3::ErrorStatus::INVALID_ARGUMENT:
+            return V1_3::ErrorStatus::INVALID_ARGUMENT;
         default:
         {}
     }
