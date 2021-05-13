@@ -60,6 +60,7 @@ ConstTensorPin::ConstTensorPin(armnn::TensorInfo& tensorInfo,
                                const void* valueStart,
                                uint32_t numBytes,
                                const armnn::PermutationVector& mappings)
+    : m_Optional(false)
 {
     armnn::IgnoreUnused(numBytes);
     if (tensorInfo.GetNumBytes() != numBytes)
