@@ -199,9 +199,14 @@ Return<V1_3::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_3(
 
     // Load it into the runtime.
     armnn::NetworkId netId = 0;
+    std::string msg;
+    armnn::INetworkProperties networkProperties(options.isAsyncModelExecutionEnabled(),
+                                                MemorySource::Undefined,
+                                                MemorySource::Undefined,
+                                                options.getNoOfArmnnThreads());
     try
     {
-        if (runtime->LoadNetwork(netId, move(optNet)) != armnn::Status::Success)
+        if (runtime->LoadNetwork(netId, move(optNet), msg, networkProperties) != armnn::Status::Success)
         {
             return FailPrepareModel(V1_3::ErrorStatus::GENERAL_FAILURE, "Network could not be loaded", cb);
         }
@@ -228,7 +233,8 @@ Return<V1_3::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_3(
                     model,
                     options.GetRequestInputsAndOutputsDumpDir(),
                     options.IsGpuProfilingEnabled(),
-                    priority));
+                    priority,
+                    options.isAsyncModelExecutionEnabled()));
 
     // Run a single 'dummy' inference of the model. This means that CL kernels will get compiled (and tuned if
     // this is enabled) before the first 'real' inference which removes the overhead of the first inference.

@@ -39,6 +39,8 @@ DriverOptions::DriverOptions(armnn::Compute computeDevice, bool fp16Enabled)
     , m_ShouldExit(false)
     , m_SaveCachedNetwork(false)
     , m_NumberOfThreads(0)
+    , m_EnableAsyncModelExecution(false)
+    , m_ArmnnNumberOfThreads(1)
 {
 }
 
@@ -53,6 +55,8 @@ DriverOptions::DriverOptions(const std::vector<armnn::BackendId>& backends, bool
     , m_ShouldExit(false)
     , m_SaveCachedNetwork(false)
     , m_NumberOfThreads(0)
+    , m_EnableAsyncModelExecution(false)
+    , m_ArmnnNumberOfThreads(1)
 {
 }
 
@@ -66,6 +70,8 @@ DriverOptions::DriverOptions(int argc, char** argv)
     , m_ShouldExit(false)
     , m_SaveCachedNetwork(false)
     , m_NumberOfThreads(0)
+    , m_EnableAsyncModelExecution(false)
+    , m_ArmnnNumberOfThreads(1)
 {
     std::string unsupportedOperationsAsString;
     std::string clTunedParametersModeAsString;
@@ -154,7 +160,16 @@ DriverOptions::DriverOptions(int argc, char** argv)
          cxxopts::value<bool>(m_VerboseLogging)->default_value("false"))
 
         ("V,version", "Show version information",
-         cxxopts::value<bool>(showVersion)->default_value("false"));
+         cxxopts::value<bool>(showVersion)->default_value("false"))
+
+        ("A,asyncModelExecution", "Enable AsynModel Execution",
+         cxxopts::value<bool>(m_EnableAsyncModelExecution)->default_value("false"))
+
+        ("T,armnn-threads",
+         "Assign the number of threads used by ArmNN. "
+         "Input value must be at least 1. "
+         "Default is set to 1.",
+         cxxopts::value<unsigned int>(m_ArmnnNumberOfThreads)->default_value("1"));
     }
     catch (const std::exception& e)
     {
