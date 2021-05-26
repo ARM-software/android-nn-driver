@@ -10,14 +10,11 @@
 #include <armnn/LayerVisitorBase.hpp>
 #include <armnn/utility/IgnoreUnused.hpp>
 
-#include <boost/test/unit_test.hpp>
+#include <doctest/doctest.h>
 
 #include <numeric>
 
-BOOST_AUTO_TEST_SUITE(DilationTests)
-
 using namespace armnn;
-using namespace boost;
 using namespace driverTestHelpers;
 
 struct DilationTestOptions
@@ -82,8 +79,8 @@ private:
     template<typename ConvolutionDescriptor>
     void CheckDilationParams(const ConvolutionDescriptor& descriptor)
     {
-        BOOST_CHECK_EQUAL(descriptor.m_DilationX, m_ExpectedDilationX);
-        BOOST_CHECK_EQUAL(descriptor.m_DilationY, m_ExpectedDilationY);
+        CHECK_EQ(descriptor.m_DilationX, m_ExpectedDilationX);
+        CHECK_EQ(descriptor.m_DilationY, m_ExpectedDilationY);
     }
 };
 
@@ -169,11 +166,9 @@ void DilationTestImpl(const DilationTestOptions& options)
     data.m_OutputSlotForOperand = std::vector<IOutputSlot*>(model.operands.size(), nullptr);
 
     bool ok = HalPolicy::ConvertOperation(model.operations[0], model, data);
-    BOOST_CHECK(ok);
+    CHECK(ok);
 
     // check if dilation params are as expected
     DilationTestVisitor visitor = options.m_HasDilation ? DilationTestVisitor(2, 2) : DilationTestVisitor();
     data.m_Network->Accept(visitor);
 }
-
-BOOST_AUTO_TEST_SUITE_END()

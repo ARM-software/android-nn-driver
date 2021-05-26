@@ -9,7 +9,31 @@
 
 #include <armnn/utility/Assert.hpp>
 
-#include <boost/test/unit_test.hpp>
+// Un-define some of the macros as they clash in 'third-party/doctest/doctest.h'
+// and 'system/core/base/include/android-base/logging.h'
+// macro redefined error[-Werror,-Wmacro-redefined]
+#ifdef CHECK
+#undef CHECK
+#endif
+#ifdef CHECK_EQ
+#undef CHECK_EQ
+#endif
+#ifdef CHECK_NE
+#undef CHECK_NE
+#endif
+#ifdef CHECK_GT
+#undef CHECK_GT
+#endif
+#ifdef CHECK_LT
+#undef CHECK_LT
+#endif
+#ifdef CHECK_GE
+#undef CHECK_GE
+#endif
+#ifdef CHECK_LE
+#undef CHECK_LE
+#endif
+#include <doctest/doctest.h>
 
 #include <sys/system_properties.h>
 
@@ -66,9 +90,9 @@ void CheckOperandType(const V1_2::Capabilities& capabilities, V1_2::OperandType 
     ARMNN_ASSERT(perfInfo.powerUsage == powerUsage);
 }
 
-BOOST_FIXTURE_TEST_SUITE(CapabilitiesTests, CapabilitiesFixture)
-
-BOOST_AUTO_TEST_CASE(PerformanceCapabilitiesWithRuntime)
+TEST_SUITE("CapabilitiesTests")
+{
+TEST_CASE_FIXTURE(CapabilitiesFixture, "PerformanceCapabilitiesWithRuntime")
 {
     using namespace armnn_driver::hal_1_2;
     using namespace android::nn;
@@ -124,7 +148,7 @@ BOOST_AUTO_TEST_CASE(PerformanceCapabilitiesWithRuntime)
     ArmnnDriverImpl::getCapabilities_1_2(runtime, getCapabilitiesFn);
 }
 
-BOOST_AUTO_TEST_CASE(PerformanceCapabilitiesUndefined)
+TEST_CASE_FIXTURE(CapabilitiesFixture, "PerformanceCapabilitiesUndefined")
 {
     using namespace armnn_driver::hal_1_2;
     using namespace android::nn;
@@ -164,4 +188,4 @@ BOOST_AUTO_TEST_CASE(PerformanceCapabilitiesUndefined)
     ArmnnDriverImpl::getCapabilities_1_2(runtime, getCapabilitiesFn);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+}

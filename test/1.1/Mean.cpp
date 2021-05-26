@@ -8,11 +8,9 @@
 
 #include "../1.1/HalPolicy.hpp"
 
-#include <boost/test/data/test_case.hpp>
+#include <doctest/doctest.h>
 
 #include <array>
-
-BOOST_AUTO_TEST_SUITE(MeanTests)
 
 using namespace android::hardware;
 using namespace driverTestHelpers;
@@ -23,12 +21,6 @@ using RequestArgument = V1_0::RequestArgument;
 
 namespace
 {
-
-#ifndef ARMCOMPUTECL_ENABLED
-    static const std::array<armnn::Compute, 1> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef }};
-#else
-    static const std::array<armnn::Compute, 2> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef, armnn::Compute::GpuAcc }};
-#endif
 
 void MeanTestImpl(const TestTensor& input,
                   const hidl_vec<uint32_t>& axisDimensions,
@@ -94,64 +86,175 @@ void MeanTestImpl(const TestTensor& input,
     if (preparedModel.get() != nullptr)
     {
         V1_0::ErrorStatus execStatus = Execute(preparedModel, request);
-        BOOST_TEST(execStatus == V1_0::ErrorStatus::NONE);
+        CHECK((int)execStatus == (int)V1_0::ErrorStatus::NONE);
     }
 
     const float* expectedOutputData = expectedOutput.GetData();
     for (unsigned int i = 0; i < expectedOutput.GetNumElements(); i++)
     {
-        BOOST_TEST(outputData[i] == expectedOutputData[i]);
+        CHECK(outputData[i] == expectedOutputData[i]);
     }
 }
 
 } // anonymous namespace
 
-BOOST_DATA_TEST_CASE(MeanNoKeepDimsTest, COMPUTE_DEVICES)
+TEST_SUITE("MeanTests_CpuRef")
 {
-    TestTensor input{ armnn::TensorShape{ 4, 3, 2 }, { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f,
-                                                       11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f, 17.0f, 18.0f, 19.0f,
-                                                       20.0f, 21.0f, 22.0f, 23.0f, 24.0f } };
-    hidl_vec<uint32_t> axisDimensions = { 2 };
-    int32_t axisValues[] = { 0, 1 };
-    int32_t keepDims = 0;
-    TestTensor expectedOutput{ armnn::TensorShape{ 2 }, { 12.0f, 13.0f } };
+    TEST_CASE("MeanNoKeepDimsTest_CpuRef")
+    {
+        TestTensor input{ armnn::TensorShape{ 4, 3, 2 },
+                          { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f,
+                            11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f, 17.0f, 18.0f, 19.0f,
+                            20.0f, 21.0f, 22.0f, 23.0f, 24.0f } };
+        hidl_vec<uint32_t> axisDimensions = { 2 };
+        int32_t axisValues[] = { 0, 1 };
+        int32_t keepDims = 0;
+        TestTensor expectedOutput{ armnn::TensorShape{ 2 }, { 12.0f, 13.0f } };
 
-    MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, false, sample);
+        MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, false, armnn::Compute::CpuRef);
+    }
+
+    TEST_CASE("MeanKeepDimsTest_CpuRef")
+    {
+        TestTensor input{ armnn::TensorShape{ 1, 1, 3, 2 }, { 1.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f } };
+        hidl_vec<uint32_t> axisDimensions = { 1 };
+        int32_t axisValues[] = { 2 };
+        int32_t keepDims = 1;
+        TestTensor expectedOutput{ armnn::TensorShape{ 1, 1, 1, 2 }, {  2.0f, 2.0f } };
+
+        MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, false, armnn::Compute::CpuRef);
+    }
+
+    TEST_CASE("MeanFp16NoKeepDimsTest_CpuRef")
+    {
+        TestTensor input{ armnn::TensorShape{ 4, 3, 2 },
+                          { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f,
+                            11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f, 17.0f, 18.0f, 19.0f,
+                            20.0f, 21.0f, 22.0f, 23.0f, 24.0f } };
+        hidl_vec<uint32_t> axisDimensions = { 2 };
+        int32_t axisValues[] = { 0, 1 };
+        int32_t keepDims = 0;
+        TestTensor expectedOutput{ armnn::TensorShape{ 2 }, { 12.0f, 13.0f } };
+
+        MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, true, armnn::Compute::CpuRef);
+    }
+
+    TEST_CASE("MeanFp16KeepDimsTest_CpuRef")
+    {
+        TestTensor input{ armnn::TensorShape{ 1, 1, 3, 2 }, { 1.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f } };
+        hidl_vec<uint32_t> axisDimensions = { 1 };
+        int32_t axisValues[] = { 2 };
+        int32_t keepDims = 1;
+        TestTensor expectedOutput{ armnn::TensorShape{ 1, 1, 1, 2 }, {  2.0f, 2.0f } };
+
+        MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, true, armnn::Compute::CpuRef);
+    }
 }
 
-BOOST_DATA_TEST_CASE(MeanKeepDimsTest, COMPUTE_DEVICES)
+#ifdef ARMCOMPUTECL_ENABLED
+TEST_SUITE("MeanTests_CpuAcc")
 {
-    TestTensor input{ armnn::TensorShape{ 1, 1, 3, 2 }, { 1.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f } };
-    hidl_vec<uint32_t> axisDimensions = { 1 };
-    int32_t axisValues[] = { 2 };
-    int32_t keepDims = 1;
-    TestTensor expectedOutput{ armnn::TensorShape{ 1, 1, 1, 2 }, {  2.0f, 2.0f } };
+    TEST_CASE("MeanNoKeepDimsTest_CpuAcc")
+    {
+        TestTensor input{ armnn::TensorShape{ 4, 3, 2 },
+                          { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f,
+                            11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f, 17.0f, 18.0f, 19.0f,
+                            20.0f, 21.0f, 22.0f, 23.0f, 24.0f } };
+        hidl_vec<uint32_t> axisDimensions = { 2 };
+        int32_t axisValues[] = { 0, 1 };
+        int32_t keepDims = 0;
+        TestTensor expectedOutput{ armnn::TensorShape{ 2 }, { 12.0f, 13.0f } };
 
-    MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, false, sample);
+        MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, false, armnn::Compute::CpuAcc);
+    }
+
+    TEST_CASE("MeanKeepDimsTest_CpuAcc")
+    {
+        TestTensor input{ armnn::TensorShape{ 1, 1, 3, 2 }, { 1.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f } };
+        hidl_vec<uint32_t> axisDimensions = { 1 };
+        int32_t axisValues[] = { 2 };
+        int32_t keepDims = 1;
+        TestTensor expectedOutput{ armnn::TensorShape{ 1, 1, 1, 2 }, {  2.0f, 2.0f } };
+
+        MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, false, armnn::Compute::CpuAcc);
+    }
+
+    TEST_CASE("MeanFp16NoKeepDimsTest_CpuAcc")
+    {
+        TestTensor input{ armnn::TensorShape{ 4, 3, 2 },
+                          { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f,
+                            11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f, 17.0f, 18.0f, 19.0f,
+                            20.0f, 21.0f, 22.0f, 23.0f, 24.0f } };
+        hidl_vec<uint32_t> axisDimensions = { 2 };
+        int32_t axisValues[] = { 0, 1 };
+        int32_t keepDims = 0;
+        TestTensor expectedOutput{ armnn::TensorShape{ 2 }, { 12.0f, 13.0f } };
+
+        MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, true, armnn::Compute::CpuAcc);
+    }
+
+    TEST_CASE("MeanFp16KeepDimsTest_CpuAcc")
+    {
+        TestTensor input{ armnn::TensorShape{ 1, 1, 3, 2 }, { 1.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f } };
+        hidl_vec<uint32_t> axisDimensions = { 1 };
+        int32_t axisValues[] = { 2 };
+        int32_t keepDims = 1;
+        TestTensor expectedOutput{ armnn::TensorShape{ 1, 1, 1, 2 }, {  2.0f, 2.0f } };
+
+        MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, true, armnn::Compute::CpuAcc);
+    }
 }
 
-BOOST_DATA_TEST_CASE(MeanFp16NoKeepDimsTest, COMPUTE_DEVICES)
+TEST_SUITE("MeanTests_GpuAcc")
 {
-    TestTensor input{ armnn::TensorShape{ 4, 3, 2 }, { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f,
-                                                       11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f, 17.0f, 18.0f, 19.0f,
-                                                       20.0f, 21.0f, 22.0f, 23.0f, 24.0f } };
-    hidl_vec<uint32_t> axisDimensions = { 2 };
-    int32_t axisValues[] = { 0, 1 };
-    int32_t keepDims = 0;
-    TestTensor expectedOutput{ armnn::TensorShape{ 2 }, { 12.0f, 13.0f } };
+    TEST_CASE("MeanNoKeepDimsTest_GpuAcc")
+    {
+        TestTensor input{ armnn::TensorShape{ 4, 3, 2 },
+                          { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f,
+                            11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f, 17.0f, 18.0f, 19.0f,
+                            20.0f, 21.0f, 22.0f, 23.0f, 24.0f } };
+        hidl_vec<uint32_t> axisDimensions = { 2 };
+        int32_t axisValues[] = { 0, 1 };
+        int32_t keepDims = 0;
+        TestTensor expectedOutput{ armnn::TensorShape{ 2 }, { 12.0f, 13.0f } };
 
-    MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, true, sample);
+        MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, false, armnn::Compute::GpuAcc);
+    }
+
+    TEST_CASE("MeanKeepDimsTest_GpuAcc")
+    {
+        TestTensor input{ armnn::TensorShape{ 1, 1, 3, 2 }, { 1.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f } };
+        hidl_vec<uint32_t> axisDimensions = { 1 };
+        int32_t axisValues[] = { 2 };
+        int32_t keepDims = 1;
+        TestTensor expectedOutput{ armnn::TensorShape{ 1, 1, 1, 2 }, {  2.0f, 2.0f } };
+
+        MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, false, armnn::Compute::GpuAcc);
+    }
+
+    TEST_CASE("MeanFp16NoKeepDimsTest_GpuAcc")
+    {
+        TestTensor input{ armnn::TensorShape{ 4, 3, 2 },
+                          { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f,
+                            11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f, 17.0f, 18.0f, 19.0f,
+                            20.0f, 21.0f, 22.0f, 23.0f, 24.0f } };
+        hidl_vec<uint32_t> axisDimensions = { 2 };
+        int32_t axisValues[] = { 0, 1 };
+        int32_t keepDims = 0;
+        TestTensor expectedOutput{ armnn::TensorShape{ 2 }, { 12.0f, 13.0f } };
+
+        MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, true, armnn::Compute::GpuAcc);
+    }
+
+    TEST_CASE("MeanFp16KeepDimsTest_GpuAcc")
+    {
+        TestTensor input{ armnn::TensorShape{ 1, 1, 3, 2 }, { 1.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f } };
+        hidl_vec<uint32_t> axisDimensions = { 1 };
+        int32_t axisValues[] = { 2 };
+        int32_t keepDims = 1;
+        TestTensor expectedOutput{ armnn::TensorShape{ 1, 1, 1, 2 }, {  2.0f, 2.0f } };
+
+        MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, true, armnn::Compute::GpuAcc);
+    }
 }
-
-BOOST_DATA_TEST_CASE(MeanFp16KeepDimsTest, COMPUTE_DEVICES)
-{
-    TestTensor input{ armnn::TensorShape{ 1, 1, 3, 2 }, { 1.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f } };
-    hidl_vec<uint32_t> axisDimensions = { 1 };
-    int32_t axisValues[] = { 2 };
-    int32_t keepDims = 1;
-    TestTensor expectedOutput{ armnn::TensorShape{ 1, 1, 1, 2 }, {  2.0f, 2.0f } };
-
-    MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, true, sample);
-}
-
-BOOST_AUTO_TEST_SUITE_END()
+#endif

@@ -6,12 +6,12 @@
 
 #include "../1.0/HalPolicy.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include <doctest/doctest.h>
 
 #include <log/log.h>
 
-BOOST_AUTO_TEST_SUITE(FullyConnectedTests)
-
+TEST_SUITE("FullyConnectedTests")
+{
 using namespace android::hardware;
 using namespace driverTestHelpers;
 using namespace armnn_driver;
@@ -19,7 +19,7 @@ using namespace armnn_driver;
 using HalPolicy = hal_1_0::HalPolicy;
 
 // Add our own test here since we fail the fc tests which Google supplies (because of non-const weights)
-BOOST_AUTO_TEST_CASE(FullyConnected)
+TEST_CASE("FullyConnected")
 {
     // this should ideally replicate fully_connected_float.model.cpp
     // but that uses slightly weird dimensions which I don't think we need to support for now
@@ -83,10 +83,10 @@ BOOST_AUTO_TEST_CASE(FullyConnected)
     }
 
     // check the result
-    BOOST_TEST(outdata[0] == 152);
+    CHECK(outdata[0] == 152);
 }
 
-BOOST_AUTO_TEST_CASE(TestFullyConnected4dInput)
+TEST_CASE("TestFullyConnected4dInput")
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
@@ -165,17 +165,17 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInput)
     }
 
     // check the result
-    BOOST_TEST(outdata[0] == 1);
-    BOOST_TEST(outdata[1] == 2);
-    BOOST_TEST(outdata[2] == 3);
-    BOOST_TEST(outdata[3] == 4);
-    BOOST_TEST(outdata[4] == 5);
-    BOOST_TEST(outdata[5] == 6);
-    BOOST_TEST(outdata[6] == 7);
-    BOOST_TEST(outdata[7] == 8);
+    CHECK(outdata[0] == 1);
+    CHECK(outdata[1] == 2);
+    CHECK(outdata[2] == 3);
+    CHECK(outdata[3] == 4);
+    CHECK(outdata[4] == 5);
+    CHECK(outdata[5] == 6);
+    CHECK(outdata[6] == 7);
+    CHECK(outdata[7] == 8);
 }
 
-BOOST_AUTO_TEST_CASE(TestFullyConnected4dInputReshape)
+TEST_CASE("TestFullyConnected4dInputReshape")
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
@@ -254,17 +254,17 @@ BOOST_AUTO_TEST_CASE(TestFullyConnected4dInputReshape)
     }
 
     // check the result
-    BOOST_TEST(outdata[0] == 1);
-    BOOST_TEST(outdata[1] == 2);
-    BOOST_TEST(outdata[2] == 3);
-    BOOST_TEST(outdata[3] == 4);
-    BOOST_TEST(outdata[4] == 5);
-    BOOST_TEST(outdata[5] == 6);
-    BOOST_TEST(outdata[6] == 7);
-    BOOST_TEST(outdata[7] == 8);
+    CHECK(outdata[0] == 1);
+    CHECK(outdata[1] == 2);
+    CHECK(outdata[2] == 3);
+    CHECK(outdata[3] == 4);
+    CHECK(outdata[4] == 5);
+    CHECK(outdata[5] == 6);
+    CHECK(outdata[6] == 7);
+    CHECK(outdata[7] == 8);
 }
 
-BOOST_AUTO_TEST_CASE(TestFullyConnectedWeightsAsInput)
+TEST_CASE("TestFullyConnectedWeightsAsInput")
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
@@ -366,14 +366,14 @@ BOOST_AUTO_TEST_CASE(TestFullyConnectedWeightsAsInput)
     }
 
     // check the result
-    BOOST_TEST(outdata[0] == 1);
-    BOOST_TEST(outdata[1] == 2);
-    BOOST_TEST(outdata[2] == 3);
-    BOOST_TEST(outdata[3] == 4);
-    BOOST_TEST(outdata[4] == 5);
-    BOOST_TEST(outdata[5] == 6);
-    BOOST_TEST(outdata[6] == 7);
-    BOOST_TEST(outdata[7] == 8);
+    CHECK(outdata[0] == 1);
+    CHECK(outdata[1] == 2);
+    CHECK(outdata[2] == 3);
+    CHECK(outdata[3] == 4);
+    CHECK(outdata[4] == 5);
+    CHECK(outdata[5] == 6);
+    CHECK(outdata[6] == 7);
+    CHECK(outdata[7] == 8);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+}

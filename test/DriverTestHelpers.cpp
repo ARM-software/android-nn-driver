@@ -4,7 +4,8 @@
 //
 #include "DriverTestHelpers.hpp"
 #include <log/log.h>
-#include <boost/test/unit_test.hpp>
+
+#include <doctest/doctest.h>
 
 namespace android
 {
@@ -139,10 +140,10 @@ android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_0::Model& mode
     driver.prepareModel(model, cb);
 
     prepareStatus = cb->GetErrorStatus();
-    BOOST_TEST(prepareStatus == expectedStatus);
+    CHECK((int)prepareStatus == (int)expectedStatus);
     if (expectedStatus == V1_0::ErrorStatus::NONE)
     {
-        BOOST_TEST((cb->GetPreparedModel() != nullptr));
+        CHECK((cb->GetPreparedModel() != nullptr));
     }
     return cb->GetPreparedModel();
 }
@@ -158,10 +159,10 @@ android::sp<V1_0::IPreparedModel> PrepareModelWithStatus(const V1_1::Model& mode
     driver.prepareModel_1_1(model, V1_1::ExecutionPreference::LOW_POWER, cb);
 
     prepareStatus = cb->GetErrorStatus();
-    BOOST_TEST(prepareStatus == expectedStatus);
+    CHECK((int)prepareStatus == (int)expectedStatus);
     if (expectedStatus == V1_0::ErrorStatus::NONE)
     {
-        BOOST_TEST((cb->GetPreparedModel() != nullptr));
+        CHECK((cb->GetPreparedModel() != nullptr));
     }
     return cb->GetPreparedModel();
 }
@@ -184,10 +185,10 @@ android::sp<V1_2::IPreparedModel> PrepareModelWithStatus_1_2(const armnn_driver:
     driver.prepareModel_1_2(model, V1_1::ExecutionPreference::LOW_POWER, emptyHandle1, emptyHandle2, emptyToken, cb);
 
     prepareStatus = cb->GetErrorStatus();
-    BOOST_TEST(prepareStatus == expectedStatus);
+    CHECK((int)prepareStatus == (int)expectedStatus);
     if (expectedStatus == V1_0::ErrorStatus::NONE)
     {
-        BOOST_TEST((cb->GetPreparedModel_1_2() != nullptr));
+        CHECK((cb->GetPreparedModel_1_2() != nullptr));
     }
     return cb->GetPreparedModel_1_2();
 }
@@ -219,7 +220,7 @@ android::sp<V1_3::IPreparedModel> PrepareModelWithStatus_1_3(const armnn_driver:
     prepareStatus = cb->Get_1_3_ErrorStatus();
     if (prepareStatus == V1_3::ErrorStatus::NONE)
     {
-        BOOST_TEST((cb->GetPreparedModel_1_3() != nullptr));
+        CHECK((cb->GetPreparedModel_1_3() != nullptr));
     }
     return cb->GetPreparedModel_1_3();
 }
@@ -230,10 +231,10 @@ V1_0::ErrorStatus Execute(android::sp<V1_0::IPreparedModel> preparedModel,
                           const V1_0::Request& request,
                           V1_0::ErrorStatus expectedStatus)
 {
-    BOOST_TEST(preparedModel.get() != nullptr);
+    CHECK(preparedModel.get() != nullptr);
     android::sp<ExecutionCallback> cb(new ExecutionCallback());
     V1_0::ErrorStatus execStatus = preparedModel->execute(request, cb);
-    BOOST_TEST(execStatus == expectedStatus);
+    CHECK((int)execStatus == (int)expectedStatus);
     ALOGI("Execute: waiting for callback to be invoked");
     cb->wait();
     return execStatus;
@@ -242,9 +243,10 @@ V1_0::ErrorStatus Execute(android::sp<V1_0::IPreparedModel> preparedModel,
 android::sp<ExecutionCallback> ExecuteNoWait(android::sp<V1_0::IPreparedModel> preparedModel,
                                              const V1_0::Request& request)
 {
-    BOOST_TEST(preparedModel.get() != nullptr);
+    CHECK(preparedModel.get() != nullptr);
     android::sp<ExecutionCallback> cb(new ExecutionCallback());
-    BOOST_TEST(preparedModel->execute(request, cb) == V1_0::ErrorStatus::NONE);
+    V1_0::ErrorStatus execStatus = preparedModel->execute(request, cb);
+    CHECK((int)execStatus == (int)V1_0::ErrorStatus::NONE);
     ALOGI("ExecuteNoWait: returning callback object");
     return cb;
 }

@@ -10,12 +10,10 @@
 
 #include <armnn/utility/IgnoreUnused.hpp>
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
+#include <doctest/doctest.h>
 
-
-BOOST_AUTO_TEST_SUITE(QosTests)
-
+TEST_SUITE("QosTests")
+{
 using ArmnnDriver   = armnn_driver::ArmnnDriver;
 using DriverOptions = armnn_driver::DriverOptions;
 
@@ -40,13 +38,7 @@ void ExecuteModel(const armnn_driver::hal_1_3::HalPolicy::Model& model,
     }
 }
 
-#ifndef ARMCOMPUTECL_ENABLED
-static const std::array<armnn::Compute, 1> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef }};
-#else
-static const std::array<armnn::Compute, 2> COMPUTE_DEVICES = {{ armnn::Compute::CpuRef, armnn::Compute::CpuAcc }};
-#endif
-
-BOOST_AUTO_TEST_CASE(ConcurrentExecuteWithQosPriority)
+TEST_CASE("ConcurrentExecuteWithQosPriority")
 {
     ALOGI("ConcurrentExecuteWithQOSPriority: entry");
 
@@ -102,7 +94,7 @@ BOOST_AUTO_TEST_CASE(ConcurrentExecuteWithQosPriority)
         preparedModelsSize++;
     }
 
-    BOOST_TEST(maxRequests == preparedModelsSize);
+    CHECK(maxRequests == preparedModelsSize);
 
     // construct the request data
     V1_0::DataLocation inloc = {};
@@ -172,15 +164,15 @@ BOOST_AUTO_TEST_CASE(ConcurrentExecuteWithQosPriority)
     {
         if (i < 15)
         {
-            BOOST_TEST(outdata[i][0] == 152);
+            CHECK(outdata[i][0] == 152);
         }
         else if (i < 30)
         {
-            BOOST_TEST(outdata[i][0] == 141);
+            CHECK(outdata[i][0] == 141);
         }
         else
         {
-            BOOST_TEST(outdata[i][0] == 159);
+            CHECK(outdata[i][0] == 159);
         }
 
     }
@@ -189,4 +181,4 @@ BOOST_AUTO_TEST_CASE(ConcurrentExecuteWithQosPriority)
 
 } // anonymous namespace
 
-BOOST_AUTO_TEST_SUITE_END()
+}

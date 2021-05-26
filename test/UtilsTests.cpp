@@ -4,7 +4,6 @@
 //
 
 #include "DriverTestHelpers.hpp"
-#include <boost/test/unit_test.hpp>
 #include <log/log.h>
 
 #include "../Utils.hpp"
@@ -18,6 +17,7 @@
 
 #include <Filesystem.hpp>
 
+#include <doctest/doctest.h>
 
 using namespace android;
 using namespace android::nn;
@@ -64,7 +64,6 @@ private:
 
 } // armnn namespace
 
-BOOST_AUTO_TEST_SUITE(UtilsTests)
 
 // The following are helpers for writing unit tests for the driver.
 namespace
@@ -78,10 +77,9 @@ public:
     ExportNetworkGraphFixture()
         : ExportNetworkGraphFixture("/data")
     {}
+
     ExportNetworkGraphFixture(const std::string& requestInputsAndOutputsDumpDir)
-        : m_RequestInputsAndOutputsDumpDir(requestInputsAndOutputsDumpDir)
-        , m_FileName()
-        , m_FileStream()
+        : m_RequestInputsAndOutputsDumpDir(requestInputsAndOutputsDumpDir), m_FileName(), m_FileStream()
     {
         // Set the name of the output .dot file.
         // NOTE: the export now uses a time stamp to name the file so we
@@ -97,7 +95,7 @@ public:
         m_FileStream.close();
 
         // Ignore any error (such as file not found).
-        (void)remove(m_FileName.c_str());
+        (void) remove(m_FileName.c_str());
     }
 
     bool FileExists()
@@ -147,10 +145,12 @@ private:
 };
 
 
-
 } // namespace
 
-BOOST_AUTO_TEST_CASE(ExportToEmptyDirectory)
+TEST_SUITE("UtilsTests")
+{
+
+TEST_CASE("ExportToEmptyDirectory")
 {
     // Set the fixture for this test.
     ExportNetworkGraphFixture fixture("");
@@ -167,13 +167,13 @@ BOOST_AUTO_TEST_CASE(ExportToEmptyDirectory)
 
     // Export the mock optimized network.
     fixture.m_FileName = armnn_driver::ExportNetworkGraphToDotFile(mockOptimizedNetwork,
-                                              fixture.m_RequestInputsAndOutputsDumpDir);
+                                                                   fixture.m_RequestInputsAndOutputsDumpDir);
 
     // Check that the output file does not exist.
-    BOOST_TEST(!fixture.FileExists());
+    CHECK(!fixture.FileExists());
 }
 
-BOOST_AUTO_TEST_CASE(ExportNetwork)
+TEST_CASE("ExportNetwork")
 {
     // Set the fixture for this test.
     ExportNetworkGraphFixture fixture;
@@ -191,16 +191,16 @@ BOOST_AUTO_TEST_CASE(ExportNetwork)
 
     // Export the mock optimized network.
     fixture.m_FileName = armnn_driver::ExportNetworkGraphToDotFile(mockOptimizedNetwork,
-                                              fixture.m_RequestInputsAndOutputsDumpDir);
+                                                                   fixture.m_RequestInputsAndOutputsDumpDir);
 
     // Check that the output file exists and that it has the correct name.
-    BOOST_TEST(fixture.FileExists());
+    CHECK(fixture.FileExists());
 
     // Check that the content of the output file matches the mock content.
-    BOOST_TEST(fixture.GetFileContent() == mockSerializedContent);
+    CHECK(fixture.GetFileContent() == mockSerializedContent);
 }
 
-BOOST_AUTO_TEST_CASE(ExportNetworkOverwriteFile)
+TEST_CASE("ExportNetworkOverwriteFile")
 {
     // Set the fixture for this test.
     ExportNetworkGraphFixture fixture;
@@ -217,13 +217,13 @@ BOOST_AUTO_TEST_CASE(ExportNetworkOverwriteFile)
 
     // Export the mock optimized network.
     fixture.m_FileName = armnn_driver::ExportNetworkGraphToDotFile(mockOptimizedNetwork,
-                                              fixture.m_RequestInputsAndOutputsDumpDir);
+                                                                   fixture.m_RequestInputsAndOutputsDumpDir);
 
     // Check that the output file exists and that it has the correct name.
-    BOOST_TEST(fixture.FileExists());
+    CHECK(fixture.FileExists());
 
     // Check that the content of the output file matches the mock content.
-    BOOST_TEST(fixture.GetFileContent() == mockSerializedContent);
+    CHECK(fixture.GetFileContent() == mockSerializedContent);
 
     // Update the mock serialized content of the network.
     mockSerializedContent = "This is ANOTHER mock serialized content!";
@@ -235,16 +235,16 @@ BOOST_AUTO_TEST_CASE(ExportNetworkOverwriteFile)
 
     // Export the mock optimized network.
     fixture.m_FileName = armnn_driver::ExportNetworkGraphToDotFile(mockOptimizedNetwork2,
-                                              fixture.m_RequestInputsAndOutputsDumpDir);
+                                                                   fixture.m_RequestInputsAndOutputsDumpDir);
 
     // Check that the output file still exists and that it has the correct name.
-    BOOST_TEST(fixture.FileExists());
+    CHECK(fixture.FileExists());
 
     // Check that the content of the output file matches the mock content.
-    BOOST_TEST(fixture.GetFileContent() == mockSerializedContent);
+    CHECK(fixture.GetFileContent() == mockSerializedContent);
 }
 
-BOOST_AUTO_TEST_CASE(ExportMultipleNetworks)
+TEST_CASE("ExportMultipleNetworks")
 {
     // Set the fixtures for this test.
     ExportNetworkGraphFixture fixture1;
@@ -263,32 +263,32 @@ BOOST_AUTO_TEST_CASE(ExportMultipleNetworks)
 
     // Export the mock optimized network.
     fixture1.m_FileName = armnn_driver::ExportNetworkGraphToDotFile(mockOptimizedNetwork,
-                                              fixture1.m_RequestInputsAndOutputsDumpDir);
+                                                                    fixture1.m_RequestInputsAndOutputsDumpDir);
 
     // Check that the output file exists and that it has the correct name.
-    BOOST_TEST(fixture1.FileExists());
+    CHECK(fixture1.FileExists());
 
     // Check that the content of the output file matches the mock content.
-    BOOST_TEST(fixture1.GetFileContent() == mockSerializedContent);
+    CHECK(fixture1.GetFileContent() == mockSerializedContent);
 
     // Export the mock optimized network.
     fixture2.m_FileName = armnn_driver::ExportNetworkGraphToDotFile(mockOptimizedNetwork,
-                                              fixture2.m_RequestInputsAndOutputsDumpDir);
+                                                                    fixture2.m_RequestInputsAndOutputsDumpDir);
 
     // Check that the output file exists and that it has the correct name.
-    BOOST_TEST(fixture2.FileExists());
+    CHECK(fixture2.FileExists());
 
     // Check that the content of the output file matches the mock content.
-    BOOST_TEST(fixture2.GetFileContent() == mockSerializedContent);
+    CHECK(fixture2.GetFileContent() == mockSerializedContent);
 
     // Export the mock optimized network.
     fixture3.m_FileName = armnn_driver::ExportNetworkGraphToDotFile(mockOptimizedNetwork,
-                                              fixture3.m_RequestInputsAndOutputsDumpDir);
+                                                                    fixture3.m_RequestInputsAndOutputsDumpDir);
     // Check that the output file exists and that it has the correct name.
-    BOOST_TEST(fixture3.FileExists());
+    CHECK(fixture3.FileExists());
 
     // Check that the content of the output file matches the mock content.
-    BOOST_TEST(fixture3.GetFileContent() == mockSerializedContent);
+    CHECK(fixture3.GetFileContent() == mockSerializedContent);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+}

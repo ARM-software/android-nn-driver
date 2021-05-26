@@ -7,12 +7,12 @@
 #include "../Convolution2D.hpp"
 #include "../../1.1/HalPolicy.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include <doctest/doctest.h>
 #include <log/log.h>
 
 #include <OperationsUtils.h>
 
-BOOST_AUTO_TEST_SUITE(Convolution2DTests)
+
 
 using namespace android::hardware;
 using namespace driverTestHelpers;
@@ -29,24 +29,28 @@ void SetModelFp16Flag(V1_1::Model& model, bool fp16Enabled)
 
 } // namespace driverTestHelpers
 
-BOOST_AUTO_TEST_CASE(ConvValidPadding_Hal_1_1)
+
+TEST_SUITE("Convolution2DTests_1.1")
+{
+
+TEST_CASE("ConvValidPadding_Hal_1_1")
 {
     PaddingTestImpl<hal_1_1::HalPolicy>(android::nn::kPaddingValid);
 }
 
-BOOST_AUTO_TEST_CASE(ConvSamePadding_Hal_1_1)
+TEST_CASE("ConvSamePadding_Hal_1_1")
 {
     PaddingTestImpl<hal_1_1::HalPolicy>(android::nn::kPaddingSame);
 }
 
-BOOST_AUTO_TEST_CASE(ConvValidPaddingFp16Flag_Hal_1_1)
+TEST_CASE("ConvValidPaddingFp16Flag_Hal_1_1")
 {
     PaddingTestImpl<hal_1_1::HalPolicy>(android::nn::kPaddingValid, true);
 }
 
-BOOST_AUTO_TEST_CASE(ConvSamePaddingFp16Flag_Hal_1_1)
+TEST_CASE("ConvSamePaddingFp16Flag_Hal_1_1")
 {
     PaddingTestImpl<hal_1_1::HalPolicy>(android::nn::kPaddingSame, true);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+}

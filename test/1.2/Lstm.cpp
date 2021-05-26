@@ -5,47 +5,54 @@
 
 #include "../Lstm.hpp"
 
-#include <boost/test/data/test_case.hpp>
-
-BOOST_AUTO_TEST_SUITE(LstmTests)
-
 using namespace armnn_driver;
 
-BOOST_DATA_TEST_CASE(LstmNoCifgNoPeepholeNoProjectionTest, COMPUTE_DEVICES)
+TEST_SUITE("LstmTests_1.2_CpuRef")
 {
-    LstmNoCifgNoPeepholeNoProjection<hal_1_2::HalPolicy>(sample);
-}
-
-BOOST_DATA_TEST_CASE(LstmCifgPeepholeNoProjectionTest, COMPUTE_DEVICES)
-{
-    LstmCifgPeepholeNoProjection<hal_1_2::HalPolicy>(sample);
-}
-
-BOOST_DATA_TEST_CASE(LstmNoCifgPeepholeProjectionTest, COMPUTE_DEVICES)
-{
-    LstmNoCifgPeepholeProjection<hal_1_2::HalPolicy>(sample);
-}
-
-BOOST_DATA_TEST_CASE(LstmCifgPeepholeNoProjectionBatch2Test, COMPUTE_DEVICES)
-{
-    LstmCifgPeepholeNoProjectionBatch2<hal_1_2::HalPolicy>(sample);
-}
-
-BOOST_DATA_TEST_CASE(LstmNoCifgPeepholeProjectionNoClippingLayerNormTest, COMPUTE_DEVICES)
-{
-    LstmNoCifgPeepholeProjectionNoClippingLayerNorm<hal_1_2::HalPolicy>(sample);
-}
-
-BOOST_DATA_TEST_CASE(LstmCifgPeepholeProjectionNoClippingLayerNormTest, COMPUTE_DEVICES)
-{
-    LstmCifgPeepholeProjectionNoClippingLayerNorm<hal_1_2::HalPolicy>(sample);
+    TEST_CASE("LstmNoCifgNoPeepholeNoProjectionTest_1.2_armnn::Compute::CpuRef")
+    {
+        LstmNoCifgNoPeepholeNoProjection<hal_1_2::HalPolicy>(armnn::Compute::CpuRef);
+    }
+    TEST_CASE("LstmCifgPeepholeNoProjectionTest_1.2_CpuRef")
+    {
+        LstmCifgPeepholeNoProjection<hal_1_2::HalPolicy>(armnn::Compute::CpuRef);
+    }
+    TEST_CASE("LstmNoCifgPeepholeProjectionTest_1.2_CpuRef")
+    {
+        LstmNoCifgPeepholeProjection<hal_1_2::HalPolicy>(armnn::Compute::CpuRef);
+    }
+    TEST_CASE("LstmCifgPeepholeNoProjectionBatch2Test_1.2_CpuRef")
+    {
+        LstmCifgPeepholeNoProjectionBatch2<hal_1_2::HalPolicy>(armnn::Compute::CpuRef);
+    }
+    TEST_CASE("QuantizedLstmTest_1.2_CpuRef")
+    {
+        QuantizedLstm<hal_1_2::HalPolicy>(armnn::Compute::CpuRef);
+    }
 }
 
 #if defined(ARMCOMPUTECL_ENABLED)
-BOOST_DATA_TEST_CASE(QuantizedLstmTest, COMPUTE_DEVICES)
+TEST_SUITE("LstmTests_1.2_GpuAcc")
 {
-    QuantizedLstm<hal_1_2::HalPolicy>(sample);
+    TEST_CASE("LstmNoCifgNoPeepholeNoProjectionTest_1.2_GpuAcc")
+    {
+        LstmNoCifgNoPeepholeNoProjection<hal_1_2::HalPolicy>(armnn::Compute::GpuAcc);
+    }
+    TEST_CASE("LstmCifgPeepholeNoProjectionTest_1.2_GpuAcc")
+    {
+        LstmCifgPeepholeNoProjection<hal_1_2::HalPolicy>(armnn::Compute::GpuAcc);
+    }
+    TEST_CASE("LstmNoCifgPeepholeProjectionTest_1.2_GpuAcc")
+    {
+        LstmNoCifgPeepholeProjection<hal_1_2::HalPolicy>(armnn::Compute::GpuAcc);
+    }
+    TEST_CASE("LstmCifgPeepholeNoProjectionBatch2Test_1.2_GpuAcc")
+    {
+        LstmCifgPeepholeNoProjectionBatch2<hal_1_2::HalPolicy>(armnn::Compute::GpuAcc);
+    }
+        TEST_CASE("QuantizedLstmTest_1.2_GpuAcc")
+    {
+        QuantizedLstm<hal_1_2::HalPolicy>(armnn::Compute::GpuAcc);
+    }
 }
 #endif
-
-BOOST_AUTO_TEST_SUITE_END()

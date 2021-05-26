@@ -6,12 +6,11 @@
 
 #include "../1.0/HalPolicy.hpp"
 
-#include <boost/test/unit_test.hpp>
-
+#include <doctest/doctest.h>
 #include <log/log.h>
 
-BOOST_AUTO_TEST_SUITE(ConcurrentDriverTests)
-
+TEST_SUITE("ConcurrentDriverTests")
+{
 using ArmnnDriver   = armnn_driver::ArmnnDriver;
 using DriverOptions = armnn_driver::DriverOptions;
 using HalPolicy     = armnn_driver::hal_1_0::HalPolicy;
@@ -26,7 +25,7 @@ using namespace armnn_driver;
 // The main point of this test is to check that multiple requests can be
 // executed without waiting for the callback from previous execution.
 // The operations performed are not significant.
-BOOST_AUTO_TEST_CASE(ConcurrentExecute)
+TEST_CASE("ConcurrentExecute")
 {
     ALOGI("ConcurrentExecute: entry");
 
@@ -64,7 +63,7 @@ BOOST_AUTO_TEST_CASE(ConcurrentExecute)
         }
     }
 
-    BOOST_TEST(maxRequests == preparedModelsSize);
+    CHECK(maxRequests == preparedModelsSize);
 
     // construct the request data
     V1_0::DataLocation inloc = {};
@@ -119,9 +118,9 @@ BOOST_AUTO_TEST_CASE(ConcurrentExecute)
     ALOGI("ConcurrentExecute: validating results");
     for (size_t i = 0; i < maxRequests; ++i)
     {
-        BOOST_TEST(outdata[i][0] == 152);
+        CHECK(outdata[i][0] == 152);
     }
     ALOGI("ConcurrentExecute: exit");
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+}

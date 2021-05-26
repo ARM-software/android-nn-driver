@@ -3,29 +3,33 @@
 // SPDX-License-Identifier: MIT
 //
 #define LOG_TAG "ArmnnDriverTests"
-#define BOOST_TEST_MODULE armnn_driver_tests
-#include <boost/test/unit_test.hpp>
 #include <log/log.h>
 
 #include "DriverTestHelpers.hpp"
 
-BOOST_AUTO_TEST_SUITE(DriverTests)
+#ifndef DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#endif
+#include <doctest/doctest.h>
 
 using namespace android::hardware;
 using namespace driverTestHelpers;
 using namespace armnn_driver;
 
-BOOST_AUTO_TEST_CASE(Init)
+TEST_SUITE("DriverTests")
+{
+
+TEST_CASE("Init")
 {
     // Making the driver object on the stack causes a weird libc error, so make it on the heap instead
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
     V1_0::DeviceStatus status = driver->getStatus();
-    // Note double-parentheses to avoid compile error from Boost trying to printf the DeviceStatus
-    BOOST_TEST((status == V1_0::DeviceStatus::AVAILABLE));
+    // Note double-parentheses to avoid compile error from doctest trying to printf the DeviceStatus
+    CHECK((status == V1_0::DeviceStatus::AVAILABLE));
 }
 
-BOOST_AUTO_TEST_CASE(TestCapabilities)
+TEST_CASE("TestCapabilities")
 {
     // Making the driver object on the stack causes a weird libc error, so make it on the heap instead
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
@@ -41,11 +45,11 @@ BOOST_AUTO_TEST_CASE(TestCapabilities)
 
     driver->getCapabilities(cb);
 
-    BOOST_TEST((int)error == (int)V1_0::ErrorStatus::NONE);
-    BOOST_TEST(cap.float32Performance.execTime > 0.f);
-    BOOST_TEST(cap.float32Performance.powerUsage > 0.f);
-    BOOST_TEST(cap.quantized8Performance.execTime > 0.f);
-    BOOST_TEST(cap.quantized8Performance.powerUsage > 0.f);
+    CHECK((int)error == (int)V1_0::ErrorStatus::NONE);
+    CHECK(cap.float32Performance.execTime > 0.f);
+    CHECK(cap.float32Performance.powerUsage > 0.f);
+    CHECK(cap.quantized8Performance.execTime > 0.f);
+    CHECK(cap.quantized8Performance.powerUsage > 0.f);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+}

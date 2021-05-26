@@ -10,9 +10,32 @@
 
 #include "../ArmnnDriver.hpp"
 #include <iosfwd>
-#include <boost/test/unit_test.hpp>
-
 #include <android/hidl/allocator/1.0/IAllocator.h>
+
+// Un-define some of the macros as they clash in 'third-party/doctest/doctest.h'
+// and 'system/core/base/include/android-base/logging.h'
+// macro redefined error[-Werror,-Wmacro-redefined]
+#ifdef CHECK
+#undef CHECK
+#endif
+#ifdef CHECK_EQ
+#undef CHECK_EQ
+#endif
+#ifdef CHECK_NE
+#undef CHECK_NE
+#endif
+#ifdef CHECK_GT
+#undef CHECK_GT
+#endif
+#ifdef CHECK_LT
+#undef CHECK_LT
+#endif
+#ifdef CHECK_GE
+#undef CHECK_GE
+#endif
+#ifdef CHECK_LE
+#undef CHECK_LE
+#endif
 
 using RequestArgument = V1_0::RequestArgument;
 using ::android::hidl::allocator::V1_0::IAllocator;
@@ -167,7 +190,7 @@ android::sp<IMemory> AddPoolAndGetData(uint32_t size, V1_0::Request& request)
 
     android::sp<IAllocator> allocator = IAllocator::getService("ashmem");
     allocator->allocate(sizeof(T) * size, [&](bool success, const hidl_memory& mem) {
-        BOOST_TEST(success);
+        ARMNN_ASSERT(success);
         pool = mem;
     });
 

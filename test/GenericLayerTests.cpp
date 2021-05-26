@@ -6,11 +6,12 @@
 
 #include "../1.0/HalPolicy.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include <doctest/doctest.h>
 
 #include <log/log.h>
 
-BOOST_AUTO_TEST_SUITE(GenericLayerTests)
+TEST_SUITE("GenericLayerTests")
+{
 
 using namespace android::hardware;
 using namespace driverTestHelpers;
@@ -18,7 +19,7 @@ using namespace armnn_driver;
 
 using HalPolicy = hal_1_0::HalPolicy;
 
-BOOST_AUTO_TEST_CASE(GetSupportedOperations)
+TEST_CASE("GetSupportedOperations")
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
@@ -52,9 +53,9 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
     model0.operations[0].outputs = hidl_vec<uint32_t>{4};
 
     driver->getSupportedOperations(model0, cb);
-    BOOST_TEST((int)errorStatus == (int)V1_0::ErrorStatus::NONE);
-    BOOST_TEST(supported.size() == (size_t)1);
-    BOOST_TEST(supported[0] == true);
+    CHECK((int)errorStatus == (int)V1_0::ErrorStatus::NONE);
+    CHECK(supported.size() == (size_t)1);
+    CHECK(supported[0] == true);
 
     V1_0::Model model1 = {};
 
@@ -81,8 +82,8 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
 
     driver->getSupportedOperations(model1, cb);
 
-    BOOST_TEST((int)errorStatus == (int)V1_0::ErrorStatus::INVALID_ARGUMENT);
-    BOOST_TEST(supported.empty());
+    CHECK((int)errorStatus == (int)V1_0::ErrorStatus::INVALID_ARGUMENT);
+    CHECK(supported.empty());
 
     // Test Broadcast on add/mul operators
     HalPolicy::Model model2 = {};
@@ -114,10 +115,10 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
     model2.operations[1].outputs = hidl_vec<uint32_t>{4};
 
     driver->getSupportedOperations(model2, cb);
-    BOOST_TEST((int)errorStatus == (int)V1_0::ErrorStatus::NONE);
-    BOOST_TEST(supported.size() == (size_t)2);
-    BOOST_TEST(supported[0] == true);
-    BOOST_TEST(supported[1] == true);
+    CHECK((int)errorStatus == (int)V1_0::ErrorStatus::NONE);
+    CHECK(supported.size() == (size_t)2);
+    CHECK(supported[0] == true);
+    CHECK(supported[1] == true);
 
     V1_0::Model model3 = {};
 
@@ -143,9 +144,9 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
     model3.operations[0].outputs = hidl_vec<uint32_t>{3, 4};
 
     driver->getSupportedOperations(model3, cb);
-    BOOST_TEST((int)errorStatus == (int)V1_0::ErrorStatus::NONE);
-    BOOST_TEST(supported.size() == (size_t)1);
-    BOOST_TEST(supported[0] == false);
+    CHECK((int)errorStatus == (int)V1_0::ErrorStatus::NONE);
+    CHECK(supported.size() == (size_t)1);
+    CHECK(supported[0] == false);
 
     HalPolicy::Model model4 = {};
 
@@ -158,14 +159,14 @@ BOOST_AUTO_TEST_CASE(GetSupportedOperations)
     model4.operations[0].outputs = hidl_vec<uint32_t>{0};
 
     driver->getSupportedOperations(model4, cb);
-    BOOST_TEST((int)errorStatus == (int)V1_0::ErrorStatus::INVALID_ARGUMENT);
-    BOOST_TEST(supported.empty());
+    CHECK((int)errorStatus == (int)V1_0::ErrorStatus::INVALID_ARGUMENT);
+    CHECK(supported.empty());
 }
 
 // The purpose of this test is to ensure that when encountering an unsupported operation
 // it is skipped and getSupportedOperations() continues (rather than failing and stopping).
 // As per IVGCVSW-710.
-BOOST_AUTO_TEST_CASE(UnsupportedLayerContinueOnFailure)
+TEST_CASE("UnsupportedLayerContinueOnFailure")
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
@@ -240,16 +241,16 @@ BOOST_AUTO_TEST_CASE(UnsupportedLayerContinueOnFailure)
 
     // We are testing that the unsupported layers return false and the test continues rather than failing and stopping
     driver->getSupportedOperations(model, cb);
-    BOOST_TEST((int)errorStatus == (int)V1_0::ErrorStatus::NONE);
-    BOOST_TEST(supported.size() == (size_t)3);
-    BOOST_TEST(supported[0] == false);
-    BOOST_TEST(supported[1] == true);
-    BOOST_TEST(supported[2] == false);
+    CHECK((int)errorStatus == (int)V1_0::ErrorStatus::NONE);
+    CHECK(supported.size() == (size_t)3);
+    CHECK(supported[0] == false);
+    CHECK(supported[1] == true);
+    CHECK(supported[2] == false);
 }
 
 // The purpose of this test is to ensure that when encountering an failure
 // during mem pool mapping we properly report an error to the framework via a callback
-BOOST_AUTO_TEST_CASE(ModelToINetworkConverterMemPoolFail)
+TEST_CASE("ModelToINetworkConverterMemPoolFail")
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
@@ -268,8 +269,8 @@ BOOST_AUTO_TEST_CASE(ModelToINetworkConverterMemPoolFail)
 
     // Memory pool mapping should fail, we should report an error
     driver->getSupportedOperations(model, cb);
-    BOOST_TEST((int)errorStatus != (int)V1_0::ErrorStatus::NONE);
-    BOOST_TEST(supported.empty());
+    CHECK((int)errorStatus != (int)V1_0::ErrorStatus::NONE);
+    CHECK(supported.empty());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+}
