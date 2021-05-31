@@ -346,7 +346,17 @@ bool ArmnnPreparedModel<HalVersion>::ExecuteWithDummyInputs()
 
     try
     {
-        armnn::Status status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors);
+        armnn::Status status;
+        if (m_AsyncModelExecutionEnabled)
+        {
+            ALOGW("ArmnnPreparedModel::ExecuteGraph m_AsyncModelExecutionEnabled true");
+            status = m_Runtime->Execute(*m_WorkingMemHandle, inputTensors, outputTensors);
+        }
+        else
+        {
+            ALOGW("ArmnnPreparedModel::ExecuteGraph m_AsyncModelExecutionEnabled false");
+            status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors);
+        }
         if (status != armnn::Status::Success)
         {
             ALOGW("ExecuteWithDummyInputs: EnqueueWorkload failed");
