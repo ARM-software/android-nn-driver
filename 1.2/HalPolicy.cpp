@@ -77,6 +77,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertComparison(operation, model, data, ComparisonOperation::LessOrEqual);
         case V1_2::OperationType::LOCAL_RESPONSE_NORMALIZATION:
             return ConvertLocalResponseNormalization(operation, model, data);
+        case V1_2::OperationType::LOG:
+            return ConvertElementwiseUnary(operation, model, data, UnaryOperation::Log);
         case V1_2::OperationType::LOGISTIC:
             return ConvertLogistic(operation, model, data);
         case V1_2::OperationType::LOG_SOFTMAX:
@@ -127,24 +129,26 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertResize(operation, model, data, ResizeMethod::NearestNeighbor);
         case V1_2::OperationType::RSQRT:
             return ConvertElementwiseUnary(operation, model, data, UnaryOperation::Rsqrt);
-        case V1_2::OperationType::SQRT:
-            return ConvertSqrt(operation, model, data);
-        case V1_2::OperationType::SQUEEZE:
-            return ConvertSqueeze(operation, model, data);
-        case V1_2::OperationType::STRIDED_SLICE:
-            return ConvertStridedSlice(operation, model, data);
-        case V1_2::OperationType::TRANSPOSE:
-            return ConvertTranspose(operation, model, data);
-        case V1_2::OperationType::TRANSPOSE_CONV_2D:
-            return ConvertTransposeConv2d(operation, model, data);
+        case V1_2::OperationType::SIN:
+            return ConvertElementwiseUnary(operation, model, data, UnaryOperation::Sin);
         case V1_2::OperationType::SOFTMAX:
             return ConvertSoftmax(operation, model, data);
         case V1_2::OperationType::SPACE_TO_BATCH_ND  :
             return ConvertSpaceToBatchNd(operation, model, data);
         case V1_2::OperationType::SPACE_TO_DEPTH:
             return ConvertSpaceToDepth(operation, model, data);
+        case V1_2::OperationType::SQRT:
+            return ConvertSqrt(operation, model, data);
+        case V1_2::OperationType::SQUEEZE:
+            return ConvertSqueeze(operation, model, data);
+        case V1_2::OperationType::STRIDED_SLICE:
+            return ConvertStridedSlice(operation, model, data);
         case V1_2::OperationType::SUB:
             return ConvertSub(operation, model, data);
+        case V1_2::OperationType::TRANSPOSE:
+            return ConvertTranspose(operation, model, data);
+        case V1_2::OperationType::TRANSPOSE_CONV_2D:
+            return ConvertTransposeConv2d(operation, model, data);
         case V1_2::OperationType::TANH:
             return ConvertTanH(operation, model, data);
         default:
