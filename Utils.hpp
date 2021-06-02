@@ -70,22 +70,25 @@ void* GetMemoryFromPool(V1_0::DataLocation location,
 /// Can throw UnsupportedOperand
 armnn::TensorInfo GetTensorInfoForOperand(const V1_0::Operand& operand);
 
+std::string GetOperandSummary(const V1_0::Operand& operand);
+
+// Returns true for any quantized data type, false for the rest.
+bool isQuantizedOperand(const V1_0::OperandType& operandType);
+
 #if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3) // Using ::android::hardware::neuralnetworks::V1_2
 armnn::TensorInfo GetTensorInfoForOperand(const V1_2::Operand& operand);
+
+std::string GetOperandSummary(const V1_2::Operand& operand);
+
+bool isQuantizedOperand(const V1_2::OperandType& operandType);
 #endif
 
 #ifdef ARMNN_ANDROID_NN_V1_3 // Using ::android::hardware::neuralnetworks::V1_3
 armnn::TensorInfo GetTensorInfoForOperand(const V1_3::Operand& operand);
-#endif
 
-std::string GetOperandSummary(const V1_0::Operand& operand);
-
-#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3) // Using ::android::hardware::neuralnetworks::V1_2
-std::string GetOperandSummary(const V1_2::Operand& operand);
-#endif
-
-#ifdef ARMNN_ANDROID_NN_V1_3 // Using ::android::hardware::neuralnetworks::V1_3
 std::string GetOperandSummary(const V1_3::Operand& operand);
+
+bool isQuantizedOperand(const V1_3::OperandType& operandType);
 #endif
 
 template <typename HalModel>

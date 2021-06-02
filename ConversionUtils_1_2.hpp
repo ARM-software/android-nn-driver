@@ -1573,7 +1573,7 @@ bool ConvertPadV2(const HalOperation& operation, const HalModel& model, Conversi
             return Fail("%s: Could not read input 2 (FLOAT32)", __func__);
         }
     }
-    else if (operandType0 == HalOperandType::TENSOR_QUANT8_ASYMM && operandType2 == HalOperandType::INT32)
+    else if (isQuantizedOperand(operandType0) && operandType2 == HalOperandType::INT32)
     {
         int32_t intPadValue = 0;
         if (!GetInputInt32<HalPolicy>(operation, 2, intPadValue, model, data))

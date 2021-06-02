@@ -603,6 +603,53 @@ bool AreDynamicTensorsSupported()
 #endif
 }
 
+bool isQuantizedOperand(const V1_0::OperandType& operandType)
+{
+    if (operandType == V1_0::OperandType::TENSOR_QUANT8_ASYMM)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+#if defined(ARMNN_ANDROID_NN_V1_2) || defined(ARMNN_ANDROID_NN_V1_3)// Using ::android::hardware::neuralnetworks::V1_2
+bool isQuantizedOperand(const V1_2::OperandType& operandType)
+{
+    if (operandType == V1_2::OperandType::TENSOR_QUANT8_ASYMM ||
+        operandType == V1_2::OperandType::TENSOR_QUANT8_SYMM_PER_CHANNEL ||
+        operandType == V1_2::OperandType::TENSOR_QUANT8_SYMM ||
+        operandType == V1_2::OperandType::TENSOR_QUANT16_SYMM )
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+#endif
+
+#ifdef ARMNN_ANDROID_NN_V1_3 // Using ::android::hardware::neuralnetworks::V1_3
+bool isQuantizedOperand(const V1_3::OperandType& operandType)
+{
+    if (operandType == V1_3::OperandType::TENSOR_QUANT8_ASYMM ||
+        operandType == V1_3::OperandType::TENSOR_QUANT8_SYMM_PER_CHANNEL ||
+        operandType == V1_3::OperandType::TENSOR_QUANT8_SYMM ||
+        operandType == V1_3::OperandType::TENSOR_QUANT16_SYMM ||
+        operandType == V1_3::OperandType::TENSOR_QUANT8_ASYMM_SIGNED)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+#endif
+
 std::string GetFileTimestamp()
 {
     // used to get a timestamp to name diagnostic files (the ArmNN serialized graph
