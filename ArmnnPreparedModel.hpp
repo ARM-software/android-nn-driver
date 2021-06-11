@@ -11,6 +11,7 @@
 
 #include <NeuralNetworks.h>
 #include <armnn/ArmNN.hpp>
+#include <armnn/Threadpool.hpp>
 
 #include <string>
 #include <vector>
@@ -39,7 +40,8 @@ public:
                        const HalModel& model,
                        const std::string& requestInputsAndOutputsDumpDir,
                        const bool gpuProfilingEnabled,
-                       const bool asyncModelExecutionEnabled = false);
+                       const bool asyncModelExecutionEnabled = false,
+                       const unsigned int numberOfThreads = 1);
 
     virtual ~ArmnnPreparedModel();
 
@@ -76,28 +78,6 @@ private:
 
         void Notify(armnn::Status status, armnn::InferenceTimingPair timeTaken) override;
 
-        // Retrieve the ArmNN Status from the AsyncExecutionCallback that has been notified
-        virtual armnn::Status GetStatus() const override
-        {
-            return armnn::Status::Success;
-        }
-
-        // Block the calling thread until the AsyncExecutionCallback object allows it to proceed
-        virtual void Wait() const override
-        {}
-
-        // Retrieve the start time before executing the inference
-        virtual armnn::HighResolutionClock GetStartTime() const override
-        {
-            return std::chrono::high_resolution_clock::now();
-        }
-
-        // Retrieve the time after executing the inference
-        virtual armnn::HighResolutionClock GetEndTime() const override
-        {
-            return std::chrono::high_resolution_clock::now();
-        }
-
         ArmnnPreparedModel<HalVersion>* m_Model;
         std::shared_ptr<std::vector<::android::nn::RunTimePoolInfo>> m_MemPools;
         std::shared_ptr<armnn::InputTensors> m_InputTensors;
@@ -116,9 +96,10 @@ private:
             std::shared_ptr<armnn::OutputTensors>& outputTensors,
             CallbackContext m_CallbackContext);
 
-    armnn::NetworkId                                                        m_NetworkId;
-    armnn::IRuntime*                                                        m_Runtime;
-    HalModel                                                                m_Model;
+    armnn::NetworkId                   m_NetworkId;
+    armnn::IRuntime*                   m_Runtime;
+    std::unique_ptr<armnn::Threadpool> m_Threadpool;
+    HalModel                           m_Model;
     // There must be a single RequestThread for all ArmnnPreparedModel objects to ensure serial execution of workloads
     // It is specific to this class, so it is declared as static here
     static RequestThread<ArmnnPreparedModel, HalVersion, CallbackContext_1_0> m_RequestThread;
@@ -126,7 +107,7 @@ private:
     const std::string&                                                      m_RequestInputsAndOutputsDumpDir;
     const bool                                                              m_GpuProfilingEnabled;
 
-    std::unique_ptr<armnn::IWorkingMemHandle> m_WorkingMemHandle;
+    std::shared_ptr<armnn::IWorkingMemHandle> m_WorkingMemHandle;
     const bool m_AsyncModelExecutionEnabled;
 };
 

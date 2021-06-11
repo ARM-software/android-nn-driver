@@ -148,7 +148,8 @@ ArmnnPreparedModel_1_2<HalVersion>::ArmnnPreparedModel_1_2(armnn::NetworkId netw
                                                            const V1_2::Model& model,
                                                            const std::string& requestInputsAndOutputsDumpDir,
                                                            const bool gpuProfilingEnabled,
-                                                           const bool asyncModelExecutionEnabled)
+                                                           const bool asyncModelExecutionEnabled,
+                                                           const unsigned int numberOfThreads)
     : m_NetworkId(networkId)
     , m_Runtime(runtime)
     , m_Model(model)
@@ -162,7 +163,14 @@ ArmnnPreparedModel_1_2<HalVersion>::ArmnnPreparedModel_1_2(armnn::NetworkId netw
 
     if (asyncModelExecutionEnabled)
     {
-        m_WorkingMemHandle = m_Runtime->CreateWorkingMemHandle(networkId);
+        std::vector<std::shared_ptr<armnn::IWorkingMemHandle>> memHandles;
+        for (int i=0; i < numberOfThreads; ++i)
+        {
+            memHandles.emplace_back(m_Runtime->CreateWorkingMemHandle(networkId));
+        }
+
+        m_WorkingMemHandle = memHandles.back();
+        m_Threadpool = std::make_unique<armnn::Threadpool>(numberOfThreads, runtime, memHandles);
     }
 }
 
@@ -661,11 +669,11 @@ void ArmnnPreparedModel_1_2<HalVersion>::ScheduleGraphForExecution(
                                                           outputTensors,
                                                           callbackContext);
 
-    m_Runtime->Schedule(m_NetworkId,
-                        *tpCb->m_InputTensors,
-                        *tpCb->m_OutputTensors,
-                        armnn::QosExecPriority::High,
-                        tpCb);
+    m_Threadpool->Schedule(m_NetworkId,
+                           *tpCb->m_InputTensors,
+                           *tpCb->m_OutputTensors,
+                           armnn::QosExecPriority::Medium,
+                           tpCb);
     ALOGV("ArmnnPreparedModel_1_2::ScheduleGraphForExecution end");
 }
 

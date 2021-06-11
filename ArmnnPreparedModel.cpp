@@ -113,7 +113,8 @@ ArmnnPreparedModel<HalVersion>::ArmnnPreparedModel(armnn::NetworkId networkId,
                                                    const HalModel& model,
                                                    const std::string& requestInputsAndOutputsDumpDir,
                                                    const bool gpuProfilingEnabled,
-                                                   const bool asyncModelExecutionEnabled)
+                                                   const bool asyncModelExecutionEnabled,
+                                                   const unsigned int numberOfThreads)
     : m_NetworkId(networkId)
     , m_Runtime(runtime)
     , m_Model(model)
@@ -127,7 +128,14 @@ ArmnnPreparedModel<HalVersion>::ArmnnPreparedModel(armnn::NetworkId networkId,
 
     if (asyncModelExecutionEnabled)
     {
-        m_WorkingMemHandle = m_Runtime->CreateWorkingMemHandle(networkId);
+        std::vector<std::shared_ptr<armnn::IWorkingMemHandle>> memHandles;
+        for (int i=0; i < numberOfThreads; ++i)
+        {
+            memHandles.emplace_back(m_Runtime->CreateWorkingMemHandle(networkId));
+        }
+
+        m_WorkingMemHandle = memHandles.back();
+        m_Threadpool = std::make_unique<armnn::Threadpool>(numberOfThreads, runtime, memHandles);
     }
 }
 
@@ -397,11 +405,11 @@ void ArmnnPreparedModel<HalVersion>::ScheduleGraphForExecution(
                                                               outputTensors,
                                                               callbackContext);
 
-    m_Runtime->Schedule(m_NetworkId,
-                        *tpCb->m_InputTensors,
-                        *tpCb->m_OutputTensors,
-                        armnn::QosExecPriority::High,
-                        tpCb);
+    m_Threadpool->Schedule(m_NetworkId,
+                           *tpCb->m_InputTensors,
+                           *tpCb->m_OutputTensors,
+                           armnn::QosExecPriority::Medium,
+                           tpCb);
     ALOGV("ArmnnPreparedModel::ScheduleGraphForExecution end");
 }
 
