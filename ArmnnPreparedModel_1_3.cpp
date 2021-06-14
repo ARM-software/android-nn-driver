@@ -492,9 +492,8 @@ Return<V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::PrepareMemoryForOu
         size_t bufferSize = 0;
 #if !defined(ARMNN_ANDROID_S)
         bufferSize = memPools.at(outputArg.location.poolIndex).getHidlMemory().size();
-        if (bufferSize < outputSize)
 #else
-        bufferSize = memPools.at(outputArg.location.poolIndex).getMemory().size;
+        bufferSize = memPools.at(outputArg.location.poolIndex).getSize();
 #endif
         if (bufferSize < outputSize)
         {

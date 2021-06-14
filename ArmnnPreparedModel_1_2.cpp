@@ -285,7 +285,7 @@ Return<V1_0::ErrorStatus> ArmnnPreparedModel_1_2<HalVersion>::PrepareMemoryForOu
             return V1_0::ErrorStatus::OUTPUT_INSUFFICIENT_SIZE;
         }
 #else
-        const size_t bufferSize = memPools.at(outputArg.location.poolIndex).getMemory().size;
+        const size_t bufferSize = memPools.at(outputArg.location.poolIndex).getSize();
         if (bufferSize < outputSize)
         {
             ALOGW("ArmnnPreparedModel_1_2::Execute failed bufferSize (%s) < outputSize (%s)",
