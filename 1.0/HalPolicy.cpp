@@ -604,7 +604,6 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
     }
 
     armnn::SpaceToDepthDescriptor desc;
-    bool dataLayoutCheck;
 
     GetInputScalar<hal_1_0::HalPolicy>(operation, 1, OperandType::INT32, desc.m_BlockSize, model, data);
 

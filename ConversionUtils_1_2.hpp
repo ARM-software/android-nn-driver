@@ -463,7 +463,6 @@ bool ConvertDepthwiseConv2d_1_2(const HalOperation& operation, const HalModel& m
     desc.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, dataLayoutFlagIndex, model, data);
 
     armnnUtils::DataLayoutIndexed dataLayoutIndexed(desc.m_DataLayout);
-    unsigned int channelsIndex = dataLayoutIndexed.GetChannelsIndex();
     unsigned int widthIndex = dataLayoutIndexed.GetWidthIndex();
     unsigned int heightIndex = dataLayoutIndexed.GetHeightIndex();
 
@@ -780,7 +779,7 @@ bool ConvertGather(const HalOperation& operation, const HalModel& model, Convers
                      __func__, outputDimensions, inputDimensions, indicesDimensions);
     }
 
-    int32_t axis;
+    uint32_t axis;
     if (!GetInputScalar<HalPolicy>(operation, 1, HalOperandType::INT32, axis, model, data))
     {
         return Fail("%s: Operation has invalid or unsupported axis operand", __func__);
@@ -890,7 +889,6 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
     const TensorShape& inputShape   = inputInfo.GetShape();
     const TensorShape& outputShape  = outputInfo.GetShape();
     const TensorShape& weightsShape = weights.GetShape();
-    const TensorShape& biasesShape  = biases.GetShape();
 
     armnnUtils::DataLayoutIndexed dataLayoutIndexed(dataLayout);
     const unsigned int channelsIndex = dataLayoutIndexed.GetChannelsIndex();
@@ -901,7 +899,7 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
     desc.m_DataLayout  = dataLayout;
     desc.m_BiasEnabled = true;
 
-    int numGroups;
+    unsigned int numGroups;
     ActivationFn activation;
 
     if (operation.inputs.size() == 12)

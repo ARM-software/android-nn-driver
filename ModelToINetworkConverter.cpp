@@ -95,7 +95,6 @@ void ModelToINetworkConverter<HalPolicy>::Convert()
             ALOGV("ModelToINetworkConverter::Convert(): getMainModel(m_Model).operands[inputIndex];");
             const HalOperand& operand = getMainModel(m_Model).operands[inputIndex];
             ALOGV("ModelToINetworkConverter::Convert(): GetTensorInfoForOperand(operand)");
-            const armnn::TensorInfo& tensor = GetTensorInfoForOperand(operand);
             const std::string layerName = "Input_" + std::to_string(i);
             ALOGV("ModelToINetworkConverter::Convert(): m_Data.m_Network->AddInputLayer(i, layerName.c_str())");
             armnn::IConnectableLayer* layer = m_Data.m_Network->AddInputLayer(i, layerName.c_str());
@@ -192,8 +191,6 @@ void ModelToINetworkConverter<HalPolicy>::Convert()
             {
                 // outputs in android nn are represented by operands
                 uint32_t outputIndex = getMainModel(m_Model).outputIndexes[i];
-                const HalOperand& operand = getMainModel(m_Model).operands[outputIndex];
-                const armnn::TensorInfo& tensor = GetTensorInfoForOperand(operand);
                 const std::string layerName = "Output_" + std::to_string(i);
                 armnn::IConnectableLayer* layer = m_Data.m_Network->AddOutputLayer(i, layerName.c_str());
 

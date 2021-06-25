@@ -269,6 +269,9 @@ LOCAL_CFLAGS := \
         -std=$(CPP_VERSION) \
         -fexceptions \
         -Werror \
+        -Wall \
+        -Wextra \
+        -Wno-unused-function \
         -Wno-format-security \
         -DARMNN_ANDROID_NN_V1_1
 
@@ -392,6 +395,9 @@ LOCAL_CFLAGS := \
         -std=$(CPP_VERSION) \
         -fexceptions \
         -Werror \
+        -Wall \
+        -Wextra \
+        -Wno-unused-function \
         -Wno-format-security \
         -DARMNN_ANDROID_NN_V1_2
 
@@ -514,6 +520,9 @@ LOCAL_CFLAGS := \
         -std=$(CPP_VERSION) \
         -fexceptions \
         -Werror \
+        -Wall \
+        -Wextra \
+        -Wno-unused-function \
         -Wno-format-security \
         -DARMNN_ANDROID_NN_V1_3 \
 
