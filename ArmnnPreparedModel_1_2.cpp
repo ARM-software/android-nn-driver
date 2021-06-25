@@ -164,7 +164,7 @@ ArmnnPreparedModel_1_2<HalVersion>::ArmnnPreparedModel_1_2(armnn::NetworkId netw
     if (asyncModelExecutionEnabled)
     {
         std::vector<std::shared_ptr<armnn::IWorkingMemHandle>> memHandles;
-        for (int i=0; i < numberOfThreads; ++i)
+        for (unsigned int i=0; i < numberOfThreads; ++i)
         {
             memHandles.emplace_back(m_Runtime->CreateWorkingMemHandle(networkId));
         }
