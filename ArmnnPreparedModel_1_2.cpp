@@ -125,6 +125,9 @@ RequestThread<ArmnnPreparedModel_1_2, HalVersion, CallbackContext_1_2>
         ArmnnPreparedModel_1_2<HalVersion>::m_RequestThread;
 
 template<typename HalVersion>
+std::unique_ptr<armnn::Threadpool> ArmnnPreparedModel_1_2<HalVersion>::m_Threadpool(nullptr);
+
+template<typename HalVersion>
 template<typename TensorBindingCollection>
 void ArmnnPreparedModel_1_2<HalVersion>::DumpTensorsIfRequired(char const* tensorNamePrefix,
                                                                const TensorBindingCollection& tensorBindings)
@@ -161,7 +164,7 @@ ArmnnPreparedModel_1_2<HalVersion>::ArmnnPreparedModel_1_2(armnn::NetworkId netw
     // Enable profiling if required.
     m_Runtime->GetProfiler(m_NetworkId)->EnableProfiling(m_GpuProfilingEnabled);
 
-    if (asyncModelExecutionEnabled)
+    if (m_AsyncModelExecutionEnabled)
     {
         std::vector<std::shared_ptr<armnn::IWorkingMemHandle>> memHandles;
         for (unsigned int i=0; i < numberOfThreads; ++i)
@@ -169,8 +172,16 @@ ArmnnPreparedModel_1_2<HalVersion>::ArmnnPreparedModel_1_2(armnn::NetworkId netw
             memHandles.emplace_back(m_Runtime->CreateWorkingMemHandle(networkId));
         }
 
+        if (!m_Threadpool)
+        {
+            m_Threadpool = std::make_unique<armnn::Threadpool>(numberOfThreads, runtime, memHandles);
+        }
+        else
+        {
+            m_Threadpool->LoadMemHandles(memHandles);
+        }
+
         m_WorkingMemHandle = memHandles.back();
-        m_Threadpool = std::make_unique<armnn::Threadpool>(numberOfThreads, runtime, memHandles);
     }
 }
 
@@ -182,6 +193,12 @@ ArmnnPreparedModel_1_2<HalVersion>::~ArmnnPreparedModel_1_2()
 
     // Unload the network associated with this model.
     m_Runtime->UnloadNetwork(m_NetworkId);
+
+    // Unload the network memhandles from the threadpool
+    if (m_AsyncModelExecutionEnabled)
+    {
+        m_Threadpool->UnloadMemHandles(m_NetworkId);
+    }
 
     // Dump the profiling info to a file if required.
     DumpJsonProfilingIfRequired(m_GpuProfilingEnabled, m_RequestInputsAndOutputsDumpDir, m_NetworkId, profiler.get());

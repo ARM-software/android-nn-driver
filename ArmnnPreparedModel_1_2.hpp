@@ -143,7 +143,6 @@ private:
 
     armnn::NetworkId                          m_NetworkId;
     armnn::IRuntime*                          m_Runtime;
-    std::unique_ptr<armnn::Threadpool>        m_Threadpool;
     V1_2::Model                               m_Model;
     // There must be a single RequestThread for all ArmnnPreparedModel objects to ensure serial execution of workloads
     // It is specific to this class, so it is declared as static here
@@ -153,6 +152,8 @@ private:
     uint32_t                                  m_RequestCount;
     const std::string&                        m_RequestInputsAndOutputsDumpDir;
     const bool                                m_GpuProfilingEnabled;
+    // Static to allow sharing of threadpool between ArmnnPreparedModel instances
+    static std::unique_ptr<armnn::Threadpool> m_Threadpool;
     std::shared_ptr<IWorkingMemHandle>        m_WorkingMemHandle;
     const bool                                m_AsyncModelExecutionEnabled;
 };

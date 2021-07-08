@@ -175,20 +175,23 @@ private:
             CallbackContext m_CallbackContext,
             armnn::QosExecPriority priority);
 
-    armnn::NetworkId                                                            m_NetworkId;
-    armnn::IRuntime*                                                            m_Runtime;
-    std::unique_ptr<armnn::Threadpool>                                          m_Threadpool;
-    V1_3::Model                                                                 m_Model;
+    armnn::NetworkId                               m_NetworkId;
+    armnn::IRuntime*                               m_Runtime;
+    V1_3::Model                                    m_Model;
     // There must be a single RequestThread for all ArmnnPreparedModel objects to ensure serial execution of workloads
     // It is specific to this class, so it is declared as static here
-    static RequestThread_1_3<ArmnnPreparedModel_1_3, HalVersion, CallbackContext_1_3> m_RequestThread;
-    uint32_t                                                                    m_RequestCount;
-    const std::string&                                                          m_RequestInputsAndOutputsDumpDir;
-    const bool                                                                  m_GpuProfilingEnabled;
-    V1_3::Priority                                                              m_ModelPriority;
+    static RequestThread_1_3<ArmnnPreparedModel_1_3,
+                             HalVersion,
+                             CallbackContext_1_3>  m_RequestThread;
+    uint32_t                                       m_RequestCount;
+    const std::string&                             m_RequestInputsAndOutputsDumpDir;
+    const bool                                     m_GpuProfilingEnabled;
+    V1_3::Priority                                 m_ModelPriority;
 
-    std::shared_ptr<IWorkingMemHandle> m_WorkingMemHandle;
-    const bool m_AsyncModelExecutionEnabled;
+    // Static to allow sharing of threadpool between ArmnnPreparedModel instances
+    static std::unique_ptr<armnn::Threadpool>      m_Threadpool;
+    std::shared_ptr<IWorkingMemHandle>             m_WorkingMemHandle;
+    const bool                                     m_AsyncModelExecutionEnabled;
 };
 
 }
