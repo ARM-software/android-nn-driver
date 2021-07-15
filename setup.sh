@@ -9,24 +9,6 @@ function AssertZeroExitCode {
   fi
 }
 
-if [ ! -d boost_1_64_0 ]; then
-  echo "++ Downloading Boost"
-
-  BOOST_PKG=boost_1_64_0.tar.gz
-
-  # There is a problem with downloading boost from the external. Issue can be found here:https://github.com/boostorg/boost/issues/299.
-  # Using a mirror link to download boost.
-  curl -LOk https://boostorg.jfrog.io/artifactory/main/release/1.64.0/source/boost_1_64_0.tar.gz
-  # curl -LOk https://sourceforge.net/projects/boost/files/boost/1.64.0/boost_1_64_0.tar.gz # had switched to this mirror as we were not able to download boost from boostorg.
-  AssertZeroExitCode "Downloading Boost failed"
-
-  tar xzf $BOOST_PKG
-  AssertZeroExitCode "Unpacking Boost failed"
-
-  rm -rf $BOOST_PKG
-fi
-
-
 if [ ! -d v1.12.0 ]; then
   echo "++ Downloading FlatBuffers"
 

@@ -63,11 +63,6 @@ LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_S
 endif # S or later
 
-ifeq ($(Q_OR_LATER),1)
-LOCAL_CFLAGS += \
-        -DBOOST_NO_AUTO_PTR
-endif # PLATFORM_VERSION == Q or later
-
 LOCAL_SRC_FILES := \
         1.0/Convolution2D.cpp \
         1.0/FullyConnectedReshape.cpp \
@@ -84,7 +79,6 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_unit_test_framework \
         libflatbuffers-framework \
         arm_compute_library
 
@@ -181,11 +175,6 @@ LOCAL_CFLAGS+= \
         -DARMNN_ANDROID_S
 endif # S or later
 
-ifeq ($(Q_OR_LATER),1)
-LOCAL_CFLAGS += \
-        -DBOOST_NO_AUTO_PTR
-endif # PLATFORM_VERSION == Q or later
-
 LOCAL_SRC_FILES := \
         1.0/Convolution2D.cpp \
         1.1/Convolution2D.cpp \
@@ -205,7 +194,6 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_unit_test_framework \
         libflatbuffers-framework \
         arm_compute_library
 
@@ -281,7 +269,6 @@ LOCAL_CFLAGS := \
         -Werror \
         -O0 \
         -UNDEBUG \
-        -DBOOST_NO_AUTO_PTR \
         -DARMNN_ANDROID_NN_V1_2
 
 # Required to build with the changes made to the Android ML framework specific to Android R
@@ -317,7 +304,6 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_unit_test_framework \
         libflatbuffers-framework \
         arm_compute_library
 
@@ -389,7 +375,6 @@ LOCAL_CFLAGS := \
         -Werror \
         -O0 \
         -UNDEBUG \
-        -DBOOST_NO_AUTO_PTR \
         -DARMNN_ANDROID_NN_V1_3
 
 ifeq ($(ANDROID_R),1)
@@ -426,7 +411,6 @@ LOCAL_SRC_FILES := \
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
-        libboost_unit_test_framework \
         libflatbuffers-framework \
         arm_compute_library
 
