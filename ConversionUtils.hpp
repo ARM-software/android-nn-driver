@@ -844,6 +844,9 @@ ConstTensorPin ConvertOperandToConstTensorPin(const HalOperand& operand,
 
     armnn::TensorInfo tensorInfo = GetTensorInfoForOperand(operand);
 
+    // Make sure isConstant flag is set.
+    tensorInfo.SetConstant();
+
     if (overrideTensorShape != nullptr)
     {
         tensorInfo.SetShape(*overrideTensorShape);
@@ -3033,27 +3036,14 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
     {
         return Fail("%s: Could not read weights", __func__);
     }
-
     const armnn::TensorInfo& weightsInfo = GetTensorInfoForOperand(*weightsOperand);
-    bool constantWeights = IsOperandConstant<HalPolicy>(*weightsOperand);
 
-    armnn::Optional<armnn::ConstTensor> optionalWeights = armnn::EmptyOptional();
-    if (!constantWeights)
+    // If weights are constant a separate constant layer will be created to store data.
+    // Otherwise handle non const weights as inputs.
+    weightsInput = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
+    if (!weightsInput.IsValid())
     {
-        weightsInput = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
-        if (!weightsInput.IsValid())
-        {
-            return Fail("%s: Operation has invalid inputs", __func__);
-        }
-    }
-    else
-    {
-        ConstTensorPin weightsPin = DequantizeAndMakeConstTensorPin<HalPolicy>(operation, model, data, 1);
-        if (!weightsPin.IsValid())
-        {
-            return Fail("%s: Operation has invalid weights", __func__);
-        }
-        optionalWeights = armnn::Optional<armnn::ConstTensor>(weightsPin.GetConstTensor());
+        return Fail("%s: Operation has invalid inputs", __func__);
     }
 
     LayerInputHandle biasInput = LayerInputHandle();
@@ -3063,30 +3053,13 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
         return Fail("%s: Could not read bias", __func__);
     }
     armnn::TensorInfo biasInfo = GetTensorInfoForOperand(*biasOperand);
-    bool constantBias = IsOperandConstant<HalPolicy>(*biasOperand);
 
-    armnn::Optional<armnn::ConstTensor> optionalBias = armnn::EmptyOptional();
-    if (!constantBias)
+    // If bias are constant a separate constant layer will be created to store data.
+    // Otherwise handle non const bias as inputs.
+    biasInput = ConvertToLayerInputHandle<HalPolicy>(operation, 2, model, data); // 1D
+    if (!biasInput.IsValid())
     {
-        biasInput = ConvertToLayerInputHandle<HalPolicy>(operation, 2, model, data);
-        if (!biasInput.IsValid())
-        {
-            return Fail("%s: Operation has invalid inputs", __func__);
-        }
-    }
-    else
-    {
-        ConstTensorPin biasPin = ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 2, model, data); // 1D
-        if (!biasPin.IsValid())
-        {
-            return Fail("%s: Operation has invalid bias", __func__);
-        }
-        optionalBias = armnn::Optional<armnn::ConstTensor>(biasPin.GetConstTensor());
-    }
-
-    if ((constantWeights && !constantBias) || (!constantWeights && constantBias))
-    {
-        return Fail("%s: Non-compatible weights and bias", __func__);
+        return Fail("%s: Operation has invalid inputs", __func__);
     }
 
     armnn::TensorInfo reshapedInfo = inputInfo;
@@ -3099,7 +3072,7 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
         return Fail("%s: %s", __func__, e.what());
     }
 
-    // ensuring that the bias value is within 1% of the weights input (small float differences can exist)
+    // Ensuring that the bias value is within 1% of the weights input (small float differences can exist)
     SanitizeBiasQuantizationScale(biasInfo, weightsInfo, reshapedInfo);
 
     ActivationFn activationFunction;
@@ -3111,7 +3084,7 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
     armnn::FullyConnectedDescriptor desc;
     desc.m_TransposeWeightMatrix = true;
     desc.m_BiasEnabled           = true;
-    desc.m_ConstantWeights       = constantWeights;
+    desc.m_ConstantWeights       = IsOperandConstant<HalPolicy>(*weightsOperand);
 
     bool isSupported = false;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
@@ -3151,10 +3124,8 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
         return false;
     }
 
-    armnn::IConnectableLayer* startLayer =
-            data.m_Network->AddFullyConnectedLayer(desc,
-                                                   optionalWeights,
-                                                   optionalBias);
+    // Add FullyConnected layer. Weights and bias will be connected as constant layers or non const inputs.
+    armnn::IConnectableLayer* startLayer = data.m_Network->AddFullyConnectedLayer(desc);
 
     if (inputInfo.GetNumDimensions() > 2U)
     {
@@ -3172,12 +3143,9 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
         input.Connect(startLayer->GetInputSlot(0));
     }
 
-    // connect weights input
-    if (!desc.m_ConstantWeights)
-    {
-        weightsInput.Connect(startLayer->GetInputSlot(1));
-        biasInput.Connect(startLayer->GetInputSlot(2));
-    }
+    // Connect weights and bias inputs
+    weightsInput.Connect(startLayer->GetInputSlot(1));
+    biasInput.Connect(startLayer->GetInputSlot(2));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
                                                    data, nullptr, validateFunc, activationFunction);
