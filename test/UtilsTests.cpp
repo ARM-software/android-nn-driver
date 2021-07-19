@@ -15,7 +15,7 @@
 #include <armnn/INetwork.hpp>
 #include "armnn/NetworkFwd.hpp"
 
-#include <Filesystem.hpp>
+#include <armnnUtils/Filesystem.hpp>
 
 #include <doctest/doctest.h>
 

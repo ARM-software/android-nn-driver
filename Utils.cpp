@@ -9,11 +9,11 @@
 #include "Half.hpp"
 
 #include <armnnSerializer/ISerializer.hpp>
+#include <armnnUtils/Filesystem.hpp>
 #include <armnnUtils/Permute.hpp>
 
 #include <armnn/Utils.hpp>
 #include <armnn/utility/Assert.hpp>
-#include <Filesystem.hpp>
 #include <log/log.h>
 
 #include <cassert>
