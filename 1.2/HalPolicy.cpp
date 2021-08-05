@@ -113,6 +113,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertReduce(operation, model, data, ReduceOperation::Max);
         case V1_2::OperationType::REDUCE_MIN:
             return ConvertReduce(operation, model, data, ReduceOperation::Min);
+        case V1_2::OperationType::REDUCE_PROD:
+            return ConvertReduce(operation, model, data, ReduceOperation::Prod);
         case V1_2::OperationType::REDUCE_SUM:
             return ConvertReduce(operation, model, data, ReduceOperation::Sum);
         case V1_2::OperationType::RELU:
