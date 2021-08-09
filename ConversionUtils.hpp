@@ -1244,9 +1244,10 @@ LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
                     armnn::IConnectableLayer* constantLayer =
                                     data.m_Network->AddConstantLayer(tensorPin.GetConstTensor());
                     armnn::IOutputSlot& outputSlot = constantLayer->GetOutputSlot(0);
-                    outputSlot.SetTensorInfo(tensorPin.GetConstTensor().GetInfo());
+                    armnn::TensorInfo constantTensorInfo = tensorPin.GetConstTensor().GetInfo();
+                    outputSlot.SetTensorInfo(constantTensorInfo);
 
-                    return LayerInputHandle(true, &outputSlot, operandTensorInfo);
+                    return LayerInputHandle(true, &outputSlot, constantTensorInfo);
                 }
                 else
                 {
@@ -1371,9 +1372,10 @@ LayerInputHandle ConvertToLayerInputHandle(const ::android::hardware::neuralnetw
                     armnn::IConnectableLayer* constantLayer =
                         data.m_Network->AddConstantLayer(tensorPin.GetConstTensor());
                     armnn::IOutputSlot& outputSlot = constantLayer->GetOutputSlot(0);
-                    outputSlot.SetTensorInfo(tensorPin.GetConstTensor().GetInfo());
+                    armnn::TensorInfo constantTensorInfo = tensorPin.GetConstTensor().GetInfo();
+                    outputSlot.SetTensorInfo(constantTensorInfo);
 
-                    return LayerInputHandle(true, &outputSlot, operandTensorInfo);
+                    return LayerInputHandle(true, &outputSlot, constantTensorInfo);
                 }
                 else
                 {
@@ -3036,7 +3038,6 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
     {
         return Fail("%s: Could not read weights", __func__);
     }
-    const armnn::TensorInfo& weightsInfo = GetTensorInfoForOperand(*weightsOperand);
 
     // If weights are constant a separate constant layer will be created to store data.
     // Otherwise handle non const weights as inputs.
@@ -3052,7 +3053,6 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
     {
         return Fail("%s: Could not read bias", __func__);
     }
-    armnn::TensorInfo biasInfo = GetTensorInfoForOperand(*biasOperand);
 
     // If bias are constant a separate constant layer will be created to store data.
     // Otherwise handle non const bias as inputs.
@@ -3062,6 +3062,7 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
+    armnn::TensorInfo weightsInfo = weightsInput.GetTensorInfo();
     armnn::TensorInfo reshapedInfo = inputInfo;
     try
     {
@@ -3073,6 +3074,7 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
     }
 
     // Ensuring that the bias value is within 1% of the weights input (small float differences can exist)
+    armnn::TensorInfo biasInfo = biasInput.GetTensorInfo();
     SanitizeBiasQuantizationScale(biasInfo, weightsInfo, reshapedInfo);
 
     ActivationFn activationFunction;
