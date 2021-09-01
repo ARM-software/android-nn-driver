@@ -16,6 +16,7 @@ namespace V1_2 = ::android::hardware::neuralnetworks::V1_2;
 
 namespace armnn_driver
 {
+class DriverOptions;
 namespace hal_1_2
 {
 
@@ -31,6 +32,9 @@ public:
     using ExecutionCallback         = V1_2::IExecutionCallback;
     using getSupportedOperations_cb = V1_2::IDevice::getSupportedOperations_1_2_cb;
     using ErrorStatus               = V1_0::ErrorStatus;
+    using DeviceType                = V1_2::DeviceType;
+
+    static DeviceType GetDeviceTypeFromOptions(const DriverOptions& options);
 
     static bool ConvertOperation(const Operation& operation, const Model& model, ConversionData& data);
 

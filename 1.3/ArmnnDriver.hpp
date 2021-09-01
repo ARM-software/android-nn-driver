@@ -244,8 +244,8 @@ public:
     Return<void> getType(getType_cb cb)
     {
         ALOGV("hal_1_3::ArmnnDriver::getType()");
-
-        cb(V1_0::ErrorStatus::NONE, V1_2::DeviceType::CPU);
+        const auto device_type = hal_1_2::HalPolicy::GetDeviceTypeFromOptions(this->m_Options);
+        cb(V1_0::ErrorStatus::NONE, device_type);
         return Void();
     }
 

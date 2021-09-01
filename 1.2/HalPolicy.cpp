@@ -4,6 +4,8 @@
 //
 
 #include "HalPolicy.hpp"
+#include "DriverOptions.hpp"
+
 
 namespace armnn_driver
 {
@@ -16,6 +18,33 @@ namespace
 {
 
 } // anonymous namespace
+
+HalPolicy::DeviceType HalPolicy::GetDeviceTypeFromOptions(const DriverOptions& options)
+{
+        // Query backends list from the options
+        auto backends = options.GetBackends();
+        // Return first backend
+        if(backends.size()>0)
+        {
+            const auto &first_backend = backends[0];
+            if(first_backend.IsCpuAcc()||first_backend.IsCpuRef())
+            {
+                return V1_2::DeviceType::CPU;
+            }
+            else if(first_backend.IsGpuAcc())
+            {
+                return V1_2::DeviceType::GPU;
+            }
+            else
+            {
+                return V1_2::DeviceType::ACCELERATOR;
+            }
+        }
+        else
+        {
+            return V1_2::DeviceType::CPU;
+        }
+}
 
 bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model, ConversionData& data)
 {
