@@ -49,6 +49,8 @@ private:
 
     static bool ConvertCast(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertChannelShuffle(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertComparison(const Operation& operation,
                                   const Model& model,
                                   ConversionData& data,

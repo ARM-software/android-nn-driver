@@ -35,6 +35,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertBatchToSpaceNd(operation, model, data);
         case V1_3::OperationType::CAST:
             return ConvertCast(operation, model, data);
+        case V1_3::OperationType::CHANNEL_SHUFFLE:
+            return ConvertChannelShuffle(operation, model, data);
         case V1_3::OperationType::CONCATENATION:
             return ConvertConcatenation(operation, model, data);
         case V1_3::OperationType::CONV_2D:
@@ -208,6 +210,12 @@ bool HalPolicy::ConvertCast(const Operation& operation, const Model& model, Conv
     return ::ConvertCast<hal_1_3::HalPolicy>(operation, model, data);
 }
 
+bool HalPolicy::ConvertChannelShuffle(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertChannelShuffle()");
+    return ::ConvertChannelShuffle<hal_1_3::HalPolicy>(operation, model, data);
+}
+
 bool HalPolicy::ConvertComparison(const Operation& operation,
                                   const Model& model,
                                   ConversionData& data,
@@ -216,7 +224,6 @@ bool HalPolicy::ConvertComparison(const Operation& operation,
     ALOGV("hal_1_3::HalPolicy::ConvertComparison()");
     return ::ConvertComparison_1_2<hal_1_3::HalPolicy>(operation, model, data, comparisonOperation);
 }
-
 
 bool HalPolicy::ConvertConcatenation(const Operation& operation, const Model& model, ConversionData& data)
 {

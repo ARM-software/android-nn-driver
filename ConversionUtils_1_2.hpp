@@ -172,6 +172,90 @@ bool ConvertCast(const HalOperation& operation,
 template<typename HalPolicy,
          typename HalOperation = typename HalPolicy::Operation,
          typename HalModel     = typename HalPolicy::Model>
+bool ConvertChannelShuffle(const HalOperation& operation,
+                           const HalModel& model,
+                           ConversionData& data)
+{
+    using HalOperand = typename HalPolicy::Operand;
+    using HalOperandType = typename HalPolicy::OperandType;
+
+    ALOGV("HalPolicy::ConvertChannelShuffle()");
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+    auto inputDimensions = static_cast<int32_t>(input.GetTensorInfo().GetNumDimensions());
+
+    ChannelShuffleDescriptor descriptor;
+
+    int32_t groups;
+    if (!GetInputScalar<HalPolicy>(operation, 1, HalOperandType::INT32, groups, model, data))
+    {
+        return Fail("%s: Operation has invalid or unsupported number of groups operand", __func__);
+    }
+    descriptor.m_NumGroups = static_cast<uint32_t>(groups);
+
+    int32_t axis;
+    if (!GetInputScalar<HalPolicy>(operation, 2, HalOperandType::INT32, axis, model, data))
+    {
+        return Fail("%s: Operation has invalid or unsupported dimension channel shuffle operand", __func__);
+    }
+    if (((axis < -inputDimensions) && (axis < 0)) || ((axis >= inputDimensions) && (axis > 0)))
+    {
+        return Fail("%s: Operation has invalid dimension: %d. It is out of bounds [-%d, %d))", __func__, axis,
+                    inputDimensions, inputDimensions);
+    }
+    int positiveAxis = (axis < 0) ? inputDimensions + axis : axis;
+    descriptor.m_Axis = static_cast<uint32_t>(positiveAxis);
+
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output 0", __func__);
+    }
+
+    const TensorInfo& inputInfo  = input.GetTensorInfo();
+    const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    bool isSupported = false;
+
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsChannelShuffleSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputInfo,
+                                   descriptor);
+    };
+
+    if(!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    IConnectableLayer* layer = data.m_Network->AddChannelShuffleLayer(descriptor);
+    assert(layer != nullptr);
+    input.Connect(layer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
+}
+
+template<typename HalPolicy,
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
 bool ConvertComparison_1_2(const HalOperation& operation,
                            const HalModel& model,
                            ConversionData& data,
