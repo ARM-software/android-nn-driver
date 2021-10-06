@@ -139,7 +139,10 @@ void DumpJsonProfilingIfRequired(bool gpuProfilingEnabled,
 std::string ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimizedNetwork,
                                         const std::string& dumpDir);
 
-std::string SerializeNetwork(const armnn::INetwork& network, const std::string& dumpDir);
+std::string SerializeNetwork(const armnn::INetwork& network,
+                             const std::string& dumpDir,
+                             std::vector<uint8_t>& dataCacheData,
+                             bool dataCachingActive = true);
 
 void RenameExportedFiles(const std::string& existingSerializedFileName,
                          const std::string& existingDotFileName,

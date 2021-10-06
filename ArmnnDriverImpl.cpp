@@ -102,8 +102,12 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
 
     // Serialize the network graph to a .armnn file if an output directory
     // has been specified in the drivers' arguments.
+    std::vector<uint8_t> dataCacheData;
     auto serializedNetworkFileName =
-        SerializeNetwork(*modelConverter.GetINetwork(), options.GetRequestInputsAndOutputsDumpDir());
+        SerializeNetwork(*modelConverter.GetINetwork(),
+                         options.GetRequestInputsAndOutputsDumpDir(),
+                         dataCacheData,
+                         false);
 
     // Optimize the network
     armnn::IOptimizedNetworkPtr optNet(nullptr, nullptr);

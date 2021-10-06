@@ -21,6 +21,8 @@
 #include "../1.0/ArmnnDriverImpl.hpp"
 #include "../1.0/HalPolicy.hpp"
 
+#include <armnn/BackendHelper.hpp>
+
 #include <log/log.h>
 
 namespace armnn_driver
@@ -31,6 +33,7 @@ namespace hal_1_3
 class ArmnnDriver : public ArmnnDevice, public V1_3::IDevice
 {
 public:
+    using HidlToken = android::hardware::hidl_array<uint8_t, ANEURALNETWORKS_BYTE_SIZE_OF_CACHE_TOKEN>;
 
     ArmnnDriver(DriverOptions options)
         : ArmnnDevice(std::move(options))
@@ -39,9 +42,7 @@ public:
     }
     ~ArmnnDriver() {}
 
-    using HidlToken = android::hardware::hidl_array<uint8_t, ANEURALNETWORKS_BYTE_SIZE_OF_CACHE_TOKEN>;
 
-public:
     Return<void> getCapabilities(V1_0::IDevice::getCapabilities_cb cb) override
     {
         ALOGV("hal_1_3::ArmnnDriver::getCapabilities()");
@@ -131,10 +132,13 @@ public:
                                                                                          cb);
     }
 
-    Return<V1_0::ErrorStatus> prepareModel_1_2(const V1_2::Model& model, V1_1::ExecutionPreference preference,
-            const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
-            const android::hardware::hidl_vec<android::hardware::hidl_handle>&, const HidlToken&,
-            const android::sp<V1_2::IPreparedModelCallback>& cb)
+    Return<V1_0::ErrorStatus> prepareModel_1_2(
+        const V1_2::Model& model,
+        V1_1::ExecutionPreference preference,
+        const android::hardware::hidl_vec<android::hardware::hidl_handle>& modelCacheHandle,
+        const android::hardware::hidl_vec<android::hardware::hidl_handle>& dataCacheHandle,
+        const HidlToken& token,
+        const android::sp<V1_2::IPreparedModelCallback>& cb)
     {
         ALOGV("hal_1_3::ArmnnDriver::prepareModel_1_2()");
 
@@ -151,6 +155,9 @@ public:
                                                                m_ClTunedParameters,
                                                                m_Options,
                                                                model,
+                                                               modelCacheHandle,
+                                                               dataCacheHandle,
+                                                               token,
                                                                cb,
                                                                model.relaxComputationFloat32toFloat16
                                                                && m_Options.GetFp16Enabled());
@@ -174,14 +181,15 @@ public:
                                                                                          cb);
     }
 
-    Return<V1_3::ErrorStatus> prepareModel_1_3(const V1_3::Model& model,
-                                               V1_1::ExecutionPreference preference,
-                                               V1_3::Priority priority,
-                                               const V1_3::OptionalTimePoint&,
-                                               const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
-                                               const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
-                                               const HidlToken&,
-                                               const android::sp<V1_3::IPreparedModelCallback>& cb)
+    Return<V1_3::ErrorStatus> prepareModel_1_3(
+        const V1_3::Model& model,
+        V1_1::ExecutionPreference preference,
+        V1_3::Priority priority,
+        const V1_3::OptionalTimePoint&,
+        const android::hardware::hidl_vec<android::hardware::hidl_handle>& modelCache,
+        const android::hardware::hidl_vec<android::hardware::hidl_handle>& dataCache,
+        const HidlToken& token,
+        const android::sp<V1_3::IPreparedModelCallback>& cb)
     {
         ALOGV("hal_1_3::ArmnnDriver::prepareModel_1_3()");
 
@@ -199,11 +207,13 @@ public:
             return V1_3::ErrorStatus::INVALID_ARGUMENT;
         }
 
-
         return ArmnnDriverImpl::prepareArmnnModel_1_3(m_Runtime,
                                                       m_ClTunedParameters,
                                                       m_Options,
                                                       model,
+                                                      modelCache,
+                                                      dataCache,
+                                                      token,
                                                       cb,
                                                       model.relaxComputationFloat32toFloat16
                                                       && m_Options.GetFp16Enabled(),
@@ -219,10 +229,13 @@ public:
 
     Return<void> getNumberOfCacheFilesNeeded(getNumberOfCacheFilesNeeded_cb cb)
     {
-        ALOGV("hal_1_3::ArmnnDriver::getSupportedExtensions()");
-
-        // Set both numbers to be 0 for cache not supported.
-        cb(V1_0::ErrorStatus::NONE, 0, 0);
+        ALOGV("hal_1_3::ArmnnDriver::getNumberOfCacheFilesNeeded()");
+        unsigned int numberOfCachedModelFiles = 0;
+        for (auto& backend : m_Options.GetBackends())
+        {
+            numberOfCachedModelFiles += GetNumberOfCacheFiles(backend);
+        }
+        cb(V1_0::ErrorStatus::NONE, numberOfCachedModelFiles,   1ul);
         return Void();
     }
 
@@ -250,26 +263,35 @@ public:
     }
 
     Return<V1_0::ErrorStatus> prepareModelFromCache(
-        const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
-        const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
-        const HidlToken&,
-        const android::sp<V1_2::IPreparedModelCallback>& callback)
+        const android::hardware::hidl_vec<android::hardware::hidl_handle>& modelCacheHandle,
+        const android::hardware::hidl_vec<android::hardware::hidl_handle>& dataCacheHandle,
+        const HidlToken& token,
+        const android::sp<V1_2::IPreparedModelCallback>& cb)
     {
         ALOGV("hal_1_3::ArmnnDriver::prepareModelFromCache()");
-        callback->notify_1_2(V1_0::ErrorStatus::GENERAL_FAILURE, nullptr);
-        return V1_0::ErrorStatus::GENERAL_FAILURE;
+        return hal_1_2::ArmnnDriverImpl::prepareModelFromCache(m_Runtime,
+                                                               m_Options,
+                                                               modelCacheHandle,
+                                                               dataCacheHandle,
+                                                               token,
+                                                               cb);
     }
 
     Return<V1_3::ErrorStatus> prepareModelFromCache_1_3(
         const V1_3::OptionalTimePoint&,
-        const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
-        const android::hardware::hidl_vec<android::hardware::hidl_handle>&,
-        const HidlToken&,
-        const android::sp<V1_3::IPreparedModelCallback>& callback)
+        const android::hardware::hidl_vec<android::hardware::hidl_handle>& modelCacheHandle,
+        const android::hardware::hidl_vec<android::hardware::hidl_handle>& dataCacheHandle,
+        const HidlToken& token,
+        const android::sp<V1_3::IPreparedModelCallback>& cb)
     {
-        ALOGV("hal_1_3::ArmnnDriver::prepareModelFromCache()");
-        callback->notify_1_3(V1_3::ErrorStatus::GENERAL_FAILURE, nullptr);
-        return V1_3::ErrorStatus::GENERAL_FAILURE;
+        ALOGV("hal_1_3::ArmnnDriver::prepareModelFromCache_1_3()");
+
+        return ArmnnDriverImpl::prepareModelFromCache_1_3(m_Runtime,
+                                                          m_Options,
+                                                          modelCacheHandle,
+                                                          dataCacheHandle,
+                                                          token,
+                                                          cb);
     }
 
     Return<void> allocate(const V1_3::BufferDesc& /*desc*/,

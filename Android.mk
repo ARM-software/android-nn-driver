@@ -469,6 +469,7 @@ LOCAL_SRC_FILES := \
         ArmnnDriverImpl.cpp \
         ArmnnPreparedModel.cpp \
         ArmnnPreparedModel_1_2.cpp \
+        CacheDataHandler.cpp \
         ConversionUtils.cpp \
         DriverOptions.cpp \
         ModelToINetworkConverter.cpp \
@@ -599,6 +600,7 @@ LOCAL_SRC_FILES := \
         ArmnnPreparedModel.cpp \
         ArmnnPreparedModel_1_2.cpp \
         ArmnnPreparedModel_1_3.cpp \
+        CacheDataHandler.cpp \
         ConversionUtils.cpp \
         DriverOptions.cpp \
         ModelToINetworkConverter.cpp \

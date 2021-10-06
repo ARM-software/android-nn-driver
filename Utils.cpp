@@ -554,37 +554,59 @@ std::string ExportNetworkGraphToDotFile(const armnn::IOptimizedNetwork& optimize
     return fileName;
 }
 
-std::string SerializeNetwork(const armnn::INetwork& network, const std::string& dumpDir)
+std::string SerializeNetwork(const armnn::INetwork& network,
+                             const std::string& dumpDir,
+                             std::vector<uint8_t>& dataCacheData,
+                             bool dataCachingActive)
 {
     std::string fileName;
-    // The dump directory must exist in advance.
+    bool bSerializeToFile = true;
     if (dumpDir.empty())
     {
-        return fileName;
+        bSerializeToFile = false;
     }
-
-    std::string timestamp = GetFileTimestamp();
-    if (timestamp.empty())
+    else
+    {
+        std::string timestamp = GetFileTimestamp();
+        if (timestamp.empty())
+        {
+            bSerializeToFile = false;
+        }
+    }
+    if (!bSerializeToFile && !dataCachingActive)
     {
         return fileName;
     }
 
     auto serializer(armnnSerializer::ISerializer::Create());
-
     // Serialize the Network
     serializer->Serialize(network);
-
-    // Set the name of the output .armnn file.
-    fs::path dumpPath = dumpDir;
-    fs::path tempFilePath = dumpPath / (timestamp + "_network.armnn");
-    fileName = tempFilePath.string();
-
-    // Save serialized network to a file
-    std::ofstream serializedFile(fileName, std::ios::out | std::ios::binary);
-    bool serialized = serializer->SaveSerializedToStream(serializedFile);
-    if (!serialized)
+    if (dataCachingActive)
     {
-        ALOGW("An error occurred when serializing to file %s", fileName.c_str());
+        std::stringstream stream;
+        auto serialized = serializer->SaveSerializedToStream(stream);
+        if (serialized)
+        {
+            std::string const serializedString{stream.str()};
+            std::copy(serializedString.begin(), serializedString.end(), std::back_inserter(dataCacheData));
+        }
+    }
+
+    if (bSerializeToFile)
+    {
+        // Set the name of the output .armnn file.
+        fs::path dumpPath = dumpDir;
+        std::string timestamp = GetFileTimestamp();
+        fs::path tempFilePath = dumpPath / (timestamp + "_network.armnn");
+        fileName = tempFilePath.string();
+
+        // Save serialized network to a file
+        std::ofstream serializedFile(fileName, std::ios::out | std::ios::binary);
+        auto serialized = serializer->SaveSerializedToStream(serializedFile);
+        if (!serialized)
+        {
+            ALOGW("An error occurred when serializing to file %s", fileName.c_str());
+        }
     }
     return fileName;
 }

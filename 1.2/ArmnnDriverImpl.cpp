@@ -8,7 +8,10 @@
 #include "../ModelToINetworkConverter.hpp"
 #include "../SystemPropertiesUtils.hpp"
 
+#include <armnnDeserializer/IDeserializer.hpp>
+
 #include <log/log.h>
+#include <sys/stat.h>
 
 namespace
 {
@@ -90,6 +93,9 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(
        const armnn::IGpuAccTunedParametersPtr& clTunedParameters,
        const DriverOptions& options,
        const V1_2::Model& model,
+       const android::hardware::hidl_vec<android::hardware::hidl_handle>& modelCacheHandle,
+       const android::hardware::hidl_vec<android::hardware::hidl_handle>& dataCacheHandle,
+       const HidlToken& token,
        const android::sp<V1_2::IPreparedModelCallback>& cb,
        bool float32ToFloat16)
 {
@@ -127,8 +133,13 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(
 
     // Serialize the network graph to a .armnn file if an output directory
     // has been specified in the drivers' arguments.
+    std::vector<uint8_t> dataCacheData;
+    bool serializeToFile = dataCacheHandle.size() < 1 ? false : true;
     auto serializedNetworkFileName =
-        SerializeNetwork(*modelConverter.GetINetwork(), options.GetRequestInputsAndOutputsDumpDir());
+        SerializeNetwork(*modelConverter.GetINetwork(),
+                         options.GetRequestInputsAndOutputsDumpDir(),
+                         dataCacheData,
+                         serializeToFile);
 
     // Optimize the network
     armnn::IOptimizedNetworkPtr optNet(nullptr, nullptr);
@@ -136,12 +147,41 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(
     OptOptions.m_ReduceFp32ToFp16 = float32ToFloat16;
     OptOptions.m_ProfilingEnabled = options.IsGpuProfilingEnabled();
 
+    int cachedFd = -1;
+    bool saveCachedNetwork = options.SaveCachedNetwork();
+
+    unsigned int numberOfCachedModelFiles = 0;
+    if (modelCacheHandle.size() > 0)
+    {
+        unsigned int index = 0;
+        for (auto& backend : options.GetBackends())
+        {
+            // modelCacheHandle size should be equal to numberOfCachedModelFiles
+            // modelCacheHandle vector should be in same order as backends
+            auto numberOfCacheFiles = GetNumberOfCacheFiles(backend);
+            if (numberOfCacheFiles > 0)
+            {
+                numberOfCachedModelFiles += numberOfCacheFiles;
+                if (modelCacheHandle[index]->numFds == 1)
+                {
+                    if (backend == armnn::Compute::GpuAcc)
+                    {
+                        cachedFd = modelCacheHandle[index]->data[0];
+                        saveCachedNetwork = true;
+                    }
+                }
+                index += numberOfCachedModelFiles;
+            }
+        }
+    }
+
     armnn::BackendOptions gpuAcc("GpuAcc",
     {
         { "FastMathEnabled", options.IsFastMathEnabled() },
-        { "SaveCachedNetwork", options.SaveCachedNetwork() },
+        { "SaveCachedNetwork", saveCachedNetwork },
         { "CachedNetworkFilePath", options.GetCachedNetworkFilePath() },
-        { "MLGOTuningFilePath", options.GetClMLGOTunedParametersFile() }
+        { "MLGOTuningFilePath", options.GetClMLGOTunedParametersFile() },
+        { "CachedFileDescriptor", cachedFd }
     });
 
     armnn::BackendOptions cpuAcc("CpuAcc",
@@ -192,12 +232,16 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(
     std::string msg;
     armnn::INetworkProperties networkProperties(options.isAsyncModelExecutionEnabled(),
                                                 MemorySource::Undefined,
-                                                MemorySource::Undefined);
+                                                MemorySource::Undefined,
+                                                options.IsGpuProfilingEnabled());
+
+    auto numInputs  = getMainModel(model).inputIndexes.size();
+    auto numOutputs = getMainModel(model).outputIndexes.size();
     try
     {
         if (runtime->LoadNetwork(netId, move(optNet), msg, networkProperties) != armnn::Status::Success)
         {
-            return FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "Network could not be loaded", cb);
+            return FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, msg, cb);
         }
     }
     catch (std::exception& e)
@@ -227,28 +271,344 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(
 
     // Run a single 'dummy' inference of the model. This means that CL kernels will get compiled (and tuned if
     // this is enabled) before the first 'real' inference which removes the overhead of the first inference.
-    if (!preparedModel->ExecuteWithDummyInputs())
+    // Only run this if the GpuAcc backend has been added to options
+    if (std::find(options.GetBackends().begin(),
+                  options.GetBackends().end(),
+                  armnn::Compute::GpuAcc) != options.GetBackends().end())
     {
-        return FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "Network could not be executed", cb);
+        if (!preparedModel->ExecuteWithDummyInputs(numInputs, numOutputs))
+        {
+            return FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "Network could not be executed", cb);
+        }
+
+        if (clTunedParameters &&
+            options.GetClTunedParametersMode() == armnn::IGpuAccTunedParameters::Mode::UpdateTunedParameters)
+        {
+            // Now that we've done one inference the CL kernel parameters will have been tuned,
+            // so save the updated file.
+            try
+            {
+                clTunedParameters->Save(options.GetClTunedParametersFile().c_str());
+            }
+            catch (std::exception& error)
+            {
+                ALOGE("ArmnnDriverImpl::prepareModel: Failed to save CL tuned parameters file '%s': %s",
+                      options.GetClTunedParametersFile().c_str(), error.what());
+            }
+        }
     }
 
-    if (clTunedParameters &&
-        options.GetClTunedParametersMode() == armnn::IGpuAccTunedParameters::Mode::UpdateTunedParameters)
+    size_t hashValue = 0;
+    // Cache the model
+    if (dataCacheHandle.size() > 0)
     {
-        // Now that we've done one inference the CL kernel parameters will have been tuned, so save the updated file.
-        try
+        // Cache the Arm NN model, should be only 1
+        if (dataCacheHandle.size() != 1)
         {
-            clTunedParameters->Save(options.GetClTunedParametersFile().c_str());
+            NotifyCallbackAndCheck(cb, V1_0::ErrorStatus::NONE, preparedModel.release());
+            return V1_0::ErrorStatus::NONE;
         }
-        catch (std::exception& error)
+
+        if (dataCacheHandle[0]->numFds != 1)
         {
-            ALOGE("ArmnnDriverImpl::prepareModel: Failed to save CL tuned parameters file '%s': %s",
-                  options.GetClTunedParametersFile().c_str(), error.what());
+            ALOGW("ArmnnDriverImpl::prepareArmnnModel_1_3: Cannot cache the data, numFds != 1.");
+            NotifyCallbackAndCheck(cb, V1_0::ErrorStatus::NONE, preparedModel.release());
+            return V1_0::ErrorStatus::NONE;
         }
+        int dataCacheFileAccessMode = fcntl(dataCacheHandle[0]->data[0], F_GETFL) & O_ACCMODE;
+        if (dataCacheFileAccessMode != O_RDWR)
+        {
+            ALOGW("ArmnnDriverImpl::prepareModelFromCache_1_2(): Invalid Access Mode.");
+            NotifyCallbackAndCheck(cb, V1_0::ErrorStatus::NONE, preparedModel.release());
+            return V1_0::ErrorStatus::NONE;
+        }
+
+        write(dataCacheHandle[0]->data[0], dataCacheData.data(), dataCacheData.size());
+        hashValue = CacheDataHandlerInstance().Hash(dataCacheData);
+    }
+
+    if (modelCacheHandle.size() > 0)
+    {
+        if (modelCacheHandle.size() != numberOfCachedModelFiles)
+        {
+            NotifyCallbackAndCheck(cb, V1_0::ErrorStatus::NONE, preparedModel.release());
+            return V1_0::ErrorStatus::NONE;
+        }
+        for (uint32_t i = 0; i < modelCacheHandle.size(); ++i)
+        {
+            if (modelCacheHandle[i]->numFds == 1)
+            {
+                int modelCacheFileAccessMode = fcntl(modelCacheHandle[i]->data[0], F_GETFL) & O_ACCMODE;
+                if (modelCacheFileAccessMode != O_RDONLY)
+                {
+                    struct stat statBuffer;
+                    if (fstat(modelCacheHandle[i]->data[0], &statBuffer) == 0)
+                    {
+                        long modelDataSize = statBuffer.st_size;
+                        if (modelDataSize > 0)
+                        {
+                            std::vector <uint8_t> modelData(modelDataSize);
+                            pread(modelCacheHandle[i]->data[0], modelData.data(), modelData.size(), 0);
+                            hashValue ^= CacheDataHandlerInstance().Hash(modelData);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (hashValue != 0)
+    {
+        CacheDataHandlerInstance().Register(token, hashValue, dataCacheData.size());
     }
 
     NotifyCallbackAndCheck(cb, V1_0::ErrorStatus::NONE, preparedModel.release());
+    return V1_0::ErrorStatus::NONE;
+}
 
+Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareModelFromCache(
+    const armnn::IRuntimePtr& runtime,
+    const DriverOptions& options,
+    const android::hardware::hidl_vec<android::hardware::hidl_handle>& modelCacheHandle,
+    const android::hardware::hidl_vec<android::hardware::hidl_handle>& dataCacheHandle,
+    const HidlToken& token,
+    const android::sp<V1_2::IPreparedModelCallback>& cb,
+    bool float32ToFloat16)
+{
+    ALOGV("ArmnnDriverImpl::prepareModelFromCache()");
+
+    if (cb.get() == nullptr)
+    {
+        ALOGW("ArmnnDriverImpl::prepareModelFromCache: Invalid callback passed to prepareModel");
+        return V1_0::ErrorStatus::INVALID_ARGUMENT;
+    }
+
+    if (!runtime)
+    {
+        return FailPrepareModel(V1_0::ErrorStatus::DEVICE_UNAVAILABLE, "Device unavailable", cb);
+    }
+
+    if (token.size() != ANEURALNETWORKS_BYTE_SIZE_OF_CACHE_TOKEN)
+    {
+        FailPrepareModel(V1_0::ErrorStatus::INVALID_ARGUMENT, "Invalid token passed!", cb);
+        return V1_0::ErrorStatus::INVALID_ARGUMENT;
+    }
+
+    // DataCacheHandle size should always be 1
+    // Arm NN model
+    if (dataCacheHandle.size() != 1)
+    {
+        FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "No data cache!", cb);
+        return V1_0::ErrorStatus::GENERAL_FAILURE;
+    }
+
+    // Check if model files cached they match the expected value
+    unsigned int numberOfCachedModelFiles = 0;
+    for (auto& backend : options.GetBackends())
+    {
+        numberOfCachedModelFiles += GetNumberOfCacheFiles(backend);
+    }
+    if (modelCacheHandle.size() != numberOfCachedModelFiles)
+    {
+        FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "Invalid model cache!", cb);
+        return V1_0::ErrorStatus::GENERAL_FAILURE;
+    }
+
+    if (dataCacheHandle[0]->numFds != 1)
+    {
+        ALOGW("ArmnnDriverImpl::prepareModelFromCache: Cannot read from the cache data, numFds != 1.");
+        FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "No data cache!", cb);
+        return V1_0::ErrorStatus::GENERAL_FAILURE;
+    }
+
+    int dataCacheFileAccessMode = fcntl(dataCacheHandle[0]->data[0], F_GETFL) & O_ACCMODE;
+    if (dataCacheFileAccessMode != O_RDWR)
+    {
+        FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "Invalid Access Mode!", cb);
+        return V1_0::ErrorStatus::GENERAL_FAILURE;
+    }
+
+    auto dataSize = CacheDataHandlerInstance().GetCacheSize(token);
+    if (dataSize == 0)
+    {
+        ALOGW("ArmnnDriverImpl::prepareModelFromCache: Invalid data to deserialize!");
+        FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "Invalid data to deserialize!", cb);
+        return V1_0::ErrorStatus::GENERAL_FAILURE;
+    }
+
+    int offset = 0;
+    {
+        struct stat statBuffer;
+        if (fstat(dataCacheHandle[0]->data[0], &statBuffer) == 0)
+        {
+            unsigned long bufferSize = statBuffer.st_size;
+            if (bufferSize <= 0)
+            {
+                ALOGW("ArmnnDriverImpl::prepareModelFromCache: Invalid data to deserialize!");
+                FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "Invalid data to deserialize!", cb);
+                return V1_0::ErrorStatus::GENERAL_FAILURE;
+            }
+            if (bufferSize > dataSize)
+            {
+                offset = bufferSize - dataSize;
+            }
+        }
+    }
+    std::vector<uint8_t> dataCacheData(dataSize);
+    pread(dataCacheHandle[0]->data[0], dataCacheData.data(), dataCacheData.size(), offset);
+    auto hashValue = CacheDataHandlerInstance().Hash(dataCacheData);
+
+    int gpuAccCachedFd = -1;
+    bool saveCachedNetwork = false;
+    if (modelCacheHandle.size() > 0)
+    {
+        unsigned int index = 0;
+        for (auto& backend : options.GetBackends())
+        {
+            // modelCacheHandle size should be equal to numberOfCachedModelFiles
+            // modelCacheHandle vector should be in same order as backends
+            auto numberOfCacheFiles = GetNumberOfCacheFiles(backend);
+            if (numberOfCacheFiles > 0)
+            {
+                if (modelCacheHandle[index]->numFds != 1)
+                {
+                    ALOGW("ArmnnDriverImpl::prepareModelFromCache: Cannot read from the model cache, numFds != 1.");
+                    FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE,
+                                     "Cannot read from the model cache, numFds != 1.", cb);
+                    return V1_0::ErrorStatus::GENERAL_FAILURE;
+                }
+                auto cachedFd = modelCacheHandle[index]->data[0];
+
+                int modelCacheFileAccessMode = fcntl(cachedFd, F_GETFL) & O_ACCMODE;
+                if (modelCacheFileAccessMode != O_RDWR)
+                {
+                    FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "Invalid Access Mode!", cb);
+                    return V1_0::ErrorStatus::GENERAL_FAILURE;
+                }
+
+                struct stat statBuffer;
+                if (cachedFd != -1 && fstat(cachedFd, &statBuffer) == 0)
+                {
+                    long modelDataSize = statBuffer.st_size;
+                    if (modelDataSize > 0)
+                    {
+                        std::vector<uint8_t> modelData(modelDataSize);
+                        pread(cachedFd, modelData.data(), modelData.size(), 0);
+                        hashValue ^= CacheDataHandlerInstance().Hash(modelData);
+
+                        // For GpuAcc numberOfCachedFiles is 1
+                        if (backend == armnn::Compute::GpuAcc)
+                        {
+                            gpuAccCachedFd = cachedFd;
+                        }
+                    }
+                }
+                index += numberOfCacheFiles;
+            }
+        }
+    }
+
+    if (!CacheDataHandlerInstance().Validate(token, hashValue))
+    {
+        ALOGW("ArmnnDriverImpl::prepareModelFromCache: ValidateHash() failed!");
+        FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "ValidateHash Failed!", cb);
+        return V1_0::ErrorStatus::GENERAL_FAILURE;
+    }
+
+    // Deserialize the network..
+    auto network = armnnDeserializer::IDeserializer::Create()->CreateNetworkFromBinary(dataCacheData);
+
+    // Optimize the network
+    armnn::IOptimizedNetworkPtr optNet(nullptr, nullptr);
+    armnn::OptimizerOptions OptOptions;
+    OptOptions.m_ReduceFp32ToFp16 = float32ToFloat16;
+    OptOptions.m_ProfilingEnabled = options.IsGpuProfilingEnabled();
+
+    armnn::BackendOptions gpuAcc("GpuAcc",
+                                 {
+                                         {"FastMathEnabled",       options.IsFastMathEnabled()},
+                                         {"SaveCachedNetwork",     saveCachedNetwork},
+                                         {"CachedNetworkFilePath", options.GetCachedNetworkFilePath()},
+                                         {"MLGOTuningFilePath",    options.GetClMLGOTunedParametersFile()},
+                                         {"CachedFileDescriptor",  gpuAccCachedFd}
+                                 });
+
+    armnn::BackendOptions cpuAcc("CpuAcc",
+                                 {
+                                         {"FastMathEnabled", options.IsFastMathEnabled()},
+                                         {"NumberOfThreads", options.GetNumberOfThreads()}
+                                 });
+    OptOptions.m_ModelOptions.push_back(gpuAcc);
+    OptOptions.m_ModelOptions.push_back(cpuAcc);
+
+    std::vector<std::string> errMessages;
+    try
+    {
+        optNet = armnn::Optimize(*network.get(),
+                                 options.GetBackends(),
+                                 runtime->GetDeviceSpec(),
+                                 OptOptions,
+                                 errMessages);
+    }
+    catch (std::exception& e)
+    {
+        std::stringstream message;
+        message << "Exception (" << e.what() << ") caught from optimize.";
+        FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, message.str(), cb);
+        return V1_0::ErrorStatus::NONE;
+    }
+
+    // Check that the optimized network is valid.
+    if (!optNet)
+    {
+        std::stringstream message;
+        message << "Invalid optimized network";
+        for (const std::string& msg : errMessages)
+        {
+            message << "\n" << msg;
+        }
+        FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, message.str(), cb);
+        return V1_0::ErrorStatus::NONE;
+    }
+
+    // Export the optimized network graph to a dot file if an output dump directory
+    // has been specified in the drivers' arguments.
+    std::string dotGraphFileName = ExportNetworkGraphToDotFile(*optNet,
+                                                               options.GetRequestInputsAndOutputsDumpDir());
+
+    // Load it into the runtime.
+    armnn::NetworkId netId = 0;
+    std::string msg;
+    armnn::INetworkProperties networkProperties(options.isAsyncModelExecutionEnabled(),
+                                                MemorySource::Undefined,
+                                                MemorySource::Undefined,
+                                                options.IsGpuProfilingEnabled());
+
+    try
+    {
+        if (runtime->LoadNetwork(netId, move(optNet), msg, networkProperties) != armnn::Status::Success)
+        {
+            return FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, msg, cb);
+        }
+    }
+    catch (std::exception& e)
+    {
+        std::stringstream message;
+        message << "Exception (" << e.what() << ") caught from LoadNetwork.";
+        FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, message.str(), cb);
+        return V1_0::ErrorStatus::NONE;
+    }
+
+    std::unique_ptr<ArmnnPreparedModel_1_2<hal_1_2::HalPolicy>> preparedModel(
+            new ArmnnPreparedModel_1_2<hal_1_2::HalPolicy>(
+                    netId,
+                    runtime.get(),
+                    options.GetRequestInputsAndOutputsDumpDir(),
+                    options.IsGpuProfilingEnabled(),
+                    options.isAsyncModelExecutionEnabled(),
+                    options.getNoOfArmnnThreads(),
+                    true));
+
+    NotifyCallbackAndCheck(cb, V1_0::ErrorStatus::NONE, preparedModel.release());
     return V1_0::ErrorStatus::NONE;
 }
 

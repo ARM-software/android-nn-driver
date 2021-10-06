@@ -57,6 +57,15 @@ public:
                            const bool asyncModelExecutionEnabled = false,
                            const unsigned int numberOfThreads = 1);
 
+    ArmnnPreparedModel_1_3(armnn::NetworkId networkId,
+                           armnn::IRuntime* runtime,
+                           const std::string& requestInputsAndOutputsDumpDir,
+                           const bool gpuProfilingEnabled,
+                           V1_3::Priority priority = V1_3::Priority::MEDIUM,
+                           const bool asyncModelExecutionEnabled = false,
+                           const unsigned int numberOfThreads = 1,
+                           const bool preparedFromCache = false);
+
     virtual ~ArmnnPreparedModel_1_3();
 
     Return<V1_0::ErrorStatus> execute(const V1_0::Request& request,
@@ -108,7 +117,7 @@ public:
 
     /// Executes this model with dummy inputs (e.g. all zeroes).
     /// \return false on failure, otherwise true
-    bool ExecuteWithDummyInputs();
+    bool ExecuteWithDummyInputs(unsigned int numInputs, unsigned int numOutputs);
 
     V1_3::Priority GetModelPriority();
 
@@ -192,6 +201,7 @@ private:
     static std::unique_ptr<armnn::Threadpool>      m_Threadpool;
     std::shared_ptr<IWorkingMemHandle>             m_WorkingMemHandle;
     const bool                                     m_AsyncModelExecutionEnabled;
+    const bool                                     m_PreparedFromCache;
 };
 
 }
