@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -12,7 +12,6 @@
 #include <OperationsUtils.h>
 #include <ValidateHal.h>
 
-#include <cassert>
 #include <cinttypes>
 
 #ifdef ARMNN_ANDROID_S

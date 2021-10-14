@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -9,8 +9,6 @@
 
 #include <armnn/StrategyBase.hpp>
 #include <armnn/utility/IgnoreUnused.hpp>
-
-#include <doctest/doctest.h>
 
 #include <numeric>
 
@@ -164,7 +162,7 @@ void DilationTestImpl(const DilationTestOptions& options)
     data.m_OutputSlotForOperand = std::vector<IOutputSlot*>(model.operands.size(), nullptr);
 
     bool ok = HalPolicy::ConvertOperation(model.operations[0], model, data);
-    CHECK(ok);
+    DOCTEST_CHECK(ok);
 
     // check if dilation params are as expected
     DilationTestVisitor visitor = options.m_HasDilation ? DilationTestVisitor(2, 2) : DilationTestVisitor();

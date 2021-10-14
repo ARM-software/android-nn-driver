@@ -1,12 +1,12 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
+
 #pragma once
 
-#include "../ArmnnDriver.hpp"
-
-#include <armnn/utility/Assert.hpp>
+#include <ArmnnDriver.hpp>
+#include "DriverTestHelpers.hpp"
 
 namespace driverTestHelpers
 {
@@ -19,7 +19,7 @@ public:
     : m_Shape{shape}
     , m_Data{data}
     {
-        ARMNN_ASSERT(m_Shape.GetNumElements() == m_Data.size());
+        DOCTEST_CHECK(m_Shape.GetNumElements() == m_Data.size());
     }
 
     hidl_vec<uint32_t> GetDimensions() const;

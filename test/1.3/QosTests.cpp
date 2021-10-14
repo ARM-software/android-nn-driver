@@ -4,15 +4,10 @@
 //
 
 #include "../DriverTestHelpers.hpp"
-#include "../TestTensor.hpp"
 
-#include "../1.3/HalPolicy.hpp"
+#include <1.3/HalPolicy.hpp>
 
-#include <armnn/utility/IgnoreUnused.hpp>
-
-#include <doctest/doctest.h>
-
-TEST_SUITE("QosTests")
+DOCTEST_TEST_SUITE("QosTests")
 {
 using ArmnnDriver   = armnn_driver::ArmnnDriver;
 using DriverOptions = armnn_driver::DriverOptions;
@@ -38,7 +33,7 @@ void ExecuteModel(const armnn_driver::hal_1_3::HalPolicy::Model& model,
     }
 }
 
-TEST_CASE("ConcurrentExecuteWithQosPriority")
+DOCTEST_TEST_CASE("ConcurrentExecuteWithQosPriority")
 {
     ALOGI("ConcurrentExecuteWithQOSPriority: entry");
 
@@ -94,7 +89,7 @@ TEST_CASE("ConcurrentExecuteWithQosPriority")
         preparedModelsSize++;
     }
 
-    CHECK(maxRequests == preparedModelsSize);
+    DOCTEST_CHECK(maxRequests == preparedModelsSize);
 
     // construct the request data
     V1_0::DataLocation inloc = {};
@@ -154,7 +149,7 @@ TEST_CASE("ConcurrentExecuteWithQosPriority")
     ALOGI("ConcurrentExecuteWithQOSPriority: waiting for callbacks");
     for (size_t i = 0; i < maxRequests; ++i)
     {
-        ARMNN_ASSERT(cb[i]);
+        DOCTEST_CHECK(cb[i]);
         cb[i]->wait();
     }
 
@@ -164,15 +159,15 @@ TEST_CASE("ConcurrentExecuteWithQosPriority")
     {
         if (i < 15)
         {
-            CHECK(outdata[i][0] == 152);
+            DOCTEST_CHECK(outdata[i][0] == 152);
         }
         else if (i < 30)
         {
-            CHECK(outdata[i][0] == 141);
+            DOCTEST_CHECK(outdata[i][0] == 141);
         }
         else
         {
-            CHECK(outdata[i][0] == 159);
+            DOCTEST_CHECK(outdata[i][0] == 159);
         }
 
     }

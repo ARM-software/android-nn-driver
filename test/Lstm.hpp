@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -8,8 +8,6 @@
 #include "DriverTestHelpers.hpp"
 
 #include <armnn/utility/IgnoreUnused.hpp>
-
-#include <doctest/doctest.h>
 
 #include <array>
 
@@ -368,18 +366,20 @@ void LstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
     // check the results
     for (size_t i = 0; i < outputStateOutValue.size(); ++i)
     {
-        CHECK_MESSAGE(outputStateOutValue[i] == doctest::Approx( outputStateOutData[i] ),
-                      "outputStateOut[" << i << "]: " << outputStateOutValue[i] << " != " << outputStateOutData[i]);
+        DOCTEST_CHECK_MESSAGE(outputStateOutValue[i] == doctest::Approx( outputStateOutData[i] ),
+                              "outputStateOut[" << i << "]: " << outputStateOutValue[i] << " != "
+                              << outputStateOutData[i]);
     }
     for (size_t i = 0; i < cellStateOutValue.size(); ++i)
     {
-        CHECK_MESSAGE(cellStateOutValue[i] == doctest::Approx( cellStateOutData[i] ),
-                      "cellStateOutValue[" << i << "]: " << cellStateOutValue[i] << " != " << cellStateOutData[i]);
+        DOCTEST_CHECK_MESSAGE(cellStateOutValue[i] == doctest::Approx( cellStateOutData[i] ),
+                              "cellStateOutValue[" << i << "]: " << cellStateOutValue[i] << " != "
+                              << cellStateOutData[i]);
     }
     for (size_t i = 0; i < outputValue.size(); ++i)
     {
-        CHECK_MESSAGE(outputValue[i] == doctest::Approx( outputData[i] ),
-                      "outputValue[" << i << "]: " << outputValue[i] << " != " << outputData[i]);
+        DOCTEST_CHECK_MESSAGE(outputValue[i] == doctest::Approx( outputData[i] ),
+                              "outputValue[" << i << "]: " << outputValue[i] << " != " << outputData[i]);
     }
 }
 
@@ -643,13 +643,14 @@ void QuantizedLstmTestImpl(const hidl_vec<uint32_t>&    inputDimensions,
     // check the results
     for (size_t i = 0; i < cellStateOutValue.size(); ++i)
     {
-        CHECK_MESSAGE(cellStateOutValue[i] == doctest::Approx( cellStateOutData[i] ),
-                      "cellStateOutValue[" << i << "]: " << cellStateOutValue[i] << " != " << cellStateOutData[i]);
+        DOCTEST_CHECK_MESSAGE(cellStateOutValue[i] == doctest::Approx( cellStateOutData[i] ),
+                              "cellStateOutValue[" << i << "]: " << cellStateOutValue[i] << " != "
+                              << cellStateOutData[i]);
     }
     for (size_t i = 0; i < outputValue.size(); ++i)
     {
-        CHECK_MESSAGE(outputValue[i] == doctest::Approx( outputData[i] ),
-                      "outputValue[" << i << "]: " << outputValue[i] << " != " << outputData[i]);
+        DOCTEST_CHECK_MESSAGE(outputValue[i] == doctest::Approx( outputData[i] ),
+                              "outputValue[" << i << "]: " << outputValue[i] << " != " << outputData[i]);
     }
 }
 

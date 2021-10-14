@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -16,8 +16,6 @@
 #include "ArmnnPreparedModel_1_2.hpp"
 #include "ArmnnPreparedModel_1_3.hpp"
 #endif
-
-#include <armnn/utility/Assert.hpp>
 
 #include <log/log.h>
 
@@ -134,8 +132,7 @@ void RequestThread<PreparedModel, HalVersion, CallbackContext>::Process()
 
             default:
                 // this should be unreachable
-                ALOGE("RequestThread::Process() - invalid message type");
-                ARMNN_ASSERT_MSG(false, "ArmNN: RequestThread: invalid message type");
+                throw armnn::RuntimeException("ArmNN: RequestThread: invalid message type");
         }
     }
 }

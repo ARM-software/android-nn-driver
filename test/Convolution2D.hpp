@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -7,7 +7,6 @@
 
 #include "DriverTestHelpers.hpp"
 
-#include <doctest/doctest.h>
 #include <log/log.h>
 
 #include <OperationsUtils.h>
@@ -23,11 +22,11 @@ namespace driverTestHelpers
 #define ARMNN_ANDROID_FP16_TEST(result, fp16Expectation, fp32Expectation, fp16Enabled) \
    if (fp16Enabled) \
    { \
-       CHECK_MESSAGE((result == fp16Expectation || result == fp32Expectation), result << \
+       DOCTEST_CHECK_MESSAGE((result == fp16Expectation || result == fp32Expectation), result << \
        " does not match either " << fp16Expectation << "[fp16] or " << fp32Expectation << "[fp32]"); \
    } else \
    { \
-      CHECK(result == fp32Expectation); \
+      DOCTEST_CHECK(result == fp32Expectation); \
    }
 
 void SetModelFp16Flag(V1_0::Model& model, bool fp16Enabled);
@@ -117,10 +116,10 @@ void PaddingTestImpl(android::nn::PaddingScheme paddingScheme, bool fp16Enabled 
             break;
         case android::nn::kPaddingSame:
             ARMNN_ANDROID_FP16_TEST(outdata[0], 1022.f, 1022.25f, fp16Enabled)
-            CHECK(outdata[1] == 0.f);
+            DOCTEST_CHECK(outdata[1] == 0.f);
             break;
         default:
-            CHECK(false);
+            DOCTEST_CHECK(false);
             break;
     }
 }

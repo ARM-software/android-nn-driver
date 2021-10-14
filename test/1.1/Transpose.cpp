@@ -1,17 +1,14 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
-#include "OperationsUtils.h"
 
 #include "../DriverTestHelpers.hpp"
 #include "../TestTensor.hpp"
-
-#include "../1.1/HalPolicy.hpp"
-
-#include <doctest/doctest.h>
+#include <1.1/HalPolicy.hpp>
 
 #include <log/log.h>
+#include <OperationsUtils.h>
 
 #include <array>
 #include <cmath>
@@ -89,15 +86,15 @@ void TransposeTestImpl(const TestTensor & inputs, int32_t perm[],
     const float * expectedOutput = expectedOutputTensor.GetData();
     for (unsigned int i = 0; i < expectedOutputTensor.GetNumElements(); ++i)
     {
-        CHECK(outdata[i] == expectedOutput[i]);
+        DOCTEST_CHECK(outdata[i] == expectedOutput[i]);
     }
 }
 
 } // namespace
 
-TEST_SUITE("TransposeTests_CpuRef")
+DOCTEST_TEST_SUITE("TransposeTests_CpuRef")
 {
-    TEST_CASE("Transpose_CpuRef")
+    DOCTEST_TEST_CASE("Transpose_CpuRef")
     {
         int32_t perm[] = {2, 3, 1, 0};
         TestTensor input{armnn::TensorShape{1, 2, 2, 2},{1, 2, 3, 4, 5, 6, 7, 8}};
@@ -106,7 +103,7 @@ TEST_SUITE("TransposeTests_CpuRef")
         TransposeTestImpl(input, perm, expected, armnn::Compute::CpuRef);
     }
 
-    TEST_CASE("TransposeNHWCToArmNN_CpuRef")
+    DOCTEST_TEST_CASE("TransposeNHWCToArmNN_CpuRef")
     {
         int32_t perm[] = {0, 3, 1, 2};
         TestTensor input{armnn::TensorShape{1, 2, 2, 3},{1, 2, 3, 11, 12, 13, 21, 22, 23, 31, 32, 33}};
@@ -114,7 +111,7 @@ TEST_SUITE("TransposeTests_CpuRef")
 
         TransposeTestImpl(input, perm, expected, armnn::Compute::CpuRef);
     }
-    TEST_CASE("TransposeArmNNToNHWC_CpuRef")
+    DOCTEST_TEST_CASE("TransposeArmNNToNHWC_CpuRef")
     {
         int32_t perm[] = {0, 2, 3, 1};
         TestTensor input{armnn::TensorShape{1, 2, 2, 2},{1, 2, 3, 4, 5, 6, 7, 8}};
@@ -125,9 +122,9 @@ TEST_SUITE("TransposeTests_CpuRef")
 }
 
 #ifdef ARMCOMPUTECL_ENABLED
-TEST_SUITE("TransposeTests_CpuAcc")
+DOCTEST_TEST_SUITE("TransposeTests_CpuAcc")
 {
-    TEST_CASE("Transpose_CpuAcc")
+    DOCTEST_TEST_CASE("Transpose_CpuAcc")
     {
         int32_t perm[] = {2, 3, 1, 0};
         TestTensor input{armnn::TensorShape{1, 2, 2, 2},{1, 2, 3, 4, 5, 6, 7, 8}};
@@ -136,7 +133,7 @@ TEST_SUITE("TransposeTests_CpuAcc")
         TransposeTestImpl(input, perm, expected, armnn::Compute::CpuAcc);
     }
 
-    TEST_CASE("TransposeNHWCToArmNN_CpuAcc")
+    DOCTEST_TEST_CASE("TransposeNHWCToArmNN_CpuAcc")
     {
         int32_t perm[] = {0, 3, 1, 2};
         TestTensor input{armnn::TensorShape{1, 2, 2, 3},{1, 2, 3, 11, 12, 13, 21, 22, 23, 31, 32, 33}};
@@ -144,7 +141,8 @@ TEST_SUITE("TransposeTests_CpuAcc")
 
         TransposeTestImpl(input, perm, expected, armnn::Compute::CpuAcc);
     }
-    TEST_CASE("TransposeArmNNToNHWC_CpuAcc")
+
+    DOCTEST_TEST_CASE("TransposeArmNNToNHWC_CpuAcc")
     {
         int32_t perm[] = {0, 2, 3, 1};
         TestTensor input{armnn::TensorShape{1, 2, 2, 2},{1, 2, 3, 4, 5, 6, 7, 8}};
@@ -153,9 +151,10 @@ TEST_SUITE("TransposeTests_CpuAcc")
         TransposeTestImpl(input, perm, expected, armnn::Compute::CpuAcc);
     }
 }
-TEST_SUITE("TransposeTests_GpuAcc")
+
+DOCTEST_TEST_SUITE("TransposeTests_GpuAcc")
 {
-    TEST_CASE("Transpose_GpuAcc")
+    DOCTEST_TEST_CASE("Transpose_GpuAcc")
     {
         int32_t perm[] = {2, 3, 1, 0};
         TestTensor input{armnn::TensorShape{1, 2, 2, 2},{1, 2, 3, 4, 5, 6, 7, 8}};
@@ -164,7 +163,7 @@ TEST_SUITE("TransposeTests_GpuAcc")
         TransposeTestImpl(input, perm, expected, armnn::Compute::GpuAcc);
     }
 
-    TEST_CASE("TransposeNHWCToArmNN_GpuAcc")
+    DOCTEST_TEST_CASE("TransposeNHWCToArmNN_GpuAcc")
     {
         int32_t perm[] = {0, 3, 1, 2};
         TestTensor input{armnn::TensorShape{1, 2, 2, 3},{1, 2, 3, 11, 12, 13, 21, 22, 23, 31, 32, 33}};
@@ -172,7 +171,8 @@ TEST_SUITE("TransposeTests_GpuAcc")
 
         TransposeTestImpl(input, perm, expected, armnn::Compute::GpuAcc);
     }
-    TEST_CASE("TransposeArmNNToNHWC_GpuAcc")
+
+    DOCTEST_TEST_CASE("TransposeArmNNToNHWC_GpuAcc")
     {
         int32_t perm[] = {0, 2, 3, 1};
         TestTensor input{armnn::TensorShape{1, 2, 2, 2},{1, 2, 3, 4, 5, 6, 7, 8}};

@@ -1,13 +1,10 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
+
 #include "DriverTestHelpers.hpp"
 #include "TestTensor.hpp"
-
-#include "../1.0/HalPolicy.hpp"
-
-#include <doctest/doctest.h>
 
 #include <array>
 #include <log/log.h>
@@ -56,14 +53,14 @@ ConcatTestImpl(const std::vector<const TestTensor*> & inputs,
                                                                              *driver,
                                                                              prepareStatus,
                                                                              expectedPrepareStatus);
-    CHECK((int)prepareStatus == (int)expectedPrepareStatus);
+    DOCTEST_CHECK((int)prepareStatus == (int)expectedPrepareStatus);
     if (prepareStatus != V1_0::ErrorStatus::NONE)
     {
         // prepare failed, we cannot continue
         return;
     }
 
-    CHECK(preparedModel.get() != nullptr);
+    DOCTEST_CHECK(preparedModel.get() != nullptr);
     if (preparedModel.get() == nullptr)
     {
         // don't spoil other tests if prepare failed
@@ -120,9 +117,9 @@ ConcatTestImpl(const std::vector<const TestTensor*> & inputs,
     float* outdata = static_cast<float*>(static_cast<void*>(outMemory->getPointer()));
 
     // run the execution
-    ARMNN_ASSERT(preparedModel.get() != nullptr);
+    DOCTEST_CHECK(preparedModel.get() != nullptr);
     auto execStatus = Execute(preparedModel, request, expectedExecStatus);
-    CHECK((int)execStatus == (int)expectedExecStatus);
+    DOCTEST_CHECK((int)execStatus == (int)expectedExecStatus);
 
     if (execStatus == V1_0::ErrorStatus::NONE)
     {
@@ -130,7 +127,7 @@ ConcatTestImpl(const std::vector<const TestTensor*> & inputs,
         const float * expectedOutput = expectedOutputTensor.GetData();
         for (unsigned int i=0; i<expectedOutputTensor.GetNumElements();++i)
         {
-            CHECK(outdata[i] == expectedOutput[i]);
+            DOCTEST_CHECK(outdata[i] == expectedOutput[i]);
         }
     }
 }
@@ -483,125 +480,125 @@ void SimpleConcatAxisZero1D(armnn::Compute computeDevice)
 
 } // namespace <anonymous>
 
-TEST_SUITE("ConcatTests_CpuRef")
+DOCTEST_TEST_SUITE("ConcatTests_CpuRef")
 {
 
-TEST_CASE("SimpleConcatAxis0")
+DOCTEST_TEST_CASE("SimpleConcatAxis0")
 {
     SimpleConcatAxis0(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("ConcatAxis0NoInterleave")
+DOCTEST_TEST_CASE("ConcatAxis0NoInterleave")
 {
     ConcatAxis0NoInterleave(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("SimpleConcatAxis1")
+DOCTEST_TEST_CASE("SimpleConcatAxis1")
 {
     SimpleConcatAxis1(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("ConcatAxis1NoInterleave")
+DOCTEST_TEST_CASE("ConcatAxis1NoInterleave")
 {
     ConcatAxis1NoInterleave(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("SimpleConcatAxis1DoInterleave")
+DOCTEST_TEST_CASE("SimpleConcatAxis1DoInterleave")
 {
     SimpleConcatAxis1DoInterleave(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("SimpleConcatAxis2")
+DOCTEST_TEST_CASE("SimpleConcatAxis2")
 {
     SimpleConcatAxis2(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("ConcatAxis2NoInterleave")
+DOCTEST_TEST_CASE("ConcatAxis2NoInterleave")
 {
     ConcatAxis2NoInterleave(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("SimpleConcatAxis2DoInterleave")
+DOCTEST_TEST_CASE("SimpleConcatAxis2DoInterleave")
 {
     SimpleConcatAxis2DoInterleave(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("SimpleConcatAxis3")
+DOCTEST_TEST_CASE("SimpleConcatAxis3")
 {
     SimpleConcatAxis3(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("SimpleConcatAxis3DoInterleave")
+DOCTEST_TEST_CASE("SimpleConcatAxis3DoInterleave")
 {
     SimpleConcatAxis3DoInterleave(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("AxisTooBig")
+DOCTEST_TEST_CASE("AxisTooBig")
 {
     AxisTooBig(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("AxisTooSmall")
+DOCTEST_TEST_CASE("AxisTooSmall")
 {
     AxisTooSmall(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("TooFewInputs")
+DOCTEST_TEST_CASE("TooFewInputs")
 {
     TooFewInputs(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("MismatchedInputDimensions")
+DOCTEST_TEST_CASE("MismatchedInputDimensions")
 {
     MismatchedInputDimensions(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("MismatchedInputRanks")
+DOCTEST_TEST_CASE("MismatchedInputRanks")
 {
     MismatchedInputRanks(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("MismatchedOutputDimensions")
+DOCTEST_TEST_CASE("MismatchedOutputDimensions")
 {
     MismatchedOutputDimensions(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("MismatchedOutputRank")
+DOCTEST_TEST_CASE("MismatchedOutputRank")
 {
     MismatchedOutputRank(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("ValidNegativeAxis")
+DOCTEST_TEST_CASE("ValidNegativeAxis")
 {
     ValidNegativeAxis(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("SimpleConcatAxisZero3D")
+DOCTEST_TEST_CASE("SimpleConcatAxisZero3D")
 {
     SimpleConcatAxisZero3D(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("SimpleConcatAxisOne3D")
+DOCTEST_TEST_CASE("SimpleConcatAxisOne3D")
 {
     SimpleConcatAxisOne3D(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("SimpleConcatAxisTwo3D")
+DOCTEST_TEST_CASE("SimpleConcatAxisTwo3D")
 {
     SimpleConcatAxisTwo3D(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("SimpleConcatAxisZero2D")
+DOCTEST_TEST_CASE("SimpleConcatAxisZero2D")
 {
     SimpleConcatAxisZero2D(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("SimpleConcatAxisOne2D")
+DOCTEST_TEST_CASE("SimpleConcatAxisOne2D")
 {
     SimpleConcatAxisOne2D(armnn::Compute::CpuRef);
 }
 
-TEST_CASE("SimpleConcatAxisZero1D")
+DOCTEST_TEST_CASE("SimpleConcatAxisZero1D")
 {
     SimpleConcatAxisZero1D(armnn::Compute::CpuRef);
 }
@@ -609,125 +606,125 @@ TEST_CASE("SimpleConcatAxisZero1D")
 }
 
 #ifdef ARMCOMPUTECL_ENABLED
-TEST_SUITE("ConcatTests_GpuAcc")
+DOCTEST_TEST_SUITE("ConcatTests_GpuAcc")
 {
 
-TEST_CASE("SimpleConcatAxis0")
+DOCTEST_TEST_CASE("SimpleConcatAxis0")
 {
     SimpleConcatAxis0(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("ConcatAxis0NoInterleave")
+DOCTEST_TEST_CASE("ConcatAxis0NoInterleave")
 {
     ConcatAxis0NoInterleave(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("SimpleConcatAxis1")
+DOCTEST_TEST_CASE("SimpleConcatAxis1")
 {
     SimpleConcatAxis1(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("ConcatAxis1NoInterleave")
+DOCTEST_TEST_CASE("ConcatAxis1NoInterleave")
 {
     ConcatAxis1NoInterleave(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("SimpleConcatAxis1DoInterleave")
+DOCTEST_TEST_CASE("SimpleConcatAxis1DoInterleave")
 {
     SimpleConcatAxis1DoInterleave(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("SimpleConcatAxis2")
+DOCTEST_TEST_CASE("SimpleConcatAxis2")
 {
     SimpleConcatAxis2(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("ConcatAxis2NoInterleave")
+DOCTEST_TEST_CASE("ConcatAxis2NoInterleave")
 {
     ConcatAxis2NoInterleave(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("SimpleConcatAxis2DoInterleave")
+DOCTEST_TEST_CASE("SimpleConcatAxis2DoInterleave")
 {
     SimpleConcatAxis2DoInterleave(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("SimpleConcatAxis3")
+DOCTEST_TEST_CASE("SimpleConcatAxis3")
 {
     SimpleConcatAxis3(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("SimpleConcatAxis3DoInterleave")
+DOCTEST_TEST_CASE("SimpleConcatAxis3DoInterleave")
 {
     SimpleConcatAxis3DoInterleave(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("AxisTooBig")
+DOCTEST_TEST_CASE("AxisTooBig")
 {
     AxisTooBig(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("AxisTooSmall")
+DOCTEST_TEST_CASE("AxisTooSmall")
 {
     AxisTooSmall(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("TooFewInputs")
+DOCTEST_TEST_CASE("TooFewInputs")
 {
     TooFewInputs(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("MismatchedInputDimensions")
+DOCTEST_TEST_CASE("MismatchedInputDimensions")
 {
     MismatchedInputDimensions(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("MismatchedInputRanks")
+DOCTEST_TEST_CASE("MismatchedInputRanks")
 {
     MismatchedInputRanks(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("MismatchedOutputDimensions")
+DOCTEST_TEST_CASE("MismatchedOutputDimensions")
 {
     MismatchedOutputDimensions(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("MismatchedOutputRank")
+DOCTEST_TEST_CASE("MismatchedOutputRank")
 {
     MismatchedOutputRank(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("ValidNegativeAxis")
+DOCTEST_TEST_CASE("ValidNegativeAxis")
 {
     ValidNegativeAxis(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("SimpleConcatAxisZero3D")
+DOCTEST_TEST_CASE("SimpleConcatAxisZero3D")
 {
     SimpleConcatAxisZero3D(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("SimpleConcatAxisOne3D")
+DOCTEST_TEST_CASE("SimpleConcatAxisOne3D")
 {
     SimpleConcatAxisOne3D(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("SimpleConcatAxisTwo3D")
+DOCTEST_TEST_CASE("SimpleConcatAxisTwo3D")
 {
     SimpleConcatAxisTwo3D(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("SimpleConcatAxisZero2D")
+DOCTEST_TEST_CASE("SimpleConcatAxisZero2D")
 {
     SimpleConcatAxisZero2D(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("SimpleConcatAxisOne2D")
+DOCTEST_TEST_CASE("SimpleConcatAxisOne2D")
 {
     SimpleConcatAxisOne2D(armnn::Compute::GpuAcc);
 }
 
-TEST_CASE("SimpleConcatAxisZero1D")
+DOCTEST_TEST_CASE("SimpleConcatAxisZero1D")
 {
     SimpleConcatAxisZero1D(armnn::Compute::GpuAcc);
 }

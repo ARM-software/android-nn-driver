@@ -1,16 +1,11 @@
 //
-// Copyright © 2020 Arm Ltd. All rights reserved.
+// Copyright © 2020 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
 #include "../DriverTestHelpers.hpp"
-#include "../TestTensor.hpp"
 
-#include "../1.3/HalPolicy.hpp"
-
-#include <armnn/utility/IgnoreUnused.hpp>
-
-#include <doctest/doctest.h>
+#include <1.3/HalPolicy.hpp>
 
 #include <array>
 
@@ -499,8 +494,9 @@ void QLstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
     // check the results
     for (size_t i = 0; i < outputStateOutValue.size(); ++i)
     {
-        CHECK_MESSAGE(outputStateOutValue[i] == doctest::Approx( outputStateOutData[i] ).epsilon(TOLERANCE),
-                      "outputStateOut[" << i << "]: " << outputStateOutValue[i] << " != " << outputStateOutData[i]);
+        DOCTEST_CHECK_MESSAGE(outputStateOutValue[i] == doctest::Approx( outputStateOutData[i] ).epsilon(TOLERANCE),
+                              "outputStateOut[" << i << "]: " << outputStateOutValue[i] << " != "
+                              << outputStateOutData[i]);
     }
 
     // CELL STATE OUTPUT Does not match currently: IVGCVSW-4860 Verify remaining VTS tests (2) for QLSTM
@@ -513,8 +509,8 @@ void QLstmTestImpl(const hidl_vec<uint32_t>&   inputDimensions,
 
     for (size_t i = 0; i < outputValue.size(); ++i)
     {
-        CHECK_MESSAGE(outputValue[i] == doctest::Approx( outputData[i] ).epsilon(TOLERANCE),
-                      "output[" << i << "]: " << outputValue[i] << " != " << outputData[i]);
+        DOCTEST_CHECK_MESSAGE(outputValue[i] == doctest::Approx( outputData[i] ).epsilon(TOLERANCE),
+                              "output[" << i << "]: " << outputValue[i] << " != " << outputData[i]);
     }
 }
 
@@ -1005,29 +1001,33 @@ void DynamicOutputQLstmWithNoProjection(armnn::Compute compute)
 //     QLstmWithProjection(sample);
 //}
 
-TEST_SUITE("QLSTMTests_CpuRef")
+DOCTEST_TEST_SUITE("QLSTMTests_CpuRef")
 {
-    TEST_CASE("QLSTMWithNoProjectionTest_CpuRef")
+
+    DOCTEST_TEST_CASE("QLSTMWithNoProjectionTest_CpuRef")
     {
         QLstmWithNoProjection(armnn::Compute::CpuRef);
     }
 
-    TEST_CASE("DynamicOutputQLstmWithNoProjection_CpuRef")
+    DOCTEST_TEST_CASE("DynamicOutputQLstmWithNoProjection_CpuRef")
     {
         DynamicOutputQLstmWithNoProjection(armnn::Compute::CpuRef);
     }
+
 }
 #ifdef ARMCOMPUTECL_ENABLED
-TEST_SUITE("QLSTMTests_CpuAcc")
+DOCTEST_TEST_SUITE("QLSTMTests_CpuAcc")
 {
-    TEST_CASE("QLSTMWithNoProjectionTest_CpuAcc")
+
+    DOCTEST_TEST_CASE("QLSTMWithNoProjectionTest_CpuAcc")
     {
         QLstmWithNoProjection(armnn::Compute::CpuAcc);
     }
 
-    TEST_CASE("DynamicOutputQLstmWithNoProjection_CpuAcc")
+    DOCTEST_TEST_CASE("DynamicOutputQLstmWithNoProjection_CpuAcc")
     {
         DynamicOutputQLstmWithNoProjection(armnn::Compute::CpuAcc);
     }
+
 }
 #endif

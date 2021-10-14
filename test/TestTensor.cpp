@@ -1,7 +1,8 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
+
 #include "TestTensor.hpp"
 
 namespace driverTestHelpers
@@ -25,7 +26,7 @@ unsigned int TestTensor::GetNumElements() const
 
 const float * TestTensor::GetData() const
 {
-    ARMNN_ASSERT(m_Data.empty() == false);
+    DOCTEST_CHECK(m_Data.empty() == false);
     return &m_Data[0];
 }
 

@@ -1,15 +1,13 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
+
 #include "DriverTestHelpers.hpp"
 
-#include "../1.0/HalPolicy.hpp"
-
-#include <doctest/doctest.h>
 #include <log/log.h>
 
-TEST_SUITE("ConcurrentDriverTests")
+DOCTEST_TEST_SUITE("ConcurrentDriverTests")
 {
 using ArmnnDriver   = armnn_driver::ArmnnDriver;
 using DriverOptions = armnn_driver::DriverOptions;
@@ -25,7 +23,7 @@ using namespace armnn_driver;
 // The main point of this test is to check that multiple requests can be
 // executed without waiting for the callback from previous execution.
 // The operations performed are not significant.
-TEST_CASE("ConcurrentExecute")
+DOCTEST_TEST_CASE("ConcurrentExecute")
 {
     ALOGI("ConcurrentExecute: entry");
 
@@ -63,7 +61,7 @@ TEST_CASE("ConcurrentExecute")
         }
     }
 
-    CHECK(maxRequests == preparedModelsSize);
+    DOCTEST_CHECK(maxRequests == preparedModelsSize);
 
     // construct the request data
     V1_0::DataLocation inloc = {};
@@ -110,7 +108,7 @@ TEST_CASE("ConcurrentExecute")
     ALOGI("ConcurrentExecute: waiting for callbacks");
     for (size_t i = 0; i < maxRequests; ++i)
     {
-        ARMNN_ASSERT(cb[i]);
+        DOCTEST_CHECK(cb[i]);
         cb[i]->wait();
     }
 
@@ -118,7 +116,7 @@ TEST_CASE("ConcurrentExecute")
     ALOGI("ConcurrentExecute: validating results");
     for (size_t i = 0; i < maxRequests; ++i)
     {
-        CHECK(outdata[i][0] == 152);
+        DOCTEST_CHECK(outdata[i][0] == 152);
     }
     ALOGI("ConcurrentExecute: exit");
 }

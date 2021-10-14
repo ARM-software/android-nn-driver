@@ -1,5 +1,5 @@
 //
-// Copyright © 2020 Arm Ltd. All rights reserved.
+// Copyright © 2020 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -144,7 +144,10 @@ bool ConvertFill(const HalOperation& operation, const HalModel& model, Conversio
     }
 
     IConnectableLayer* const layer = data.m_Network->AddFillLayer(descriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the FillLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
@@ -212,7 +215,10 @@ bool ConvertLogicalBinary(const HalOperation& operation,
     }
 
     IConnectableLayer* layer = data.m_Network->AddLogicalBinaryLayer(descriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the LogicalBinaryLayer", __func__);
+    }
 
     bool isReshapeSupported = BroadcastTensor(input0, input1, layer, data);
     if (!isReshapeSupported)
@@ -776,7 +782,10 @@ bool ConvertRank(const HalOperation& operation, const HalModel& model, Conversio
     }
 
     armnn::IConnectableLayer* layer = data.m_Network->AddRankLayer();
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the RankLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, &outInfo);

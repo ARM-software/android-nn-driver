@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -13,10 +13,8 @@
 #include <armnnUtils/Permute.hpp>
 
 #include <armnn/Utils.hpp>
-#include <armnn/utility/Assert.hpp>
 #include <log/log.h>
 
-#include <cassert>
 #include <cerrno>
 #include <cinttypes>
 #include <sstream>
@@ -34,14 +32,17 @@ const armnn::PermutationVector g_DontPermute{};
 void SwizzleAndroidNn4dTensorToArmNn(armnn::TensorInfo& tensorInfo, const void* input, void* output,
                                      const armnn::PermutationVector& mappings)
 {
-    assert(tensorInfo.GetNumDimensions() == 4U);
-
+    if (tensorInfo.GetNumDimensions() != 4U)
+    {
+        throw armnn::InvalidArgumentException("NumDimensions must be 4");
+    }
     armnn::DataType dataType = tensorInfo.GetDataType();
     switch (dataType)
     {
     case armnn::DataType::Float16:
     case armnn::DataType::Float32:
     case armnn::DataType::QAsymmU8:
+    case armnn::DataType::QSymmS16:
     case armnn::DataType::QSymmS8:
     case armnn::DataType::QAsymmS8:
         // First swizzle tensor info
@@ -50,15 +51,17 @@ void SwizzleAndroidNn4dTensorToArmNn(armnn::TensorInfo& tensorInfo, const void* 
         armnnUtils::Permute(tensorInfo.GetShape(), mappings, input, output, armnn::GetDataTypeSize(dataType));
         break;
     default:
-        ALOGW("Unknown armnn::DataType for swizzling");
-        assert(0);
+        throw armnn::InvalidArgumentException("Unknown DataType for swizzling");
     }
 }
 
 void* GetMemoryFromPool(V1_0::DataLocation location, const std::vector<android::nn::RunTimePoolInfo>& memPools)
 {
     // find the location within the pool
-    assert(location.poolIndex < memPools.size());
+    if (location.poolIndex >= memPools.size())
+    {
+        throw armnn::InvalidArgumentException("The poolIndex is greater than the memPools size.");
+    }
 
     const android::nn::RunTimePoolInfo& memPool = memPools[location.poolIndex];
 
@@ -185,9 +188,10 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_2::Operand& operand)
 
     if (perChannel)
     {
-        // ExtraParams is expected to be of type channelQuant
-        ARMNN_ASSERT(operand.extraParams.getDiscriminator() ==
-                     V1_2::Operand::ExtraParams::hidl_discriminator::channelQuant);
+        if (operand.extraParams.getDiscriminator() != V1_2::Operand::ExtraParams::hidl_discriminator::channelQuant)
+        {
+            throw armnn::InvalidArgumentException("ExtraParams is expected to be of type channelQuant");
+        }
 
         auto perAxisQuantParams = operand.extraParams.channelQuant();
 
@@ -286,9 +290,10 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_3::Operand& operand)
     if (perChannel)
     {
         // ExtraParams is expected to be of type channelQuant
-        ARMNN_ASSERT(operand.extraParams.getDiscriminator() ==
-                     V1_2::Operand::ExtraParams::hidl_discriminator::channelQuant);
-
+        if (operand.extraParams.getDiscriminator() != V1_2::Operand::ExtraParams::hidl_discriminator::channelQuant)
+        {
+            throw armnn::InvalidArgumentException("ExtraParams is expected to be of type channelQuant");
+        }
         auto perAxisQuantParams = operand.extraParams.channelQuant();
 
         ret.SetQuantizationScales(perAxisQuantParams.scales);
@@ -485,7 +490,11 @@ void DumpJsonProfilingIfRequired(bool gpuProfilingEnabled,
         return;
     }
 
-    ARMNN_ASSERT(profiler);
+    if (!profiler)
+    {
+        ALOGW("profiler was null");
+        return;
+    }
 
     // Set the name of the output profiling file.
     fs::path dumpPath = dumpDir;

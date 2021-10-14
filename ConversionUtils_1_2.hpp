@@ -163,7 +163,10 @@ bool ConvertCast(const HalOperation& operation,
     }
 
     IConnectableLayer* layer = data.m_Network->AddCastLayer();
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the CastLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -315,7 +318,10 @@ bool ConvertComparison_1_2(const HalOperation& operation,
     }
 
     IConnectableLayer* layer = data.m_Network->AddComparisonLayer(descriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the ComparisonLayer", __func__);
+    }
 
     bool isReshapeSupported = BroadcastTensor(input0, input1, layer, data);
     if (!isReshapeSupported)
@@ -732,7 +738,10 @@ bool ConvertElementwiseUnary(const HalOperation& operation,
     }
 
     IConnectableLayer* layer = data.m_Network->AddElementwiseUnaryLayer(descriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the ElementwiseUnaryLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -814,7 +823,10 @@ bool ConvertExpandDims(const HalOperation& operation, const HalModel& model, Con
     }
 
     IConnectableLayer* layer = data.m_Network->AddReshapeLayer(reshapeDescriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the ReshapeLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -899,7 +911,10 @@ bool ConvertGather(const HalOperation& operation, const HalModel& model, Convers
     }
 
     IConnectableLayer* layer = data.m_Network->AddGatherLayer(desc);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the GatherLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
     indices.Connect(layer->GetInputSlot(1));
 
@@ -1456,9 +1471,8 @@ bool ConvertLogSoftmax(const HalOperation& operation, const HalModel& model, Con
     IConnectableLayer* layer = data.m_Network->AddLogSoftmaxLayer(descriptor);
     if (!layer)
     {
-        return Fail("%s: AddLogSoftmaxLayer() returned nullptr", __func__);
+        return Fail("%s: Could not add the LogSoftmaxLayer", __func__);
     }
-
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -1516,7 +1530,10 @@ bool ConvertMaximum(const HalOperation& operation, const HalModel& model, Conver
     }
 
     IConnectableLayer* layer = data.m_Network->AddMaximumLayer();
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the MaximumLayer", __func__);
+    }
     bool isReshapeSupported = BroadcastTensor(input0, input1, layer, data);
     if (!isReshapeSupported)
     {
@@ -1578,7 +1595,10 @@ bool ConvertMinimum(const HalOperation& operation, const HalModel& model, Conver
     }
 
     IConnectableLayer* const layer = data.m_Network->AddMinimumLayer();
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the MinimumLayer", __func__);
+    }
     bool isReshapeSupported = BroadcastTensor(input0, input1, layer, data);
     if (!isReshapeSupported)
     {
@@ -1690,7 +1710,10 @@ bool ConvertPadV2(const HalOperation& operation, const HalModel& model, Conversi
     }
 
     IConnectableLayer* const layer = data.m_Network->AddPadLayer(descriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the PadLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -1751,10 +1774,9 @@ bool ConvertPrelu(const HalOperation& operation, const HalModel& model, Conversi
     }
 
     IConnectableLayer* const layer = data.m_Network->AddPreluLayer();
-
     if (!layer)
     {
-        return Fail("%s: AddPreluLayer failed", __func__);
+        return Fail("%s: Could not add the PreluLayer", __func__);
     }
 
     bool isReshapeSupported = BroadcastTensor(input, alpha, layer, data);
@@ -1815,7 +1837,10 @@ bool ConvertQuantize(const HalOperation& operation, const HalModel& model, Conve
     }
 
     IConnectableLayer* const layer = data.m_Network->AddQuantizeLayer();
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the QuantizeLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -2139,7 +2164,10 @@ bool ConvertReduce(const HalOperation& operation,
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddReduceLayer(descriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the ReduceLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -2288,7 +2316,10 @@ bool ConvertResize(const HalOperation& operation,
     }
 
     IConnectableLayer* layer = data.m_Network->AddResizeLayer(descriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the ResizeLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -2363,7 +2394,10 @@ bool ConvertSpaceToDepth(const HalOperation& operation, const HalModel& model, C
     }
 
     IConnectableLayer* const layer = data.m_Network->AddSpaceToDepthLayer(desc);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the SpaceToDephLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -2453,7 +2487,10 @@ bool ConvertSoftmax(const HalOperation& operation, const HalModel& model, Conver
     }
 
     IConnectableLayer* layer = data.m_Network->AddSoftmaxLayer(desc);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the SoftmaxLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);

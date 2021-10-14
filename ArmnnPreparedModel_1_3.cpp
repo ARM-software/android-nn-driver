@@ -1,5 +1,5 @@
 //
-// Copyright © 2020 Arm Ltd. All rights reserved.
+// Copyright © 2020 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 // Note: the ArmnnFencedExecutionCallback and code snippet in the executeFenced() function
@@ -19,7 +19,6 @@
 #include <ExecutionBurstServer.h>
 #include <ValidateHal.h>
 
-#include <cassert>
 #include <cinttypes>
 
 #ifdef ARMNN_ANDROID_S

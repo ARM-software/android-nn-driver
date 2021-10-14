@@ -1,16 +1,13 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
+
 #include "DriverTestHelpers.hpp"
-
-#include "../1.0/HalPolicy.hpp"
-
-#include <doctest/doctest.h>
 
 #include <log/log.h>
 
-TEST_SUITE("FullyConnectedTests")
+DOCTEST_TEST_SUITE("FullyConnectedTests")
 {
 using namespace android::hardware;
 using namespace driverTestHelpers;
@@ -19,7 +16,7 @@ using namespace armnn_driver;
 using HalPolicy = hal_1_0::HalPolicy;
 
 // Add our own test here since we fail the fc tests which Google supplies (because of non-const weights)
-TEST_CASE("FullyConnected")
+DOCTEST_TEST_CASE("FullyConnected")
 {
     // this should ideally replicate fully_connected_float.model.cpp
     // but that uses slightly weird dimensions which I don't think we need to support for now
@@ -83,10 +80,10 @@ TEST_CASE("FullyConnected")
     }
 
     // check the result
-    CHECK(outdata[0] == 152);
+    DOCTEST_CHECK(outdata[0] == 152);
 }
 
-TEST_CASE("TestFullyConnected4dInput")
+DOCTEST_TEST_CASE("TestFullyConnected4dInput")
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
@@ -165,17 +162,17 @@ TEST_CASE("TestFullyConnected4dInput")
     }
 
     // check the result
-    CHECK(outdata[0] == 1);
-    CHECK(outdata[1] == 2);
-    CHECK(outdata[2] == 3);
-    CHECK(outdata[3] == 4);
-    CHECK(outdata[4] == 5);
-    CHECK(outdata[5] == 6);
-    CHECK(outdata[6] == 7);
-    CHECK(outdata[7] == 8);
+    DOCTEST_CHECK(outdata[0] == 1);
+    DOCTEST_CHECK(outdata[1] == 2);
+    DOCTEST_CHECK(outdata[2] == 3);
+    DOCTEST_CHECK(outdata[3] == 4);
+    DOCTEST_CHECK(outdata[4] == 5);
+    DOCTEST_CHECK(outdata[5] == 6);
+    DOCTEST_CHECK(outdata[6] == 7);
+    DOCTEST_CHECK(outdata[7] == 8);
 }
 
-TEST_CASE("TestFullyConnected4dInputReshape")
+DOCTEST_TEST_CASE("TestFullyConnected4dInputReshape")
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
@@ -254,17 +251,17 @@ TEST_CASE("TestFullyConnected4dInputReshape")
     }
 
     // check the result
-    CHECK(outdata[0] == 1);
-    CHECK(outdata[1] == 2);
-    CHECK(outdata[2] == 3);
-    CHECK(outdata[3] == 4);
-    CHECK(outdata[4] == 5);
-    CHECK(outdata[5] == 6);
-    CHECK(outdata[6] == 7);
-    CHECK(outdata[7] == 8);
+    DOCTEST_CHECK(outdata[0] == 1);
+    DOCTEST_CHECK(outdata[1] == 2);
+    DOCTEST_CHECK(outdata[2] == 3);
+    DOCTEST_CHECK(outdata[3] == 4);
+    DOCTEST_CHECK(outdata[4] == 5);
+    DOCTEST_CHECK(outdata[5] == 6);
+    DOCTEST_CHECK(outdata[6] == 7);
+    DOCTEST_CHECK(outdata[7] == 8);
 }
 
-TEST_CASE("TestFullyConnectedWeightsAsInput")
+DOCTEST_TEST_CASE("TestFullyConnectedWeightsAsInput")
 {
     auto driver = std::make_unique<ArmnnDriver>(DriverOptions(armnn::Compute::CpuRef));
 
@@ -366,14 +363,14 @@ TEST_CASE("TestFullyConnectedWeightsAsInput")
     }
 
     // check the result
-    CHECK(outdata[0] == 1);
-    CHECK(outdata[1] == 2);
-    CHECK(outdata[2] == 3);
-    CHECK(outdata[3] == 4);
-    CHECK(outdata[4] == 5);
-    CHECK(outdata[5] == 6);
-    CHECK(outdata[6] == 7);
-    CHECK(outdata[7] == 8);
+    DOCTEST_CHECK(outdata[0] == 1);
+    DOCTEST_CHECK(outdata[1] == 2);
+    DOCTEST_CHECK(outdata[2] == 3);
+    DOCTEST_CHECK(outdata[3] == 4);
+    DOCTEST_CHECK(outdata[4] == 5);
+    DOCTEST_CHECK(outdata[5] == 6);
+    DOCTEST_CHECK(outdata[6] == 7);
+    DOCTEST_CHECK(outdata[7] == 8);
 }
 
 }

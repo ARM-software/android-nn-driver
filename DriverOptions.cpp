@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -17,7 +17,6 @@
 #include <cxxopts/cxxopts.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <functional>
 #include <string>
 #include <sstream>

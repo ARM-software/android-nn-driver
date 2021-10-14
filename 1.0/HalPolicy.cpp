@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -579,7 +579,10 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
     }
 
     armnn::IConnectableLayer* layer = data.m_Network->AddSoftmaxLayer(desc);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the SoftmaxLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, model, data);
@@ -638,7 +641,10 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddSpaceToDepthLayer(desc);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the SpaceToDepthLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<hal_1_0::HalPolicy>(operation, 0, *layer, model, data);
@@ -704,9 +710,10 @@ bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& m
     }
 
     armnn::IConnectableLayer* layer = data.m_Network->AddResizeLayer(desc);
-
-    assert(layer != nullptr);
-
+    if (!layer)
+    {
+        return Fail("%s: Could not add the ResizeLayer", __func__);
+    }
     layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
     input.Connect(layer->GetInputSlot(0));
 

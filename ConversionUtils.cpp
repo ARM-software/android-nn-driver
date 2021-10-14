@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -31,7 +31,11 @@ bool LayerInputHandle::IsValid() const
 
 void LayerInputHandle::Connect(armnn::IInputSlot& inputSlot)
 {
-    ARMNN_ASSERT(IsValid());
+    if (!IsValid())
+    {
+        throw armnn::RuntimeException("LayerInputHandle is invalid");
+    }
+
     if (m_OutputSlot)
     {
         m_OutputSlot->Connect(inputSlot);
@@ -40,7 +44,10 @@ void LayerInputHandle::Connect(armnn::IInputSlot& inputSlot)
 
 void LayerInputHandle::Disconnect(armnn::IInputSlot& inputSlot)
 {
-    ARMNN_ASSERT(IsValid());
+    if (!IsValid())
+    {
+        throw armnn::RuntimeException("LayerInputHandle is invalid");
+    }
     if (m_OutputSlot)
     {
         m_OutputSlot->Disconnect(inputSlot);
@@ -116,8 +123,11 @@ armnn::IConnectableLayer* ProcessActivation(const armnn::TensorInfo& tensorInfo,
                                             armnn::IConnectableLayer* prevLayer,
                                             ConversionData& data)
 {
-    ARMNN_ASSERT(prevLayer->GetNumOutputSlots() == 1);
-
+    if (prevLayer->GetNumOutputSlots() != 1)
+    {
+        Fail("%s: Incorrect Number of OutputSlots expected 1 was %i", __func__, prevLayer->GetNumOutputSlots());
+        return nullptr;
+    }
     prevLayer->GetOutputSlot(0).SetTensorInfo(tensorInfo);
 
     armnn::IConnectableLayer* activationLayer = prevLayer;

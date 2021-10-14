@@ -1,17 +1,16 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
 #include "../Dilation.hpp"
 
-#include "../../1.2/HalPolicy.hpp"
+#include <1.2/HalPolicy.hpp>
 
-#include <doctest/doctest.h>
-
-TEST_SUITE("DilationTests")
+DOCTEST_TEST_SUITE("DilationTests")
 {
-TEST_CASE("ConvolutionExplicitPaddingNoDilation")
+
+DOCTEST_TEST_CASE("ConvolutionExplicitPaddingNoDilation")
 {
     DilationTestOptions options;
     options.m_IsDepthwiseConvolution = false;
@@ -21,7 +20,7 @@ TEST_CASE("ConvolutionExplicitPaddingNoDilation")
     DilationTestImpl<hal_1_2::HalPolicy>(options);
 }
 
-TEST_CASE("ConvolutionExplicitPaddingDilation")
+DOCTEST_TEST_CASE("ConvolutionExplicitPaddingDilation")
 {
     DilationTestOptions options;
     options.m_IsDepthwiseConvolution = false;
@@ -31,7 +30,7 @@ TEST_CASE("ConvolutionExplicitPaddingDilation")
     DilationTestImpl<hal_1_2::HalPolicy>(options);
 }
 
-TEST_CASE("ConvolutionImplicitPaddingNoDilation")
+DOCTEST_TEST_CASE("ConvolutionImplicitPaddingNoDilation")
 {
     DilationTestOptions options;
     options.m_IsDepthwiseConvolution = false;
@@ -41,7 +40,7 @@ TEST_CASE("ConvolutionImplicitPaddingNoDilation")
     DilationTestImpl<hal_1_2::HalPolicy>(options);
 }
 
-TEST_CASE("ConvolutionImplicitPaddingDilation")
+DOCTEST_TEST_CASE("ConvolutionImplicitPaddingDilation")
 {
     DilationTestOptions options;
     options.m_IsDepthwiseConvolution = false;
@@ -51,7 +50,7 @@ TEST_CASE("ConvolutionImplicitPaddingDilation")
     DilationTestImpl<hal_1_2::HalPolicy>(options);
 }
 
-TEST_CASE("DepthwiseConvolutionExplicitPaddingNoDilation")
+DOCTEST_TEST_CASE("DepthwiseConvolutionExplicitPaddingNoDilation")
 {
     DilationTestOptions options;
     options.m_IsDepthwiseConvolution = true;
@@ -61,7 +60,7 @@ TEST_CASE("DepthwiseConvolutionExplicitPaddingNoDilation")
     DilationTestImpl<hal_1_2::HalPolicy>(options);
 }
 
-TEST_CASE("DepthwiseConvolutionExplicitPaddingDilation")
+DOCTEST_TEST_CASE("DepthwiseConvolutionExplicitPaddingDilation")
 {
     DilationTestOptions options;
     options.m_IsDepthwiseConvolution = true;
@@ -71,7 +70,7 @@ TEST_CASE("DepthwiseConvolutionExplicitPaddingDilation")
     DilationTestImpl<hal_1_2::HalPolicy>(options);
 }
 
-TEST_CASE("DepthwiseConvolutionImplicitPaddingNoDilation")
+DOCTEST_TEST_CASE("DepthwiseConvolutionImplicitPaddingNoDilation")
 {
     DilationTestOptions options;
     options.m_IsDepthwiseConvolution = true;
@@ -81,7 +80,7 @@ TEST_CASE("DepthwiseConvolutionImplicitPaddingNoDilation")
     DilationTestImpl<hal_1_2::HalPolicy>(options);
 }
 
-TEST_CASE("DepthwiseConvolutionImplicitPaddingDilation")
+DOCTEST_TEST_CASE("DepthwiseConvolutionImplicitPaddingDilation")
 {
     DilationTestOptions options;
     options.m_IsDepthwiseConvolution = true;

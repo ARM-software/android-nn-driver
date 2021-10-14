@@ -9,7 +9,6 @@
 
 #include <armnn/ArmNN.hpp>
 #include <armnn/BackendHelper.hpp>
-#include <armnn/utility/Assert.hpp>
 #include <armnn/utility/IgnoreUnused.hpp>
 #include <armnn/utility/NumericCast.hpp>
 
@@ -277,7 +276,10 @@ armnn::IConnectableLayer& AddReshapeLayer(armnn::INetwork& network,
     reshapeDescriptor.m_TargetShape = reshapeInfo.GetShape();
 
     armnn::IConnectableLayer* reshapeLayer = network.AddReshapeLayer(reshapeDescriptor);
-    ARMNN_ASSERT(reshapeLayer != nullptr);
+    if (!reshapeLayer)
+    {
+        throw armnn::RuntimeException("ReshapeLayer is null");
+    }
 
     // Attach the input layer to the reshape layer
     inputLayer.Connect(reshapeLayer->GetInputSlot(0));
@@ -291,7 +293,10 @@ bool BroadcastTensor(LayerInputHandle& input0,
                      armnn::IConnectableLayer* startLayer,
                      ConversionData& data)
 {
-    ARMNN_ASSERT(startLayer != nullptr);
+    if (!startLayer)
+    {
+        throw armnn::RuntimeException("StartLayer is null");
+    }
 
     const armnn::TensorInfo& inputInfo0 = input0.GetTensorInfo();
     const armnn::TensorInfo& inputInfo1 = input1.GetTensorInfo();
@@ -346,7 +351,11 @@ bool BroadcastTensor(LayerInputHandle& input0,
         return false;
     }
 
-    ARMNN_ASSERT(data.m_Network != nullptr);
+    if (!data.m_Network)
+    {
+        throw armnn::RuntimeException("Network is null");
+    }
+
     armnn::IConnectableLayer& reshapeLayer = AddReshapeLayer(*data.m_Network, smallInputHandle, reshapedInfo);
 
     if (input0IsSmaller)
@@ -506,9 +515,10 @@ armnn::IConnectableLayer& AddTransposeLayer(armnn::INetwork& network, OSlot& inp
 {
     // Add swizzle layer
     armnn::IConnectableLayer* const layer = network.AddTransposeLayer(mappings);
-
-    ARMNN_ASSERT(layer != nullptr);
-
+    if (!layer)
+    {
+        throw armnn::RuntimeException("TransposeLayer is null");
+    }
     // Connect input to swizzle layer
     input.Connect(layer->GetInputSlot(0));
 
@@ -630,7 +640,11 @@ bool CreateConcatPermutationParameters(const unsigned int numberOfDimensions,
                                        std::pair<armnn::PermutationVector, armnn::PermutationVector> & permutationPair)
 {
     bool needPermute = false;
-    ARMNN_ASSERT(numberOfDimensions >= 3);
+
+    if (numberOfDimensions < 3)
+    {
+        return Fail("%s: Invalid numberOfDimensions: %i < 3", __func__, numberOfDimensions);
+    }
 
     // ArmNN uses Compute Library subtensors to perform concatenation
     // This only works when concatenating along dimension 0, 1 or 3 for a 4-D tensor,
@@ -696,13 +710,18 @@ const HalOperand* GetInputOperand(const HalOperation& operation,
     {
         if (failOnIndexOutOfBounds)
         {
-            Fail("%s: invalid input index: %i out of %i", __func__, inputIndex, operation.inputs.size());
+            Fail("%s: Invalid input index: %i out of %i", __func__, inputIndex, operation.inputs.size());
         }
         return nullptr;
     }
 
     // Model should have been validated beforehand
-    ARMNN_ASSERT(operation.inputs[inputIndex] < getMainModel(model).operands.size());
+    if (operation.inputs[inputIndex] >= getMainModel(model).operands.size())
+    {
+        Fail("%s: invalid model index: %i >= %i", __func__, inputIndex, getMainModel(model).operands.size());
+        return nullptr;
+    }
+
     return &getMainModel(model).operands[operation.inputs[inputIndex]];
 }
 
@@ -721,8 +740,11 @@ const HalOperand* GetOutputOperand(const HalOperation& operation,
     }
 
     // Model should have been validated beforehand
-    ARMNN_ASSERT(operation.outputs[outputIndex] < getMainModel(model).operands.size());
-
+    if (operation.inputs[outputIndex] >= getMainModel(model).operands.size())
+    {
+        Fail("%s: invalid model index: %i >= %i", __func__, outputIndex, getMainModel(model).operands.size());
+        return nullptr;
+    }
     return &getMainModel(model).operands[operation.outputs[outputIndex]];
 }
 
@@ -1439,7 +1461,7 @@ bool SetupAndTrackLayerOutputSlot(const HalOperation& operation,
         // Type one dynamic tensors require the previous layer's output shape for inference
         for (unsigned int inputSlotIndex = 0; inputSlotIndex < layer.GetNumInputSlots(); ++inputSlotIndex)
         {
-            if(!layer.GetInputSlot(inputSlotIndex).GetConnection())
+            if (!layer.GetInputSlot(inputSlotIndex).GetConnection())
             {
                 return false;
             }
@@ -1596,7 +1618,10 @@ bool ConvertToActivation(const HalOperation& operation,
     }
 
     armnn::IConnectableLayer* layer = data.m_Network->AddActivationLayer(activationDesc);
-    ARMNN_ASSERT(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the ActivationLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -1978,8 +2003,10 @@ bool ConvertArgMinMax(const HalOperation& operation,
     }
 
     armnn::IConnectableLayer* layer = data.m_Network->AddArgMinMaxLayer(descriptor);
-    assert(layer != nullptr);
-
+    if (!layer)
+    {
+        return Fail("%s: Could not add the ArgMinMaxLayer", __func__);
+    }
     input0.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -2110,7 +2137,11 @@ bool ConvertConcatenation(const HalOperation& operation, const HalModel& model, 
         }
     }
 
-    ARMNN_ASSERT(inputShapes.size() == inputHandles.size());
+    if (inputShapes.size() != inputHandles.size())
+    {
+        return Fail("%s: invalid model input shapes size doesn't match input handles sise: %i != %i", __func__,
+                    inputShapes.size(), inputHandles.size());
+    }
 
     if (inputsHaveBeenReshaped)
     {
@@ -2217,11 +2248,19 @@ bool ConvertConcatenation(const HalOperation& operation, const HalModel& model, 
     }
 
     armnn::IConnectableLayer* layer = data.m_Network->AddConcatLayer(concatDescriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the ConcatLayer", __func__);
+    }
     layer->GetOutputSlot(0).SetTensorInfo(outputInfo);
     // Connect inputs to the layer
     const int numInputSlots = layer->GetNumInputSlots();
-    assert(static_cast<std::size_t>(numInputSlots) == inputHandles.size());
+
+    if (static_cast<std::size_t>(numInputSlots) != inputHandles.size())
+    {
+        return Fail("%s: invalid model input slots size doesn't match input handles sise: %i != %i", __func__,
+                    static_cast<std::size_t>(numInputSlots), inputHandles.size());
+    }
     for (int i = 0; i < numInputSlots; ++i)
     {
         // connect the input directly to the merge (concat) layer
@@ -2265,7 +2304,10 @@ bool ConvertConcatenation(const HalOperation& operation, const HalModel& model, 
         if (isDynamicTensor)
         {
             // Infer the output shapes of concat if outputs are type 1 dynamic
-            ARMNN_ASSERT(layer->GetOutputSlot(0).IsTensorInfoSet());
+            if (!layer->GetOutputSlot(0).IsTensorInfoSet())
+            {
+                return Fail("%s: TensorInfo is not set", __func__);
+            }
             if (!ValidateConcatOutputShape(inputShapes,
                                            layer->GetOutputSlot(0).GetTensorInfo().GetShape(),
                                            concatDim))
@@ -2520,7 +2562,10 @@ bool ConvertDepthToSpace(const HalOperation& operation, const HalModel& model, C
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddDepthToSpaceLayer(descriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the DepthToSpaceLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -2727,7 +2772,10 @@ bool ConvertDequantize(const HalOperation& operation, const HalModel& model, Con
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddDequantizeLayer();
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the DequantizeLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -2850,7 +2898,10 @@ bool ConvertFloor(const HalOperation& operation, const HalModel& model, Conversi
     }
 
     armnn::IConnectableLayer* layer = data.m_Network->AddFloorLayer();
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the FloorLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -2935,7 +2986,11 @@ DequantizeResult DequantizeIfRequired(size_t operand_index,
         }
 
         const HalOperand* operand = GetInputOperand<HalPolicy>(operationIt, 0, model);
-        ARMNN_ASSERT(operand);
+
+        if (!operand)
+        {
+            return { nullptr, 0, armnn::TensorInfo(), DequantizeStatus::INVALID_OPERAND };
+        }
 
         if (!IsQSymm8(*operand))
         {
@@ -2959,7 +3014,11 @@ DequantizeResult DequantizeIfRequired(size_t operand_index,
         for (size_t i = 0; i < dequantizedBufferLength; ++i)
         {
             float* dstPtr = dequantizedBuffer.get();
-            ARMNN_ASSERT(dstPtr);
+
+            if (!dstPtr)
+            {
+                return { nullptr, 0, armnn::TensorInfo(), DequantizeStatus::INVALID_OPERAND };
+            }
             *dstPtr++ = quantizedBuffer[i] * quantizationScale;
         }
 
@@ -3135,7 +3194,10 @@ bool ConvertFullyConnected(const HalOperation& operation, const HalModel& model,
         reshapeDescriptor.m_TargetShape = reshapedInfo.GetShape();
 
         armnn::IConnectableLayer* reshapeLayer = data.m_Network->AddReshapeLayer(reshapeDescriptor);
-        assert(reshapeLayer != nullptr);
+        if (!reshapeLayer)
+        {
+            return Fail("%s:  could not add the reshapeLayer", __func__);
+        }
         input.Connect(reshapeLayer->GetInputSlot(0));
         reshapeLayer->GetOutputSlot(0).SetTensorInfo(reshapedInfo);
         reshapeLayer->GetOutputSlot(0).Connect(startLayer->GetInputSlot(0));
@@ -3215,7 +3277,10 @@ bool ConvertL2Normalization(const HalOperation& operation, const HalModel& model
     }
 
     armnn::IConnectableLayer* layer = data.m_Network->AddL2NormalizationLayer(desc);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the L2NormalizationLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -3300,9 +3365,11 @@ bool ConvertLocalResponseNormalization(const HalOperation& operation,
         return false;
     }
 
-
     armnn::IConnectableLayer* layer = data.m_Network->AddNormalizationLayer(descriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the NormalizationLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -3399,7 +3466,10 @@ bool ConvertMean(const HalOperation& operation, const HalModel& model, Conversio
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddMeanLayer(descriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the MeanLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -3542,7 +3612,10 @@ bool ConvertPad(HalOperation& operation, const HalModel& model, ConversionData& 
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddPadLayer(descriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the PadLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -3627,7 +3700,10 @@ bool ConvertReshape(const HalOperation& operation, const HalModel& model, Conver
     }
 
     armnn::IConnectableLayer* layer = data.m_Network->AddReshapeLayer(reshapeDescriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the ReshapeLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -3783,7 +3859,10 @@ bool ConvertSqueeze(const HalOperation& operation, const HalModel& model, Conver
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddReshapeLayer(reshapeDesc);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the ReshapeLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data);
@@ -3918,7 +3997,10 @@ bool ConvertStridedSlice(const HalOperation& operation, const HalModel& model, C
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddStridedSliceLayer(descriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the StridedSliceLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -4002,7 +4084,10 @@ bool ConvertTranspose(const HalOperation& operation, const HalModel& model, Conv
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddTransposeLayer(transposeDesc);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the TransposeLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -4097,7 +4182,10 @@ bool ConvertBatchToSpaceNd(const HalOperation& operation,
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddBatchToSpaceNdLayer(batchToSpaceNdDesc);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the BatchToSpaceNdLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -4212,7 +4300,10 @@ bool ConvertSpaceToBatchNd(const HalOperation& operation, const HalModel& model,
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddSpaceToBatchNdLayer(descriptor);
-    assert(layer != nullptr);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the BatchToSpaceLayer", __func__);
+    }
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
