@@ -134,6 +134,7 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(
     armnn::IOptimizedNetworkPtr optNet(nullptr, nullptr);
     armnn::OptimizerOptions OptOptions;
     OptOptions.m_ReduceFp32ToFp16 = float32ToFloat16;
+    OptOptions.m_ProfilingEnabled = options.IsGpuProfilingEnabled();
 
     armnn::BackendOptions gpuAcc("GpuAcc",
     {
