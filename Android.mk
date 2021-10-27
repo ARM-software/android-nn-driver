@@ -69,6 +69,9 @@ endif
 
 # Configure these paths if you move the source or Khronos headers
 ARMNN_HEADER_PATH := $(LOCAL_PATH)/armnn/include
+ARMNN_BACKEND_MAKEFILE_LOCAL_PATHS := $(wildcard $(LOCAL_PATH)/armnn/src/backends/*/backend.mk)
+ARMNN_BACKEND_MAKEFILE_PATHS := $(subst $(LOCAL_PATH),,$(ARMNN_BACKEND_MAKEFILE_LOCAL_PATHS))
+ARMNN_BACKEND_MAKEFILE_DIRS := $(subst /backend.mk,,$(ARMNN_BACKEND_MAKEFILE_PATHS))
 ARMNN_THIRD_PARTY_PATH := $(LOCAL_PATH)/armnn/third-party
 ARMNN_UTILS_HEADER_PATH := $(LOCAL_PATH)/armnn/src/armnnUtils
 ARMNN_THIRD_PARTY_PATH := $(LOCAL_PATH)/armnn/third-party
@@ -109,6 +112,24 @@ endif
 
 # Variable to control retire rate of priority queue
 RETIRE_RATE := 3
+
+# Placeholder to hold all backend link files.
+ARMNN_BACKEND_STATIC_LIBRARIES :=
+ARMNN_BACKEND_SHARED_LIBRARIES :=
+
+# Iterate through the Arm NN backends and specific include paths, include them into the
+# current makefile and append the linkfiles held by
+# the optional BACKEND_STATIC_LIBRARIES and optional BACKEND_SHARED_LIBRARIES variable
+# (included from the given makefile) to
+# the ARMNN_BACKEND_STATIC_LIBRARIES and ARMNN_BACKEND_SHARED_LIBRARIES lists
+
+$(foreach mkPath,$(ARMNN_BACKEND_MAKEFILE_DIRS),\
+        $(eval include $(LOCAL_PATH)/$(mkPath)/backend.mk)\
+        $(eval ARMNN_BACKEND_STATIC_LIBRARIES += $(BACKEND_STATIC_LIBRARIES)))
+
+$(foreach mkPath,$(ARMNN_BACKEND_MAKEFILE_DIRS),\
+        $(eval include $(LOCAL_PATH)/$(mkPath)/backend.mk)\
+        $(eval ARMNN_BACKEND_SHARED_LIBRARIES += $(BACKEND_SHARED_LIBRARIES)))
 
 #######################
 # libarmnn-driver@1.0 #
@@ -670,7 +691,8 @@ LOCAL_SRC_FILES := \
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
         libflatbuffers-framework \
-        arm_compute_library
+        arm_compute_library \
+        $(ARMNN_BACKEND_STATIC_LIBRARIES)
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
         libarmnn-driver@1.0
@@ -687,7 +709,8 @@ LOCAL_SHARED_LIBRARIES := \
         libutils \
         android.hardware.neuralnetworks@1.0 \
         android.hidl.allocator@1.0 \
-        android.hidl.memory@1.0
+        android.hidl.memory@1.0 \
+        $(ARMNN_BACKEND_SHARED_LIBRARIES)
 
 ifeq ($(P_OR_LATER),1)
 # Required to build the 1.0 version of the NN Driver on Android P and later versions,
@@ -772,7 +795,8 @@ LOCAL_SRC_FILES := \
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
         libflatbuffers-framework \
-        arm_compute_library
+        arm_compute_library \
+        $(ARMNN_BACKEND_STATIC_LIBRARIES)
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
         libarmnn-driver@1.1
@@ -790,7 +814,8 @@ LOCAL_SHARED_LIBRARIES := \
         android.hardware.neuralnetworks@1.0 \
         android.hardware.neuralnetworks@1.1 \
         android.hidl.allocator@1.0 \
-        android.hidl.memory@1.0
+        android.hidl.memory@1.0 \
+        $(ARMNN_BACKEND_SHARED_LIBRARIES)
 
 ifeq ($(Q_OR_LATER),1)
 LOCAL_SHARED_LIBRARIES+= \
@@ -865,7 +890,8 @@ LOCAL_SRC_FILES := \
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
         libflatbuffers-framework \
-        arm_compute_library
+        arm_compute_library \
+        $(ARMNN_BACKEND_STATIC_LIBRARIES)
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
         libarmnn-driver@1.2
@@ -888,7 +914,8 @@ LOCAL_SHARED_LIBRARIES := \
         android.hidl.memory@1.0 \
         android.hardware.neuralnetworks@1.0 \
         android.hardware.neuralnetworks@1.1 \
-        android.hardware.neuralnetworks@1.2
+        android.hardware.neuralnetworks@1.2 \
+        $(ARMNN_BACKEND_SHARED_LIBRARIES)
 
 ifeq ($(R_OR_LATER),1)
 LOCAL_SHARED_LIBRARIES+= \
@@ -953,7 +980,8 @@ LOCAL_SRC_FILES := \
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
         libflatbuffers-framework \
-        arm_compute_library
+        arm_compute_library \
+        $(ARMNN_BACKEND_STATIC_LIBRARIES)
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
         libarmnn-driver@1.3
@@ -978,7 +1006,8 @@ LOCAL_SHARED_LIBRARIES := \
         android.hardware.neuralnetworks@1.0 \
         android.hardware.neuralnetworks@1.1 \
         android.hardware.neuralnetworks@1.2 \
-        android.hardware.neuralnetworks@1.3
+        android.hardware.neuralnetworks@1.3 \
+        $(ARMNN_BACKEND_SHARED_LIBRARIES)
 
 ifeq ($(ARMNN_INCLUDE_LIBOPENCL),1)
 LOCAL_SHARED_LIBRARIES+= \
