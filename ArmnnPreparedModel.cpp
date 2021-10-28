@@ -216,7 +216,10 @@ Return<V1_0::ErrorStatus> ArmnnPreparedModel<HalVersion>::execute(
         {
             const auto& inputArg = request.inputs[i];
 
-            const armnn::TensorInfo inputTensorInfo = m_Runtime->GetInputTensorInfo(m_NetworkId, i);
+            armnn::TensorInfo inputTensorInfo = m_Runtime->GetInputTensorInfo(m_NetworkId, i);
+            // pInputTensors (of type InputTensors) is composed of a vector of ConstTensors.
+            // Therefore, set all TensorInfo isConstant parameters of input Tensors to true.
+            inputTensorInfo.SetConstant();
             const armnn::Tensor inputTensor = GetTensorForRequestArgument(inputArg, inputTensorInfo, *pMemPools);
             if (inputTensor.GetMemoryArea() == nullptr)
             {
@@ -351,7 +354,11 @@ bool ArmnnPreparedModel<HalVersion>::ExecuteWithDummyInputs()
     armnn::InputTensors inputTensors;
     for (unsigned int i = 0; i < getMainModel(m_Model).inputIndexes.size(); i++)
     {
-        const armnn::TensorInfo inputTensorInfo = m_Runtime->GetInputTensorInfo(m_NetworkId, i);
+        armnn::TensorInfo inputTensorInfo = m_Runtime->GetInputTensorInfo(m_NetworkId, i);
+        // pInputTensors (of type InputTensors) is composed of a vector of ConstTensors.
+        // Therefore, set all TensorInfo isConstant parameters of input Tensors to true.
+        inputTensorInfo.SetConstant();
+
         storage.emplace_back(inputTensorInfo.GetNumBytes());
         const armnn::ConstTensor inputTensor(inputTensorInfo, storage.back().data());
 
