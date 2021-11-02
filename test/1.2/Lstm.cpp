@@ -7,6 +7,7 @@
 
 using namespace armnn_driver;
 
+#if defined(ARMNNREF_ENABLED)
 DOCTEST_TEST_SUITE("LstmTests_1.2_CpuRef")
 {
 
@@ -36,6 +37,7 @@ DOCTEST_TEST_SUITE("LstmTests_1.2_CpuRef")
     }
 
 }
+#endif
 
 #if defined(ARMCOMPUTECL_ENABLED)
 DOCTEST_TEST_SUITE("LstmTests_1.2_GpuAcc")
