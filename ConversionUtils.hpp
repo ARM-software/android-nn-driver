@@ -1276,7 +1276,6 @@ LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
                     Fail("%s: invalid operand tensor", __func__);
                     return LayerInputHandle();
                 }
-                break;
             }
             default:
             {
@@ -2139,7 +2138,7 @@ bool ConvertConcatenation(const HalOperation& operation, const HalModel& model, 
 
     if (inputShapes.size() != inputHandles.size())
     {
-        return Fail("%s: invalid model input shapes size doesn't match input handles sise: %i != %i", __func__,
+        return Fail("%s: invalid model input shapes size doesn't match input handles size: %i != %i", __func__,
                     inputShapes.size(), inputHandles.size());
     }
 
@@ -2258,13 +2257,13 @@ bool ConvertConcatenation(const HalOperation& operation, const HalModel& model, 
 
     if (static_cast<std::size_t>(numInputSlots) != inputHandles.size())
     {
-        return Fail("%s: invalid model input slots size doesn't match input handles sise: %i != %i", __func__,
+        return Fail("%s: invalid model input slots size doesn't match input handles size: %i != %i", __func__,
                     static_cast<std::size_t>(numInputSlots), inputHandles.size());
     }
     for (int i = 0; i < numInputSlots; ++i)
     {
         // connect the input directly to the merge (concat) layer
-        inputHandles[static_cast<unsigned int>(i)].Connect(layer->GetInputSlot(i));
+        inputHandles[static_cast<unsigned int>(i)].Connect(layer->GetInputSlot(static_cast<unsigned int>(i)));
     }
 
     // Transpose the output shape
@@ -3019,7 +3018,7 @@ DequantizeResult DequantizeIfRequired(size_t operand_index,
             {
                 return { nullptr, 0, armnn::TensorInfo(), DequantizeStatus::INVALID_OPERAND };
             }
-            *dstPtr++ = quantizedBuffer[i] * quantizationScale;
+            *dstPtr = quantizedBuffer[i] * quantizationScale;
         }
 
         // Construct tensor info for dequantized ConstTensor
@@ -3812,13 +3811,13 @@ bool ConvertSqueeze(const HalOperation& operation, const HalModel& model, Conver
     // if the operand index is out of bounds.
     const HalOperand* axisOperand = GetInputOperand<HalPolicy>(operation, 1, model, false);
 
-    const uint32_t dimensionSequence[] = { 0, 1, 2, 3 };
-
     std::vector<int32_t> axis;
     if (!axisOperand)
     {
-        axis.assign(dimensionSequence,
-                    dimensionSequence + rank);
+        for (unsigned int i = 0; i < rank; ++i)
+        {
+            axis.push_back(static_cast<unsigned int>(i));
+        }
     }
     else if (!GetTensorInt32Values<HalPolicy>(*axisOperand, axis, model, data))
     {
@@ -4260,7 +4259,8 @@ bool ConvertSpaceToBatchNd(const HalOperation& operation, const HalModel& model,
             return Fail("%s: Operation has invalid paddings operand, invalid padding values.", __func__);
         }
 
-        paddingList.emplace_back((unsigned int) paddingBeforeInput, (unsigned int) paddingAfterInput);
+        paddingList.emplace_back(static_cast<unsigned int>(paddingBeforeInput),
+                                 static_cast<unsigned int>(paddingAfterInput));
     }
 
     armnn::SpaceToBatchNdDescriptor descriptor;

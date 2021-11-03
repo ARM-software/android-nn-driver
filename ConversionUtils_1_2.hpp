@@ -2396,7 +2396,7 @@ bool ConvertSpaceToDepth(const HalOperation& operation, const HalModel& model, C
     IConnectableLayer* const layer = data.m_Network->AddSpaceToDepthLayer(desc);
     if (!layer)
     {
-        return Fail("%s: Could not add the SpaceToDephLayer", __func__);
+        return Fail("%s: Could not add the SpaceToDepthLayer", __func__);
     }
     input.Connect(layer->GetInputSlot(0));
 
