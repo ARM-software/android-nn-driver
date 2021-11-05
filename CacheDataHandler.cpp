@@ -18,19 +18,22 @@ CacheDataHandler& CacheDataHandlerInstance()
 
 void CacheDataHandler::Register(const HidlToken token, const size_t hashValue, const size_t cacheSize)
 {
-    if (m_CacheDataMap.find(hashValue) != m_CacheDataMap.end())
+    if (m_CacheDataMap.find(hashValue) != m_CacheDataMap.end()
+                        && m_CacheDataMap.at(hashValue).GetToken() == token
+                        && m_CacheDataMap.at(hashValue).GetCacheSize() == cacheSize)
     {
-        ALOGV("CacheHandler::Register() Token has been already registered.");
+        ALOGV("CacheHandler::Register() Hash value has already registered.");
         return;
     }
     CacheHandle cacheHandle(token, cacheSize);
     m_CacheDataMap.insert({hashValue, cacheHandle});
 }
 
-bool CacheDataHandler::Validate(const HidlToken token, const size_t hashValue) const
+bool CacheDataHandler::Validate(const HidlToken token, const size_t hashValue, const size_t cacheSize) const
 {
     return (m_CacheDataMap.find(hashValue) != m_CacheDataMap.end()
-                             && m_CacheDataMap.at(hashValue).GetToken() == token);
+                             && m_CacheDataMap.at(hashValue).GetToken() == token
+                             && m_CacheDataMap.at(hashValue).GetCacheSize() == cacheSize);
 }
 
 size_t CacheDataHandler::Hash(std::vector<uint8_t>& cacheData)
@@ -38,7 +41,7 @@ size_t CacheDataHandler::Hash(std::vector<uint8_t>& cacheData)
     std::size_t hash = cacheData.size();
     for (auto& i : cacheData)
     {
-        hash ^= std::hash<unsigned int>{}(i);
+        hash = ((hash << 5) - hash) + i;
     }
     return hash;
 }

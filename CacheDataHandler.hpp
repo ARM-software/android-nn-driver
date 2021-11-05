@@ -48,7 +48,7 @@ public:
 
     void Register(const HidlToken token, const size_t hashValue, const size_t cacheSize);
 
-    bool Validate(const HidlToken token, const size_t hashValue) const;
+    bool Validate(const HidlToken token, const size_t hashValue, const size_t cacheSize) const;
 
     size_t Hash(std::vector<uint8_t>& cacheData);
 
