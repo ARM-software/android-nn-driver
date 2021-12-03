@@ -1,5 +1,5 @@
 //
-// Copyright © 2017,2022 Arm Ltd and Contributors. All rights reserved.
+// Copyright © 2017-2023 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -20,7 +20,7 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
     switch (operation.type)
     {
         case V1_0::OperationType::ADD:
-            return ConvertAdd(operation, model, data);
+            return ConvertElementwiseBinary(operation, model, data, armnn::BinaryOperation::Add);
         case V1_0::OperationType::AVERAGE_POOL_2D:
             return ConvertAveragePool2d(operation, model, data);
         case V1_0::OperationType::CONCATENATION:
@@ -50,7 +50,7 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
         case V1_0::OperationType::MAX_POOL_2D:
             return ConvertMaxPool2d(operation, model, data);
         case V1_0::OperationType::MUL:
-            return ConvertMul(operation, model, data);
+            return ConvertElementwiseBinary(operation, model, data, armnn::BinaryOperation::Mul);
         case V1_0::OperationType::RELU:
             return ConvertReLu(operation, model, data);
         case V1_0::OperationType::RELU1:
@@ -71,12 +71,6 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return Fail("%s: Operation type %s not supported in ArmnnDriver",
                         __func__, toString(operation.type).c_str());
     }
-}
-
-bool HalPolicy::ConvertAdd(const Operation& operation, const Model& model, ConversionData& data)
-{
-    ALOGV("hal_1_0::HalPolicy::ConvertAdd()");
-    return ::ConvertAdd<hal_1_0::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertAveragePool2d(const Operation& operation, const Model& model, ConversionData& data)
@@ -113,6 +107,15 @@ bool HalPolicy::ConvertDequantize(const Operation& operation, const Model& model
 {
     ALOGV("hal_1_0::HalPolicy::ConvertDequantize()");
     return ::ConvertDequantize<hal_1_0::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertElementwiseBinary(const Operation& operation,
+                                         const Model& model,
+                                         ConversionData& data,
+                                         armnn::BinaryOperation binaryOperation)
+{
+    ALOGV("hal_1_0::HalPolicy::ConvertElementwiseBinary()");
+    return ::ConvertElementwiseBinary<hal_1_0::HalPolicy>(operation, model, data, binaryOperation);
 }
 
 bool HalPolicy::ConvertFloor(const Operation& operation, const Model& model, ConversionData& data)
@@ -514,12 +517,6 @@ bool HalPolicy::ConvertMaxPool2d(const Operation& operation, const Model& model,
 {
     ALOGV("hal_1_0::HalPolicy::ConvertMaxPool2d()");
     return ConvertPooling2d<hal_1_0::HalPolicy>(operation, __func__, armnn::PoolingAlgorithm::Max, model, data);
-}
-
-bool HalPolicy::ConvertMul(const Operation& operation, const Model& model, ConversionData& data)
-{
-    ALOGV("hal_1_0::HalPolicy::ConvertMul()");
-    return ::ConvertMul<hal_1_0::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertReLu(const Operation& operation, const Model& model, ConversionData& data)

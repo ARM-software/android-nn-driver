@@ -1,5 +1,5 @@
 //
-// Copyright © 2017,2022 Arm Ltd and Contributors. All rights reserved.
+// Copyright © 2017-2023 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -1884,82 +1884,6 @@ bool ConvertPooling2d(const HalOperation& operation,
 template<typename HalPolicy,
          typename HalOperation = typename HalPolicy::Operation,
          typename HalModel     = typename HalPolicy::Model>
-bool ConvertAdd(const HalOperation& operation, const HalModel& model, ConversionData& data)
-{
-    using HalOperand = typename HalPolicy::Operand;
-
-    LayerInputHandle input0 = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
-    LayerInputHandle input1 = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
-
-    if (!input0.IsValid() || !input1.IsValid())
-    {
-        return Fail("%s: Operation has invalid inputs", __func__);
-    }
-
-    // The FuseActivation parameter is always the input index 2
-    // and it should be optional
-    ActivationFn activationFunction;
-    if (!GetOptionalInputActivation<HalPolicy>(operation, 2, activationFunction, model, data))
-    {
-        return Fail("%s: Operation has invalid inputs", __func__);
-    }
-
-    const HalOperand* outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
-    if (!outputOperand)
-    {
-        return false;
-    }
-
-    const armnn::TensorInfo& inputInfo0 = input0.GetTensorInfo();
-    const armnn::TensorInfo& inputInfo1 = input1.GetTensorInfo();
-
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
-
-    bool isSupported = false;
-    armnn::BackendId setBackend;
-    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
-    {
-        FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                                   IsAdditionSupported,
-                                   data.m_Backends,
-                                   isSupported,
-                                   setBackend,
-                                   inputInfo0,
-                                   inputInfo1,
-                                   outputInfo);
-    };
-
-    if(!IsDynamicTensor(outputInfo))
-    {
-        validateFunc(outputInfo, isSupported);
-    }
-    else
-    {
-        isSupported = AreDynamicTensorsSupported();
-    }
-
-    if (!isSupported)
-    {
-        return false;
-    }
-
-    armnn::IConnectableLayer* const startLayer = data.m_Network->AddAdditionLayer();
-    startLayer->SetBackendId(setBackend);
-
-    bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
-    if (!isReshapeSupported)
-    {
-        return false;
-    }
-
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
-                                                   data, nullptr, validateFunc, activationFunction);
-
-}
-
-template<typename HalPolicy,
-         typename HalOperation = typename HalPolicy::Operation,
-         typename HalModel     = typename HalPolicy::Model>
 bool ConvertArgMinMax(const HalOperation& operation,
                       const HalModel& model,
                       ConversionData& data,
@@ -2859,9 +2783,15 @@ bool ConvertDequantize(const HalOperation& operation, const HalModel& model, Con
 template<typename HalPolicy,
          typename HalOperation = typename HalPolicy::Operation,
          typename HalModel     = typename HalPolicy::Model>
-bool ConvertDiv(const HalOperation& operation, const HalModel& model, ConversionData& data)
+bool ConvertElementwiseBinary(const HalOperation& operation,
+                              const HalModel& model,
+                              ConversionData& data,
+                              armnn::BinaryOperation binaryOperation)
 {
     using HalOperand = typename HalPolicy::Operand;
+
+    ALOGV("HalPolicy::ConvertElementwiseBinary()");
+    ALOGV("binaryOperation = %s", GetBinaryOperationAsCString(binaryOperation));
 
     LayerInputHandle input0 = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
     LayerInputHandle input1 = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
@@ -2871,37 +2801,38 @@ bool ConvertDiv(const HalOperation& operation, const HalModel& model, Conversion
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    // The FuseActivation parameter is always the input index 2
-    // and it should be optional
+    // The FuseActivation parameter is always the input index 2, and it should be optional
     ActivationFn activationFunction;
     if (!GetOptionalInputActivation<HalPolicy>(operation, 2, activationFunction, model, data))
     {
-        return Fail("%s: Operation has invalid inputs", __func__);
+        return Fail("%s: Operation has invalid optional input: activation function", __func__);
     }
 
     const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
     if (!output)
     {
-        return Fail("%s: Could not read output 0", __func__);
+        return Fail("%s: Could not read output", __func__);
     }
 
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
+    armnn::ElementwiseBinaryDescriptor descriptor(binaryOperation);
+
     bool isSupported = false;
-    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                                   IsDivisionSupported,
+                                   IsElementwiseBinarySupported,
                                    data.m_Backends,
                                    isSupported,
-                                   setBackend,
+                                   armnn::BackendId(),
                                    input0.GetTensorInfo(),
                                    input1.GetTensorInfo(),
-                                   outputInfo);
+                                   outputInfo,
+                                   binaryOperation);
     };
 
-    if(!IsDynamicTensor(outputInfo))
+    if (!IsDynamicTensor(outputInfo))
     {
         validateFunc(outputInfo, isSupported);
     }
@@ -2915,19 +2846,21 @@ bool ConvertDiv(const HalOperation& operation, const HalModel& model, Conversion
         return false;
     }
 
-    armnn::IConnectableLayer* const startLayer = data.m_Network->AddDivisionLayer();
-    startLayer->SetBackendId(setBackend);
-
-    bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
+    armnn::IConnectableLayer* layer = data.m_Network->AddElementwiseBinaryLayer(descriptor);
+    if (!layer)
+    {
+        return Fail("%s: Could not add the ElementwiseBinaryLayer", __func__);
+    }
+    bool isReshapeSupported = BroadcastTensor(input0, input1, layer, data);
     if (!isReshapeSupported)
     {
         return false;
     }
 
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
-                                                   data, nullptr, validateFunc, activationFunction);
-
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc,
+                                                   activationFunction);
 }
+
 
 template<typename HalPolicy,
          typename HalOperation = typename HalPolicy::Operation,
@@ -3571,79 +3504,6 @@ bool ConvertMean(const HalOperation& operation, const HalModel& model, Conversio
 template<typename HalPolicy,
          typename HalOperation = typename HalPolicy::Operation,
          typename HalModel     = typename HalPolicy::Model>
-bool ConvertMul(const HalOperation& operation, const HalModel& model, ConversionData& data)
-{
-    using HalOperand = typename HalPolicy::Operand;
-
-    LayerInputHandle input0 = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
-    LayerInputHandle input1 = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
-
-    if (!input0.IsValid() || !input1.IsValid())
-    {
-        return Fail("%s: Operation has invalid inputs", __func__);
-    }
-
-    // The FuseActivation parameter is always the input index 2
-    // and it should be optional
-    ActivationFn activationFunction;
-    if (!GetOptionalInputActivation<HalPolicy>(operation, 2, activationFunction, model, data))
-    {
-        return Fail("%s: Operation has invalid inputs", __func__);
-    }
-
-    const HalOperand* outputOperand = GetOutputOperand<HalPolicy>(operation, 0, model);
-
-    if (outputOperand == nullptr)
-    {
-        return false;
-    }
-
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
-
-    bool isSupported = false;
-    armnn::BackendId setBackend;
-    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
-    {
-        FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                                   IsMultiplicationSupported,
-                                   data.m_Backends,
-                                   isSupported,
-                                   setBackend,
-                                   input0.GetTensorInfo(),
-                                   input1.GetTensorInfo(),
-                                   outputInfo);
-    };
-
-    if(!IsDynamicTensor(outputInfo))
-    {
-        validateFunc(outputInfo, isSupported);
-    }
-    else
-    {
-        isSupported = AreDynamicTensorsSupported();
-    }
-
-    if (!isSupported)
-    {
-        return false;
-    }
-
-    armnn::IConnectableLayer* const startLayer = data.m_Network->AddMultiplicationLayer();
-    startLayer->SetBackendId(setBackend);
-
-    bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
-    if (!isReshapeSupported)
-    {
-        return false;
-    }
-
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
-                                                   data, nullptr, validateFunc, activationFunction);
-}
-
-template<typename HalPolicy,
-         typename HalOperation = typename HalPolicy::Operation,
-         typename HalModel     = typename HalPolicy::Model>
 bool ConvertPad(HalOperation& operation, const HalModel& model, ConversionData& data)
 {
     using HalOperand = typename HalPolicy::Operand;
@@ -3809,77 +3669,6 @@ bool ConvertReshape(const HalOperation& operation, const HalModel& model, Conver
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
-}
-
-template<typename HalPolicy,
-         typename HalOperation = typename HalPolicy::Operation,
-         typename HalModel     = typename HalPolicy::Model>
-bool ConvertSub(const HalOperation& operation, const HalModel& model, ConversionData& data)
-{
-    using HalOperand = typename HalPolicy::Operand;
-
-    LayerInputHandle input0 = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
-    LayerInputHandle input1 = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
-
-    if (!input0.IsValid() || !input1.IsValid())
-    {
-        return Fail("%s: Operation has invalid inputs", __func__);
-    }
-
-    // The FuseActivation parameter is always the input index 2
-    // and it should be optional
-    ActivationFn activationFunction;
-    if (!GetOptionalInputActivation<HalPolicy>(operation, 2, activationFunction, model, data))
-    {
-        return Fail("%s: Operation has invalid inputs", __func__);
-    }
-
-    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
-    if (!output)
-    {
-        return Fail("%s: Could not read output 0", __func__);
-    }
-
-    const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
-
-    bool isSupported = false;
-    armnn::BackendId setBackend;
-    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
-    {
-        FORWARD_LAYER_SUPPORT_FUNC(__func__,
-                                   IsSubtractionSupported,
-                                   data.m_Backends,
-                                   isSupported,
-                                   setBackend,
-                                   input0.GetTensorInfo(),
-                                   input1.GetTensorInfo(),
-                                   outputInfo);
-    };
-
-    if(IsDynamicTensor(outputInfo))
-    {
-        isSupported = AreDynamicTensorsSupported();
-    }
-    else
-    {
-        validateFunc(outputInfo, isSupported);
-    }
-
-    if (!isSupported)
-    {
-        return false;
-    }
-
-    armnn::IConnectableLayer* const startLayer = data.m_Network->AddSubtractionLayer();
-    startLayer->SetBackendId(setBackend);
-
-    bool isReshapeSupported = BroadcastTensor(input0, input1, startLayer, data);
-    if (!isReshapeSupported)
-    {
-        return false;
-    }
-    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
-                                                   data, nullptr, validateFunc, activationFunction);
 }
 
 template<typename HalPolicy,
