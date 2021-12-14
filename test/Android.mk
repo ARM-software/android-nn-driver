@@ -80,7 +80,8 @@ LOCAL_SRC_FILES := \
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
         libflatbuffers-framework \
-        arm_compute_library
+        arm_compute_library \
+        $(ARMNN_BACKEND_STATIC_LIBRARIES)
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
         libarmnn-driver@1.0
@@ -195,7 +196,8 @@ LOCAL_SRC_FILES := \
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
         libflatbuffers-framework \
-        arm_compute_library
+        arm_compute_library \
+        $(ARMNN_BACKEND_STATIC_LIBRARIES)
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
         libarmnn-driver@1.1
@@ -305,7 +307,8 @@ LOCAL_SRC_FILES := \
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
         libflatbuffers-framework \
-        arm_compute_library
+        arm_compute_library \
+        $(ARMNN_BACKEND_STATIC_LIBRARIES)
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
         libarmnn-driver@1.2
@@ -412,7 +415,8 @@ LOCAL_SRC_FILES := \
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
         libflatbuffers-framework \
-        arm_compute_library
+        arm_compute_library \
+        $(ARMNN_BACKEND_STATIC_LIBRARIES)
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
         libarmnn-driver@1.3
