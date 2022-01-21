@@ -159,6 +159,10 @@ private:
     static bool ConvertTranspose(const Operation& operation, const Model& model, ConversionData& data);
 
     static bool ConvertTransposeConv2d(const Operation& operation, const Model& model, ConversionData& data);
+
+    static bool ConvertUnidirectionalSequenceLstm(const Operation& operation,
+                                                  const Model& model,
+                                                  ConversionData& data);
 };
 
 } // namespace hal_1_2

@@ -87,6 +87,7 @@ SUB                          (FLOAT32, FLOAT16, INT32, QUANT8_ASYMM, QUANT8_ASYM
 TANH                         (FLOAT32, FLOAT16, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
 TRANSPOSE                    (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
 TRANSPOSE_CONV_2D            (FLOAT32, QUANT8_ASYMM, QUANT8_ASYMM_SIGNED)
+UNIDIRECTIONAL_SEQUENCE_LSTM (FLOAT32, FLOAT16)
 
 Where operations are not supported by the ArmNN Android NN Driver, the driver indicates this to the framework
 appropriately and the framework implements those operations using a CPU implementation.

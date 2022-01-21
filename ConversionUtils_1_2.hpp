@@ -3127,4 +3127,438 @@ bool ConvertTransposeConv2d(const HalOperation& operation, const HalModel& model
                                                    data, nullptr, validateFunc, activation);
 }
 
+template<typename HalPolicy,
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
+bool ConvertUnidirectionalSequenceLstm(const HalOperation& operation,
+                                       const HalModel& model,
+                                       ConversionData& data)
+{
+    using HalOperand = typename HalPolicy::Operand;
+    using HalOperandType = typename HalPolicy::OperandType;
+
+    ALOGV("HalPolicy::ConvertUnidirectionalSequenceLstm()");
+
+    // Determine if input OperandType is ANEURALNETWORKS_TENSOR_FLOAT 32 or 16
+    HalOperandType inputType;
+    if (!GetOperandType<HalPolicy>(operation, 0, model, inputType))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    // Inputs:
+    // 0: The input: A 3-D tensor of shape: If time-major: [max_time, batch_size, input_size] If batch-major:
+    // [batch_size, max_time, input_size] where “max_time” is the number of timesteps (sequence length), “batch_size”
+    // corresponds to the batching dimension, and “input_size” is the size of the input.
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    if (!input.IsValid())
+    {
+        return Fail("%s: Could not read input 0: input", __func__);
+    }
+    // 18: The output state: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape [batch_size, output_size].
+    LayerInputHandle outputStateIn = ConvertToLayerInputHandle<HalPolicy>(operation, 18, model, data);
+    if (!outputStateIn.IsValid())
+    {
+        return Fail("%s: Could not read input 18: outputStateIn", __func__);
+    }
+    // 19: The cell state: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape [batch_size, num_units].
+    LayerInputHandle cellStateIn = ConvertToLayerInputHandle<HalPolicy>(operation, 19, model, data);
+    if (!cellStateIn.IsValid())
+    {
+        return Fail("%s: Could not read input 19: cellStateIn", __func__);
+    }
+
+    // Get the mandatory input tensors:
+    // 02: The input-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
+    //     [num_units, input_size].
+    const ConstTensorPin inputToForgetWeightsPin =
+                             (DequantizeAndMakeConstTensorPin<HalPolicy>(operation, model, data, 2));
+    // 03: The input-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
+    // [num_units, input_size].
+    const ConstTensorPin inputToCellWeightsPin =
+                             (DequantizeAndMakeConstTensorPin<HalPolicy>(operation, model, data, 3));
+    // 04: The input-to-output weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
+    //     [num_units, input_size].
+    const ConstTensorPin inputToOutputWeightsPin =
+                             (DequantizeAndMakeConstTensorPin<HalPolicy>(operation, model, data, 4));
+    // 06: The recurrent-to-forget weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
+    //     [num_units, output_size].
+    const ConstTensorPin recurrentToForgetWeightsPin =
+                             (DequantizeAndMakeConstTensorPin<HalPolicy>(operation, model, data, 6));
+    // 07: The recurrent-to-cell weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32, of shape
+    //     [num_units, output_size].
+    const ConstTensorPin recurrentToCellWeightsPin =
+                             (DequantizeAndMakeConstTensorPin<HalPolicy>(operation, model, data, 7));
+    // 08: The recurrent-to-output weights: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
+    //     [num_units, output_size].
+    const ConstTensorPin recurrentToOutputWeightsPin =
+                             (DequantizeAndMakeConstTensorPin<HalPolicy>(operation, model, data, 8));
+    // 13: The forget gate bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape [num_units].
+    const ConstTensorPin forgetGateBiasPin =
+                             ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 13, model, data);
+    // 14: The cell bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape [num_units].
+    const ConstTensorPin cellBiasPin =
+                             ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 14, model, data);
+    // 15: The output gate bias: A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape [num_units].
+    const ConstTensorPin outputGateBiasPin =
+                             ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 15, model, data);
+
+    if (!inputToForgetWeightsPin.IsValid() ||
+        !inputToCellWeightsPin.IsValid() ||
+        !inputToOutputWeightsPin.IsValid() ||
+        !recurrentToForgetWeightsPin.IsValid() ||
+        !recurrentToCellWeightsPin.IsValid() ||
+        !recurrentToOutputWeightsPin.IsValid() ||
+        !forgetGateBiasPin.IsValid() ||
+        !cellBiasPin.IsValid() ||
+        !outputGateBiasPin.IsValid())
+    {
+        return Fail("%s: Operation has invalid tensor inputs", __func__);
+    }
+
+    // Get the optional input tensors:
+    // 01: The input-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
+    //     [num_units, input_size], where “num_units” corresponds to the number of cell units.
+    const ConstTensorPin inputToInputWeightsPin =
+                             (DequantizeAndMakeConstTensorPin<HalPolicy>(operation, model, data, 1, true));
+    // 05: The recurrent-to-input weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
+    //     [num_units, output_size], where “output_size” corresponds to either the number of cell units (i.e.,
+    //     “num_units”), or the second dimension of the “projection_weights”, if defined.
+    const ConstTensorPin recurrentToInputWeightsPin =
+                             (DequantizeAndMakeConstTensorPin<HalPolicy>(operation, model, data, 5, true));
+    // 09: The cell-to-input weights: Optional.
+    // A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape [num_units].
+    const ConstTensorPin cellToInputWeightsPin =
+                             (DequantizeAndMakeConstTensorPin<HalPolicy>(operation, model, data, 9, true));
+    // 10: The cell-to-forget weights: Optional.
+    // A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape [num_units].
+    const ConstTensorPin cellToForgetWeightsPin =
+                             (DequantizeAndMakeConstTensorPin<HalPolicy>(operation, model, data, 10, true));
+    // 11: The cell-to-output weights: Optional.
+    // A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape [num_units].
+    const ConstTensorPin cellToOutputWeightsPin =
+                             (DequantizeAndMakeConstTensorPin<HalPolicy>(operation, model, data, 11, true));
+    // 12: The input gate bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape [num_units].
+    const ConstTensorPin inputGateBiasPin =
+                             ConvertOperationInputToConstTensorPin<HalPolicy>(operation,
+                                                                              12,
+                                                                              model,
+                                                                              data,
+                                                                              g_DontPermute,
+                                                                              nullptr,
+                                                                              true);
+
+    // 16: The projection weights: Optional. A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
+    //     [output_size, num_units].
+    const ConstTensorPin projectionWeightsPin =
+                             (DequantizeAndMakeConstTensorPin<HalPolicy>(operation, model, data, 16, true));
+    // 17: The projection bias: Optional. A 1-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape [output_size].
+    const ConstTensorPin projectionBiasPin =
+                             ConvertOperationInputToConstTensorPin<HalPolicy>(operation,
+                                                                              17,
+                                                                              model,
+                                                                              data,
+                                                                              g_DontPermute,
+                                                                              nullptr,
+                                                                              true);
+
+    if ((!inputToInputWeightsPin.IsValid() && !inputToInputWeightsPin.IsOptional()) ||
+        (!recurrentToInputWeightsPin.IsValid() && !recurrentToInputWeightsPin.IsOptional()) ||
+        (!cellToInputWeightsPin.IsValid() && !cellToInputWeightsPin.IsOptional()) ||
+        (!cellToForgetWeightsPin.IsValid() && !cellToForgetWeightsPin.IsOptional()) ||
+        (!cellToOutputWeightsPin.IsValid() && !cellToOutputWeightsPin.IsOptional()) ||
+        (!inputGateBiasPin.IsValid() && !inputGateBiasPin.IsOptional()) ||
+        (!projectionWeightsPin.IsValid() && !projectionWeightsPin.IsOptional()) ||
+        (!projectionBiasPin.IsValid() && !projectionBiasPin.IsOptional()))
+    {
+        return Fail("%s: Operation has invalid tensor inputs", __func__);
+    }
+
+    // Get the mandatory input scalars (actually 1-D tensors of size 1):
+    // 20: The activation function: A value indicating the activation function:
+    //     0: None; 1: Relu; 3: Relu6; 4: Tanh; 6: Sigmoid.
+    // 21: The clipping threshold: for the cell state, such that values are bound within [-cell_clip, cell_clip].
+    //     If set to 0.0 then clipping is disabled.
+    // 22: The clipping threshold: for the output from the projection layer, such that values are bound within
+    //     [-proj_clip, proj_clip]. If set to 0.0 then clipping is disabled.
+    // Determine data type of input tensor
+    ActivationFn activation;
+    LstmDescriptor desc;
+
+    if (inputType == HalOperandType::TENSOR_FLOAT32)
+    {
+        float cellClip;
+        float projClip;
+
+        if (!GetInputActivationFunctionFromTensor<HalPolicy>(operation, 20, activation, model, data) ||
+            !GetInputScalar<HalPolicy>(operation, 21, HalOperandType::FLOAT32, cellClip, model, data) ||
+            !GetInputScalar<HalPolicy>(operation, 22, HalOperandType::FLOAT32, projClip, model, data))
+        {
+            return Fail("%s: Operation has invalid scalar inputs", __func__);
+        }
+
+        desc.m_ClippingThresCell = cellClip;
+        desc.m_ClippingThresProj = projClip;
+    }
+
+    if (inputType == HalOperandType::TENSOR_FLOAT16)
+    {
+        Half cellClip;
+        Half projClip;
+
+        if (!GetInputActivationFunctionFromTensor<HalPolicy>(operation, 20, activation, model, data) ||
+            !GetInputScalar<HalPolicy>(operation, 21, HalOperandType::FLOAT16, cellClip, model, data) ||
+            !GetInputScalar<HalPolicy>(operation, 22, HalOperandType::FLOAT16, projClip, model, data))
+        {
+            return Fail("%s: Operation has invalid scalar inputs", __func__);
+        }
+
+        desc.m_ClippingThresCell = cellClip;
+        desc.m_ClippingThresProj = projClip;
+    }
+
+    // Determine if time-major or batch-major.
+    // 23: Time-major if true, batch-major if false.
+    bool isTimeMajor = GetOptionalBool<HalPolicy>(operation, 23, model, data);
+
+    // Get the normalization tensors
+    // 24: The input layer normalization weights. A 1-D tensor of shape [num_units].
+    //     Used to rescale normalized inputs to activation at input gate.
+    const ConstTensorPin inputLayerNormWeightsPin
+                             (DequantizeAndMakeConstTensorPin<HalPolicy>(operation, model, data, 24, true));
+
+    // 25: The forget layer normalization weights. A 1-D tensor of shape [num_units].
+    //     Used to rescale normalized inputs to activation at forget gate.
+    const ConstTensorPin forgetLayerNormWeightsPin =
+                             ConvertOperationInputToConstTensorPin<HalPolicy>(operation,
+                                                                              25,
+                                                                              model,
+                                                                              data,
+                                                                              g_DontPermute,
+                                                                              nullptr,
+                                                                              true);
+
+    // 26: The cell layer normalization weights. A 1-D tensor of shape [num_units].
+    //     Used to rescale normalized inputs to activation at cell gate.
+    const ConstTensorPin cellLayerNormWeightsPin =
+                             ConvertOperationInputToConstTensorPin<HalPolicy>(operation,
+                                                                              26,
+                                                                              model,
+                                                                              data,
+                                                                              g_DontPermute,
+                                                                              nullptr,
+                                                                              true);
+
+    // 27: The output layer normalization weights. A 1-D tensor of shape [num_units].
+    //     Used to rescale normalized inputs to activation at output gate.
+    const ConstTensorPin outputLayerNormWeightsPin =
+                             ConvertOperationInputToConstTensorPin<HalPolicy>(operation,
+                                                                              27,
+                                                                              model,
+                                                                              data,
+                                                                              g_DontPermute,
+                                                                              nullptr,
+                                                                              true);
+
+    // Outputs:
+    // 00: The output: A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16. Shape:  if time-major:
+    // [max_time, batch_size, output_size] If batch-major: [batch_size, max_time, output_size]
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+    if (!output)
+    {
+        return Fail("%s: Could not read output: ", __func__);
+    }
+
+    //
+    // 01 & 02: 
+    // hiddenStateOut and cellStateOut are not currently supported by our android versioning.
+    //
+
+    // set the params structure for the AddLstmLayer call
+    LstmInputParams params;
+    params.m_InputToInputWeights = inputToInputWeightsPin.GetConstTensorPtr();
+    params.m_InputToForgetWeights = inputToForgetWeightsPin.GetConstTensorPtr();
+    params.m_InputToCellWeights = inputToCellWeightsPin.GetConstTensorPtr();
+    params.m_InputToOutputWeights = inputToOutputWeightsPin.GetConstTensorPtr();
+    params.m_RecurrentToInputWeights = recurrentToInputWeightsPin.GetConstTensorPtr();
+    params.m_RecurrentToForgetWeights = recurrentToForgetWeightsPin.GetConstTensorPtr();
+    params.m_RecurrentToCellWeights = recurrentToCellWeightsPin.GetConstTensorPtr();
+    params.m_RecurrentToOutputWeights = recurrentToOutputWeightsPin.GetConstTensorPtr();
+    params.m_CellToInputWeights = cellToInputWeightsPin.GetConstTensorPtr();
+    params.m_CellToForgetWeights = cellToForgetWeightsPin.GetConstTensorPtr();
+    params.m_CellToOutputWeights = cellToOutputWeightsPin.GetConstTensorPtr();
+    params.m_InputGateBias = inputGateBiasPin.GetConstTensorPtr();
+    params.m_ForgetGateBias = forgetGateBiasPin.GetConstTensorPtr();
+    params.m_CellBias = cellBiasPin.GetConstTensorPtr();
+    params.m_OutputGateBias = outputGateBiasPin.GetConstTensorPtr();
+    params.m_ProjectionWeights = projectionWeightsPin.GetConstTensorPtr();
+    params.m_ProjectionBias = projectionBiasPin.GetConstTensorPtr();
+    params.m_InputLayerNormWeights = inputLayerNormWeightsPin.GetConstTensorPtr();
+    params.m_ForgetLayerNormWeights = forgetLayerNormWeightsPin.GetConstTensorPtr();
+    params.m_CellLayerNormWeights = cellLayerNormWeightsPin.GetConstTensorPtr();
+    params.m_OutputLayerNormWeights = outputLayerNormWeightsPin.GetConstTensorPtr();
+
+    // set the layer descriptor
+    desc.m_ActivationFunc = activation;
+    desc.m_CifgEnabled = (params.m_InputToInputWeights == nullptr ||
+        params.m_RecurrentToInputWeights == nullptr ||
+        params.m_InputGateBias == nullptr);
+    desc.m_PeepholeEnabled = (params.m_CellToForgetWeights != nullptr ||
+        params.m_CellToOutputWeights != nullptr);
+    desc.m_ProjectionEnabled = (params.m_ProjectionWeights != nullptr);
+    desc.m_LayerNormEnabled = (params.m_InputLayerNormWeights != nullptr ||
+        params.m_ForgetLayerNormWeights != nullptr ||
+        params.m_CellLayerNormWeights != nullptr ||
+        params.m_OutputLayerNormWeights != nullptr);
+    desc.m_TimeMajor = isTimeMajor;
+
+    // validate the optional input groups
+    if (desc.m_CifgEnabled &&
+        (params.m_InputToInputWeights != nullptr ||
+            params.m_RecurrentToInputWeights != nullptr ||
+            params.m_InputGateBias != nullptr))
+    {
+        return Fail("%s: All, or none, of input-to-input weights, recurrent-to-input weights,"
+                    " and input gate bias must be provided", __func__);
+    }
+
+    if (!desc.m_ProjectionEnabled && params.m_ProjectionBias != nullptr)
+    {
+        return Fail("%s: projection bias should not be provided without projection weights", __func__);
+    }
+
+    if (desc.m_PeepholeEnabled &&
+        (params.m_CellToForgetWeights == nullptr ||
+            params.m_CellToOutputWeights == nullptr ||
+            (!desc.m_CifgEnabled && params.m_CellToInputWeights == nullptr)))
+    {
+        return Fail("%s: All, or none, of cell-to-forget weights and cell-to-output weights must be provided"
+                    " and, if CIFG is not enabled, cell-to-input weights must also be provided", __func__);
+    }
+
+    if (desc.m_LayerNormEnabled &&
+        (params.m_ForgetLayerNormWeights == nullptr ||
+            params.m_CellLayerNormWeights == nullptr ||
+            params.m_OutputLayerNormWeights == nullptr ||
+            (!desc.m_CifgEnabled && params.m_InputLayerNormWeights == nullptr)))
+    {
+        return Fail("%s: All, or none, of forget-norm weights, cell-norm weights and output-norm weights must be"
+                    " provided and, if CIFG is not enabled, input-norm weights must also be provided", __func__);
+    }
+
+    // Check if the layer is supported
+    // Inputs
+    const TensorInfo& inputInfo         = input.GetTensorInfo();
+    const TensorInfo& outputStateInInfo = outputStateIn.GetTensorInfo();
+    const TensorInfo& cellStateInInfo   = cellStateIn.GetTensorInfo();
+
+    // Outputs
+    const TensorInfo& outputInfo         = GetTensorInfoForOperand(*output);
+
+    // Basic parameters
+    LstmInputParamsInfo paramsInfo;
+    paramsInfo.m_InputToForgetWeights     = &(params.m_InputToForgetWeights->GetInfo());
+    paramsInfo.m_InputToCellWeights       = &(params.m_InputToCellWeights->GetInfo());
+    paramsInfo.m_InputToOutputWeights     = &(params.m_InputToOutputWeights->GetInfo());
+    paramsInfo.m_RecurrentToForgetWeights = &(params.m_RecurrentToForgetWeights->GetInfo());
+    paramsInfo.m_RecurrentToCellWeights   = &(params.m_RecurrentToCellWeights->GetInfo());
+    paramsInfo.m_RecurrentToOutputWeights = &(params.m_RecurrentToOutputWeights->GetInfo());
+    paramsInfo.m_ForgetGateBias           = &(params.m_ForgetGateBias->GetInfo());
+    paramsInfo.m_CellBias                 = &(params.m_CellBias->GetInfo());
+    paramsInfo.m_OutputGateBias           = &(params.m_OutputGateBias->GetInfo());
+
+    // Optional parameters
+    if (!desc.m_CifgEnabled)
+    {
+        paramsInfo.m_InputToInputWeights = &(params.m_InputToInputWeights->GetInfo());
+        paramsInfo.m_RecurrentToInputWeights = &(params.m_RecurrentToInputWeights->GetInfo());
+        if (params.m_CellToInputWeights != nullptr)
+        {
+            paramsInfo.m_CellToInputWeights = &(params.m_CellToInputWeights->GetInfo());
+        }
+        paramsInfo.m_InputGateBias = &(params.m_InputGateBias->GetInfo());
+    }
+
+    if (desc.m_ProjectionEnabled)
+    {
+        paramsInfo.m_ProjectionWeights = &(params.m_ProjectionWeights->GetInfo());
+        if (params.m_ProjectionBias != nullptr)
+        {
+            paramsInfo.m_ProjectionBias = &(params.m_ProjectionBias->GetInfo());
+        }
+    }
+
+    if (desc.m_PeepholeEnabled)
+    {
+        paramsInfo.m_CellToForgetWeights = &(params.m_CellToForgetWeights->GetInfo());
+        paramsInfo.m_CellToOutputWeights = &(params.m_CellToOutputWeights->GetInfo());
+    }
+
+    if (desc.m_LayerNormEnabled)
+    {
+        if(!desc.m_CifgEnabled)
+        {
+            paramsInfo.m_InputLayerNormWeights = &(params.m_InputLayerNormWeights->GetInfo());
+        }
+        paramsInfo.m_ForgetLayerNormWeights = &(params.m_ForgetLayerNormWeights->GetInfo());
+        paramsInfo.m_CellLayerNormWeights = &(params.m_CellLayerNormWeights->GetInfo());
+        paramsInfo.m_OutputLayerNormWeights = &(params.m_OutputLayerNormWeights->GetInfo());
+    }
+
+    auto hiddenStateOutInfo = EmptyOptional();
+    auto cellStateOutInfo   = EmptyOptional();
+
+    bool isSupported = false;
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsUnidirectionalSequenceLstmSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   inputInfo,
+                                   outputStateInInfo,
+                                   cellStateInInfo,
+                                   outputInfo,
+                                   hiddenStateOutInfo,
+                                   cellStateOutInfo,
+                                   desc,
+                                   paramsInfo);
+    };
+
+    bool isDynamic = false;
+    if (!IsDynamicTensor(outputInfo))
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    else
+    {
+        isDynamic = true;
+        isSupported = AreDynamicTensorsSupported();
+    }
+
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    // Add the layer
+    IConnectableLayer* layer = data.m_Network->AddUnidirectionalSequenceLstmLayer(desc,
+                                                                                  params,
+                                                                                  "UnidirectionalSequenceLstm");
+
+    input.Connect(layer->GetInputSlot(0));
+    outputStateIn.Connect(layer->GetInputSlot(1));
+    cellStateIn.Connect(layer->GetInputSlot(2));
+
+    if (!isDynamic)
+    {
+        return (SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, 0, model, data));
+    }
+    else
+    {
+        return (SetupAndTrackLayerOutputSlot<HalPolicy>(
+                    operation, 0, *layer, 0, model, data, nullptr, validateFunc, ActivationFn::kActivationNone, true));
+    }
+}
+
 } // armnn_driver namespace

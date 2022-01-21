@@ -171,6 +171,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertTransposeConv2d(operation, model, data);
         case V1_3::OperationType::TANH:
             return ConvertTanH(operation, model, data);
+        case V1_3::OperationType::UNIDIRECTIONAL_SEQUENCE_LSTM:
+            return ConvertUnidirectionalSequenceLstm(operation, model, data);
         default:
             return Fail("%s: Operation type %s not supported in ArmnnDriver",
                         __func__, toString(operation.type).c_str());
@@ -549,6 +551,12 @@ bool HalPolicy::ConvertTranspose(const Operation& operation, const Model& model,
 {
     ALOGV("hal_1_3::HalPolicy::ConvertTranspose()");
     return ::ConvertTranspose<hal_1_3::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertUnidirectionalSequenceLstm(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_3::HalPolicy::ConvertUnidirectionalSequenceLstm()");
+    return ::ConvertUnidirectionalSequenceLstm<hal_1_3::HalPolicy>(operation, model, data);
 }
 
 } // namespace hal_1_3
