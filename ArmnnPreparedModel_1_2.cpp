@@ -566,8 +566,8 @@ bool ArmnnPreparedModel_1_2<HalVersion>::ExecuteGraph(
         V1_2::Timing timing;
         timing.timeOnDevice = MicrosecondsDuration(deviceEnd, deviceStart);
         timing.timeInDriver = MicrosecondsDuration(driverEnd, cb.ctx.driverStart);
-        ALOGV("ArmnnPreparedModel_1_2::execute timing - Device = %lu Driver = %lu", timing.timeOnDevice,
-              timing.timeInDriver);
+        ALOGV("ArmnnPreparedModel_1_2::execute timing - Device = %lu Driver = %lu",
+              static_cast<unsigned long>(timing.timeOnDevice), static_cast<unsigned long>(timing.timeInDriver));
         cb.callback(V1_0::ErrorStatus::NONE, outputShapes, timing, "ArmnnPreparedModel_1_2::ExecuteGraph");
     } else {
         cb.callback(V1_0::ErrorStatus::NONE, outputShapes, g_NoTiming, "ArmnnPreparedModel_1_2::ExecuteGraph");
@@ -774,8 +774,8 @@ void ArmnnPreparedModel_1_2<HalVersion>::ArmnnThreadPoolCallback_1_2<CallbackCon
         V1_2::Timing timing;
         timing.timeOnDevice = MicrosecondsDuration(timeTaken.second, timeTaken.first);
         timing.timeInDriver = MicrosecondsDuration(driverEnd, m_CallbackContext.ctx.driverStart);
-        ALOGV("ArmnnPreparedModel_1_2::execute timing - Device = %lu Driver = %lu", timing.timeOnDevice,
-              timing.timeInDriver);
+        ALOGV("ArmnnPreparedModel_1_2::execute timing - Device = %lu Driver = %lu",
+              static_cast<unsigned long>(timing.timeOnDevice), static_cast<unsigned long>(timing.timeInDriver));
         m_CallbackContext.callback(
                 V1_0::ErrorStatus::NONE, m_OutputShapes, timing, "ArmnnPreparedModel_1_2::ExecuteGraph");
     } else {

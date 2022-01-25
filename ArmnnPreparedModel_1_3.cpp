@@ -476,7 +476,8 @@ Return<void> ArmnnPreparedModel_1_3<HalVersion>::executeFenced(const V1_3::Reque
         fenceTiming.timeOnDevice = MicrosecondsDuration(ctx.deviceEnd, ctx.deviceStart);
         fenceTiming.timeInDriver = MicrosecondsDuration(ctx.driverEnd, fenceExecutionStart);
         ALOGV("ArmnnPreparedModel_1_3::fenceFinishExecutionTiming - Device = %lu Driver = %lu",
-              fenceTiming.timeOnDevice, fenceTiming.timeInDriver);
+              static_cast<unsigned long>(fenceTiming.timeOnDevice),
+              static_cast<unsigned long>(fenceTiming.timeInDriver));
     }
 
     sp<ArmnnFencedExecutionCallback> armnnFencedExecutionCallback =
@@ -857,8 +858,8 @@ Return <V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::ExecuteGraph(
         V1_2::Timing timing;
         timing.timeOnDevice = MicrosecondsDuration(cb.ctx.deviceEnd, cb.ctx.deviceStart);
         timing.timeInDriver = MicrosecondsDuration(cb.ctx.driverEnd, cb.ctx.driverStart);
-        ALOGV("ArmnnPreparedModel_1_3::execute timing - Device = %lu Driver = %lu", timing.timeOnDevice,
-              timing.timeInDriver);
+        ALOGV("ArmnnPreparedModel_1_3::execute timing - Device = %lu Driver = %lu",
+              static_cast<unsigned long>(timing.timeOnDevice), static_cast<unsigned long>(timing.timeInDriver));
         cb.callback(V1_3::ErrorStatus::NONE, outputShapes, timing, "ArmnnPreparedModel_1_3::ExecuteGraph");
     } else
     {
@@ -1083,8 +1084,8 @@ void ArmnnPreparedModel_1_3<HalVersion>::ArmnnThreadPoolCallback_1_3<CallbackCon
         V1_2::Timing timing;
         timing.timeOnDevice = MicrosecondsDuration(m_CallbackContext.ctx.deviceEnd, m_CallbackContext.ctx.deviceStart);
         timing.timeInDriver = MicrosecondsDuration(m_CallbackContext.ctx.driverEnd, m_CallbackContext.ctx.driverStart);
-        ALOGV("ArmnnPreparedModel_1_3::execute timing - Device = %lu Driver = %lu", timing.timeOnDevice,
-              timing.timeInDriver);
+        ALOGV("ArmnnPreparedModel_1_3::execute timing - Device = %lu Driver = %lu",
+              static_cast<unsigned long>(timing.timeOnDevice), static_cast<unsigned long>(timing.timeInDriver));
         m_CallbackContext.callback(
                 V1_3::ErrorStatus::NONE, m_OutputShapes, timing, "ArmnnPreparedModel_1_3::ExecuteGraph");
     } else
