@@ -9,6 +9,8 @@
 
 #include "Utils.hpp"
 
+#include <armnn/Types.hpp>
+
 #include <log/log.h>
 #include <OperationsUtils.h>
 #include <ExecutionBurstServer.h>
@@ -528,7 +530,12 @@ bool ArmnnPreparedModel_1_2<HalVersion>::ExecuteGraph(
         else
         {
             ALOGW("ArmnnPreparedModel_1_2::ExecuteGraph m_AsyncModelExecutionEnabled false");
-            status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors);
+            std::vector<armnn::ImportedInputId> importedInputIds =
+                m_Runtime->ImportInputs(m_NetworkId, inputTensors, armnn::MemorySource::Malloc);
+            std::vector<armnn::ImportedOutputId> importedOutputIds =
+                m_Runtime->ImportOutputs(m_NetworkId, outputTensors, armnn::MemorySource::Malloc);
+            status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors,
+                                                importedInputIds, importedOutputIds);
         }
 
         if (cb.ctx.measureTimings == V1_2::MeasureTiming::YES)
