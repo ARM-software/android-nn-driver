@@ -11,10 +11,10 @@
 namespace
 {
 
-const char *g_Float32PerformanceExecTimeName      = "ArmNN.float32Performance.execTime";
-const char *g_Float32PerformancePowerUsageName    = "ArmNN.float32Performance.powerUsage";
-const char *g_Quantized8PerformanceExecTimeName   = "ArmNN.quantized8Performance.execTime";
-const char *g_Quantized8PerformancePowerUsageName = "ArmNN.quantized8Performance.powerUsage";
+const char *g_Float32PerformanceExecTimeName      = "vendor.ArmNN.float32Performance.execTime";
+const char *g_Float32PerformancePowerUsageName    = "vendor.ArmNN.float32Performance.powerUsage";
+const char *g_Quantized8PerformanceExecTimeName   = "vendor.ArmNN.quantized8Performance.execTime";
+const char *g_Quantized8PerformancePowerUsageName = "vendor.ArmNN.quantized8Performance.powerUsage";
 
 } // anonymous namespace
 

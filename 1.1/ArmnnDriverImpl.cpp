@@ -11,12 +11,12 @@
 namespace
 {
 
-const char *g_Float32PerformanceExecTimeName                   = "ArmNN.float32Performance.execTime";
-const char *g_Float32PerformancePowerUsageName                 = "ArmNN.float32Performance.powerUsage";
-const char *g_Quantized8PerformanceExecTimeName                = "ArmNN.quantized8Performance.execTime";
-const char *g_Quantized8PerformancePowerUsageName              = "ArmNN.quantized8Performance.powerUsage";
-const char *g_RelaxedFloat32toFloat16PerformanceExecTime       = "ArmNN.relaxedFloat32toFloat16Performance.execTime";
-const char *g_RelaxedFloat32toFloat16PerformancePowerUsageName = "ArmNN.relaxedFloat32toFloat16Performance.powerUsage";
+const char *g_Float32PerformanceExecTimeName                   = "vendor.ArmNN.float32Performance.execTime";
+const char *g_Float32PerformancePowerUsageName                 = "vendor.ArmNN.float32Performance.powerUsage";
+const char *g_Quantized8PerformanceExecTimeName                = "vendor.ArmNN.quantized8Performance.execTime";
+const char *g_Quantized8PerformancePowerUsageName              = "vendor.ArmNN.quantized8Performance.powerUsage";
+const char *g_RelaxedFloat32toFloat16PerformanceExecTime       = "vendor.ArmNN.relaxedFloat32toFloat16Performance.execTime";
+const char *g_RelaxedFloat32toFloat16PerformancePowerUsageName = "vendor.ArmNN.relaxedFloat32toFloat16Performance.powerUsage";
 
 } // anonymous namespace
 

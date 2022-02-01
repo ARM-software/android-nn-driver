@@ -16,58 +16,58 @@
 
 namespace
 {
-const char *g_RelaxedFloat32toFloat16PerformanceExecTime    = "ArmNN.relaxedFloat32toFloat16Performance.execTime";
-const char *g_RelaxedFloat32toFloat16PerformancePowerUsage  = "ArmNN.relaxedFloat32toFloat16Performance.powerUsage";
+const char *g_RelaxedFloat32toFloat16PerformanceExecTime    = "vendor.ArmNN.relaxedFloat32toFloat16Performance.execTime";
+const char *g_RelaxedFloat32toFloat16PerformancePowerUsage  = "vendor.ArmNN.relaxedFloat32toFloat16Performance.powerUsage";
 
-const char *g_ifPerformanceExecTime                         = "ArmNN.ifPerformance.execTime";
-const char *g_ifPerformancePowerUsage                       = "ArmNN.ifPerformance.powerUsage";
+const char *g_ifPerformanceExecTime                         = "vendor.ArmNN.ifPerformance.execTime";
+const char *g_ifPerformancePowerUsage                       = "vendor.ArmNN.ifPerformance.powerUsage";
 
-const char *g_whilePerformanceExecTime                      = "ArmNN.whilePerformance.execTime";
-const char *g_whilePerformancePowerUsage                    = "ArmNN.whilePerformance.powerUsage";
+const char *g_whilePerformanceExecTime                      = "vendor.ArmNN.whilePerformance.execTime";
+const char *g_whilePerformancePowerUsage                    = "vendor.ArmNN.whilePerformance.powerUsage";
 
-const char *g_OperandTypeTensorFloat32PerformanceExecTime   = "Armnn.operandTypeTensorFloat32Performance.execTime";
-const char *g_OperandTypeTensorFloat32PerformancePowerUsage = "Armnn.operandTypeTensorFloat32Performance.powerUsage";
+const char *g_OperandTypeTensorFloat32PerformanceExecTime   = "vendor.Armnn.operandTypeTensorFloat32Performance.execTime";
+const char *g_OperandTypeTensorFloat32PerformancePowerUsage = "vendor.Armnn.operandTypeTensorFloat32Performance.powerUsage";
 
-const char *g_OperandTypeFloat32PerformanceExecTime         = "Armnn.operandTypeFloat32Performance.execTime";
-const char *g_OperandTypeFloat32PerformancePowerUsage       = "Armnn.operandTypeFloat32Performance.powerUsage";
+const char *g_OperandTypeFloat32PerformanceExecTime         = "vendor.Armnn.operandTypeFloat32Performance.execTime";
+const char *g_OperandTypeFloat32PerformancePowerUsage       = "vendor.Armnn.operandTypeFloat32Performance.powerUsage";
 
-const char *g_OperandTypeTensorFloat16PerformanceExecTime   = "Armnn.operandTypeTensorFloat16Performance.execTime";
-const char *g_OperandTypeTensorFloat16PerformancePowerUsage = "Armnn.operandTypeTensorFloat16Performance.powerUsage";
+const char *g_OperandTypeTensorFloat16PerformanceExecTime   = "vendor.Armnn.operandTypeTensorFloat16Performance.execTime";
+const char *g_OperandTypeTensorFloat16PerformancePowerUsage = "vendor.Armnn.operandTypeTensorFloat16Performance.powerUsage";
 
-const char *g_OperandTypeFloat16PerformanceExecTime         = "Armnn.operandTypeFloat16Performance.execTime";
-const char *g_OperandTypeFloat16PerformancePowerUsage       = "Armnn.operandTypeFloat16Performance.powerUsage";
+const char *g_OperandTypeFloat16PerformanceExecTime         = "vendor.Armnn.operandTypeFloat16Performance.execTime";
+const char *g_OperandTypeFloat16PerformancePowerUsage       = "vendor.Armnn.operandTypeFloat16Performance.powerUsage";
 
 const char *g_OperandTypeTensorQuant8AsymmPerformanceExecTime =
-        "Armnn.operandTypeTensorQuant8AsymmPerformance.execTime";
+        "vendor.Armnn.operandTypeTensorQuant8AsymmPerformance.execTime";
 const char *g_OperandTypeTensorQuant8AsymmPerformancePowerUsage =
-        "Armnn.operandTypeTensorQuant8AsymmPerformance.powerUsage";
+        "vendor.Armnn.operandTypeTensorQuant8AsymmPerformance.powerUsage";
 
 const char *g_OperandTypeTensorQuant8AsymmSignedPerformanceExecTime =
-    "Armnn.operandTypeTensorQuant8AsymmSignedPerformance.execTime";
+    "vendor.Armnn.operandTypeTensorQuant8AsymmSignedPerformance.execTime";
 const char *g_OperandTypeTensorQuant8AsymmSignedPerformancePowerUsage =
-    "Armnn.operandTypeTensorQuant8AsymmSignedPerformance.powerUsage";
+    "vendor.Armnn.operandTypeTensorQuant8AsymmSignedPerformance.powerUsage";
 
 const char *g_OperandTypeTensorQuant16SymmPerformanceExecTime =
-        "Armnn.operandTypeTensorQuant16SymmPerformance.execTime";
+        "vendor.Armnn.operandTypeTensorQuant16SymmPerformance.execTime";
 const char *g_OperandTypeTensorQuant16SymmPerformancePowerUsage =
-        "Armnn.operandTypeTensorQuant16SymmPerformance.powerUsage";
+        "vendor.Armnn.operandTypeTensorQuant16SymmPerformance.powerUsage";
 
 const char *g_OperandTypeTensorQuant8SymmPerformanceExecTime =
-        "Armnn.operandTypeTensorQuant8SymmPerformance.execTime";
+        "vendor.Armnn.operandTypeTensorQuant8SymmPerformance.execTime";
 const char *g_OperandTypeTensorQuant8SymmPerformancePowerUsage =
-        "Armnn.operandTypeTensorQuant8SymmPerformance.powerUsage";
+        "vendor.Armnn.operandTypeTensorQuant8SymmPerformance.powerUsage";
 
 const char *g_OperandTypeTensorQuant8SymmPerChannelPerformanceExecTime =
-    "Armnn.operandTypeTensorQuant8SymmPerChannelPerformance.execTime";
+    "vendor.Armnn.operandTypeTensorQuant8SymmPerChannelPerformance.execTime";
 const char *g_OperandTypeTensorQuant8SymmPerChannelPerformancePowerUsage =
-    "Armnn.operandTypeTensorQuant8SymmPerChannelPerformance.powerUsage";
+    "vendor.Armnn.operandTypeTensorQuant8SymmPerChannelPerformance.powerUsage";
 
 
-const char *g_OperandTypeTensorInt32PerformanceExecTime     = "Armnn.operandTypeTensorInt32Performance.execTime";
-const char *g_OperandTypeTensorInt32PerformancePowerUsage   = "Armnn.operandTypeTensorInt32Performance.powerUsage";
+const char *g_OperandTypeTensorInt32PerformanceExecTime     = "vendor.Armnn.operandTypeTensorInt32Performance.execTime";
+const char *g_OperandTypeTensorInt32PerformancePowerUsage   = "vendor.Armnn.operandTypeTensorInt32Performance.powerUsage";
 
-const char *g_OperandTypeInt32PerformanceExecTime           = "Armnn.operandTypeInt32Performance.execTime";
-const char *g_OperandTypeInt32PerformancePowerUsage         = "Armnn.operandTypeInt32Performance.powerUsage";
+const char *g_OperandTypeInt32PerformanceExecTime           = "vendor.Armnn.operandTypeInt32Performance.execTime";
+const char *g_OperandTypeInt32PerformancePowerUsage         = "vendor.Armnn.operandTypeInt32Performance.powerUsage";
 
 
 void NotifyCallbackAndCheck(const android::sp<V1_3::IPreparedModelCallback>& callback,
