@@ -12,8 +12,6 @@
 #include "ArmnnPreparedModel_1_3.hpp"
 #include "Utils.hpp"
 
-#include <armnn/Types.hpp>
-
 #include <Utils.h>
 #include <android/sync.h>
 #include <log/log.h>
@@ -823,12 +821,7 @@ Return <V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::ExecuteGraph(
         else
         {
             ALOGW("ArmnnPreparedModel_1_3::ExecuteGraph m_AsyncModelExecutionEnabled false");
-            std::vector<armnn::ImportedInputId> importedInputIds =
-                m_Runtime->ImportInputs(m_NetworkId, inputTensors, armnn::MemorySource::Malloc);
-            std::vector<armnn::ImportedOutputId> importedOutputIds =
-                m_Runtime->ImportOutputs(m_NetworkId, outputTensors, armnn::MemorySource::Malloc);
-            status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors,
-                                                importedInputIds, importedOutputIds);
+            status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors);
         }
 
         if (cb.ctx.measureTimings == V1_2::MeasureTiming::YES)

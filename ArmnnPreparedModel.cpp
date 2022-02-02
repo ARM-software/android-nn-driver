@@ -8,8 +8,6 @@
 #include "ArmnnPreparedModel.hpp"
 #include "Utils.hpp"
 
-#include <armnn/Types.hpp>
-
 #include <log/log.h>
 #include <OperationsUtils.h>
 #include <ValidateHal.h>
@@ -307,12 +305,7 @@ void ArmnnPreparedModel<HalVersion>::ExecuteGraph(
         else
         {
             ALOGW("ArmnnPreparedModel::ExecuteGraph m_AsyncModelExecutionEnabled false");
-            std::vector<armnn::ImportedInputId> importedInputIds =
-                m_Runtime->ImportInputs(m_NetworkId, inputTensors, armnn::MemorySource::Malloc);
-            std::vector<armnn::ImportedOutputId> importedOutputIds =
-                m_Runtime->ImportOutputs(m_NetworkId, outputTensors, armnn::MemorySource::Malloc);
-            status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors,
-                                                importedInputIds, importedOutputIds);
+            status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors);
         }
 
         if (status != armnn::Status::Success)
@@ -393,12 +386,7 @@ bool ArmnnPreparedModel<HalVersion>::ExecuteWithDummyInputs()
         else
         {
             ALOGW("ArmnnPreparedModel::ExecuteGraph m_AsyncModelExecutionEnabled false");
-            std::vector<armnn::ImportedInputId> importedInputIds =
-                m_Runtime->ImportInputs(m_NetworkId, inputTensors, armnn::MemorySource::Malloc);
-            std::vector<armnn::ImportedOutputId> importedOutputIds =
-                m_Runtime->ImportOutputs(m_NetworkId, outputTensors, armnn::MemorySource::Malloc);
-            status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors,
-                                                importedInputIds, importedOutputIds);
+            status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors);
         }
         if (status != armnn::Status::Success)
         {
