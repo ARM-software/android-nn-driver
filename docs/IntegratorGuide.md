@@ -8,7 +8,8 @@ This document describes how to integrate the Arm NN Android NNAPI driver into an
 1. Android source tree for Android P (we have tested against Android P version 9.0.0_r3) , in the directory `<ANDROID_ROOT>`
 2. Android source tree for Android Q (we have tested against Android Q version 10.0.0_r39), in the directory `<ANDROID_ROOT>`
 2. Android source tree for Android R (we have tested against Android R version 11.0.0_r3), in the directory `<ANDROID_ROOT>`
-3. Mali OpenCL driver integrated into the Android source tree
+3. Android source tree for Android S (we have tested against Android S version 12.0.0_r1), in the directory `<ANDROID_ROOT>`
+4. Mali OpenCL driver integrated into the Android source tree
 
 ### Procedure
 
@@ -32,7 +33,7 @@ thus the following should be added to `device.mk` instead:
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.2-service-armnn
 </pre>
 
-For Android R, new version of the NN API is available (1.3),
+For Android R and S, new version of the NN API is available (1.3),
 thus the following should be added to `device.mk` instead:
 <pre>
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.3-service-armnn
@@ -44,8 +45,8 @@ ARMNN_COMPUTE_NEON_ENABLE or ARMNN_REF_ENABLE in `device.mk`:
 ARMNN_COMPUTE_CL_ENABLE := 1
 </pre>
 
-For Android P, Q and R the vendor manifest.xml requires the Neural Network HAL information.
-For Android P use HAL version 1.1 as below. For Android Q substitute 1.2 where necessary. For Android R substitute 1.3 where necessary.
+For all Android versions the vendor manifest.xml requires the Neural Network HAL information.
+For Android P use HAL version 1.1 as below. For Android Q substitute 1.2 where necessary. For Android R and S substitute 1.3 where necessary.
 ```xml
 <hal format="hidl">
     <name>android.hardware.neuralnetworks</name>
@@ -83,7 +84,7 @@ Use the corresponding version of the driver for the Android version you are runn
 i.e
 android.hardware.neuralnetworks@1.1-service-armnn for Android P,
 android.hardware.neuralnetworks@1.2-service-armnn for Android Q and
-android.hardware.neuralnetworks@1.3-service-armnn for Android R
+android.hardware.neuralnetworks@1.3-service-armnn for Android R and S
 <pre>
 It is also possible to use a specific backend by using the -c option.
 The following is an example of using the CpuAcc backend for Android Q:
@@ -140,4 +141,4 @@ In some hikey960 boards you may need to set LD_LIBRARY_PATH before running the A
 export LD_LIBRARY_PATH=/vendor/lib64/egl:/vendor/lib/egl/
 
 
-The guide was tested on Ubuntu 16.04. If you are using a docker you may see some build issues. Explicitly setting the USER variable may help resolve these when building Android inside docker.
+The guide was tested on Ubuntu 18.04. If you are using a docker you may see some build issues. Explicitly setting the USER variable may help resolve these when building Android inside docker.
