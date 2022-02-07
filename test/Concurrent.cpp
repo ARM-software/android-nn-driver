@@ -82,15 +82,16 @@ DOCTEST_TEST_CASE("ConcurrentExecute")
 
     // build the requests
     V1_0::Request requests[maxRequests];
+    android::sp<IMemory> inMemory[maxRequests];
     android::sp<IMemory> outMemory[maxRequests];
+    float indata[] = {2, 32, 16};
     float* outdata[maxRequests];
     for (size_t i = 0; i < maxRequests; ++i)
     {
         requests[i].inputs  = hidl_vec<RequestArgument>{input};
         requests[i].outputs = hidl_vec<RequestArgument>{output};
         // set the input data (matching source test)
-        float indata[] = {2, 32, 16};
-        AddPoolAndSetData<float>(3, requests[i], indata);
+        inMemory[i] = AddPoolAndSetData<float>(3, requests[i], indata);
         // add memory for the output
         outMemory[i] = AddPoolAndGetData<float>(1, requests[i]);
         outdata[i] = static_cast<float*>(static_cast<void*>(outMemory[i]->getPointer()));

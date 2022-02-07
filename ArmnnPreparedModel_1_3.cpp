@@ -12,6 +12,8 @@
 #include "ArmnnPreparedModel_1_3.hpp"
 #include "Utils.hpp"
 
+#include <armnn/Types.hpp>
+
 #include <Utils.h>
 #include <android/sync.h>
 #include <log/log.h>
@@ -172,7 +174,9 @@ ArmnnPreparedModel_1_3<HalVersion>::ArmnnPreparedModel_1_3(armnn::NetworkId netw
                                                            const bool gpuProfilingEnabled,
                                                            V1_3::Priority priority,
                                                            const bool asyncModelExecutionEnabled,
-                                                           const unsigned int numberOfThreads)
+                                                           const unsigned int numberOfThreads,
+                                                           const bool importEnabled,
+                                                           const bool exportEnabled)
     : m_NetworkId(networkId)
     , m_Runtime(runtime)
     , m_Model(model)
@@ -181,6 +185,8 @@ ArmnnPreparedModel_1_3<HalVersion>::ArmnnPreparedModel_1_3(armnn::NetworkId netw
     , m_GpuProfilingEnabled(gpuProfilingEnabled)
     , m_ModelPriority(priority)
     , m_AsyncModelExecutionEnabled(asyncModelExecutionEnabled)
+    , m_EnableImport(importEnabled)
+    , m_EnableExport(exportEnabled)
     , m_PreparedFromCache(false)
 {
     // Enable profiling if required.
@@ -215,6 +221,8 @@ ArmnnPreparedModel_1_3<HalVersion>::ArmnnPreparedModel_1_3(armnn::NetworkId netw
                                                            V1_3::Priority priority,
                                                            const bool asyncModelExecutionEnabled,
                                                            const unsigned int numberOfThreads,
+                                                           const bool importEnabled,
+                                                           const bool exportEnabled,
                                                            const bool preparedFromCache)
     : m_NetworkId(networkId)
     , m_Runtime(runtime)
@@ -223,6 +231,8 @@ ArmnnPreparedModel_1_3<HalVersion>::ArmnnPreparedModel_1_3(armnn::NetworkId netw
     , m_GpuProfilingEnabled(gpuProfilingEnabled)
     , m_ModelPriority(priority)
     , m_AsyncModelExecutionEnabled(asyncModelExecutionEnabled)
+    , m_EnableImport(importEnabled)
+    , m_EnableExport(exportEnabled)
     , m_PreparedFromCache(preparedFromCache)
 {
     // Enable profiling if required.
@@ -824,7 +834,19 @@ Return <V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::ExecuteGraph(
         else
         {
             ALOGW("ArmnnPreparedModel_1_3::ExecuteGraph m_AsyncModelExecutionEnabled false");
-            status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors);
+            // Create a vector of Input and Output Ids which can be imported. An empty vector means all will be copied.
+            std::vector<armnn::ImportedInputId> importedInputIds;
+            if (m_EnableImport)
+            {
+                importedInputIds =  m_Runtime->ImportInputs(m_NetworkId, inputTensors, armnn::MemorySource::Malloc);
+            }
+            std::vector<armnn::ImportedOutputId> importedOutputIds;
+            if (m_EnableExport)
+            {
+                importedOutputIds = m_Runtime->ImportOutputs(m_NetworkId, outputTensors, armnn::MemorySource::Malloc);
+            }
+            status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors,
+                                                importedInputIds, importedOutputIds);
         }
 
         if (cb.ctx.measureTimings == V1_2::MeasureTiming::YES)
