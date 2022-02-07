@@ -47,7 +47,9 @@ public:
                            const std::string& requestInputsAndOutputsDumpDir,
                            const bool gpuProfilingEnabled,
                            const bool asyncModelExecutionEnabled = false,
-                           const unsigned int numberOfThreads = 1);
+                           const unsigned int numberOfThreads = 1,
+                           const bool importEnabled = false,
+                           const bool exportEnabled = true);
 
     ArmnnPreparedModel_1_2(armnn::NetworkId networkId,
                            armnn::IRuntime* runtime,
@@ -55,6 +57,8 @@ public:
                            const bool gpuProfilingEnabled,
                            const bool asyncModelExecutionEnabled = false,
                            const unsigned int numberOfThreads = 1,
+                           const bool importEnabled = false,
+                           const bool exportEnabled = true,
                            const bool preparedFromCache = false);
 
     virtual ~ArmnnPreparedModel_1_2();
@@ -164,6 +168,8 @@ private:
     static std::unique_ptr<armnn::Threadpool> m_Threadpool;
     std::shared_ptr<IWorkingMemHandle>        m_WorkingMemHandle;
     const bool                                m_AsyncModelExecutionEnabled;
+    const bool                                m_EnableImport;
+    const bool                                m_EnableExport;
     const bool                                m_PreparedFromCache;
 };
 

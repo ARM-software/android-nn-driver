@@ -186,13 +186,15 @@ android::sp<IMemory> AddPoolAndGetData(uint32_t size, V1_0::Request& request)
 }
 
 template<typename T>
-void AddPoolAndSetData(uint32_t size, V1_0::Request& request, const T* data)
+android::sp<IMemory> AddPoolAndSetData(uint32_t size, V1_0::Request& request, const T* data)
 {
     android::sp<IMemory> memory = AddPoolAndGetData<T>(size, request);
 
     T* dst = static_cast<T*>(static_cast<void*>(memory->getPointer()));
 
     memcpy(dst, data, size * sizeof(T));
+
+    return memory;
 }
 
 template<typename HalPolicy,

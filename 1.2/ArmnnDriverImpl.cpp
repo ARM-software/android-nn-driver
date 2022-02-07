@@ -267,7 +267,9 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(
                     options.GetRequestInputsAndOutputsDumpDir(),
                     options.IsGpuProfilingEnabled(),
                     options.isAsyncModelExecutionEnabled(),
-                    options.getNoOfArmnnThreads()));
+                    options.getNoOfArmnnThreads(),
+                    options.isImportEnabled(),
+                    options.isExportEnabled()));
 
     // Run a single 'dummy' inference of the model. This means that CL kernels will get compiled (and tuned if
     // this is enabled) before the first 'real' inference which removes the overhead of the first inference.
@@ -630,6 +632,8 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareModelFromCache(
                     options.IsGpuProfilingEnabled(),
                     options.isAsyncModelExecutionEnabled(),
                     options.getNoOfArmnnThreads(),
+                    options.isImportEnabled(),
+                    options.isExportEnabled(),
                     true));
 
     NotifyCallbackAndCheck(cb, V1_0::ErrorStatus::NONE, preparedModel.release());

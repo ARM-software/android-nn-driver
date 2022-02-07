@@ -55,7 +55,9 @@ public:
                            const bool gpuProfilingEnabled,
                            V1_3::Priority priority = V1_3::Priority::MEDIUM,
                            const bool asyncModelExecutionEnabled = false,
-                           const unsigned int numberOfThreads = 1);
+                           const unsigned int numberOfThreads = 1,
+                           const bool importEnabled = false,
+                           const bool exportEnabled = true);
 
     ArmnnPreparedModel_1_3(armnn::NetworkId networkId,
                            armnn::IRuntime* runtime,
@@ -64,6 +66,8 @@ public:
                            V1_3::Priority priority = V1_3::Priority::MEDIUM,
                            const bool asyncModelExecutionEnabled = false,
                            const unsigned int numberOfThreads = 1,
+                           const bool importEnabled = false,
+                           const bool exportEnabled = true,
                            const bool preparedFromCache = false);
 
     virtual ~ArmnnPreparedModel_1_3();
@@ -201,6 +205,8 @@ private:
     static std::unique_ptr<armnn::Threadpool>      m_Threadpool;
     std::shared_ptr<IWorkingMemHandle>             m_WorkingMemHandle;
     const bool                                     m_AsyncModelExecutionEnabled;
+    const bool                                     m_EnableImport;
+    const bool                                     m_EnableExport;
     const bool                                     m_PreparedFromCache;
 };
 

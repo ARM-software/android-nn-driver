@@ -8,6 +8,8 @@
 #include "ArmnnPreparedModel.hpp"
 #include "Utils.hpp"
 
+#include <armnn/Types.hpp>
+
 #include <log/log.h>
 #include <OperationsUtils.h>
 #include <ValidateHal.h>
@@ -116,7 +118,9 @@ ArmnnPreparedModel<HalVersion>::ArmnnPreparedModel(armnn::NetworkId networkId,
                                                    const std::string& requestInputsAndOutputsDumpDir,
                                                    const bool gpuProfilingEnabled,
                                                    const bool asyncModelExecutionEnabled,
-                                                   const unsigned int numberOfThreads)
+                                                   const unsigned int numberOfThreads,
+                                                   const bool importEnabled,
+                                                   const bool exportEnabled)
     : m_NetworkId(networkId)
     , m_Runtime(runtime)
     , m_Model(model)
@@ -124,6 +128,8 @@ ArmnnPreparedModel<HalVersion>::ArmnnPreparedModel(armnn::NetworkId networkId,
     , m_RequestInputsAndOutputsDumpDir(requestInputsAndOutputsDumpDir)
     , m_GpuProfilingEnabled(gpuProfilingEnabled)
     , m_AsyncModelExecutionEnabled(asyncModelExecutionEnabled)
+    , m_EnableImport(importEnabled)
+    , m_EnableExport(exportEnabled)
 {
     // Enable profiling if required.
     m_Runtime->GetProfiler(m_NetworkId)->EnableProfiling(m_GpuProfilingEnabled);
@@ -308,7 +314,19 @@ void ArmnnPreparedModel<HalVersion>::ExecuteGraph(
         else
         {
             ALOGW("ArmnnPreparedModel::ExecuteGraph m_AsyncModelExecutionEnabled false");
-            status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors);
+            // Create a vector of Input and Output Ids which can be imported. An empty vector means all will be copied.
+            std::vector<armnn::ImportedInputId> importedInputIds;
+            if (m_EnableImport)
+            {
+                importedInputIds =  m_Runtime->ImportInputs(m_NetworkId, inputTensors, armnn::MemorySource::Malloc);
+            }
+            std::vector<armnn::ImportedOutputId> importedOutputIds;
+            if (m_EnableExport)
+            {
+                importedOutputIds = m_Runtime->ImportOutputs(m_NetworkId, outputTensors, armnn::MemorySource::Malloc);
+            }
+            status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors,
+                                                importedInputIds, importedOutputIds);
         }
 
         if (status != armnn::Status::Success)
@@ -389,7 +407,19 @@ bool ArmnnPreparedModel<HalVersion>::ExecuteWithDummyInputs()
         else
         {
             ALOGW("ArmnnPreparedModel::ExecuteGraph m_AsyncModelExecutionEnabled false");
-            status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors);
+            // Create a vector of Input and Output Ids which can be imported. An empty vector means all will be copied.
+            std::vector<armnn::ImportedInputId> importedInputIds;
+            if (m_EnableImport)
+            {
+                importedInputIds =  m_Runtime->ImportInputs(m_NetworkId, inputTensors, armnn::MemorySource::Malloc);
+            }
+            std::vector<armnn::ImportedOutputId> importedOutputIds;
+            if (m_EnableExport)
+            {
+                importedOutputIds = m_Runtime->ImportOutputs(m_NetworkId, outputTensors, armnn::MemorySource::Malloc);
+            }
+            status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors,
+                                                importedInputIds, importedOutputIds);
         }
         if (status != armnn::Status::Success)
         {

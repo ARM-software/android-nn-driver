@@ -202,30 +202,36 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
                     options.GetRequestInputsAndOutputsDumpDir(),
                     options.IsGpuProfilingEnabled(),
                     options.isAsyncModelExecutionEnabled(),
-                    options.getNoOfArmnnThreads()));
+                    options.getNoOfArmnnThreads(),
+                    options.isImportEnabled(),
+                    options.isExportEnabled()));
 
-    // Run a single 'dummy' inference of the model. This means that CL kernels will get compiled (and tuned if
-    // this is enabled) before the first 'real' inference which removes the overhead of the first inference.
-    if (!preparedModel->ExecuteWithDummyInputs())
+    if (std::find(options.GetBackends().begin(),
+                  options.GetBackends().end(),
+                  armnn::Compute::GpuAcc) != options.GetBackends().end())
     {
-        return FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "Network could not be executed", cb);
-    }
-
-    if (clTunedParameters &&
-        options.GetClTunedParametersMode() == armnn::IGpuAccTunedParameters::Mode::UpdateTunedParameters)
-    {
-        // Now that we've done one inference the CL kernel parameters will have been tuned, so save the updated file.
-        try
+        // Run a single 'dummy' inference of the model. This means that CL kernels will get compiled (and tuned if
+        // this is enabled) before the first 'real' inference which removes the overhead of the first inference.
+        if (!preparedModel->ExecuteWithDummyInputs())
         {
-            clTunedParameters->Save(options.GetClTunedParametersFile().c_str());
+            return FailPrepareModel(V1_0::ErrorStatus::GENERAL_FAILURE, "Network could not be executed", cb);
         }
-        catch (std::exception& error)
+
+        if (clTunedParameters &&
+            options.GetClTunedParametersMode() == armnn::IGpuAccTunedParameters::Mode::UpdateTunedParameters)
         {
-            ALOGE("ArmnnDriverImpl::prepareModel: Failed to save CL tuned parameters file '%s': %s",
-                  options.GetClTunedParametersFile().c_str(), error.what());
+            // Now that we've done one inference the CL kernel parameters will have been tuned, so save the updated file
+            try
+            {
+                clTunedParameters->Save(options.GetClTunedParametersFile().c_str());
+            }
+            catch (std::exception& error)
+            {
+                ALOGE("ArmnnDriverImpl::prepareModel: Failed to save CL tuned parameters file '%s': %s",
+                      options.GetClTunedParametersFile().c_str(), error.what());
+            }
         }
     }
-
     NotifyCallbackAndCheck(cb, V1_0::ErrorStatus::NONE, preparedModel);
 
     return V1_0::ErrorStatus::NONE;
