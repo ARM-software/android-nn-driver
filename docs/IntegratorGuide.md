@@ -60,7 +60,7 @@ For Android P use HAL version 1.1 as below. For Android Q substitute 1.2 where n
 </hal>
 ```
 
-4. Build Android as normal, i.e. run `make` in `<ANDROID_ROOT>`
+4. Build Android as normal (https://source.android.com/setup/build/building)
 5. To confirm that the Arm NN driver has been built, check for the driver service executable at
 
 Android P
