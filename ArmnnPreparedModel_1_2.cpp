@@ -230,6 +230,12 @@ ArmnnPreparedModel_1_2<HalVersion>::~ArmnnPreparedModel_1_2()
 {
     // Get a hold of the profiler used by this model.
     std::shared_ptr<armnn::IProfiler> profiler = m_Runtime->GetProfiler(m_NetworkId);
+    if (profiler && m_GpuProfilingEnabled)
+    {
+        // Dump the profiling info to a file if required.
+        DumpJsonProfilingIfRequired(m_GpuProfilingEnabled, m_RequestInputsAndOutputsDumpDir, m_NetworkId,
+                                    profiler.get());
+    }
 
     // Unload the network associated with this model.
     m_Runtime->UnloadNetwork(m_NetworkId);
@@ -239,9 +245,6 @@ ArmnnPreparedModel_1_2<HalVersion>::~ArmnnPreparedModel_1_2()
     {
         m_Threadpool->UnloadMemHandles(m_NetworkId);
     }
-
-    // Dump the profiling info to a file if required.
-    DumpJsonProfilingIfRequired(m_GpuProfilingEnabled, m_RequestInputsAndOutputsDumpDir, m_NetworkId, profiler.get());
 }
 
 template<typename HalVersion>
