@@ -20,31 +20,28 @@ An acceptable workaround is to increase the timeout defined in AndroidTest.xml, 
 Problems seen when trying to build the android-nn-driver obtained from GitHub
 -----------------------------------------------------------------------------
 
-Some users have encountered difficulties when attempting to build copies of the android-nn-driver obtained from GitHub. The build reports missing module source paths from armnn, clframework, flatbuffers-1.12.0 or boost_1_64_0.
+Some users have encountered difficulties when attempting to build copies of the android-nn-driver obtained from GitHub. The build reports missing module source paths from armnn, clframework or  flatbuffers-1.12.0.
 These errors can look
 like this:
 
 'error: vendor/arm/android-nn-driver/Android.bp:45:1: variant "android_arm64_armv7": module "armnn-arm_compute" "module source path "vendor/arm/android-nn-driver/clframework/build/android-arm64v8a/src/core/CL" does not exist'
 
-These errors are due to missing dependencies or incompatiblities between the android-nn-driver and armnn or clframework versions. The android-nn-driver requires boost_1_64_0 to build unit tests. The versions of android-nn-driver, armnn and clframework will have to match for them to work together. For example, the 19.08 version of android-nn-driver, clframework and armnn will work together but none of them will work with earlier or later versions of the others.
+These errors are due to missing dependencies or incompatiblities between the android-nn-driver and armnn or clframework versions. The versions of android-nn-driver, armnn and clframework will have to match for them to work together. For example, the 22.02 version of android-nn-driver, clframework and armnn will work together but none of them will work with earlier or later versions of the others.
 
-In order to ensure that the correct versions of flatbuffers, boost, armnn and the clframework are obtained you can do the following:
+In order to ensure that the correct versions of flatbuffers, armnn and the clframework are obtained you can do the following:
 
-1. Delete or move any flatbuffers, boost, armnn or clframework directories from the android-nn-driver directory.
+1. Delete or move any flatbuffers, armnn or clframework directories from the android-nn-driver directory.
 2. Run the setup.sh script in the android-nn-driver directory. 
 
-This will download the correct versions of flatbuffers, boost, armnn and the clframework and the android-nn-driver should build
+This will download the correct versions of flatbuffers, armnn and the clframework and the android-nn-driver should build
 correctly. Alternatively you can go to the GitHub pages for android-nn-driver, armnn and computelibrary (clframework) and download versions with the same release tag.
 
-As an example, for 20.05 these would be:
+As an example, for 22.02 these would be:
 
-https://github.com/ARM-software/android-nn-driver/tree/v20.05
-https://github.com/ARM-software/armnn/tree/v20.05
-https://github.com/ARM-software/computelibrary/tree/v20.05
+https://github.com/ARM-software/android-nn-driver/tree/v22.02
+https://github.com/ARM-software/armnn/tree/v22.02
+https://github.com/ARM-software/computelibrary/tree/v22.02
 
-The correct version of boost (1_64_0) can be downloaded from:
-
-https://www.boost.org/
 
 The correct version of flatbuffers (1.12.0) can be downloaded from:
 
@@ -58,7 +55,7 @@ There is a known issue in the Android NNAPI implementation of Instance Normaliza
 VTS and CTS test failures
 -------------------------
 
-With the release of the Android 10 R2 CTS some errors and crashes were discovered in the 19.08 and 19.11 releases of armnn, the android-nn-driver and ComputeLibrary. 19.08.01 and 19.11.01 releases of armnn, the android-nn-driver and ComputeLibrary were prepared that fix all these issues on CpuAcc and GpuAcc. If using 19.08 or 19.11 we recommend that you upgrade to the 19.08.01 or 19.11.01 releases. These issues have also been fixed in the 20.02 and later releases of armnn, the android-nn-driver and ComputeLibrary.
+With the release of the Android 10 R2 CTS some errors and crashes were discovered in the 19.08 and 19.11 releases of armnn, the android-nn-driver and ComputeLibrary. 19.08.01 and 19.11.01 releases of armnn, the android-nn-driver and ComputeLibrary were prepared that fix all these issues on CpuAcc and GpuAcc. If using 19.08 or 19.11 we recommend that you upgrade to the latest releases.
 
 These fixes also required patches to be made to the Android Q test framework. You may encounter CTS and VTS test failures when attempting to build copies of the android-nn-driver against older versions of Android Q.
 
