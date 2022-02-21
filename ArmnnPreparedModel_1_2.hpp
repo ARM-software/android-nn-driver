@@ -48,7 +48,7 @@ public:
                            const bool gpuProfilingEnabled,
                            const bool asyncModelExecutionEnabled = false,
                            const unsigned int numberOfThreads = 1,
-                           const bool importEnabled = false,
+                           const bool importEnabled = true,
                            const bool exportEnabled = true);
 
     ArmnnPreparedModel_1_2(armnn::NetworkId networkId,
@@ -57,7 +57,7 @@ public:
                            const bool gpuProfilingEnabled,
                            const bool asyncModelExecutionEnabled = false,
                            const unsigned int numberOfThreads = 1,
-                           const bool importEnabled = false,
+                           const bool importEnabled = true,
                            const bool exportEnabled = true,
                            const bool preparedFromCache = false);
 

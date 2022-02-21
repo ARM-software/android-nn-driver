@@ -42,7 +42,7 @@ public:
                        const bool gpuProfilingEnabled,
                        const bool asyncModelExecutionEnabled = false,
                        const unsigned int numberOfThreads = 1,
-                       const bool importEnabled = false,
+                       const bool importEnabled = true,
                        const bool exportEnabled = true);
 
     virtual ~ArmnnPreparedModel();

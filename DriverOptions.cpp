@@ -40,7 +40,7 @@ DriverOptions::DriverOptions(armnn::Compute computeDevice, bool fp16Enabled)
     , m_NumberOfThreads(0)
     , m_EnableAsyncModelExecution(false)
     , m_ArmnnNumberOfThreads(1)
-    , m_EnableImport(false)
+    , m_EnableImport(true)
     , m_EnableExport(true)
 {
 }
@@ -58,7 +58,7 @@ DriverOptions::DriverOptions(const std::vector<armnn::BackendId>& backends, bool
     , m_NumberOfThreads(0)
     , m_EnableAsyncModelExecution(false)
     , m_ArmnnNumberOfThreads(1)
-    , m_EnableImport(false)
+    , m_EnableImport(true)
     , m_EnableExport(true)
 {
 }
@@ -75,7 +75,7 @@ DriverOptions::DriverOptions(int argc, char** argv)
     , m_NumberOfThreads(0)
     , m_EnableAsyncModelExecution(false)
     , m_ArmnnNumberOfThreads(1)
-    , m_EnableImport(false)
+    , m_EnableImport(true)
     , m_EnableExport(true)
 {
     std::string unsupportedOperationsAsString;
@@ -177,7 +177,7 @@ DriverOptions::DriverOptions(int argc, char** argv)
          cxxopts::value<unsigned int>(m_ArmnnNumberOfThreads)->default_value("1"))
 
         ("I,enableImport", "Enable Importing of input buffers",
-         cxxopts::value<bool>(m_EnableImport)->default_value("false"))
+         cxxopts::value<bool>(m_EnableImport)->default_value("true"))
 
         ("E,enableExport", "Enable Exporting of output buffers",
          cxxopts::value<bool>(m_EnableExport)->default_value("true"));
