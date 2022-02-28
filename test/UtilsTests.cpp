@@ -45,7 +45,7 @@ public:
         return stream.good() ? ::armnn::Status::Success : ::armnn::Status::Failure;
     }
 
-    ::armnn::profiling::ProfilingGuid GetGuid() const final { return ::armnn::profiling::ProfilingGuid(0); }
+    ::arm::pipe::ProfilingGuid GetGuid() const final { return ::arm::pipe::ProfilingGuid(0); }
 
     void UpdateMockSerializedContent(const std::string& mockSerializedContent)
     {
