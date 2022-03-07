@@ -52,6 +52,22 @@ LOCAL_CFLAGS := \
         -O0 \
         -UNDEBUG
 
+# The variable to enable/disable the CL backend (ARMNN_COMPUTE_CL_ENABLED) is declared in android-nn-driver/Android.mk
+ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMCOMPUTECL_ENABLED
+endif # ARMNN_COMPUTE_CL_ENABLED == 1
+# The variable to enable/disable the NEON backend (ARMNN_COMPUTE_NEON_ENABLED) is declared in android-nn-driver/Android.mk
+ifeq ($(ARMNN_COMPUTE_NEON_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMCOMPUTENEON_ENABLED
+endif # ARMNN_COMPUTE_NEON_ENABLED == 1
+# The variable to enable/disable the REFERENCE backend (ARMNN_REF_ENABLED) is declared in android-nn-driver/Android.mk
+ifeq ($(ARMNN_REF_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMNNREF_ENABLED
+endif # ARMNN_REF_ENABLED == 1
+
 # Required to build with the changes made to the Android ML framework specific to Android R
 ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
@@ -165,6 +181,22 @@ LOCAL_CFLAGS := \
         -UNDEBUG \
         -DARMNN_ANDROID_NN_V1_1
 
+# The variable to enable/disable the CL backend (ARMNN_COMPUTE_CL_ENABLED) is declared in android-nn-driver/Android.mk
+ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMCOMPUTECL_ENABLED
+endif # ARMNN_COMPUTE_CL_ENABLED == 1
+# The variable to enable/disable the NEON backend (ARMNN_COMPUTE_NEON_ENABLED) is declared in android-nn-driver/Android.mk
+ifeq ($(ARMNN_COMPUTE_NEON_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMCOMPUTENEON_ENABLED
+endif # ARMNN_COMPUTE_NEON_ENABLED == 1
+# The variable to enable/disable the REFERENCE backend (ARMNN_REF_ENABLED) is declared in android-nn-driver/Android.mk
+ifeq ($(ARMNN_REF_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMNNREF_ENABLED
+endif # ARMNN_REF_ENABLED == 1
+
 # Required to build with the changes made to the Android ML framework specific to Android R
 ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
@@ -273,6 +305,22 @@ LOCAL_CFLAGS := \
         -UNDEBUG \
         -DARMNN_ANDROID_NN_V1_2
 
+# The variable to enable/disable the CL backend (ARMNN_COMPUTE_CL_ENABLED) is declared in android-nn-driver/Android.mk
+ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMCOMPUTECL_ENABLED
+endif # ARMNN_COMPUTE_CL_ENABLED == 1
+# The variable to enable/disable the NEON backend (ARMNN_COMPUTE_NEON_ENABLED) is declared in android-nn-driver/Android.mk
+ifeq ($(ARMNN_COMPUTE_NEON_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMCOMPUTENEON_ENABLED
+endif # ARMNN_COMPUTE_NEON_ENABLED == 1
+# The variable to enable/disable the REFERENCE backend (ARMNN_REF_ENABLED) is declared in android-nn-driver/Android.mk
+ifeq ($(ARMNN_REF_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMNNREF_ENABLED
+endif # ARMNN_REF_ENABLED == 1
+
 # Required to build with the changes made to the Android ML framework specific to Android R
 ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
@@ -380,6 +428,22 @@ LOCAL_CFLAGS := \
         -O0 \
         -UNDEBUG \
         -DARMNN_ANDROID_NN_V1_3
+
+# The variable to enable/disable the CL backend (ARMNN_COMPUTE_CL_ENABLED) is declared in android-nn-driver/Android.mk
+ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMCOMPUTECL_ENABLED
+endif # ARMNN_COMPUTE_CL_ENABLED == 1
+# The variable to enable/disable the NEON backend (ARMNN_COMPUTE_NEON_ENABLED) is declared in android-nn-driver/Android.mk
+ifeq ($(ARMNN_COMPUTE_NEON_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMCOMPUTENEON_ENABLED
+endif # ARMNN_COMPUTE_NEON_ENABLED == 1
+# The variable to enable/disable the REFERENCE backend (ARMNN_REF_ENABLED) is declared in android-nn-driver/Android.mk
+ifeq ($(ARMNN_REF_ENABLED),1)
+LOCAL_CFLAGS += \
+        -DARMNNREF_ENABLED
+endif # ARMNN_REF_ENABLED == 1
 
 ifeq ($(ANDROID_R),1)
 LOCAL_CFLAGS+= \
