@@ -12,6 +12,7 @@
 
 #include <log/log.h>
 #include <sys/stat.h>
+#include <chrono>
 
 namespace
 {
@@ -100,6 +101,8 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(
        bool float32ToFloat16)
 {
     ALOGV("ArmnnDriverImpl::prepareArmnnModel_1_2()");
+
+    std::chrono::time_point<std::chrono::system_clock> prepareModelTimepoint = std::chrono::system_clock::now();
 
     if (cb.get() == nullptr)
     {
@@ -372,6 +375,10 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(
     }
 
     NotifyCallbackAndCheck(cb, V1_0::ErrorStatus::NONE, preparedModel.release());
+
+    ALOGV("ArmnnDriverImpl::prepareModel cache timing = %lld µs", std::chrono::duration_cast<std::chrono::microseconds>
+         (std::chrono::system_clock::now() - prepareModelTimepoint).count());
+
     return V1_0::ErrorStatus::NONE;
 }
 
@@ -385,6 +392,7 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareModelFromCache(
     bool float32ToFloat16)
 {
     ALOGV("ArmnnDriverImpl::prepareModelFromCache()");
+    std::chrono::time_point<std::chrono::system_clock> modelFromCacheTimepoint = std::chrono::system_clock::now();
 
     if (cb.get() == nullptr)
     {
@@ -637,6 +645,11 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareModelFromCache(
                     true));
 
     NotifyCallbackAndCheck(cb, V1_0::ErrorStatus::NONE, preparedModel.release());
+
+    ALOGV("ArmnnDriverImpl::prepareModelFromCache cache timing = %lld µs",
+          std::chrono::duration_cast<std::chrono::microseconds>
+          (std::chrono::system_clock::now() - modelFromCacheTimepoint).count());
+
     return V1_0::ErrorStatus::NONE;
 }
 

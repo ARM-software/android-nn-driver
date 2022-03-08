@@ -23,6 +23,7 @@
 
 #include <ValidateHal.h>
 #include <log/log.h>
+#include <chrono>
 
 using namespace std;
 using namespace android;
@@ -69,6 +70,8 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
         bool float32ToFloat16)
 {
     ALOGV("ArmnnDriverImpl::prepareModel()");
+
+    std::chrono::time_point<std::chrono::system_clock> prepareModelTimepoint = std::chrono::system_clock::now();
 
     if (cb.get() == nullptr)
     {
@@ -233,6 +236,9 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
         }
     }
     NotifyCallbackAndCheck(cb, V1_0::ErrorStatus::NONE, preparedModel);
+
+    ALOGV("ArmnnDriverImpl::prepareModel cache timing = %lld µs", std::chrono::duration_cast<std::chrono::microseconds>
+         (std::chrono::system_clock::now() - prepareModelTimepoint).count());
 
     return V1_0::ErrorStatus::NONE;
 }

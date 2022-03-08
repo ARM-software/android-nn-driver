@@ -13,6 +13,7 @@
 #include <log/log.h>
 
 #include <sys/stat.h>
+#include <chrono>
 
 namespace
 {
@@ -112,6 +113,8 @@ Return<V1_3::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_3(
        V1_3::Priority priority)
 {
     ALOGV("ArmnnDriverImpl::prepareArmnnModel_1_3()");
+
+    std::chrono::time_point<std::chrono::system_clock> prepareModelTimepoint = std::chrono::system_clock::now();
 
     if (cb.get() == nullptr)
     {
@@ -387,6 +390,11 @@ Return<V1_3::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_3(
     }
 
     NotifyCallbackAndCheck(cb, V1_3::ErrorStatus::NONE, preparedModel.release());
+
+    ALOGV("ArmnnDriverImpl::prepareModel cache timing = %lld µs", std::chrono::duration_cast<std::chrono::microseconds>
+         (std::chrono::system_clock::now() - prepareModelTimepoint).count());
+
+
     return V1_3::ErrorStatus::NONE;
 }
 
@@ -399,6 +407,7 @@ Return<V1_3::ErrorStatus> ArmnnDriverImpl::prepareModelFromCache_1_3(
     const android::sp<V1_3::IPreparedModelCallback>& cb)
 {
     ALOGV("ArmnnDriverImpl::prepareModelFromCache_1_3()");
+    std::chrono::time_point<std::chrono::system_clock> modelFromCacheTimepoint = std::chrono::system_clock::now();
 
     if (token.size() != ANEURALNETWORKS_BYTE_SIZE_OF_CACHE_TOKEN)
     {
@@ -652,6 +661,11 @@ Return<V1_3::ErrorStatus> ArmnnDriverImpl::prepareModelFromCache_1_3(
                                                            true));
 
     NotifyCallbackAndCheck(cb, V1_3::ErrorStatus::NONE, preparedModel.release());
+
+    ALOGV("ArmnnDriverImpl::prepareModelFromCache timing = %lld µs",
+          std::chrono::duration_cast<std::chrono::microseconds>
+          (std::chrono::system_clock::now() - modelFromCacheTimepoint).count());
+
     return V1_3::ErrorStatus::NONE;
 }
 
