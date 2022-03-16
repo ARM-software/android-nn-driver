@@ -14,6 +14,7 @@
 #include <OperationsUtils.h>
 #include <ValidateHal.h>
 
+#include <chrono>
 #include <cinttypes>
 
 #ifdef ARMNN_ANDROID_S
@@ -299,6 +300,8 @@ void ArmnnPreparedModel<HalVersion>::ExecuteGraph(
         CallbackContext_1_0 cb)
 {
     ALOGV("ArmnnPreparedModel::ExecuteGraph(...)");
+    // Capture the graph execution start time.
+    std::chrono::time_point<std::chrono::system_clock> graphExecutionStart = std::chrono::system_clock::now();
 
     DumpTensorsIfRequired("Input", inputTensors);
 
@@ -328,7 +331,6 @@ void ArmnnPreparedModel<HalVersion>::ExecuteGraph(
             status = m_Runtime->EnqueueWorkload(m_NetworkId, inputTensors, outputTensors,
                                                 importedInputIds, importedOutputIds);
         }
-
         if (status != armnn::Status::Success)
         {
             ALOGW("EnqueueWorkload failed");
@@ -364,6 +366,12 @@ void ArmnnPreparedModel<HalVersion>::ExecuteGraph(
             pool.update();
         #endif
     }
+
+    // Log the total time in this call. This is a good number to compare to that printed out by
+    // RuntimeImpl::EnqueueWorkload. The difference should be the execution overhead of the driver.
+    ALOGI("ArmnnPreparedModel::ExecuteGraph Execution time = %lld µs",
+           std::chrono::duration_cast<std::chrono::microseconds>
+          (std::chrono::system_clock::now() - graphExecutionStart).count());
 
     cb.callback(V1_0::ErrorStatus::NONE, "ExecuteGraph");
 }
