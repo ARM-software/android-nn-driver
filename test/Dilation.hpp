@@ -51,6 +51,8 @@ public:
         armnn::IgnoreUnused(layer, constants, id, name);
         switch (layer->GetType())
         {
+            case armnn::LayerType::Constant:
+                break;
             case armnn::LayerType::Convolution2d:
             {
                 CheckDilationParams(static_cast<const armnn::Convolution2dDescriptor&>(descriptor));

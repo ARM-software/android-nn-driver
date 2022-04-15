@@ -523,12 +523,11 @@ bool ConvertDepthwiseConv2d_1_2(const HalOperation& operation, const HalModel& m
     // ArmNN does not currently support non-fixed weights or bias
     // Find the shape of the weights tensor. In AndroidNN this will be [ 1, H, W, I * M ]
     const HalOperand* weightsOperand = GetInputOperand<HalPolicy>(operation, 1, model);
-
-    if (weightsOperand == nullptr)
+    if (!weightsOperand)
     {
-        return Fail("%s: Operand is invalid", __func__);
+        return Fail("%s: Could not read weights", __func__);
     }
-    if ( weightsOperand->dimensions[0] != 1)
+    if (weightsOperand->dimensions[0] != 1)
     {
         return Fail("%s: Invalid weights; for depthwise convolution, dimension 0 must be 1 but it is %i",
                     __func__, weightsOperand->dimensions[0] );
@@ -550,30 +549,27 @@ bool ConvertDepthwiseConv2d_1_2(const HalOperation& operation, const HalModel& m
     unsigned int widthIndex = dataLayoutIndexed.GetWidthIndex();
     unsigned int heightIndex = dataLayoutIndexed.GetHeightIndex();
 
-    // The layout for weights in depthwise is [ 1, H, W, O] and it's the same in ArmNN. No need to permute anything.
-    const ConstTensorPin weightsPin =
-        ConvertOperationInputToConstTensorPin<HalPolicy>(operation,
-                                                         1,
-                                                         model,
-                                                         data);
-
-    // Bias is a 1D tensor
-    const ConstTensorPin biasPin =
-        ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 2, model, data);
-
-    if (!weightsPin.IsValid())
+    LayerInputHandle weightsInput = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
+    if (!weightsInput.IsValid())
     {
-        return Fail("%s: Operation has invalid weights", __func__);
+        return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    if (!biasPin.IsValid())
+    const HalOperand* biasOperand = GetInputOperand<HalPolicy>(operation, 2, model);
+    if (!biasOperand)
     {
-        return Fail("%s: Operation has invalid biases", __func__);
+        return Fail("%s: Could not read bias", __func__);
     }
 
-    ConstTensor weights = weightsPin.GetConstTensor();
-    ConstTensor bias = biasPin.GetConstTensor();
-    SanitizeBiasQuantizationScale(bias.GetInfo(), weights.GetInfo(), inputInfo);
+    LayerInputHandle biasInput = ConvertToLayerInputHandle<HalPolicy>(operation, 2, model, data); // 1D
+    if (!biasInput.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    biasInput.SanitizeQuantizationScale(weightsInput, input);
+    armnn::TensorInfo weightsInfo = weightsInput.GetTensorInfo();
+    armnn::TensorInfo biasInfo = biasInput.GetTensorInfo();
 
     ActivationFn activation;
 
@@ -589,8 +585,8 @@ bool ConvertDepthwiseConv2d_1_2(const HalOperation& operation, const HalModel& m
             return Fail("%s: Operation has invalid inputs (implicit padding)", __func__);
         }
 
-        const uint32_t kernelX = weights.GetShape()[2];
-        const uint32_t kernelY = weights.GetShape()[1];
+        const uint32_t kernelX = weightsInfo.GetShape()[2];
+        const uint32_t kernelY = weightsInfo.GetShape()[1];
         const uint32_t inputX  = inputInfo.GetShape()[widthIndex];
         const uint32_t inputY  = inputInfo.GetShape()[heightIndex];
 
@@ -618,7 +614,7 @@ bool ConvertDepthwiseConv2d_1_2(const HalOperation& operation, const HalModel& m
     }
 
     desc.m_BiasEnabled = true;
-    Optional<TensorInfo> biases(bias.GetInfo());
+    Optional<TensorInfo> biases(biasInfo);
 
     bool isSupported = false;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
@@ -630,7 +626,7 @@ bool ConvertDepthwiseConv2d_1_2(const HalOperation& operation, const HalModel& m
                                    inputInfo,
                                    outputInfo,
                                    desc,
-                                   weights.GetInfo(),
+                                   weightsInfo,
                                    biases);
     };
 
@@ -648,8 +644,7 @@ bool ConvertDepthwiseConv2d_1_2(const HalOperation& operation, const HalModel& m
         return false;
     }
 
-    IConnectableLayer* startLayer =
-        data.m_Network->AddDepthwiseConvolution2dLayer(desc, weights, Optional<ConstTensor>(bias));
+    armnn::IConnectableLayer* startLayer = data.m_Network->AddDepthwiseConvolution2dLayer(desc);
 
     if (!startLayer)
     {
@@ -657,6 +652,10 @@ bool ConvertDepthwiseConv2d_1_2(const HalOperation& operation, const HalModel& m
     }
 
     input.Connect(startLayer->GetInputSlot(0));
+
+    // Connect weights and bias inputs
+    weightsInput.Connect(startLayer->GetInputSlot(1));
+    biasInput.Connect(startLayer->GetInputSlot(2));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
                                                    data, nullptr, validateFunc, activation);
