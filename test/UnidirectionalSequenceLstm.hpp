@@ -138,10 +138,10 @@ void UnidirectionalSequenceLstmTestImpl(const hidl_vec<uint32_t>& inputDimension
                                         const std::vector<float>& outputLayerNormWeightsValue,
                                         const hidl_vec<uint32_t>& outputDimensions,
                                         const std::vector<float>& outputValue,
-                                        const hidl_vec<uint32_t>&,
-                                        const std::vector<float>&,
-                                        const hidl_vec<uint32_t>&,
-                                        const std::vector<float>&,
+                                        const hidl_vec<uint32_t>&, // outputStateOutDimensions,
+                                        const std::vector<float>&, // outputStateOutValue,
+                                        const hidl_vec<uint32_t>&, // cellStateOutDimensions,
+                                        const std::vector<float>&, // cellStateOutValue,
                                         armnn::Compute compute,
                                         float epsilonValue = 0)
 {
@@ -519,12 +519,12 @@ void UnidirectionalSequenceLstmLayerFloat32TestImpl(armnn::Compute compute)
     // 1: The hidden state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
     //    [batch_size, output_size]. This output is optional and can be omitted. If this output
     //    is present then output #2 must be present as well.
-    hidl_vec<uint32_t> hiddenStateOutDimensions{0};
-    std::vector<float> hiddenStateOutValue;
+    hidl_vec<uint32_t> hiddenStateOutDimensions{batchSize, outputSize};
+    std::vector<float> hiddenStateOutValue(batchSize * outputSize, 0.f);
     // 2: The cell state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
     //    [batch_size, num_units]. This output is optional and can be omitted.
-    hidl_vec<uint32_t> cellStateOutDimensions{0};
-    std::vector<float> cellStateOutValue;
+    hidl_vec<uint32_t> cellStateOutDimensions{batchSize, numUnits};
+    std::vector<float> cellStateOutValue(batchSize * numUnits, 0.f);
 
     UnidirectionalSequenceLstmTestImpl<HalPolicy>(inputDimensions, inputValue,
                                                   inputToInputWeightsDimensions, inputToInputWeightsValue,
@@ -724,12 +724,12 @@ void UnidirectionalSequenceLstmLayerFloat32TimeMajorTestImpl(armnn::Compute comp
     // 1: The hidden state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
     //    [batch_size, output_size]. This output is optional and can be omitted. If this output
     //    is present then output #2 must be present as well.
-    hidl_vec<uint32_t> hiddenStateOutDimensions{0};
-    std::vector<float> hiddenStateOutValue;
+    hidl_vec<uint32_t> hiddenStateOutDimensions{batchSize, outputSize};
+    std::vector<float> hiddenStateOutValue(batchSize * outputSize, 0.f);
     // 2: The cell state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
     //    [batch_size, num_units]. This output is optional and can be omitted.
-    hidl_vec<uint32_t> cellStateOutDimensions{0};
-    std::vector<float> cellStateOutValue;
+    hidl_vec<uint32_t> cellStateOutDimensions{batchSize, numUnits};
+    std::vector<float> cellStateOutValue(batchSize * numUnits, 0.f);
 
     UnidirectionalSequenceLstmTestImpl<HalPolicy>(inputDimensions, inputValue,
                                                   inputToInputWeightsDimensions, inputToInputWeightsValue,
@@ -964,12 +964,12 @@ void UnidirectionalSequenceLstmLayerNoCifgWithPeepholeWithProjectionTestImpl(arm
     // 1: The hidden state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
     //    [batch_size, output_size]. This output is optional and can be omitted. If this output
     //    is present then output #2 must be present as well.
-    hidl_vec<uint32_t> hiddenStateOutDimensions{0};
-    std::vector<float> hiddenStateOutValue;
+    hidl_vec<uint32_t> hiddenStateOutDimensions{batchSize, outputSize};
+    std::vector<float> hiddenStateOutValue(batchSize * outputSize, 0.f);
     // 2: The cell state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
     //    [batch_size, num_units]. This output is optional and can be omitted.
-    hidl_vec<uint32_t> cellStateOutDimensions{0};
-    std::vector<float> cellStateOutValue;
+    hidl_vec<uint32_t> cellStateOutDimensions{batchSize, numUnits};
+    std::vector<float> cellStateOutValue(batchSize * numUnits, 0.f);
 
     UnidirectionalSequenceLstmTestImpl<HalPolicy>(inputDimensions, inputValue,
                                                   inputToInputWeightsDimensions, inputToInputWeightsValue,
@@ -1179,12 +1179,12 @@ void UnidirectionalSequenceLstmLayerNoCifgWithPeepholeWithProjectionWithLayerNor
     // 1: The hidden state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
     //    [batch_size, output_size]. This output is optional and can be omitted. If this output
     //    is present then output #2 must be present as well.
-    hidl_vec<uint32_t> hiddenStateOutDimensions{0};
-    std::vector<float> hiddenStateOutValue;
+    hidl_vec<uint32_t> hiddenStateOutDimensions{batchSize, outputSize};
+    std::vector<float> hiddenStateOutValue(batchSize * outputSize, 0.f);
     // 2: The cell state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
     //    [batch_size, num_units]. This output is optional and can be omitted.
-    hidl_vec<uint32_t> cellStateOutDimensions{0};
-    std::vector<float> cellStateOutValue;
+    hidl_vec<uint32_t> cellStateOutDimensions{batchSize, numUnits};
+    std::vector<float> cellStateOutValue(batchSize * numUnits, 0.f);
 
     UnidirectionalSequenceLstmTestImpl<HalPolicy>(inputDimensions, inputValue,
                                                   inputToInputWeightsDimensions, inputToInputWeightsValue,
@@ -1376,12 +1376,12 @@ void UnidirectionalSequenceLstmWithCifgWithPeepholeNoProjectionTestImpl(armnn::C
     // 1: The hidden state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
     //    [batch_size, output_size]. This output is optional and can be omitted. If this output
     //    is present then output #2 must be present as well.
-    hidl_vec<uint32_t> hiddenStateOutDimensions{0};
-    std::vector<float> hiddenStateOutValue;
+    hidl_vec<uint32_t> hiddenStateOutDimensions{batchSize, outputSize};
+    std::vector<float> hiddenStateOutValue(batchSize * outputSize, 0.f);
     // 2: The cell state (out): A 2-D tensor of ANEURALNETWORKS_TENSOR_FLOAT32/16, of shape
     //    [batch_size, num_units]. This output is optional and can be omitted.
-    hidl_vec<uint32_t> cellStateOutDimensions{0};
-    std::vector<float> cellStateOutValue;
+    hidl_vec<uint32_t> cellStateOutDimensions{batchSize, numUnits};
+    std::vector<float> cellStateOutValue(batchSize * numUnits, 0.f);
 
     UnidirectionalSequenceLstmTestImpl<HalPolicy>(inputDimensions, inputValue,
                                                   inputToInputWeightsDimensions, inputToInputWeightsValue,
