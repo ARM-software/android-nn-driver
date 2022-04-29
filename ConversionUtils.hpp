@@ -1189,7 +1189,8 @@ template<typename HalPolicy,
 LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
                                            uint32_t inputIndex,
                                            const HalModel& model,
-                                           ConversionData& data)
+                                           ConversionData& data,
+                                           const armnn::PermutationVector& dimensionMappings = g_DontPermute)
 {
     using HalOperand         = typename HalPolicy::Operand;
     using HalOperandType     = typename HalPolicy::OperandType;
@@ -1252,7 +1253,9 @@ LayerInputHandle ConvertToLayerInputHandle(const HalOperation& operation,
             case HalOperandLifeTime::CONSTANT_REFERENCE:
             {
                 // The tensor has an already known constant value, and can be converted into an ArmNN Constant layer.
-                ConstTensorPin tensorPin = ConvertOperandToConstTensorPin<HalPolicy>(*operand, model, data);
+                ConstTensorPin tensorPin =
+                                    ConvertOperandToConstTensorPin<HalPolicy>(*operand, model, data, dimensionMappings);
+
                 if (tensorPin.IsValid())
                 {
                     bool isSupported = false;
@@ -1302,7 +1305,8 @@ template<typename HalPolicy>
 LayerInputHandle ConvertToLayerInputHandle(const ::android::hardware::neuralnetworks::V1_3::Operation& operation,
                                            uint32_t inputIndex,
                                            const::android::hardware::neuralnetworks::V1_3::Model& model,
-                                           ConversionData& data)
+                                           ConversionData& data,
+                                           const armnn::PermutationVector& dimensionMappings = g_DontPermute)
 {
     using HalOperand         = typename HalPolicy::Operand;
     using HalOperandType     = typename HalPolicy::OperandType;
@@ -1379,7 +1383,9 @@ LayerInputHandle ConvertToLayerInputHandle(const ::android::hardware::neuralnetw
             case HalOperandLifeTime::CONSTANT_REFERENCE:
             {
                 // The tensor has an already known constant value, and can be converted into an ArmNN Constant layer.
-                ConstTensorPin tensorPin = ConvertOperandToConstTensorPin<HalPolicy>(*operand, model, data);
+                ConstTensorPin tensorPin =
+                                    ConvertOperandToConstTensorPin<HalPolicy>(*operand, model, data, dimensionMappings);
+
                 if (tensorPin.IsValid())
                 {
                     bool isSupported = false;
@@ -2395,18 +2401,21 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
     const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
     const armnn::TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
-    // ArmNN does not currently support non-fixed weights or bias
-    const ConstTensorPin weightsPin = ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 1, model, data);
-    const ConstTensorPin biasPin    = ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 2, model, data);
-
-    if (!weightsPin.IsValid() || !biasPin.IsValid())
+    LayerInputHandle weightsInput = ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
+    if (!weightsInput.IsValid())
     {
         return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    armnn::ConstTensor weights = weightsPin.GetConstTensor();
-    armnn::ConstTensor bias    = biasPin.GetConstTensor();
-    SanitizeBiasQuantizationScale(bias.GetInfo(), weights.GetInfo(), inputInfo);
+    LayerInputHandle biasInput = ConvertToLayerInputHandle<HalPolicy>(operation, 2, model, data); // 1D
+    if (!biasInput.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    biasInput.SanitizeQuantizationScale(weightsInput, input);
+    armnn::TensorInfo weightsInfo = weightsInput.GetTensorInfo();
+    armnn::TensorInfo biasInfo = biasInput.GetTensorInfo();
 
     armnn::Convolution2dDescriptor desc;
     desc.m_DataLayout = armnn::DataLayout::NHWC;
@@ -2436,8 +2445,8 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
             return Fail("%s: Operation has invalid inputs", __func__);
         }
 
-        const uint32_t kernelX = weights.GetShape()[2];
-        const uint32_t kernelY = weights.GetShape()[1];
+        const uint32_t kernelX = weightsInfo.GetShape()[2];
+        const uint32_t kernelY = weightsInfo.GetShape()[1];
         const uint32_t inputX  = inputInfo.GetShape()[2];
         const uint32_t inputY  = inputInfo.GetShape()[1];
 
@@ -2450,7 +2459,7 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
     }
 
     desc.m_BiasEnabled = true;
-    armnn::Optional<armnn::TensorInfo> biases(bias.GetInfo());
+    armnn::Optional<armnn::TensorInfo> biases(biasInfo);
 
     bool isSupported = false;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
@@ -2462,7 +2471,7 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
                                    inputInfo,
                                    outputInfo,
                                    desc,
-                                   weights.GetInfo(),
+                                   weightsInfo,
                                    biases);
     };
 
@@ -2480,8 +2489,7 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
         return false;
     }
 
-    armnn::IConnectableLayer* startLayer =
-            data.m_Network->AddConvolution2dLayer(desc, weights, armnn::Optional<armnn::ConstTensor>(bias));
+    armnn::IConnectableLayer* startLayer = data.m_Network->AddConvolution2dLayer(desc);
 
     if (!startLayer)
     {
@@ -2489,6 +2497,10 @@ bool ConvertConv2d(const HalOperation& operation, const HalModel& model, Convers
     }
 
     input.Connect(startLayer->GetInputSlot(0));
+
+    // Connect weights and bias inputs
+    weightsInput.Connect(startLayer->GetInputSlot(1));
+    biasInput.Connect(startLayer->GetInputSlot(2));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
                                                    data, nullptr, validateFunc, activation);
