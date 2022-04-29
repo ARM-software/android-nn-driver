@@ -23,6 +23,31 @@ using namespace armnn;
 using namespace android::nn;
 
 template<typename HalPolicy,
+        typename HalOperation = typename HalPolicy::Operation,
+        typename HalModel     = typename HalPolicy::Model>
+bool IsWeightsValid(const HalOperation& operation,
+                    uint32_t inputIndex,
+                    const HalModel& model)
+{
+    using HalOperand         = typename HalPolicy::Operand;
+    using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
+    const HalOperand* operand = GetInputOperand<HalPolicy>(operation, inputIndex, model);
+    if (!operand)
+    {
+        Fail("%s: failed to get input operand %i", __func__, inputIndex);
+        return false;
+    }
+
+    if (operand->lifetime    != HalOperandLifeTime::CONSTANT_COPY
+        && operand->lifetime != HalOperandLifeTime::CONSTANT_REFERENCE
+        && operand->lifetime != HalOperandLifeTime::NO_VALUE)
+    {
+        return false;
+    }
+    return true;
+}
+
+template<typename HalPolicy,
          typename HalOperation = typename HalPolicy::Operation,
          typename HalModel     = typename HalPolicy::Model>
 bool IsQSymmDequantizeForWeights(const HalOperation& operation, const HalModel& model)
@@ -381,26 +406,31 @@ bool ConvertConv2d_1_2(const HalOperation& operation, const HalModel& model, Con
     // The NNAPI filter is always OHWI [depth_out, filter_height, filter_width, depth_in] but ArmNN expects the
     // filter's height and width indices to match the input's height and width indices so we permute it to OIHW if
     // the DataLayout is NCHW
-    const ConstTensorPin weightsPin = (desc.m_DataLayout == DataLayout::NCHW) ?
-                                      ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 1,
-                                                                                       model, data, OHWIToOIHW) :
-                                      ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 1, model, data);
-    const ConstTensorPin biasPin    =
-        ConvertOperationInputToConstTensorPin<HalPolicy>(operation, 2, model, data);
 
-    if (!weightsPin.IsValid())
+
+    if (!IsWeightsValid<HalPolicy>(operation, 1, model) && desc.m_DataLayout == DataLayout::NCHW)
     {
-        return Fail("%s: Operation has invalid weights", __func__);
+        return Fail("%s: Operation has unsupported weights HalOperandLifeTime", __func__);
     }
 
-    if (!biasPin.IsValid())
+    LayerInputHandle weightsInput = (desc.m_DataLayout == DataLayout::NCHW) ?
+                                     ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data, OHWIToOIHW) :
+                                     ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
+
+    if (!weightsInput.IsValid())
     {
-        return Fail("%s: Operation has invalid biases", __func__);
+        return Fail("%s: Operation has invalid inputs", __func__);
     }
 
-    ConstTensor weights = weightsPin.GetConstTensor();
-    ConstTensor bias = biasPin.GetConstTensor();
-    SanitizeBiasQuantizationScale(bias.GetInfo(), weights.GetInfo(), inputInfo);
+    LayerInputHandle biasInput = ConvertToLayerInputHandle<HalPolicy>(operation, 2, model, data); // 1D
+    if (!biasInput.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    biasInput.SanitizeQuantizationScale(weightsInput, input);
+    armnn::TensorInfo weightsInfo = weightsInput.GetTensorInfo();
+    armnn::TensorInfo biasInfo = biasInput.GetTensorInfo();
 
     ActivationFn activation;
 
@@ -419,8 +449,8 @@ bool ConvertConv2d_1_2(const HalOperation& operation, const HalModel& model, Con
         armnnUtils::DataLayoutIndexed dataLayoutIndexed(desc.m_DataLayout);
         unsigned int widthIndex = dataLayoutIndexed.GetWidthIndex();
         unsigned int heightIndex = dataLayoutIndexed.GetHeightIndex();
-        const uint32_t kernelX = weights.GetShape()[widthIndex];
-        const uint32_t kernelY = weights.GetShape()[heightIndex];
+        const uint32_t kernelX = weightsInfo.GetShape()[widthIndex];
+        const uint32_t kernelY = weightsInfo.GetShape()[heightIndex];
         const uint32_t inputX  = inputInfo.GetShape()[widthIndex];
         const uint32_t inputY  = inputInfo.GetShape()[heightIndex];
 
@@ -449,7 +479,7 @@ bool ConvertConv2d_1_2(const HalOperation& operation, const HalModel& model, Con
     }
 
     desc.m_BiasEnabled = true;
-    Optional<TensorInfo> biases(bias.GetInfo());
+    Optional<TensorInfo> biases(biasInfo);
 
     bool isSupported = false;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
@@ -461,7 +491,7 @@ bool ConvertConv2d_1_2(const HalOperation& operation, const HalModel& model, Con
                                    inputInfo,
                                    outputInfo,
                                    desc,
-                                   weights.GetInfo(),
+                                   weightsInfo,
                                    biases);
     };
 
@@ -479,8 +509,7 @@ bool ConvertConv2d_1_2(const HalOperation& operation, const HalModel& model, Con
         return false;
     }
 
-    IConnectableLayer* startLayer =
-        data.m_Network->AddConvolution2dLayer(desc, weights, Optional<ConstTensor>(bias));
+    armnn::IConnectableLayer* startLayer = data.m_Network->AddConvolution2dLayer(desc);
 
     if (!startLayer)
     {
@@ -488,6 +517,8 @@ bool ConvertConv2d_1_2(const HalOperation& operation, const HalModel& model, Con
     }
 
     input.Connect(startLayer->GetInputSlot(0));
+    weightsInput.Connect(startLayer->GetInputSlot(1));
+    biasInput.Connect(startLayer->GetInputSlot(2));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *startLayer, model,
                                                    data, nullptr, validateFunc, activation);
@@ -1202,8 +1233,11 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
                 return false;
             }
 
+            ARMNN_NO_DEPRECATE_WARN_BEGIN
             IConnectableLayer* convLayer =
                 data.m_Network->AddConvolution2dLayer(desc, groupWeights, Optional<ConstTensor>(groupBiases));
+            ARMNN_NO_DEPRECATE_WARN_END
+
             if (!convLayer)
             {
                 return Fail("%s: AddConvolution2dLayer failed", __func__);
