@@ -62,14 +62,17 @@ const armnn::TensorInfo& LayerInputHandle::GetTensorInfo() const
 void LayerInputHandle::SanitizeQuantizationScale(LayerInputHandle& weight,
                                                  LayerInputHandle& input)
 {
-    armnn::TensorInfo weightInfo = weight.GetTensorInfo();
-    armnn::TensorInfo inputInfo = input.GetTensorInfo();
-    armnn::TensorInfo biasInfo = GetTensorInfo();
+    if (m_OutputSlot)
+    {
+        armnn::TensorInfo weightInfo = weight.GetTensorInfo();
+        armnn::TensorInfo inputInfo = input.GetTensorInfo();
+        armnn::TensorInfo biasInfo = GetTensorInfo();
 
-    SanitizeBiasQuantizationScale(biasInfo, weightInfo, inputInfo);
+        SanitizeBiasQuantizationScale(biasInfo, weightInfo, inputInfo);
 
-    m_TensorInfo = biasInfo;
-    m_OutputSlot->SetTensorInfo(biasInfo);
+        m_TensorInfo = biasInfo;
+        m_OutputSlot->SetTensorInfo(biasInfo);
+    }
 }
 
 ConstTensorPin::ConstTensorPin(bool optional)
