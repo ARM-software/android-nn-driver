@@ -11,10 +11,10 @@
 cc_defaults {
     name: "libflatbuffers-defaults",
     proprietary: true,
-    export_include_dirs: [ "flatbuffers-1.12.0/",
-                           "flatbuffers-1.12.0/include",
+    export_include_dirs: [ "flatbuffers/",
+                           "flatbuffers/include",
     ],
-    local_include_dirs: ["flatbuffers-1.12.0/include",],
+    local_include_dirs: ["flatbuffers/include",],
     cflags: [
         "-O3",
         "-fexceptions",
@@ -31,8 +31,8 @@ cc_library_static {
     name: "libflatbuffers-framework",
     defaults: ["libflatbuffers-defaults"],
     srcs: [
-        "flatbuffers-1.12.0/src/flatc.cpp",
-        "flatbuffers-1.12.0/src/flatc_main.cpp",
+        "flatbuffers/src/flatc.cpp",
+        "flatbuffers/src/flatc_main.cpp",
     ],
 }
 

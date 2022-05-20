@@ -9,18 +9,59 @@ function AssertZeroExitCode {
   fi
 }
 
-if [ ! -d v1.12.0 ]; then
-  echo "++ Downloading FlatBuffers"
+BUILD_DIR=build-x86_64
+FLATBUFFERS_DIR=$PWD/flatbuffers
 
-  FLATBUFFERS_PKG=v1.12.0.tar.gz
+function BuildFlatbuffers {
+  pushd flatbuffers
+  rm -rf $BUILD_DIR
+  rm -f CMakeCache.txt
+  FLATBUFFERS_DIR=$PWD
 
-  curl -LOk https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz
-  AssertZeroExitCode "Downloading FlatBuffers failed"
+  mkdir -p $BUILD_DIR
+  cd $BUILD_DIR
 
-  tar xzf $FLATBUFFERS_PKG
-  AssertZeroExitCode "Unpacking FlatBuffers failed"
+  echo "+++ Building Google Flatbufers"
+  CMD="cmake -DFLATBUFFERS_BUILD_FLATC=1 -DCMAKE_INSTALL_PREFIX:PATH=$FLATBUFFERS_DIR .."
+  # Force -fPIC to allow relocatable linking.
+  CXXFLAGS="-fPIC" $CMD
+  AssertZeroExitCode "cmake Google Flatbuffers failed. command was: ${CMD}"
+  make all install
+  AssertZeroExitCode "Building Google Flatbuffers failed"
+  mkdir -p $FLATBUFFERS_DIR/bin
+  cp -f flatc $FLATBUFFERS_DIR/bin
+  AssertZeroExitCode "Failed to copy the Flatbuffers Compiler"
+  popd
+}
 
-  rm -rf $FLATBUFFERS_PKG
+if [ ! -d flatbuffers ]; then
+  # Check if the AOSP has a flatbuffers we can use
+  if [ -d ../../../external/flatbuffers/ ]; then
+    echo "+++ Using AOSP Flatbufers"
+    FLATBUFFERS_DIR=$PWD
+    # Have to make a copy of the AOSP flatbuffers and delete a few files to avoid issues with the android build
+    cp -r ../../../external/flatbuffers/ flatbuffers
+    # Remove Android build files to avoid build issues
+    rm flatbuffers/Android.*
+
+    BuildFlatbuffers
+
+  # If not then download flatbuffers
+  else
+    echo "++ Downloading FlatBuffers v1.12.0"
+
+    FLATBUFFERS_PKG=v1.12.0.tar.gz
+
+    curl -LOk https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz
+    AssertZeroExitCode "Downloading FlatBuffers failed"
+    mkdir -p flatbuffers
+    tar xzf $FLATBUFFERS_PKG -C flatbuffers --strip-components 1
+    AssertZeroExitCode "Unpacking FlatBuffers failed"
+
+    BuildFlatbuffers
+
+    rm -rf $FLATBUFFERS_PKG
+  fi
 fi
 
 if [ ! -d armnn ]; then
@@ -51,3 +92,12 @@ scons os=android build=embed_only neon=0 opencl=1 embed_kernels=1 validation_tes
 AssertZeroExitCode "Precompiling clframework failed for v8a."
 popd
 
+if [ ! -d armnn/generated ]; then
+  mkdir -p armnn/generated
+fi
+
+if [ ! -f armnn/generated/ArmnnSchema_generated.h ]; then
+  echo "+++ Generating new ArmnnSchema_generated.h"
+  $FLATBUFFERS_DIR/bin/flatc -o armnn/generated --cpp armnn/src/armnnSerializer/ArmnnSchema.fbs
+  AssertZeroExitCode "Generating ArmnnSchema_generated.h failed."
+fi
