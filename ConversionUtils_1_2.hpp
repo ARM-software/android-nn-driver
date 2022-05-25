@@ -2670,7 +2670,7 @@ bool ConvertLstm(const HalOperation& operation, const HalModel& model, Conversio
     //     If set to 0.0 then clipping is disabled.
     // 22: The clipping threshold: for the output from the projection layer, such that values are bound within
     //     [-proj_clip, proj_clip]. If set to 0.0 then clipping is disabled.
-    ActivationFn activation;
+    ActivationFn activation = ActivationFn::kActivationNone;
     float cellClip;
     float projClip;
     if (!GetInputActivationFunctionFromTensor<HalPolicy>(operation, 20, activation, model, data) ||
@@ -3315,7 +3315,7 @@ bool ConvertUnidirectionalSequenceLstm(const HalOperation& operation,
     // 22: The clipping threshold: for the output from the projection layer, such that values are bound within
     //     [-proj_clip, proj_clip]. If set to 0.0 then clipping is disabled.
     // Determine data type of input tensor
-    ActivationFn activation;
+    ActivationFn activation = ActivationFn::kActivationNone;
     LstmDescriptor desc;
 
     if (inputType == HalOperandType::TENSOR_FLOAT32)
