@@ -182,6 +182,8 @@ endif
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS+= \
         -UNDEBUG
+LOCAL_LDFLAGS += \
+        -Wl,-Map=libarmnndriver10MapFile.map
 endif # ARMNN_DRIVER_DEBUG == 1
 
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
@@ -309,6 +311,8 @@ LOCAL_CFLAGS := \
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS+= \
         -UNDEBUG
+LOCAL_LDFLAGS += \
+        -Wl,-Map=libarmnnDriver11MapFile.map
 endif # ARMNN_DRIVER_DEBUG == 1
 
 # Required to build with the changes made to the Android ML framework specific to Android R
@@ -439,6 +443,8 @@ LOCAL_CFLAGS := \
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS+= \
         -UNDEBUG
+LOCAL_LDFLAGS += \
+        -Wl,-Map=libarmnnDriver12MapFile.map
 endif # ARMNN_DRIVER_DEBUG == 1
 
 # Required to build with the changes made to the Android ML framework specific to Android R
@@ -579,6 +585,8 @@ endif
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS+= \
         -UNDEBUG
+LOCAL_LDFLAGS += \
+        -Wl,-Map=libarmnnDriver13MapFile.map
 endif # ARMNN_DRIVER_DEBUG == 1
 
 ifeq ($(ARMNN_COMPUTE_CL_ENABLED),1)
@@ -697,6 +705,8 @@ LOCAL_CFLAGS := \
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS += \
         -UNDEBUG
+LOCAL_LDFLAGS += \
+        -Wl,-Map=neuralNetworks10MapFile.map
 endif # ARMNN_DRIVER_DEBUG == 1
 
 # Required to build with the changes made to the Android ML framework specific to Android R
@@ -805,6 +815,8 @@ LOCAL_CFLAGS := \
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS += \
         -UNDEBUG
+LOCAL_LDFLAGS += \
+        -Wl,-Map=neuralNetworks11MapFile.map
 endif # ARMNN_DRIVER_DEBUG == 1
 
 # Required to build with the changes made to the Android ML framework specific to Android R
@@ -904,6 +916,8 @@ LOCAL_CFLAGS := \
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS += \
         -UNDEBUG
+LOCAL_LDFLAGS += \
+        -Wl,-Map=neuralNetworks12MapFile.map
 endif # ARMNN_DRIVER_DEBUG == 1
 
 # Required to build with the changes made to the Android ML framework specific to Android R
@@ -1009,6 +1023,8 @@ endif
 ifeq ($(ARMNN_DRIVER_DEBUG),1)
 LOCAL_CFLAGS += \
         -UNDEBUG
+LOCAL_LDFLAGS += \
+        -Wl,-Map=neuralNetworks13MapFile.map
 endif # ARMNN_DRIVER_DEBUG == 1
 
 LOCAL_SRC_FILES := \
