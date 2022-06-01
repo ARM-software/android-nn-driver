@@ -35,33 +35,19 @@ function BuildFlatbuffers {
 }
 
 if [ ! -d flatbuffers ]; then
-  # Check if the AOSP has a flatbuffers we can use
-  if [ -d ../../../external/flatbuffers/ ]; then
-    echo "+++ Using AOSP Flatbufers"
-    FLATBUFFERS_DIR=$PWD
-    # Have to make a copy of the AOSP flatbuffers and delete a few files to avoid issues with the android build
-    cp -r ../../../external/flatbuffers/ flatbuffers
-    # Remove Android build files to avoid build issues
-    rm flatbuffers/Android.*
+  echo "++ Downloading FlatBuffers v1.12.0"
 
-    BuildFlatbuffers
+  FLATBUFFERS_PKG=v1.12.0.tar.gz
 
-  # If not then download flatbuffers
-  else
-    echo "++ Downloading FlatBuffers v1.12.0"
+  curl -LOk https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz
+  AssertZeroExitCode "Downloading FlatBuffers failed"
+  mkdir -p flatbuffers
+  tar xzf $FLATBUFFERS_PKG -C flatbuffers --strip-components 1
+  AssertZeroExitCode "Unpacking FlatBuffers failed"
 
-    FLATBUFFERS_PKG=v1.12.0.tar.gz
+  BuildFlatbuffers
 
-    curl -LOk https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz
-    AssertZeroExitCode "Downloading FlatBuffers failed"
-    mkdir -p flatbuffers
-    tar xzf $FLATBUFFERS_PKG -C flatbuffers --strip-components 1
-    AssertZeroExitCode "Unpacking FlatBuffers failed"
-
-    BuildFlatbuffers
-
-    rm -rf $FLATBUFFERS_PKG
-  fi
+  rm -rf $FLATBUFFERS_PKG
 fi
 
 if [ ! -d armnn ]; then
