@@ -1,6 +1,7 @@
 armnn
 boost_1_64_0
 clframework
+flatbuffers-1.12.0
 prebuilt
 .vscode/settings.json
 .gitignore
