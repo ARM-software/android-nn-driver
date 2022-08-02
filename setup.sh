@@ -1,5 +1,10 @@
 #!/bin/bash
 
+#
+# Copyright © 2018, 2020-022 Arm Ltd and Contributors. All rights reserved.
+# SPDX-License-Identifier: MIT
+#
+
 function AssertZeroExitCode {
   EXITCODE=$?
   if [ $EXITCODE -ne 0 ]; then
