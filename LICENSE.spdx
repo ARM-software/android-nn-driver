@@ -1,0 +1,756 @@
+SPDXVersion: SPDX-2.1
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: android-nn-driver
+DocumentNamespace: http://spdx.org/spdxdocs/spdx-v2.1-52f0ad2d-5aaf-4639-824f-433fd3f75059
+Creator: Person: Anonymous ()
+Creator: Organization: Anonymous ()
+Creator: Tool: reuse-1.0.0
+Created: 2022-08-03T11:15:19Z
+CreatorComment: <text>This document was created automatically using available reuse information consistent with REUSE.</text>
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-9f8259108df712c403827fb71c15e65a
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-a43f0edf0ce5df76c5fa0b729273ea77
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-bf1cf5f58ec86ae7e11a3c3c8b474034
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-cecaaa5d4dda56381f9f7a9cd61ff7e9
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-f143870cf1668a0e1921bc40fdb66f54
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-00a23dbae66843f432e28118661839d4
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-3256f8866910230cf6a7a73811af0cf9
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-2cc451461228edab191f273bf18b1bb3
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-d98af2dbf0e85ae4bc5f7b43ea7a954a
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-c88a629746090e9a0d3827215e2bfd51
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-cae6fc1961249d6881aca965eb58e004
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-e46a1911e4d9059307bd22dc2d912cb1
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-ea85c3000a503cbd9bd1b1f84e9fad86
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-4a1090b46195ace5630ea4a007850de7
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-385bcf1658d8867efb2b32b1500f09d4
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-b521d1dfe6989e64400469fdebd831c9
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-8bc8b64290ab46c0fb3219b9ec81a869
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-8463e614db8ba40e6e1945c7b4b18295
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-b829f130ef058df6a26066043a87a7f2
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-df339a6ebf0b4933a48663cccf1cf20a
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-b850f00ee638309c5b8d15037fac6df6
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-ca9a486e79c5c263b3d3f536a4565d83
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-67139f126de1f029b3bd651cd63b1bd6
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-be18403f7bc7bf15c37c7f64298b3c3d
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-9f5b20dfa312b6e2f9a8e1bf2b0b3503
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-b825919ce48fdb7516cbc362e6393f29
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-edaddcd2dd335d3ece1304a6554ba51d
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-7856d093259efa6362ed229b843e3bf4
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-965719fd5d318ab9d90f4ef97d6e5b0f
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-531050aa1791fd697a5dc40c9a177dd4
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-6776eb54bb2ecc6d49e627dbe41622b7
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-b6f8185ee2082a086ab3c079d6b39244
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-8507d62cd47bf366b75f14567d47267e
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-ccf8d55a9e9058f0dcf7c363c703d32d
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-092945a8bc4261b051b787bd591a7714
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-655f5885a812698027dcabea1589d5f4
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-649cb81767be10c5da180796b9ddb4a7
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-9f7e9dd3a20f1713c3fdc385273c66fa
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-f32963290737441c8d622ba4d084b5c8
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-567e8339bfeba1cb3c6421c08837b35c
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-03ea74a5d4f4f43725bd95894fdec8dd
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-8a7249a37de6af18cd2d550cff6010f9
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-c71eb7532243e3ca46e017d669533dba
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-22c04f1ed16ebce9712667a1c38a372a
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-e11be25fc4287567b7a0fa7ac82f1bb9
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-1dcf36d546829f1e3054e855e00ba041
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-b712c2b9f228f16280dd638e9509a61d
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-e9e436995bae1a91cc8eca98e9b807fd
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-07efeb8174fbf736a199dc31e12c5e72
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-37f8670d1beb81082869bc84b163efab
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-342850c8fa79d64844c1094ab1610c1c
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-147dd65486ab91d9c3c92070f0bfdeb0
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-de4084667ef7b12bc58e12fdd2191c69
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-b2047de27559c407bef406aff2b40d94
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-9f4bb06fba519fb76f51f8943f6ebae9
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-30b64008afa71760eabc7da521c1889d
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-baf669b9e92e00c5362dbc82809d5bde
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-930a2fdcf68b3d60760bcd4b005da53a
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-ddc27b0006a37f1b787e8b6162daf3d8
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-37595def2f9768995c35e05cb7997d5b
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-815280de5c96988091018b623655b38f
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-d2adb23643a916d18c659c84820d7c6a
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-29371c36e8e4df94cfddca2fc1d126ba
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-cd71ee2ca480910d96b8b0d8d11f7ad0
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-e66a2501ad56e8b4c34ec503ea107499
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-f0b928f9591fbb77b0fd4f581e328118
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-ec80697484956fb568cffa59d1176c99
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-3ee20d00476f82587311b7af6755ba87
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-a2c1c0f69d8cae0e305c6588f5a1b7f1
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-a25ef944bedd8c0ebed511a2acf49ec5
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-6efb1f07d269b9e0980b06617c8a715b
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-3f448b727744f3cb9b0779c05699e288
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-dde9ae64190be94ab573edb16facee76
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-740f541502a5a7bdef15c23c22f921dd
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-815f4a4f014436097f35a2933a78c782
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-141d09b3dcfb086fa13ed4d1d7dc72c7
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-b608c8e94bd050f57df20a7b3c3578f7
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-9af5a132c2718f7f9cd37780855d5dc7
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-835e7b213035e712703efb1919160385
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-3ac1d54ace29e86b09ef0f7040ce499a
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-d4683c7840fdbbe5db1883d20f39e36f
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-106e0283ae070f56090f2d8df4aa23bf
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-390a1372ba683ef9a6008dacad3d7189
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-7ce28875cc79ab21c78d42ecdb2ba887
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-9ea405115778d8bc6828cb805c59d965
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-4c471c4784291b124a329da98dbb5721
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-5aa36b3d6a82f93da9cc87f793dd596d
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-2994f5b9a6418a8785a66cb0c974b6fd
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-2cd09106f5468654db71e97033eda634
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-233ae563722a5bc6f6fd82d5ca664e9b
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-2d49afc0410844dd4d5fb753d0d2c4d8
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-05f43bb75f39ece251d8a20052bcfd61
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-94799b14d1b2f5eb08bf3204677984f1
+
+FileName: ./.gitignore
+SPDXID: SPDXRef-9f8259108df712c403827fb71c15e65a
+FileChecksum: SHA1: 20e5140c5f3d7d2bb9447e20e86fc36899042ebc
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2018, 2022 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./1.0/ArmnnDriver.hpp
+SPDXID: SPDXRef-a43f0edf0ce5df76c5fa0b729273ea77
+FileChecksum: SHA1: a8f69427c8291cd8237349d637a4e8be518109c0
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.0/ArmnnDriverImpl.cpp
+SPDXID: SPDXRef-bf1cf5f58ec86ae7e11a3c3c8b474034
+FileChecksum: SHA1: f59f11e39817ddf3707b0ac10e512357b4c453dc
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.0/ArmnnDriverImpl.hpp
+SPDXID: SPDXRef-cecaaa5d4dda56381f9f7a9cd61ff7e9
+FileChecksum: SHA1: 9da9087071f65ca982a6107f2459cbd25e90f30b
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.0/FullyConnected.hpp
+SPDXID: SPDXRef-f143870cf1668a0e1921bc40fdb66f54
+FileChecksum: SHA1: 637f01696648b3d45ff7fa923bdf9d1dc69d28af
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.0/HalPolicy.cpp
+SPDXID: SPDXRef-00a23dbae66843f432e28118661839d4
+FileChecksum: SHA1: 91f1c7cadf4a257ff227a828a399be98a418bbbe
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./1.0/HalPolicy.hpp
+SPDXID: SPDXRef-3256f8866910230cf6a7a73811af0cf9
+FileChecksum: SHA1: dcb315bcb1d3f3da0a9c3c0613b88927f478549f
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.1/ArmnnDriver.hpp
+SPDXID: SPDXRef-2cc451461228edab191f273bf18b1bb3
+FileChecksum: SHA1: 77f4cf04748296e452f8af5d3b039122fdd128d7
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.1/ArmnnDriverImpl.cpp
+SPDXID: SPDXRef-d98af2dbf0e85ae4bc5f7b43ea7a954a
+FileChecksum: SHA1: 0f1fd3966716c0b12250d126f9e81e7c4255250e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.1/ArmnnDriverImpl.hpp
+SPDXID: SPDXRef-c88a629746090e9a0d3827215e2bfd51
+FileChecksum: SHA1: e3d2b504055de7abe3bf788e90f575dd1025bd85
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.1/HalPolicy.cpp
+SPDXID: SPDXRef-cae6fc1961249d6881aca965eb58e004
+FileChecksum: SHA1: 3ce067043eaeb91850116ca6d96bf2cc157e0b25
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.1/HalPolicy.hpp
+SPDXID: SPDXRef-e46a1911e4d9059307bd22dc2d912cb1
+FileChecksum: SHA1: 9622c84ff7b21205560a852f6937c9f6294726fe
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.2/ArmnnDriver.hpp
+SPDXID: SPDXRef-ea85c3000a503cbd9bd1b1f84e9fad86
+FileChecksum: SHA1: a3139ec9145218e6135ba01a28915b7eaa978030
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.2/ArmnnDriverImpl.cpp
+SPDXID: SPDXRef-4a1090b46195ace5630ea4a007850de7
+FileChecksum: SHA1: 5314d9584fde5478496ae4a5e21dae2e4cff9b30
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.2/ArmnnDriverImpl.hpp
+SPDXID: SPDXRef-385bcf1658d8867efb2b32b1500f09d4
+FileChecksum: SHA1: da57c0309a90ccccc2548a5f5980646e8034fbc8
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.2/HalPolicy.cpp
+SPDXID: SPDXRef-b521d1dfe6989e64400469fdebd831c9
+FileChecksum: SHA1: 3c36a47c20cbccaff4ab066cdd70415588e7b2dc
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.2/HalPolicy.hpp
+SPDXID: SPDXRef-8bc8b64290ab46c0fb3219b9ec81a869
+FileChecksum: SHA1: a5f76412d0382b3a1dfa1cd660d6bcaf3611005c
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.3/ArmnnDriver.hpp
+SPDXID: SPDXRef-8463e614db8ba40e6e1945c7b4b18295
+FileChecksum: SHA1: 2df533c72232ee6dd03485e24ea09f39d11936ab
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2020 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.3/ArmnnDriverImpl.cpp
+SPDXID: SPDXRef-b829f130ef058df6a26066043a87a7f2
+FileChecksum: SHA1: b2fc505c82f7818ac3c1724d9793c74f64499b4c
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2020 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.3/ArmnnDriverImpl.hpp
+SPDXID: SPDXRef-df339a6ebf0b4933a48663cccf1cf20a
+FileChecksum: SHA1: cfc89a2aeb1019f6073a9608284874bf7f5fad1b
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2020 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.3/HalPolicy.cpp
+SPDXID: SPDXRef-b850f00ee638309c5b8d15037fac6df6
+FileChecksum: SHA1: d40e4d1c8d2ddae7b405049a6c2925bf6920b066
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2020 Arm Ltd. All rights reserved.</text>
+
+FileName: ./1.3/HalPolicy.hpp
+SPDXID: SPDXRef-ca9a486e79c5c263b3d3f536a4565d83
+FileChecksum: SHA1: d5e11e86d3e7e9b7c411137d02b177d47878af65
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2020 Arm Ltd. All rights reserved.</text>
+
+FileName: ./Android.bp
+SPDXID: SPDXRef-67139f126de1f029b3bd651cd63b1bd6
+FileChecksum: SHA1: b6eee11f4b5dec7d0edc76cc6a7f3096c0626aeb
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 ARM Ltd. All rights reserved.</text>
+
+FileName: ./Android.mk
+SPDXID: SPDXRef-be18403f7bc7bf15c37c7f64298b3c3d
+FileChecksum: SHA1: d2c012577d70974378211d3ee8ea290a61b52fa7
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2022 ARM Ltd. and Contributors. All rights reserved.</text>
+
+FileName: ./ArmnnDevice.cpp
+SPDXID: SPDXRef-9f5b20dfa312b6e2f9a8e1bf2b0b3503
+FileChecksum: SHA1: 5164605fe75cbebe13c4ae3c026789212710f4db
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./ArmnnDevice.hpp
+SPDXID: SPDXRef-b825919ce48fdb7516cbc362e6393f29
+FileChecksum: SHA1: 6e49e8fe37b39ca1381a403e227c664cb5c0f07e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./ArmnnDriver.hpp
+SPDXID: SPDXRef-edaddcd2dd335d3ece1304a6554ba51d
+FileChecksum: SHA1: 537df248b2cd55405b3df65d3808c3ef41fd0aa1
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./ArmnnDriverImpl.cpp
+SPDXID: SPDXRef-7856d093259efa6362ed229b843e3bf4
+FileChecksum: SHA1: 36395b80efda8d6dce9a9e5fe4e9f45083eedf36
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./ArmnnDriverImpl.hpp
+SPDXID: SPDXRef-965719fd5d318ab9d90f4ef97d6e5b0f
+FileChecksum: SHA1: 4e36f763d315c5db72d0cb0b4477411800abbd96
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./ArmnnPreparedModel.cpp
+SPDXID: SPDXRef-531050aa1791fd697a5dc40c9a177dd4
+FileChecksum: SHA1: 440468c755b83402a9f308a7fc1e9bc860077c08
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./ArmnnPreparedModel.hpp
+SPDXID: SPDXRef-6776eb54bb2ecc6d49e627dbe41622b7
+FileChecksum: SHA1: ba7af89983699d749ab6305415b7dcaba2b2c981
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./ArmnnPreparedModel_1_2.cpp
+SPDXID: SPDXRef-b6f8185ee2082a086ab3c079d6b39244
+FileChecksum: SHA1: e4d46acd9483cb285bc681a74c2f399593ea7f6c
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./ArmnnPreparedModel_1_2.hpp
+SPDXID: SPDXRef-8507d62cd47bf366b75f14567d47267e
+FileChecksum: SHA1: 742b7ac96b7c7e96ec8b956214dd3211098d70b8
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./ArmnnPreparedModel_1_3.cpp
+SPDXID: SPDXRef-ccf8d55a9e9058f0dcf7c363c703d32d
+FileChecksum: SHA1: c70810b740e24cff02d7caf4f7f8aa5aab37cfb6
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2020 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./ArmnnPreparedModel_1_3.hpp
+SPDXID: SPDXRef-092945a8bc4261b051b787bd591a7714
+FileChecksum: SHA1: 7b3b0fdfb2bb3fc4d0e5764171a3549a8c8978bd
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2020 Arm Ltd. All rights reserved.</text>
+
+FileName: ./CacheDataHandler.cpp
+SPDXID: SPDXRef-655f5885a812698027dcabea1589d5f4
+FileChecksum: SHA1: 445629336054df90c9099b9b75797ed6811dd779
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2021 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./CacheDataHandler.hpp
+SPDXID: SPDXRef-649cb81767be10c5da180796b9ddb4a7
+FileChecksum: SHA1: 26ae481a852dd13093a1c9edf25ba183f2d35fc5
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2021 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./ConversionUtils.cpp
+SPDXID: SPDXRef-9f7e9dd3a20f1713c3fdc385273c66fa
+FileChecksum: SHA1: 0c8905ac2bb01f0be67c7ebe32d50554d88864a2
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./ConversionUtils.hpp
+SPDXID: SPDXRef-f32963290737441c8d622ba4d084b5c8
+FileChecksum: SHA1: 8084c3cbe39122af1061c98cfd2872bbb363f281
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./ConversionUtils_1_2.hpp
+SPDXID: SPDXRef-567e8339bfeba1cb3c6421c08837b35c
+FileChecksum: SHA1: bff1d8c18281b0d2a77b33a92f67acfb321c4a87
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2020 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./ConversionUtils_1_3.hpp
+SPDXID: SPDXRef-03ea74a5d4f4f43725bd95894fdec8dd
+FileChecksum: SHA1: af14ef930e27aae57ae6f0cb7031b3fac5eb3009
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2020 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./DriverOptions.cpp
+SPDXID: SPDXRef-8a7249a37de6af18cd2d550cff6010f9
+FileChecksum: SHA1: d141aea6e242783c111d0a6d37e619fa7397d10d
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./DriverOptions.hpp
+SPDXID: SPDXRef-c71eb7532243e3ca46e017d669533dba
+FileChecksum: SHA1: 9684228ad74e75018325e92902a4d3dc871ef6a8
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./ModelToINetworkConverter.cpp
+SPDXID: SPDXRef-22c04f1ed16ebce9712667a1c38a372a
+FileChecksum: SHA1: abede3be1ee6b689512d4720f9a64bea307aeb6f
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./ModelToINetworkConverter.hpp
+SPDXID: SPDXRef-e11be25fc4287567b7a0fa7ac82f1bb9
+FileChecksum: SHA1: 14a9c3b1b8196f05d82f514a584e5c57cf3f0f99
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./NnapiSupport.txt
+SPDXID: SPDXRef-1dcf36d546829f1e3054e855e00ba041
+FileChecksum: SHA1: 821af6773ff138f88246e2154b80c4c9ec8412d9
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2018-2022 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./README.md
+SPDXID: SPDXRef-b712c2b9f228f16280dd638e9509a61d
+FileChecksum: SHA1: af3dcb14667d2fd936c87704d362704f18224c76
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2018-2021 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./RequestThread.cpp
+SPDXID: SPDXRef-e9e436995bae1a91cc8eca98e9b807fd
+FileChecksum: SHA1: cb92a755b3081985429649b6a4baf5930d869b82
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./RequestThread.hpp
+SPDXID: SPDXRef-07efeb8174fbf736a199dc31e12c5e72
+FileChecksum: SHA1: 48c759a5bf72b34d9f8b4fb2b7e9722e923561d9
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./RequestThread_1_3.cpp
+SPDXID: SPDXRef-37f8670d1beb81082869bc84b163efab
+FileChecksum: SHA1: a1c383202dc7fea2c6a78d0065aeb2edf33eda10
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2020 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./RequestThread_1_3.hpp
+SPDXID: SPDXRef-342850c8fa79d64844c1094ab1610c1c
+FileChecksum: SHA1: f49a15fca5bfb1bdf4e5e4718ed01b3124047894
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2020 Arm Ltd. All rights reserved.</text>
+
+FileName: ./SECURITY.md
+SPDXID: SPDXRef-147dd65486ab91d9c3c92070f0bfdeb0
+FileChecksum: SHA1: 5c7051d2c36aa1671d35aa1ef5f830be26929c47
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2020 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./SystemPropertiesUtils.hpp
+SPDXID: SPDXRef-de4084667ef7b12bc58e12fdd2191c69
+FileChecksum: SHA1: 6ad8daffbc795aad50bd00f316b40565323eeae1
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./Utils.cpp
+SPDXID: SPDXRef-b2047de27559c407bef406aff2b40d94
+FileChecksum: SHA1: 76c8badff7865de215abe395e79e8a059a97ccb5
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./Utils.hpp
+SPDXID: SPDXRef-9f4bb06fba519fb76f51f8943f6ebae9
+FileChecksum: SHA1: 615c59ebc06d526534dadab7e4a9589a22933de1
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./android-nn-driver.IVGCVSW-7090.patch
+SPDXID: SPDXRef-30b64008afa71760eabc7da521c1889d
+FileChecksum: SHA1: 35fbf73bed3f1eb2cad0de08475b88853cc918d7
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright (c) <year> <copyright holders>
+Copyright © 2018, 2022 Arm Ltd and Contributors. All rights reserved.
+Copyright © 2018-2022 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./android.hardware.neuralnetworks@1.0-service-armnn.rc
+SPDXID: SPDXRef-baf669b9e92e00c5362dbc82809d5bde
+FileChecksum: SHA1: 8fa18b080109a4e60839b5d1d635af28e9eef847
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2018, 2020 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./android.hardware.neuralnetworks@1.1-service-armnn.rc
+SPDXID: SPDXRef-930a2fdcf68b3d60760bcd4b005da53a
+FileChecksum: SHA1: 7f085302dd79d18f958c0779d1918871e55f816a
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2018, 2020 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./android.hardware.neuralnetworks@1.2-service-armnn.rc
+SPDXID: SPDXRef-ddc27b0006a37f1b787e8b6162daf3d8
+FileChecksum: SHA1: 14f30ecab9ddab0ca1589c140f7104835e83025f
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2019-2020 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./android.hardware.neuralnetworks@1.3-service-armnn.rc
+SPDXID: SPDXRef-37595def2f9768995c35e05cb7997d5b
+FileChecksum: SHA1: 759eff0251977e333141d4383ff08bb41debd395
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2020 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./docs/FAQ.md
+SPDXID: SPDXRef-815280de5c96988091018b623655b38f
+FileChecksum: SHA1: ed059961071be063db41ea7378030e9279256725
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2019-2022 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./docs/IntegratorGuide.md
+SPDXID: SPDXRef-d2adb23643a916d18c659c84820d7c6a
+FileChecksum: SHA1: 16ce5aa116603d2a009b209a91b57d73271d2c0b
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2019-2022 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./service.cpp
+SPDXID: SPDXRef-29371c36e8e4df94cfddca2fc1d126ba
+FileChecksum: SHA1: 763c8edce64123fcb36c182acbdaa8a7d1b44782
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd. All rights reserved.</text>
+
+FileName: ./setup.sh
+SPDXID: SPDXRef-cd71ee2ca480910d96b8b0d8d11f7ad0
+FileChecksum: SHA1: 531cfa9f242d7c718e8d07f56564c9782a046d4f
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2018, 2020-022 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/1.0/Convolution2D.cpp
+SPDXID: SPDXRef-e66a2501ad56e8b4c34ec503ea107499
+FileChecksum: SHA1: 128550351b04d32459edd674f9c9d669f57f1b06
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/1.0/FullyConnectedReshape.cpp
+SPDXID: SPDXRef-f0b928f9591fbb77b0fd4f581e328118
+FileChecksum: SHA1: 1ae9abf76553388bc2e6245fed9b8a65a8f62706
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/1.0/Lstm.cpp
+SPDXID: SPDXRef-ec80697484956fb568cffa59d1176c99
+FileChecksum: SHA1: 5727d5f855f102a6b6704847adf4944b28f48aef
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/1.1/Convolution2D.cpp
+SPDXID: SPDXRef-3ee20d00476f82587311b7af6755ba87
+FileChecksum: SHA1: 03db94ba9ca8bd50266e46b9ad771ac776083414
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/1.1/Lstm.cpp
+SPDXID: SPDXRef-a2c1c0f69d8cae0e305c6588f5a1b7f1
+FileChecksum: SHA1: bd8899a7ce02d366cde07b1bc09548e841b0289e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/1.1/Mean.cpp
+SPDXID: SPDXRef-a25ef944bedd8c0ebed511a2acf49ec5
+FileChecksum: SHA1: 55a55089a6b6a1dfadb25254caf0c1c00464e81b
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/1.1/Transpose.cpp
+SPDXID: SPDXRef-6efb1f07d269b9e0980b06617c8a715b
+FileChecksum: SHA1: 5ff1b93fad61526f720be64cdb1db99cde3f3867
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/1.2/Capabilities.cpp
+SPDXID: SPDXRef-3f448b727744f3cb9b0779c05699e288
+FileChecksum: SHA1: af172eb6b3911c53764662e84ba4b54948566951
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/1.2/Dilation.cpp
+SPDXID: SPDXRef-dde9ae64190be94ab573edb16facee76
+FileChecksum: SHA1: a42f16142851e48f6c25ba62dfb59b85cbbd707c
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/1.2/Lstm.cpp
+SPDXID: SPDXRef-740f541502a5a7bdef15c23c22f921dd
+FileChecksum: SHA1: 417055ce2712481721b4610e0794ff45c4fad5e0
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/1.2/UnidirectionalSequenceLstm.cpp
+SPDXID: SPDXRef-815f4a4f014436097f35a2933a78c782
+FileChecksum: SHA1: ef80888be3ffee282501ae7b24112c1fe5aef530
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2022 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/1.3/QLstm.cpp
+SPDXID: SPDXRef-141d09b3dcfb086fa13ed4d1d7dc72c7
+FileChecksum: SHA1: b153faa2047b69fa50c61d8b571ae6c56f30a6c1
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2020 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/1.3/QosTests.cpp
+SPDXID: SPDXRef-b608c8e94bd050f57df20a7b3c3578f7
+FileChecksum: SHA1: 581cd7da71d8c437eec87f7a6883639cf03c87d3
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2020 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/Android.mk
+SPDXID: SPDXRef-9af5a132c2718f7f9cd37780855d5dc7
+FileChecksum: SHA1: 39ed4f7eb099c95e3b322ab33884addd8e8679a1
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 ARM Ltd. All rights reserved.</text>
+
+FileName: ./test/Concat.cpp
+SPDXID: SPDXRef-835e7b213035e712703efb1919160385
+FileChecksum: SHA1: bf25dc393b3886450e887e3f00f1866be2ec6a91
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/Concurrent.cpp
+SPDXID: SPDXRef-3ac1d54ace29e86b09ef0f7040ce499a
+FileChecksum: SHA1: f67c8bbb69c38ce9fc29e89780f183be49e9c7b7
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/Convolution2D.hpp
+SPDXID: SPDXRef-d4683c7840fdbbe5db1883d20f39e36f
+FileChecksum: SHA1: b4bf0e39e5b1e754dbbb62d22ee8010edf14ed5e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/Dilation.hpp
+SPDXID: SPDXRef-106e0283ae070f56090f2d8df4aa23bf
+FileChecksum: SHA1: 065c5e5c9dde792785f7f58eb1498f216efb8cf1
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/DriverTestHelpers.cpp
+SPDXID: SPDXRef-390a1372ba683ef9a6008dacad3d7189
+FileChecksum: SHA1: baf7aa187cfa11c4b3a69a00a69262e5ced445bf
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/DriverTestHelpers.hpp
+SPDXID: SPDXRef-7ce28875cc79ab21c78d42ecdb2ba887
+FileChecksum: SHA1: fa779ca557ae7bebcfefecb1faded7ac783f5924
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/FullyConnected.cpp
+SPDXID: SPDXRef-9ea405115778d8bc6828cb805c59d965
+FileChecksum: SHA1: 4a21a85071eaaac20d5705b1bceae1219bff607f
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/GenericLayerTests.cpp
+SPDXID: SPDXRef-4c471c4784291b124a329da98dbb5721
+FileChecksum: SHA1: 0587067149b5065ef082a788ca5194e88653ec36
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/Lstm.hpp
+SPDXID: SPDXRef-5aa36b3d6a82f93da9cc87f793dd596d
+FileChecksum: SHA1: 193309453c30280b2fbc96cf756d8b03e080b856
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/SystemProperties.cpp
+SPDXID: SPDXRef-2994f5b9a6418a8785a66cb0c974b6fd
+FileChecksum: SHA1: 34cc21f95a76e864d0d77e68bd374120ba50fd9d
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/TestTensor.cpp
+SPDXID: SPDXRef-2cd09106f5468654db71e97033eda634
+FileChecksum: SHA1: c2869d7fba41a2c04af6d3ee8813c28b66c3fdaf
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/TestTensor.hpp
+SPDXID: SPDXRef-233ae563722a5bc6f6fd82d5ca664e9b
+FileChecksum: SHA1: cf3e2de34c3b526aadba3fb64381f7b520c21c03
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/Tests.cpp
+SPDXID: SPDXRef-2d49afc0410844dd4d5fb753d0d2c4d8
+FileChecksum: SHA1: 90784980509b0d9b5cb27dc7486dae0c3f5818a2
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/UnidirectionalSequenceLstm.hpp
+SPDXID: SPDXRef-05f43bb75f39ece251d8a20052bcfd61
+FileChecksum: SHA1: e6eeadc76e06482371803a213b2ad9582456afac
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2022 Arm Ltd and Contributors. All rights reserved.</text>
+
+FileName: ./test/UtilsTests.cpp
+SPDXID: SPDXRef-94799b14d1b2f5eb08bf3204677984f1
+FileChecksum: SHA1: 42157f2abe26fd24b755df1695670408749327a6
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>Copyright © 2017 Arm Ltd and Contributors. All rights reserved.</text>
