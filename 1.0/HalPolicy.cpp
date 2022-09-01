@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
+// Copyright © 2017,2022 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -464,10 +464,12 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
     }
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsLstmSupported,
                                data.m_Backends,
                                isSupported,
+                               setBackend,
                                inputInfo,
                                outputStateInInfo,
                                cellStateInInfo,
@@ -484,6 +486,7 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
 
     // Add the layer
     armnn::IConnectableLayer* layer = data.m_Network->AddLstmLayer(desc, params, "Lstm");
+    layer->SetBackendId(setBackend);
 
     input.Connect(layer->GetInputSlot(0));
     outputStateIn.Connect(layer->GetInputSlot(1));
@@ -566,10 +569,12 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
     }
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsSoftmaxSupported,
                                data.m_Backends,
                                isSupported,
+                               setBackend,
                                input.GetTensorInfo(),
                                outputInfo,
                                desc);
@@ -579,6 +584,7 @@ bool HalPolicy::ConvertSoftmax(const Operation& operation, const Model& model, C
     }
 
     armnn::IConnectableLayer* layer = data.m_Network->AddSoftmaxLayer(desc);
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the SoftmaxLayer", __func__);
@@ -628,10 +634,12 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
     }
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsSpaceToDepthSupported,
                                data.m_Backends,
                                isSupported,
+                               setBackend,
                                inputInfo,
                                outputInfo,
                                desc);
@@ -641,6 +649,7 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddSpaceToDepthLayer(desc);
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the SpaceToDepthLayer", __func__);
@@ -691,10 +700,12 @@ bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& m
     desc.m_DataLayout = armnn::DataLayout::NHWC;
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsResizeSupported,
                                data.m_Backends,
                                isSupported,
+                               setBackend,
                                inputInfo,
                                outputInfo,
                                desc);
@@ -710,6 +721,7 @@ bool HalPolicy::ConvertResizeBilinear(const Operation& operation, const Model& m
     }
 
     armnn::IConnectableLayer* layer = data.m_Network->AddResizeLayer(desc);
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the ResizeLayer", __func__);

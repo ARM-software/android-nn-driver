@@ -162,13 +162,14 @@ bool ConvertCast(const HalOperation& operation,
     const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
     bool isSupported = false;
-
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsCastSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    inputInfo,
                                    outputInfo);
     };
@@ -188,6 +189,7 @@ bool ConvertCast(const HalOperation& operation,
     }
 
     IConnectableLayer* layer = data.m_Network->AddCastLayer();
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the CastLayer", __func__);
@@ -248,13 +250,14 @@ bool ConvertChannelShuffle(const HalOperation& operation,
     const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
     bool isSupported = false;
-
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsChannelShuffleSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    inputInfo,
                                    outputInfo,
                                    descriptor);
@@ -275,6 +278,7 @@ bool ConvertChannelShuffle(const HalOperation& operation,
     }
 
     IConnectableLayer* layer = data.m_Network->AddChannelShuffleLayer(descriptor);
+    layer->SetBackendId(setBackend);
     assert(layer != nullptr);
     input.Connect(layer->GetInputSlot(0));
 
@@ -315,12 +319,14 @@ bool ConvertComparison_1_2(const HalOperation& operation,
     ComparisonDescriptor descriptor(comparisonOperation);
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsComparisonSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    inputInfo0,
                                    inputInfo1,
                                    outputInfo,
@@ -343,6 +349,7 @@ bool ConvertComparison_1_2(const HalOperation& operation,
     }
 
     IConnectableLayer* layer = data.m_Network->AddComparisonLayer(descriptor);
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the ComparisonLayer", __func__);
@@ -482,12 +489,14 @@ bool ConvertConv2d_1_2(const HalOperation& operation, const HalModel& model, Con
     Optional<TensorInfo> biases(biasInfo);
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsConvolution2dSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    inputInfo,
                                    outputInfo,
                                    desc,
@@ -510,6 +519,7 @@ bool ConvertConv2d_1_2(const HalOperation& operation, const HalModel& model, Con
     }
 
     armnn::IConnectableLayer* startLayer = data.m_Network->AddConvolution2dLayer(desc);
+    startLayer->SetBackendId(setBackend);
 
     if (!startLayer)
     {
@@ -648,12 +658,14 @@ bool ConvertDepthwiseConv2d_1_2(const HalOperation& operation, const HalModel& m
     Optional<TensorInfo> biases(biasInfo);
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsDepthwiseConvolutionSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    inputInfo,
                                    outputInfo,
                                    desc,
@@ -676,6 +688,7 @@ bool ConvertDepthwiseConv2d_1_2(const HalOperation& operation, const HalModel& m
     }
 
     armnn::IConnectableLayer* startLayer = data.m_Network->AddDepthwiseConvolution2dLayer(desc);
+    startLayer->SetBackendId(setBackend);
 
     if (!startLayer)
     {
@@ -741,13 +754,14 @@ bool ConvertElementwiseUnary(const HalOperation& operation,
     ElementwiseUnaryDescriptor descriptor(unaryOperation);
 
     bool isSupported = false;
-
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsElementwiseUnarySupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    inputInfo,
                                    outputInfo,
                                    descriptor);
@@ -768,6 +782,7 @@ bool ConvertElementwiseUnary(const HalOperation& operation,
     }
 
     IConnectableLayer* layer = data.m_Network->AddElementwiseUnaryLayer(descriptor);
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the ElementwiseUnaryLayer", __func__);
@@ -823,12 +838,14 @@ bool ConvertExpandDims(const HalOperation& operation, const HalModel& model, Con
     reshapeDescriptor.m_TargetShape = targetShape;
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsReshapeSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    input.GetTensorInfo(),
                                    outputInfo,
                                    reshapeDescriptor);
@@ -853,6 +870,7 @@ bool ConvertExpandDims(const HalOperation& operation, const HalModel& model, Con
     }
 
     IConnectableLayer* layer = data.m_Network->AddReshapeLayer(reshapeDescriptor);
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the ReshapeLayer", __func__);
@@ -915,12 +933,14 @@ bool ConvertGather(const HalOperation& operation, const HalModel& model, Convers
     desc.m_Axis = axis;
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsGatherSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    input.GetTensorInfo(),
                                    indices.GetTensorInfo(),
                                    outputInfo,
@@ -942,6 +962,7 @@ bool ConvertGather(const HalOperation& operation, const HalModel& model, Convers
     }
 
     IConnectableLayer* layer = data.m_Network->AddGatherLayer(desc);
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the GatherLayer", __func__);
@@ -1111,10 +1132,12 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
     }
 
     bool isSupported = false;
+    armnn::BackendId setBackendSplit;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsSplitterSupported,
                                data.m_Backends,
                                isSupported,
+                               setBackendSplit,
                                inputInfo,
                                splitterOutputInfos,
                                splitterDesc);
@@ -1124,6 +1147,7 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
     }
 
     IConnectableLayer* splitterLayer = data.m_Network->AddSplitterLayer(splitterDesc);
+    splitterLayer->SetBackendId(setBackendSplit);
     if (!splitterLayer)
     {
         return Fail("%s: Failed to add SplitterLayer", __func__);
@@ -1207,12 +1231,14 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
                                                               biasesDataOffset));
 
             isSupported = false;
+            armnn::BackendId setBackendConv;
             auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
             {
                 FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                            IsConvolution2dSupported,
                                            data.m_Backends,
                                            isSupported,
+                                           setBackendConv,
                                            groupInputInfo,
                                            outputInfo,
                                            desc,
@@ -1237,6 +1263,7 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
             IConnectableLayer* weightsLayer = data.m_Network->AddConstantLayer(groupWeights);
             IConnectableLayer* biasLayer = data.m_Network->AddConstantLayer(groupBiases);
             IConnectableLayer* convLayer = data.m_Network->AddConvolution2dLayer(desc);
+            convLayer->SetBackendId(setBackendConv);
 
             if (!convLayer)
             {
@@ -1286,10 +1313,12 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
     }
 
     isSupported = false;
+    armnn::BackendId setBackendConcat;
     FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                IsConcatSupported,
                                data.m_Backends,
                                isSupported,
+                               setBackendConcat,
                                std::vector<const TensorInfo*>(numGroups * channelMultiplier, &groupOutputInfo),
                                outputInfo,
                                concatDescriptor);
@@ -1300,6 +1329,7 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
     }
 
     IConnectableLayer* concatLayer = data.m_Network->AddConcatLayer(concatDescriptor);
+    concatLayer->SetBackendId(setBackendConcat);
     if (!concatLayer)
     {
         return Fail("%s: AddConcatLayer failed", __func__);
@@ -1387,12 +1417,14 @@ bool ConvertInstanceNormalization(const HalOperation& operation, const HalModel&
     desc.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 4, model, data);
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsInstanceNormalizationSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    input.GetTensorInfo(),
                                    outputInfo,
                                    desc);
@@ -1413,6 +1445,7 @@ bool ConvertInstanceNormalization(const HalOperation& operation, const HalModel&
     }
 
     IConnectableLayer* layer = data.m_Network->AddInstanceNormalizationLayer(desc);
+    layer->SetBackendId(setBackend);
     input.Connect(layer->GetInputSlot(0));
 
     return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *layer, model, data, nullptr, validateFunc);
@@ -1481,12 +1514,14 @@ bool ConvertLogSoftmax(const HalOperation& operation, const HalModel& model, Con
     }
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsLogSoftmaxSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    input.GetTensorInfo(),
                                    outputInfo,
                                    descriptor);
@@ -1507,6 +1542,7 @@ bool ConvertLogSoftmax(const HalOperation& operation, const HalModel& model, Con
     }
 
     IConnectableLayer* layer = data.m_Network->AddLogSoftmaxLayer(descriptor);
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the LogSoftmaxLayer", __func__);
@@ -1542,12 +1578,14 @@ bool ConvertMaximum(const HalOperation& operation, const HalModel& model, Conver
     const TensorInfo& outInfo = GetTensorInfoForOperand(*outputOperand);
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsMaximumSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    input0.GetTensorInfo(),
                                    input1.GetTensorInfo(),
                                    outInfo);
@@ -1568,6 +1606,7 @@ bool ConvertMaximum(const HalOperation& operation, const HalModel& model, Conver
     }
 
     IConnectableLayer* layer = data.m_Network->AddMaximumLayer();
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the MaximumLayer", __func__);
@@ -1607,12 +1646,14 @@ bool ConvertMinimum(const HalOperation& operation, const HalModel& model, Conver
     const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsMinimumSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    input0.GetTensorInfo(),
                                    input1.GetTensorInfo(),
                                    outputInfo);
@@ -1633,6 +1674,7 @@ bool ConvertMinimum(const HalOperation& operation, const HalModel& model, Conver
     }
 
     IConnectableLayer* const layer = data.m_Network->AddMinimumLayer();
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the MinimumLayer", __func__);
@@ -1722,12 +1764,14 @@ bool ConvertPadV2(const HalOperation& operation, const HalModel& model, Conversi
     }
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsPadSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    inputInfo,
                                    outputInfo,
                                    descriptor);
@@ -1748,6 +1792,7 @@ bool ConvertPadV2(const HalOperation& operation, const HalModel& model, Conversi
     }
 
     IConnectableLayer* const layer = data.m_Network->AddPadLayer(descriptor);
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the PadLayer", __func__);
@@ -1786,12 +1831,14 @@ bool ConvertPrelu(const HalOperation& operation, const HalModel& model, Conversi
     const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsPreluSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    inputInfo,
                                    alphaInfo,
                                    outputInfo);
@@ -1812,6 +1859,7 @@ bool ConvertPrelu(const HalOperation& operation, const HalModel& model, Conversi
     }
 
     IConnectableLayer* const layer = data.m_Network->AddPreluLayer();
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the PreluLayer", __func__);
@@ -1850,12 +1898,14 @@ bool ConvertQuantize(const HalOperation& operation, const HalModel& model, Conve
     const TensorInfo& outputInfo = GetTensorInfoForOperand(*outputOperand);
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsQuantizeSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    input.GetTensorInfo(),
                                    outputInfo);
     };
@@ -1875,6 +1925,7 @@ bool ConvertQuantize(const HalOperation& operation, const HalModel& model, Conve
     }
 
     IConnectableLayer* const layer = data.m_Network->AddQuantizeLayer();
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the QuantizeLayer", __func__);
@@ -2072,12 +2123,14 @@ bool ConvertQuantized16BitLstm(const HalOperation& operation, const HalModel& mo
     paramsInfo.m_OutputGateBias           = &(params.m_OutputGateBias->GetInfo());
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsQuantizedLstmSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    inputInfo,
                                    previousCellStateInInfo,
                                    previousOutputInInfo,
@@ -2104,6 +2157,7 @@ bool ConvertQuantized16BitLstm(const HalOperation& operation, const HalModel& mo
     }
 
     IConnectableLayer* const layer = data.m_Network->AddQuantizedLstmLayer(params, "QuantizedLstm");
+    layer->SetBackendId(setBackend);
     input.Connect(layer->GetInputSlot(0));
     previousCellStateIn.Connect(layer->GetInputSlot(1));
     previousOutputIn.Connect(layer->GetInputSlot(2));
@@ -2176,12 +2230,14 @@ bool ConvertReduce(const HalOperation& operation,
     }
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsReduceSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    inputInfo,
                                    outputInfo,
                                    descriptor);
@@ -2202,6 +2258,7 @@ bool ConvertReduce(const HalOperation& operation,
     }
 
     armnn::IConnectableLayer* const layer = data.m_Network->AddReduceLayer(descriptor);
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the ReduceLayer", __func__);
@@ -2328,12 +2385,14 @@ bool ConvertResize(const HalOperation& operation,
     descriptor.m_HalfPixelCenters = GetOptionalBool<HalPolicy>(operation, 5, model, data);
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsResizeSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    inputInfo,
                                    outputInfo,
                                    descriptor);
@@ -2354,6 +2413,7 @@ bool ConvertResize(const HalOperation& operation,
     }
 
     IConnectableLayer* layer = data.m_Network->AddResizeLayer(descriptor);
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the ResizeLayer", __func__);
@@ -2406,12 +2466,14 @@ bool ConvertSpaceToDepth(const HalOperation& operation, const HalModel& model, C
     desc.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 2, model, data);
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsSpaceToDepthSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    inputInfo,
                                    outputInfo,
                                    desc);
@@ -2432,6 +2494,7 @@ bool ConvertSpaceToDepth(const HalOperation& operation, const HalModel& model, C
     }
 
     IConnectableLayer* const layer = data.m_Network->AddSpaceToDepthLayer(desc);
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the SpaceToDepthLayer", __func__);
@@ -2499,12 +2562,14 @@ bool ConvertSoftmax(const HalOperation& operation, const HalModel& model, Conver
     }
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsSoftmaxSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    input.GetTensorInfo(),
                                    outputInfo,
                                    desc);
@@ -2525,6 +2590,7 @@ bool ConvertSoftmax(const HalOperation& operation, const HalModel& model, Conver
     }
 
     IConnectableLayer* layer = data.m_Network->AddSoftmaxLayer(desc);
+    layer->SetBackendId(setBackend);
     if (!layer)
     {
         return Fail("%s: Could not add the SoftmaxLayer", __func__);
@@ -2889,12 +2955,14 @@ bool ConvertLstm(const HalOperation& operation, const HalModel& model, Conversio
     }
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsLstmSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    inputInfo,
                                    outputStateInInfo,
                                    cellStateInInfo,
@@ -2927,6 +2995,7 @@ bool ConvertLstm(const HalOperation& operation, const HalModel& model, Conversio
 
     // Add the layer
     IConnectableLayer* layer = data.m_Network->AddLstmLayer(desc, params, "Lstm");
+    layer->SetBackendId(setBackend);
 
     input.Connect(layer->GetInputSlot(0));
     outputStateIn.Connect(layer->GetInputSlot(1));
@@ -3126,12 +3195,14 @@ bool ConvertTransposeConv2d(const HalOperation& operation, const HalModel& model
     Optional<TensorInfo> biases(bias.GetInfo());
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsTransposeConvolution2dSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    inputInfo,
                                    outputInfo,
                                    desc,
@@ -3154,6 +3225,7 @@ bool ConvertTransposeConv2d(const HalOperation& operation, const HalModel& model
 
     IConnectableLayer* startLayer =
         data.m_Network->AddTransposeConvolution2dLayer(desc, weights, Optional<ConstTensor>(bias));
+    startLayer->SetBackendId(setBackend);
     if (!startLayer)
     {
         return Fail("%s: AddTransposeConvolution2dLayer failed", __func__);
@@ -3556,12 +3628,14 @@ bool ConvertUnidirectionalSequenceLstm(const HalOperation& operation,
     }
 
     bool isSupported = false;
+    armnn::BackendId setBackend;
     auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
     {
         FORWARD_LAYER_SUPPORT_FUNC(__func__,
                                    IsUnidirectionalSequenceLstmSupported,
                                    data.m_Backends,
                                    isSupported,
+                                   setBackend,
                                    inputInfo,
                                    outputStateInInfo,
                                    cellStateInInfo,
@@ -3592,6 +3666,7 @@ bool ConvertUnidirectionalSequenceLstm(const HalOperation& operation,
     IConnectableLayer* layer = data.m_Network->AddUnidirectionalSequenceLstmLayer(desc,
                                                                                   params,
                                                                                   "UnidirectionalSequenceLstm");
+    layer->SetBackendId(setBackend);
 
     input.Connect(layer->GetInputSlot(0));
     outputStateIn.Connect(layer->GetInputSlot(1));
