@@ -1,5 +1,13 @@
 # Arm NN Android Neural Networks driver
 
+### This branch is deprecated
+
+This project's primary branch is now called main.
+
+To checkout the 'main' branch you first need to clone the Android NN repository: 'https://github.com/ARM-software/android-nn-driver.git'
+
+You should 'git checkout main' and 'git pull origin main' from now on.
+
 This directory contains the Arm NN driver for the Android Neural Networks API, implementing the android.hardware.neuralnetworks@1.0, android.hardware.neuralnetworks@1.1, android.hardware.neuralnetworks@1.2 and android.hardware.neuralnetworks@1.3 HALs.
 
 For more information about supported operations and configurations, see [NnapiSupport.txt](NnapiSupport.txt)
