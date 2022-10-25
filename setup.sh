@@ -40,11 +40,11 @@ function BuildFlatbuffers {
 }
 
 if [ ! -d flatbuffers ]; then
-  echo "++ Downloading FlatBuffers v1.12.0"
+  echo "++ Downloading FlatBuffers v2.0.6"
 
-  FLATBUFFERS_PKG=v1.12.0.tar.gz
+  FLATBUFFERS_PKG=v2.0.6.tar.gz
 
-  curl -LOk https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz
+  curl -LOk https://github.com/google/flatbuffers/archive/${FLATBUFFERS_PKG}
   AssertZeroExitCode "Downloading FlatBuffers failed"
   mkdir -p flatbuffers
   tar xzf $FLATBUFFERS_PKG -C flatbuffers --strip-components 1
