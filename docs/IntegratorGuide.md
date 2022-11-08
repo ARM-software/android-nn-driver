@@ -5,11 +5,11 @@ This document describes how to integrate the Arm NN Android NNAPI driver into an
 
 ### Prerequisites
 
-1. Android source tree for Android P (we have tested against Android P version 9.0.0_r3) , in the directory `<ANDROID_ROOT>`
-2. Android source tree for Android Q (we have tested against Android Q version 10.0.0_r39), in the directory `<ANDROID_ROOT>`
+1. Android source tree for Android Q (we have tested against Android Q version 10.0.0_r39), in the directory `<ANDROID_ROOT>`
 2. Android source tree for Android R (we have tested against Android R version 11.0.0_r3), in the directory `<ANDROID_ROOT>`
 3. Android source tree for Android S (we have tested against Android S version 12.0.0_r1), in the directory `<ANDROID_ROOT>`
-4. Mali OpenCL driver integrated into the Android source tree
+4. Android source tree for Android T (we have tested against Android T pre-release tag - TP1A.220624.003), in the directory `<ANDROID_ROOT>`
+5. Mali OpenCL driver integrated into the Android source tree
 
 ### Procedure
 
@@ -21,11 +21,7 @@ To update the build environment, add to the contents of the variable `PRODUCT_PA
 within the device-specific makefile that is located in the `<ANDROID_ROOT>/device/<manufacturer>/<product>`
 directory. This file is normally called `device.mk`:
 
-`Android.mk` contains the module definition of all versions (1.0, 1.1, 1.2 and 1.3) of the Arm NN driver.
-For Android P, a new version of NN API is available (1.1), thus the following should be added to `device.mk` instead:
-<pre>
-PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.1-service-armnn
-</pre>
+`Android.mk` contains the module definition of all versions (1.1, 1.2 and 1.3) of the Arm NN driver.
 
 For Android Q, a new version of the NN API is available (1.2),
 thus the following should be added to `device.mk` instead:
@@ -33,7 +29,7 @@ thus the following should be added to `device.mk` instead:
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.2-service-armnn
 </pre>
 
-For Android R and S, new version of the NN API is available (1.3),
+For Android R, S and T, new version of the NN API is available (1.3),
 thus the following should be added to `device.mk` instead:
 <pre>
 PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.3-service-armnn
@@ -46,33 +42,24 @@ ARMNN_COMPUTE_CL_ENABLE := 1
 </pre>
 
 For all Android versions the vendor manifest.xml requires the Neural Network HAL information.
-For Android P use HAL version 1.1 as below. For Android Q substitute 1.2 where necessary. For Android R and S substitute 1.3 where necessary.
+For Android Q use HAL version 1.2 as below. For later Android versions substitute 1.3 where necessary.
 ```xml
 <hal format="hidl">
     <name>android.hardware.neuralnetworks</name>
     <transport>hwbinder</transport>
-    <version>1.1</version>
+    <version>1.2</version>
     <interface>
         <name>IDevice</name>
         <instance>armnn</instance>
     </interface>
-    <fqname>@1.1::IDevice/armnn</fqname>
+    <fqname>@1.2::IDevice/armnn</fqname>
 </hal>
 ```
 
 4. Build Android as normal (https://source.android.com/setup/build/building)
 5. To confirm that the Arm NN driver has been built, check for the driver service executable at
 
-Android P
-<pre>
-<ANDROID_ROOT>/out/target/product/<product>/system/vendor/bin/hw
-</pre>
-For example, if the Arm NN driver has been built with the NN API 1.1, check for the following file:
-<pre>
-<ANDROID_ROOT>/out/target/product/<product>/system/vendor/bin/hw/android.hardware.neuralnetworks@1.1-service-armnn
-</pre>
-
-Android Q and later has a different path:
+Android Q
 <pre>
 <ANDROID_ROOT>/out/target/product/<product>/vendor/bin/hw
 </pre>
@@ -82,9 +69,8 @@ Android Q and later has a different path:
 1. Run the Arm NN driver service executable in the background.
 Use the corresponding version of the driver for the Android version you are running.
 i.e
-android.hardware.neuralnetworks@1.1-service-armnn for Android P,
 android.hardware.neuralnetworks@1.2-service-armnn for Android Q and
-android.hardware.neuralnetworks@1.3-service-armnn for Android R and S
+android.hardware.neuralnetworks@1.3-service-armnn for Android R, S and T
 <pre>
 It is also possible to use a specific backend by using the -c option.
 The following is an example of using the CpuAcc backend for Android Q:
@@ -108,37 +94,14 @@ Rapid means that only 3 lws values should be tested for each kernel.
 The recommended way of using it with Arm NN is to generate the tuning data during development of the Android image for a device, and use it in read-only mode during normal operation:
 
 1. Run the Arm NN driver service executable in tuning mode. The path to the tuning data must be writable by the service.
-The following examples assume that the 1.1 version of the driver is being used:
+The following examples assume that the 1.2 version of the driver is being used:
 <pre>
-adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.1-service-armnn --cl-tuned-parameters-file &lt;PATH_TO_TUNING_DATA&gt; --cl-tuned-parameters-mode UpdateTunedParameters --cl-tuning-level exhaustive &
+adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.2-service-armnn --cl-tuned-parameters-file &lt;PATH_TO_TUNING_DATA&gt; --cl-tuned-parameters-mode UpdateTunedParameters --cl-tuning-level exhaustive &
 </pre>
 2. Run a representative set of Android NNAPI testing loads. In this mode of operation, each NNAPI workload will be slow the first time it is executed, as the tuning parameters are being selected. Subsequent executions will use the tuning data which has been generated.
 3. Stop the service.
 4. Deploy the tuned parameters file to a location readable by the Arm NN driver service (for example, to a location within /vendor/etc).
 5. During normal operation, pass the location of the tuning data to the driver service (this would normally be done by passing arguments via Android init in the service .rc definition):
 <pre>
-adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.1-service-armnn --cl-tuned-parameters-file &lt;PATH_TO_TUNING_DATA&gt; &
+adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.2-service-armnn --cl-tuned-parameters-file &lt;PATH_TO_TUNING_DATA&gt; &
 </pre>
-
-
-
-### Troubleshooting
-
-The guide assumes you have the knowledge of how to build Android from source and where to find certain files in Android source tree. But if you are having any trouble:
-
-1. The vendor manifest.xml file for a hikey960 is located at android/device/linaro/hikey/manifest.xml
-2. The device.mk file for a hikey960 is located at device/linaro/hikey/hikey960/device-hikey960.mk
-
-If you are running any tests you can also add them to the device-hikey960.mk file so that you have access to the test executable in your hikey. For example, if you are running VTS tests for Android R Hal version 1.3:
-
-PRODUCT_PACKAGES += VtsHalNeuralnetworksV1_3TargetTest
-
-Or if you are running NeuralNetworksTest:
-
-PRODUCT_PACKAGES += NeuralNetworksTest_static
-
-In some hikey960 boards you may need to set LD_LIBRARY_PATH before running the Arm NN driver service:
-export LD_LIBRARY_PATH=/vendor/lib64/egl:/vendor/lib/egl/
-
-
-The guide was tested on Ubuntu 18.04. If you are using a docker you may see some build issues. Explicitly setting the USER variable may help resolve these when building Android inside docker.
