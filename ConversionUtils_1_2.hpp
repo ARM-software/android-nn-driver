@@ -1,5 +1,5 @@
 //
-// Copyright © 2020 Arm Ltd and Contributors. All rights reserved.
+// Copyright © 2020,2022 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -899,12 +899,13 @@ bool ConvertGather(const HalOperation& operation, const HalModel& model, Convers
                      __func__, outputDimensions, inputDimensions, indicesDimensions);
     }
 
-    uint32_t axis;
+    int32_t axis;
     if (!GetInputScalar<HalPolicy>(operation, 1, HalOperandType::INT32, axis, model, data))
     {
         return Fail("%s: Operation has invalid or unsupported axis operand", __func__);
     }
-    if (((axis < -inputDimensions) && (axis < 0)) || ((axis >= inputDimensions) && (axis > 0)))
+    int32_t inputDimensions_int = static_cast<int32_t>(inputDimensions);
+    if ((axis < -inputDimensions_int) || (inputDimensions_int <= axis))
     {
         return Fail("%s: Operation has invalid axis: %d. It is out of bounds [-%d, %d))", __func__, axis,
                     inputDimensions, inputDimensions);
