@@ -1,5 +1,5 @@
 #
-# Copyright © 2017 ARM Ltd. All rights reserved.
+# Copyright © 2017, 2022 ARM Ltd. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 
@@ -91,7 +91,8 @@ LOCAL_SRC_FILES := \
         DriverTestHelpers.cpp \
         SystemProperties.cpp \
         Concat.cpp \
-        TestTensor.cpp
+        TestTensor.cpp \
+        TestHalfTensor.cpp
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
@@ -223,7 +224,8 @@ LOCAL_SRC_FILES := \
         DriverTestHelpers.cpp \
         SystemProperties.cpp \
         Concat.cpp \
-        TestTensor.cpp
+        TestTensor.cpp \
+        TestHalfTensor.cpp
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
@@ -339,6 +341,7 @@ LOCAL_SRC_FILES := \
         1.1/Transpose.cpp \
         1.2/Dilation.cpp \
         1.2/Capabilities.cpp \
+        1.2/Mean.cpp \
         1.0/Lstm.cpp \
         1.1/Lstm.cpp \
         1.2/Lstm.cpp \
@@ -351,7 +354,8 @@ LOCAL_SRC_FILES := \
         DriverTestHelpers.cpp \
         SystemProperties.cpp \
         Concat.cpp \
-        TestTensor.cpp
+        TestTensor.cpp \
+        TestHalfTensor.cpp
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \
@@ -462,6 +466,7 @@ LOCAL_SRC_FILES := \
         1.1/Transpose.cpp \
         1.2/Dilation.cpp \
         1.2/Capabilities.cpp \
+        1.2/Mean.cpp \
         1.0/Lstm.cpp \
         1.1/Lstm.cpp \
         1.2/Lstm.cpp \
@@ -476,7 +481,8 @@ LOCAL_SRC_FILES := \
         DriverTestHelpers.cpp \
         SystemProperties.cpp \
         Concat.cpp \
-        TestTensor.cpp
+        TestTensor.cpp \
+        TestHalfTensor.cpp
 
 LOCAL_STATIC_LIBRARIES := \
         libneuralnetworks_common \

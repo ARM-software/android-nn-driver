@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
+// Copyright © 2017, 2022 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -124,7 +124,7 @@ DOCTEST_TEST_SUITE("MeanTests_CpuRef")
         MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, false, armnn::Compute::CpuRef);
     }
 
-    DOCTEST_TEST_CASE("MeanFp16NoKeepDimsTest_CpuRef")
+    DOCTEST_TEST_CASE("MeanFp16EnabledNoKeepDimsTest_CpuRef")
     {
         TestTensor input{ armnn::TensorShape{ 4, 3, 2 },
                           { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f,
@@ -138,7 +138,7 @@ DOCTEST_TEST_SUITE("MeanTests_CpuRef")
         MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, true, armnn::Compute::CpuRef);
     }
 
-    DOCTEST_TEST_CASE("MeanFp16KeepDimsTest_CpuRef")
+    DOCTEST_TEST_CASE("MeanFp16EnabledKeepDimsTest_CpuRef")
     {
         TestTensor input{ armnn::TensorShape{ 1, 1, 3, 2 }, { 1.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f } };
         hidl_vec<uint32_t> axisDimensions = { 1 };
@@ -179,7 +179,7 @@ DOCTEST_TEST_SUITE("MeanTests_CpuAcc")
         MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, false, armnn::Compute::CpuAcc);
     }
 
-    DOCTEST_TEST_CASE("MeanFp16NoKeepDimsTest_CpuAcc")
+    DOCTEST_TEST_CASE("MeanFp16EnabledNoKeepDimsTest_CpuAcc")
     {
         TestTensor input{ armnn::TensorShape{ 4, 3, 2 },
                           { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f,
@@ -193,7 +193,7 @@ DOCTEST_TEST_SUITE("MeanTests_CpuAcc")
         MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, true, armnn::Compute::CpuAcc);
     }
 
-    DOCTEST_TEST_CASE("MeanFp16KeepDimsTest_CpuAcc")
+    DOCTEST_TEST_CASE("MeanFp16EnabledKeepDimsTest_CpuAcc")
     {
         TestTensor input{ armnn::TensorShape{ 1, 1, 3, 2 }, { 1.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f } };
         hidl_vec<uint32_t> axisDimensions = { 1 };
@@ -232,7 +232,7 @@ DOCTEST_TEST_SUITE("MeanTests_GpuAcc")
         MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, false, armnn::Compute::GpuAcc);
     }
 
-    DOCTEST_TEST_CASE("MeanFp16NoKeepDimsTest_GpuAcc")
+    DOCTEST_TEST_CASE("MeanFp16EnabledNoKeepDimsTest_GpuAcc")
     {
         TestTensor input{ armnn::TensorShape{ 4, 3, 2 },
                           { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f,
@@ -246,7 +246,7 @@ DOCTEST_TEST_SUITE("MeanTests_GpuAcc")
         MeanTestImpl(input, axisDimensions, axisValues, keepDims, expectedOutput, true, armnn::Compute::GpuAcc);
     }
 
-    DOCTEST_TEST_CASE("MeanFp16KeepDimsTest_GpuAcc")
+    DOCTEST_TEST_CASE("MeanFp16EnabledKeepDimsTest_GpuAcc")
     {
         TestTensor input{ armnn::TensorShape{ 1, 1, 3, 2 }, { 1.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f } };
         hidl_vec<uint32_t> axisDimensions = { 1 };
