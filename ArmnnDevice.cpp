@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017, 2023 Arm Ltd. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -98,7 +98,16 @@ ArmnnDevice::ArmnnDevice(DriverOptions options)
             }
             else
             {
-                backends.push_back(backend);
+                if (m_Options.isAsyncModelExecutionEnabled() &&
+                    armnn::HasCapability(armnn::BackendOptions::BackendOption{"AsyncExecution", false}, backend))
+                {
+                    ALOGV("ArmnnDevice: ArmNN does not support AsyncExecution with the following backend: %s",
+                          backend.Get().c_str());
+                }
+                else
+                {
+                    backends.push_back(backend);
+                }
             }
         }
     }
