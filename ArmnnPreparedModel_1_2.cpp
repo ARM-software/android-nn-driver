@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
+// Copyright © 2017-2023 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -312,11 +312,20 @@ Return<V1_0::ErrorStatus> ArmnnPreparedModel_1_2<HalVersion>::PrepareMemoryForIn
     for (unsigned int i = 0; i < request.inputs.size(); i++)
     {
         const auto& inputArg = request.inputs[i];
-
         armnn::TensorInfo inputTensorInfo = m_Runtime->GetInputTensorInfo(m_NetworkId, i);
         // inputs (of type InputTensors) is composed of a vector of ConstTensors.
         // Therefore, set all TensorInfo isConstant parameters of input Tensors to true.
         inputTensorInfo.SetConstant();
+        auto result = ValidateRequestArgument<V1_0::ErrorStatus, V1_0::Request>(request,
+                                                                                inputTensorInfo,
+                                                                                inputArg,
+                                                                                "input");
+
+        if (result != V1_0::ErrorStatus::NONE)
+        {
+            return result;
+        }
+
         const armnn::Tensor inputTensor = GetTensorForRequestArgument(inputArg, inputTensorInfo, memPools);
 
         if (inputTensor.GetMemoryArea() == nullptr)
@@ -342,8 +351,17 @@ Return<V1_0::ErrorStatus> ArmnnPreparedModel_1_2<HalVersion>::PrepareMemoryForOu
     for (unsigned int i = 0; i < request.outputs.size(); i++)
     {
         const auto& outputArg = request.outputs[i];
+        armnn::TensorInfo outputTensorInfo = m_Runtime->GetOutputTensorInfo(m_NetworkId, i);
+        auto result = ValidateRequestArgument<V1_0::ErrorStatus, V1_0::Request>(request,
+                                                                                outputTensorInfo,
+                                                                                outputArg,
+                                                                                "output");
 
-        const armnn::TensorInfo outputTensorInfo = m_Runtime->GetOutputTensorInfo(m_NetworkId, i);
+        if (result != V1_0::ErrorStatus::NONE)
+        {
+            return result;
+        }
+
         const armnn::Tensor outputTensor = GetTensorForRequestArgument(outputArg, outputTensorInfo, memPools);
         if (outputTensor.GetMemoryArea() == nullptr)
         {

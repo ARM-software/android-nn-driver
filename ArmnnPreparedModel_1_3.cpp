@@ -1,5 +1,5 @@
 //
-// Copyright © 2020 Arm Ltd and Contributors. All rights reserved.
+// Copyright © 2020-2023 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 // Note: the ArmnnFencedExecutionCallback and code snippet in the executeFenced() function
@@ -510,11 +510,20 @@ Return<V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::PrepareMemoryForIn
     for (unsigned int i = 0; i < request.inputs.size(); i++)
     {
         const auto& inputArg = request.inputs[i];
-
         armnn::TensorInfo inputTensorInfo = m_Runtime->GetInputTensorInfo(m_NetworkId, i);
         // inputs (of type InputTensors) is composed of a vector of ConstTensors.
         // Therefore, set all TensorInfo isConstant parameters of input Tensors to true.
         inputTensorInfo.SetConstant();
+        auto result = ValidateRequestArgument<V1_3::ErrorStatus, V1_3::Request>(request,
+                                                                                inputTensorInfo,
+                                                                                inputArg,
+                                                                                "input");
+
+        if (result != V1_3::ErrorStatus::NONE)
+        {
+            return result;
+        }
+
         const armnn::Tensor inputTensor = GetTensorForRequestArgument(inputArg, inputTensorInfo, memPools);
 
         if (inputTensor.GetMemoryArea() == nullptr)
@@ -540,15 +549,24 @@ Return<V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::PrepareMemoryForOu
     for (unsigned int i = 0; i < request.outputs.size(); i++)
     {
         const auto& outputArg = request.outputs[i];
-
         armnn::TensorInfo outputTensorInfo = m_Runtime->GetOutputTensorInfo(m_NetworkId, i);
+        auto result = ValidateRequestArgument<V1_3::ErrorStatus, V1_3::Request>(request,
+                                                                                outputTensorInfo,
+                                                                                outputArg,
+                                                                                "output");
+
+        if (result != V1_3::ErrorStatus::NONE)
+        {
+            return result;
+        }
+
         const armnn::Tensor outputTensor = GetTensorForRequestArgument(outputArg, outputTensorInfo, memPools);
+
         if (outputTensor.GetMemoryArea() == nullptr)
         {
             ALOGE("Cannot execute request. Error converting request output %u to tensor", i);
             return V1_3::ErrorStatus::GENERAL_FAILURE;
         }
-
         const size_t outputSize = outputTensorInfo.GetNumBytes();
 
         unsigned int count = 0;

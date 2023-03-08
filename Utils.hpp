@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017-2021,2023 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -10,6 +10,8 @@
 #include <HalInterfaces.h>
 #include <NeuralNetworks.h>
 #include <Utils.h>
+
+#include <fmt/format.h>
 
 #include <vector>
 #include <string>
@@ -194,4 +196,9 @@ inline V1_2::OutputShape ComputeShape(const armnn::TensorInfo& info)
 
 void CommitPools(std::vector<::android::nn::RunTimePoolInfo>& memPools);
 
+template <typename ErrorStatus, typename Request>
+ErrorStatus ValidateRequestArgument(const Request& request,
+                                    const armnn::TensorInfo& tensorInfo,
+                                    const V1_0::RequestArgument& requestArgument,
+                                    std::string descString);
 } // namespace armnn_driver
