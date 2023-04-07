@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017, 2023 Arm Ltd. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -114,8 +114,8 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
 
     // Optimize the network
     armnn::IOptimizedNetworkPtr optNet(nullptr, nullptr);
-    armnn::OptimizerOptions OptOptions;
-    OptOptions.m_ReduceFp32ToFp16 = float32ToFloat16;
+    armnn::OptimizerOptionsOpaque OptOptions;
+    OptOptions.SetReduceFp32ToFp16(float32ToFloat16);
 
     armnn::BackendOptions gpuAcc("GpuAcc",
     {
@@ -131,8 +131,8 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl<HalPolicy>::prepareModel(
         { "FastMathEnabled", options.IsFastMathEnabled() },
         { "NumberOfThreads", options.GetNumberOfThreads() }
     });
-    OptOptions.m_ModelOptions.push_back(gpuAcc);
-    OptOptions.m_ModelOptions.push_back(cpuAcc);
+    OptOptions.AddModelOption(gpuAcc);
+    OptOptions.AddModelOption(cpuAcc);
 
     std::vector<std::string> errMessages;
     try

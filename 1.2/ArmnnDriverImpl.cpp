@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd. All rights reserved.
+// Copyright © 2017, 2023 Arm Ltd. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -146,9 +146,9 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(
 
     // Optimize the network
     armnn::IOptimizedNetworkPtr optNet(nullptr, nullptr);
-    armnn::OptimizerOptions OptOptions;
-    OptOptions.m_ReduceFp32ToFp16 = float32ToFloat16;
-    OptOptions.m_ProfilingEnabled = options.IsGpuProfilingEnabled();
+    armnn::OptimizerOptionsOpaque OptOptions;
+    OptOptions.SetReduceFp32ToFp16(float32ToFloat16);
+    OptOptions.SetProfilingEnabled(options.IsGpuProfilingEnabled());
 
     int cachedFd = -1;
     bool saveCachedNetwork = options.SaveCachedNetwork();
@@ -192,8 +192,8 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareArmnnModel_1_2(
         { "FastMathEnabled", options.IsFastMathEnabled() },
         { "NumberOfThreads", options.GetNumberOfThreads() }
     });
-    OptOptions.m_ModelOptions.push_back(gpuAcc);
-    OptOptions.m_ModelOptions.push_back(cpuAcc);
+    OptOptions.AddModelOption(gpuAcc);
+    OptOptions.AddModelOption(cpuAcc);
 
     std::vector<std::string> errMessages;
     try
@@ -553,9 +553,9 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareModelFromCache(
 
     // Optimize the network
     armnn::IOptimizedNetworkPtr optNet(nullptr, nullptr);
-    armnn::OptimizerOptions OptOptions;
-    OptOptions.m_ReduceFp32ToFp16 = float32ToFloat16;
-    OptOptions.m_ProfilingEnabled = options.IsGpuProfilingEnabled();
+    armnn::OptimizerOptionsOpaque OptOptions;
+    OptOptions.SetReduceFp32ToFp16(float32ToFloat16);
+    OptOptions.SetProfilingEnabled(options.IsGpuProfilingEnabled());
 
     armnn::BackendOptions gpuAcc("GpuAcc",
                                  {
@@ -571,8 +571,8 @@ Return<V1_0::ErrorStatus> ArmnnDriverImpl::prepareModelFromCache(
                                          {"FastMathEnabled", options.IsFastMathEnabled()},
                                          {"NumberOfThreads", options.GetNumberOfThreads()}
                                  });
-    OptOptions.m_ModelOptions.push_back(gpuAcc);
-    OptOptions.m_ModelOptions.push_back(cpuAcc);
+    OptOptions.AddModelOption(gpuAcc);
+    OptOptions.AddModelOption(cpuAcc);
 
     std::vector<std::string> errMessages;
     try
