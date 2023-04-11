@@ -1,5 +1,5 @@
 //
-// Copyright © 2017 Arm Ltd and Contributors. All rights reserved.
+// Copyright © 2017, 2023 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -194,7 +194,7 @@ DriverOptions::DriverOptions(int argc, char** argv)
     {
         cxxopts::ParseResult result = optionsDesc.parse(argc, argv);
     }
-    catch (const cxxopts::OptionException& e)
+    catch (const cxxopts::exceptions::exception& e)
     {
         ALOGW("An exception occurred attempting to parse program options: %s", e.what());
         std::cout << optionsDesc.help() << std::endl
