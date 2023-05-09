@@ -105,3 +105,93 @@ adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.2-service-armn
 <pre>
 adb shell /system/vendor/bin/hw/android.hardware.neuralnetworks@1.2-service-armnn --cl-tuned-parameters-file &lt;PATH_TO_TUNING_DATA&gt; &
 </pre>
+
+### Specifying the Capabilities for the Driver
+
+The Android NNAPI framework specifies a means for a Driver to specify its Capabilities. These are relevant in situations where there are multiple drivers on a device and the NNAPI needs to choose one to use for a model. The Android NNAPI documentation gives an overview of them and how they're used at https://source.android.com/docs/core/interaction/neural-networks 
+
+These values will be hardware dependent and, as we can't know how any specific hardware is configured and we have no idea of the kind of values that the creators of other drivers might use, we leave it up to the Integrator to specify the values. The Android documentation linked above also provides some guidelines on measuring performance when generating these values. 
+
+As the Arm NN driver service initialises it will look for system properties containing the performance values to return when the NNAPI service requests the drivers Capabilities. The properties must all be 32-bit Float values and specify execution performance as well as power usage (in some circumstances Android may prefer low power consumption over high performance). 
+
+As each new HAL version was introduced the number of properties increased. The following is a list of the system properties that are looked for when the driver starts for each HAL version.
+
+#### HAL 1.0
+
+Initially the HAL 1.0 service only supported Float 32 and Quantized int8. 
+
+* ArmNN.float32Performance.execTime
+* ArmNN.float32Performance.powerUsage
+* ArmNN.quantized8Performance.execTime
+* ArmNN.quantized8Performance.powerUsage
+
+#### HAL 1.1
+
+HAL 1.1 added a performance setting for relaxedFloat32toFloat16Performance.
+
+* ArmNN.float32Performance.execTime
+* ArmNN.float32Performance.powerUsage
+* ArmNN.quantized8Performance.execTime
+* ArmNN.quantized8Performance.powerUsage
+* ArmNN.relaxedFloat32toFloat16Performance.execTime
+* ArmNN.relaxedFloat32toFloat16Performance.powerUsage
+
+#### HAL 1.2
+
+HAL 1.2 added support for a number of new operand types. 
+
+* ArmNN.relaxedFloat32toFloat16Performance.execTime
+* ArmNN.relaxedFloat32toFloat16Performance.powerUsage
+* Armnn.operandTypeTensorFloat32Performance.execTime
+* Armnn.operandTypeTensorFloat32Performance.powerUsage
+* Armnn.operandTypeFloat32Performance.execTime
+* Armnn.operandTypeFloat32Performance.powerUsage
+* Armnn.operandTypeTensorFloat16Performance.execTime
+* Armnn.operandTypeTensorFloat16Performance.powerUsage
+* Armnn.operandTypeFloat16Performance.execTime
+* Armnn.operandTypeFloat16Performance.powerUsage
+* Armnn.operandTypeTensorQuant8AsymmPerformance.execTime
+* Armnn.operandTypeTensorQuant8AsymmPerformance.powerUsage
+* Armnn.operandTypeTensorQuant16SymmPerformance.execTime
+* Armnn.operandTypeTensorQuant16SymmPerformance.powerUsage
+* Armnn.operandTypeTensorQuant8SymmPerformance.execTime
+* Armnn.operandTypeTensorQuant8SymmPerformance.powerUsage
+* Armnn.operandTypeTensorQuant8SymmPerChannelPerformance.execTime
+* Armnn.operandTypeTensorQuant8SymmPerChannelPerformance.powerUsage
+* Armnn.operandTypeTensorInt32Performance.execTime
+* Armnn.operandTypeTensorInt32Performance.powerUsage
+* Armnn.operandTypeInt32Performance.execTime
+* Armnn.operandTypeInt32Performance.powerUsage
+
+#### HAL 1.3
+
+HAL 1.3 added support for the control flow operations If and While. Please note ArmNN does not currently support If or While and until it does ignoring these system properties is appropriate. 
+
+* ArmNN.relaxedFloat32toFloat16Performance.powerUsage
+* ArmNN.relaxedFloat32toFloat16Performance.powerUsage
+* ArmNN.ifPerformance.execTime
+* ArmNN.ifPerformance.powerUsage
+* ArmNN.whilePerformance.execTime
+* ArmNN.whilePerformance.powerUsage
+* Armnn.operandTypeTensorFloat32Performance.execTime
+* Armnn.operandTypeTensorFloat32Performance.powerUsage
+* Armnn.operandTypeFloat32Performance.execTime
+* Armnn.operandTypeFloat32Performance.powerUsage
+* Armnn.operandTypeTensorFloat16Performance.execTime
+* Armnn.operandTypeTensorFloat16Performance.powerUsage
+* Armnn.operandTypeFloat16Performance.execTime
+* Armnn.operandTypeFloat16Performance.powerUsage
+* Armnn.operandTypeTensorQuant8AsymmPerformance.execTime
+* Armnn.operandTypeTensorQuant8AsymmPerformance.powerUsage
+* Armnn.operandTypeTensorQuant8AsymmSignedPerformance.execTime
+* Armnn.operandTypeTensorQuant8AsymmSignedPerformance.powerUsage
+* Armnn.operandTypeTensorQuant16SymmPerformance.execTime
+* Armnn.operandTypeTensorQuant16SymmPerformance.powerUsage
+* Armnn.operandTypeTensorQuant8SymmPerformance.execTime
+* Armnn.operandTypeTensorQuant8SymmPerformance.powerUsage
+* Armnn.operandTypeTensorQuant8SymmPerChannelPerformance.execTime
+* Armnn.operandTypeTensorQuant8SymmPerChannelPerformance.powerUsage
+* Armnn.operandTypeTensorInt32Performance.execTime
+* Armnn.operandTypeTensorInt32Performance.powerUsage
+* Armnn.operandTypeInt32Performance.execTime
+* Armnn.operandTypeInt32Performance.powerUsage
