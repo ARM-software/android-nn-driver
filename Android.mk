@@ -1,5 +1,5 @@
 #
-# Copyright © 2022 ARM Ltd. and Contributors. All rights reserved.
+# Copyright © 2022-2023 ARM Ltd. and Contributors. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 
@@ -43,41 +43,15 @@ R_OR_LATER := 1
 ANDROID_R  := 1
 endif # PLATFORM_VERSION == 11
 
-ifeq ($(PLATFORM_VERSION),S)
+ifeq ($(PLATFORM_VERSION),$(filter $(PLATFORM_VERSION),12 13 14 S T U))
 P_OR_LATER := 1
 Q_OR_LATER := 1
 R_OR_LATER := 1
 S_OR_LATER := 1
 ANDROID_R  := 0
 ANDROID_S  := 1
-endif # PLATFORM_VERSION == S
+endif # PLATFORM_VERSION >= S
 
-ifeq ($(PLATFORM_VERSION),12)
-P_OR_LATER := 1
-Q_OR_LATER := 1
-R_OR_LATER := 1
-S_OR_LATER := 1
-ANDROID_R  := 0
-ANDROID_S  := 1
-endif # PLATFORM_VERSION == 12
-
-ifeq ($(PLATFORM_VERSION),T)
-P_OR_LATER := 1
-Q_OR_LATER := 1
-R_OR_LATER := 1
-S_OR_LATER := 1
-ANDROID_R  := 0
-ANDROID_S  := 1
-endif # PLATFORM_VERSION == S
-
-ifeq ($(PLATFORM_VERSION),13)
-P_OR_LATER := 1
-Q_OR_LATER := 1
-R_OR_LATER := 1
-S_OR_LATER := 1
-ANDROID_R  := 0
-ANDROID_S  := 1
-endif # PLATFORM_VERSION == 13
 
 CPP_VERSION := c++14
 
