@@ -2888,6 +2888,84 @@ bool ConvertLstm(const HalOperation& operation, const HalModel& model, Conversio
 template<typename HalPolicy,
          typename HalOperation = typename HalPolicy::Operation,
          typename HalModel     = typename HalPolicy::Model>
+bool ConvertTile(const HalOperation& operation, const HalModel& model, ConversionData& data)
+{
+    using HalOperand     = typename HalPolicy::Operand;
+
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+
+    if (!input.IsValid())
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    const HalOperand* output = GetOutputOperand<HalPolicy>(operation, 0, model);
+
+    if (!output)
+    {
+        return Fail("%s: Could not read output", __func__);
+    }
+
+    const HalOperand* multiplesOperand = GetInputOperand<HalPolicy>(operation, 1, model);
+    if (!multiplesOperand)
+    {
+        return Fail("%s: Could not read input 1", __func__);
+    }
+    std::vector<int32_t> multiples;
+    if (!GetTensorInt32Values<HalPolicy>(*multiplesOperand, multiples, model, data))
+    {
+        return Fail("%s: Input 1 has invalid values", __func__);
+    }
+    // Convert the multiples from int to unsigned int,
+    // as values are always going to be positive despite the data type being integer.
+    TileDescriptor descriptor;
+    descriptor.m_Multiples.assign(multiples.begin(), multiples.end());
+
+    const TensorInfo& inputInfo  = input.GetTensorInfo();
+    const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+
+    bool isSupported = false;
+    armnn::BackendId setBackend;
+    auto validateFunc = [&](const armnn::TensorInfo& outputInfo, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsTileSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   setBackend,
+                                   inputInfo,
+                                   outputInfo,
+                                   descriptor);
+    };
+
+    if(IsDynamicTensor(outputInfo))
+    {
+        isSupported = AreDynamicTensorsSupported();
+    }
+    else
+    {
+        validateFunc(outputInfo, isSupported);
+    }
+    if (!isSupported)
+    {
+        return false;
+    }
+
+    IConnectableLayer* tileLayer = data.m_Network->AddTileLayer(descriptor);
+    if (!tileLayer)
+    {
+        return Fail("%s: AddTileLayer failed", __func__);
+    }
+    tileLayer->SetBackendId(setBackend);
+
+    input.Connect(tileLayer->GetInputSlot(0));
+
+    return SetupAndTrackLayerOutputSlot<HalPolicy>(operation, 0, *tileLayer, model, data, nullptr, validateFunc);
+}
+
+template<typename HalPolicy,
+         typename HalOperation = typename HalPolicy::Operation,
+         typename HalModel     = typename HalPolicy::Model>
 bool ConvertTransposeConv2d(const HalOperation& operation, const HalModel& model, ConversionData& data)
 {
     using HalOperand     = typename HalPolicy::Operand;

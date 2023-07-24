@@ -185,6 +185,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertTransposeConv2d(operation, model, data);
         case V1_2::OperationType::TANH:
             return ConvertTanH(operation, model, data);
+        case V1_2::OperationType::TILE:
+            return ConvertTile(operation, model, data);
         case V1_2::OperationType::UNIDIRECTIONAL_SEQUENCE_LSTM:
             return ConvertUnidirectionalSequenceLstm(operation, model, data);
         default:
@@ -496,6 +498,12 @@ bool HalPolicy::ConvertTransposeConv2d(const Operation& operation, const Model& 
 {
     ALOGV("hal_1_2::HalPolicy::ConvertTransposeConv2d()");
     return ::ConvertTransposeConv2d<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertTile(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertTile()");
+    return ::ConvertTile<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertUnidirectionalSequenceLstm(const Operation& operation, const Model& model, ConversionData& data)

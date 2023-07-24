@@ -165,6 +165,8 @@ private:
 
     static bool ConvertTransposeConv2d(const Operation& operation, const Model& model, ConversionData& data);
 
+    static bool ConvertTile(const Operation& operation, const Model& model, ConversionData& data);
+
     static bool ConvertUnidirectionalSequenceLstm(const Operation& operation,
                                                   const Model& model,
                                                   ConversionData& data);
