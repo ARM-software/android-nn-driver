@@ -615,7 +615,7 @@ bool HalPolicy::ConvertSpaceToDepth(const Operation& operation, const Model& mod
 
     if (desc.m_BlockSize <= 1)
     {
-        return Fail("%s: Block size must be at least 1 in all dimensions");
+        return Fail("%s: Block size must be at least 1 in all dimensions", __func__);
     }
 
     const Operand* output = GetOutputOperand<hal_1_0::HalPolicy>(operation, 0, model);

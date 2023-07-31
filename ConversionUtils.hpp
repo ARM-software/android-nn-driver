@@ -2511,7 +2511,7 @@ bool ConvertDepthToSpace(const HalOperation& operation, const HalModel& model, C
     GetInputScalar<HalPolicy>(operation, 1, HalOperandType::INT32, descriptor.m_BlockSize, model, data);
     if (descriptor.m_BlockSize <= 1)
     {
-        return Fail("%s: Block size must be at least 1 in all dimensions");
+        return Fail("%s: Block size must be at least 1 in all dimensions", __func__);
     }
 
     descriptor.m_DataLayout = armnn::DataLayout::NHWC;

@@ -2324,7 +2324,7 @@ bool ConvertSpaceToDepth(const HalOperation& operation, const HalModel& model, C
 
     if (desc.m_BlockSize <= 1)
     {
-        return Fail("%s: Block size must be at least 1 in all dimensions");
+        return Fail("%s: Block size must be at least 1 in all dimensions", __func__);
     }
 
     desc.m_DataLayout = OptionalDataLayout<HalPolicy>(operation, 2, model, data);
