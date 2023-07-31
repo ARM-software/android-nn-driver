@@ -100,20 +100,19 @@ armnn::TensorInfo GetTensorInfoForOperand(const V1_0::Operand& operand)
     }
     else
     {
-        bool dimensionsSpecificity[5] = { true, true, true, true, true };
-        int count = 0;
-        std::for_each(operand.dimensions.data(),
-                      operand.dimensions.data() +  operand.dimensions.size(),
-                      [&](const unsigned int val)
-                      {
-                          if (val == 0)
-                          {
-                              dimensionsSpecificity[count] = false;
-                          }
-                          count++;
-                      });
+        std::vector<unsigned char> dimensionsSpecificity(operand.dimensions.size(), true);
 
-        TensorShape tensorShape(operand.dimensions.size(), operand.dimensions.data(), dimensionsSpecificity);
+        for (unsigned int i = 0; i < static_cast<unsigned int>(operand.dimensions.size()); ++i)
+        {
+            auto dim = operand.dimensions[i];
+            if (dim == 0)
+            {
+                dimensionsSpecificity[i] = false;
+            }
+        }
+        TensorShape tensorShape(operand.dimensions.size(),
+                                operand.dimensions.data(),
+                                reinterpret_cast<const bool *>(dimensionsSpecificity.data()));
         ret = TensorInfo(tensorShape, type);
     }
 
