@@ -133,8 +133,10 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertPad(operation, model, data);
         case V1_2::OperationType::PAD_V2:
             return ConvertPadV2(operation, model, data);
-        case V1_2::OperationType::POW:
-            return ConvertElementwiseBinary(operation, model, data, BinaryOperation::Power);
+// There's a problem with the combination of Hal 1.2, Android Q and the POW operator. The problem does not happen
+// with Hal 1.3.
+//        case V1_2::OperationType::POW:
+//            return ConvertElementwiseBinary(operation, model, data, BinaryOperation::Power);
         case V1_2::OperationType::PRELU:
             return ConvertPrelu(operation, model, data);
         case V1_2::OperationType::QUANTIZE:
