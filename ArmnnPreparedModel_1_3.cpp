@@ -434,6 +434,21 @@ Return<void> ArmnnPreparedModel_1_3<HalVersion>::executeFenced(const V1_3::Reque
         auto fenceNativeHandle = fenceWaitFor[index].getNativeHandle();
         if (!fenceNativeHandle)
         {
+            ALOGE("ArmnnPreparedModel_1_3::executeFenced null native handle.");
+            cb(V1_3::ErrorStatus::INVALID_ARGUMENT, hidl_handle(nullptr), nullptr);
+            return Void();
+        }
+
+        if (fenceNativeHandle->numFds != 1)
+        {
+            ALOGE("ArmnnPreparedModel_1_3::executeFenced invalid fenceHandle numFds.");
+            cb(V1_3::ErrorStatus::INVALID_ARGUMENT, hidl_handle(nullptr), nullptr);
+            return Void();
+        }
+
+        if (fenceNativeHandle->numInts != 0)
+        {
+            ALOGE("ArmnnPreparedModel_1_3::executeFenced invalid fenceHandle numInts.");
             cb(V1_3::ErrorStatus::INVALID_ARGUMENT, hidl_handle(nullptr), nullptr);
             return Void();
         }
