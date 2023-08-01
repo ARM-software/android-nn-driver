@@ -99,7 +99,8 @@ ArmnnDevice::ArmnnDevice(DriverOptions options)
             else
             {
                 if (m_Options.isAsyncModelExecutionEnabled() &&
-                    armnn::HasCapability(armnn::BackendOptions::BackendOption{"AsyncExecution", false}, backend))
+                    armnn::HasMatchingCapability(armnn::BackendOptions::BackendOption{"AsyncExecution", false},
+                                                 backend))
                 {
                     ALOGV("ArmnnDevice: ArmNN does not support AsyncExecution with the following backend: %s",
                           backend.Get().c_str());
