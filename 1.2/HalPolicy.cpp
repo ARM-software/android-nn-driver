@@ -173,6 +173,8 @@ bool HalPolicy::ConvertOperation(const Operation& operation, const Model& model,
             return ConvertSpaceToBatchNd(operation, model, data);
         case V1_2::OperationType::SPACE_TO_DEPTH:
             return ConvertSpaceToDepth(operation, model, data);
+        case V1_2::OperationType::SPLIT:
+            return ConvertSplit(operation, model, data);
         case V1_2::OperationType::SQRT:
             return ConvertSqrt(operation, model, data);
         case V1_2::OperationType::SQUEEZE:
@@ -467,6 +469,12 @@ bool HalPolicy::ConvertLstm(const Operation& operation, const Model& model, Conv
 {
     ALOGV("hal_1_2::HalPolicy::ConvertLstm()");
     return ::ConvertLstm<hal_1_2::HalPolicy>(operation, model, data);
+}
+
+bool HalPolicy::ConvertSplit(const Operation& operation, const Model& model, ConversionData& data)
+{
+    ALOGV("hal_1_2::HalPolicy::ConvertSplit()");
+    return ::ConvertSplit<hal_1_2::HalPolicy>(operation, model, data);
 }
 
 bool HalPolicy::ConvertSqrt(const Operation& operation, const Model& model, ConversionData& data)

@@ -2475,6 +2475,160 @@ bool ConvertSoftmax(const HalOperation& operation, const HalModel& model, Conver
 }
 
 template<typename HalPolicy,
+         typename Operation = typename HalPolicy::Operation,
+         typename Model     = typename HalPolicy::Model>
+bool ConvertSplit(const Operation& operation, const Model& model, ConversionData& data)
+{
+    using HalOperand     = typename HalPolicy::Operand;
+    using HalOperandType = typename HalPolicy::OperandType;
+
+    if (operation.inputs.size() != 3)
+    {
+        return Fail("%s: Optional inputs are not supported expected 3 was %i", __func__, operation.inputs.size());
+    }
+
+    // 0: An n-D tensor to split.
+    LayerInputHandle input = ConvertToLayerInputHandle<HalPolicy>(operation, 0, model, data);
+    // 1: An ANEURALNETWORKS_INT32 scalar specifying the axis along which to split.
+    int32_t axis = 0;
+    // 2: An ANEURALNETWORKS_INT32 scalar indicating the number of splits along given axis.
+    // Must evenly divide axis size.
+    int32_t numSplits = 0;
+
+    if (!input.IsValid() ||
+        !GetInputScalar<HalPolicy>(operation, 1, HalOperandType::INT32, axis, model, data) ||
+        !GetInputScalar<HalPolicy>(operation, 2, HalOperandType::INT32, numSplits, model, data))
+    {
+        return Fail("%s: Operation has invalid inputs", __func__);
+    }
+
+    // If number of splits is <= zero, return false.
+    if (numSplits <= 0)
+    {
+        return Fail("%s: Number of splits must be greater than zero", __func__);
+    }
+    const armnn::TensorInfo& inputInfo  = input.GetTensorInfo();
+    unsigned int inputDimSize = inputInfo.GetNumDimensions();
+    int32_t inputDimensions = static_cast<int32_t>(inputDimSize);
+
+    if (axis < -inputDimensions || axis >= inputDimensions)
+    {
+        // The axis for a tensor with n dimensions must be between -n and n-1
+        // E.g. Rank 4 tensor can have axis in range [-4, 3)
+        // -1 == 3, -2 == 2, -3 == 1, -4 == 0
+        return Fail("%s: Operation has invalid axis %i. Axis must be in range [-n, n-1]", __func__, axis);
+    }
+    auto splitDim = armnnUtils::GetUnsignedAxis(inputDimSize, axis);
+
+    if (inputDimSize > MaxNumOfTensorDimensions)
+    {
+        return Fail("%s: The number of dimensions %i for split operation cannot be greater than %i",
+                    __func__, inputInfo.GetNumDimensions(), MaxNumOfTensorDimensions);
+    }
+    std::vector<uint32_t> splitterDimSizes(inputDimSize);
+
+    // Add current input shape to splitterDimSizes
+    for (uint32_t i = 0; i < inputDimSize; ++i)
+    {
+        splitterDimSizes[i] = inputInfo.GetShape()[i];
+    }
+
+    if (splitterDimSizes[splitDim] % numSplits != 0)
+    {
+        return Fail("%s: The number of splits %i must evenly divide the dimension %i",
+                    __func__, numSplits, splitterDimSizes[splitDim]);
+    }
+    splitterDimSizes[splitDim] /= numSplits;
+
+    ViewsDescriptor descriptor(numSplits, inputDimSize);
+
+    for (int32_t i = 0; i < numSplits; ++i)
+    {
+        // Set the size of the views.
+        for (uint32_t dimIdx = 0; dimIdx < splitterDimSizes.size(); ++dimIdx)
+        {
+            descriptor.SetViewSize(i, dimIdx, splitterDimSizes[dimIdx]);
+        }
+        descriptor.SetViewOriginCoord(i, splitDim, splitterDimSizes[splitDim] * i);
+    }
+
+    std::vector<TensorInfo> outputInfos;
+    for (int32_t i = 0; i < numSplits; ++i)
+    {
+        const HalOperand* output = GetOutputOperand<HalPolicy>(operation, i, model);
+        if (!output)
+        {
+            return Fail("%s: Could not read output %i", __func__, i);
+        }
+
+        const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+        outputInfos.template emplace_back(outputInfo);
+    }
+    std::vector<std::reference_wrapper<TensorInfo>> splitterOutputInfos(outputInfos.begin(), outputInfos.end());
+    bool isSupported = false;
+    armnn::BackendId setBackend;
+
+    FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                               IsSplitterSupported,
+                               data.m_Backends,
+                               isSupported,
+                               setBackend,
+                               inputInfo,
+                               splitterOutputInfos,
+                               descriptor);
+
+    if (!isSupported)
+    {
+        return Fail("%s: Layer is not supported", __func__);
+    }
+
+    for (int32_t i = 0; i < numSplits; ++i)
+    {
+        const HalOperand* output = GetOutputOperand<HalPolicy>(operation, i, model);
+        if (!output)
+        {
+            return Fail("%s: Could not read output %i", __func__, i);
+        }
+
+        const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
+        if (IsDynamicTensor(outputInfo))
+        {
+            return Fail("%s: Dynamic output tensors are not supported", __func__);
+        }
+    }
+
+    IConnectableLayer* layer = data.m_Network->AddSplitterLayer(descriptor, "Split");
+    if (!layer)
+    {
+        return Fail("%s: could not add the Layer", __func__);
+    }
+    input.Connect(layer->GetInputSlot(0));
+
+    auto validateFunc = [&](const armnn::TensorInfo&, bool& isSupported)
+    {
+        FORWARD_LAYER_SUPPORT_FUNC(__func__,
+                                   IsSplitterSupported,
+                                   data.m_Backends,
+                                   isSupported,
+                                   setBackend,
+                                   inputInfo,
+                                   splitterOutputInfos,
+                                   descriptor);
+    };
+
+    for (int32_t i = 0; i < numSplits; ++i)
+    {
+        bool ok = SetupAndTrackLayerOutputSlot<HalPolicy>(operation, i, *layer, model, data, nullptr, validateFunc);
+
+        if (!ok)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+template<typename HalPolicy,
          typename HalOperation = typename HalPolicy::Operation,
          typename HalModel     = typename HalPolicy::Model>
 bool ConvertLstm(const HalOperation& operation, const HalModel& model, ConversionData& data)
