@@ -1122,6 +1122,7 @@ bool ConvertGroupedConv2d(const HalOperation& operation, const HalModel& model, 
     std::vector<std::reference_wrapper<TensorInfo>> splitterOutputInfos(numGroups, std::ref(splitterOutputInfo));
 
     ViewsDescriptor splitterDesc(numGroups);
+    splitterDesc.SetAxis(armnn::numeric_cast<int32_t>(channelsIndex));
     for (unsigned int group = 0u; group < numGroups; ++group)
     {
         splitterDesc.SetViewOriginCoord(group, channelsIndex, splitterDimSizes[channelsIndex] * group);
