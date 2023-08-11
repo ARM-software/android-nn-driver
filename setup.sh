@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright © 2018, 2020-022 Arm Ltd and Contributors. All rights reserved.
+# Copyright © 2018,2020-2023 Arm Ltd and Contributors. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 
@@ -87,8 +87,6 @@ if [ ! -d armnn/generated ]; then
   mkdir -p armnn/generated
 fi
 
-if [ ! -f armnn/generated/ArmnnSchema_generated.h ]; then
-  echo "+++ Generating new ArmnnSchema_generated.h"
-  $FLATBUFFERS_DIR/bin/flatc -o armnn/generated --cpp armnn/src/armnnSerializer/ArmnnSchema.fbs
-  AssertZeroExitCode "Generating ArmnnSchema_generated.h failed."
-fi
+echo "+++ Generating new ArmnnSchema_generated.h"
+$FLATBUFFERS_DIR/bin/flatc -o armnn/generated --cpp armnn/src/armnnSerializer/ArmnnSchema.fbs
+AssertZeroExitCode "Generating ArmnnSchema_generated.h failed."
