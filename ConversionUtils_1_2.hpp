@@ -27,7 +27,8 @@ template<typename HalPolicy,
         typename HalModel     = typename HalPolicy::Model>
 bool IsWeightsValid(const HalOperation& operation,
                     uint32_t inputIndex,
-                    const HalModel& model)
+                    const HalModel& model,
+                    const bool isOptional = true)
 {
     using HalOperand         = typename HalPolicy::Operand;
     using HalOperandLifeTime = typename HalPolicy::OperandLifeTime;
@@ -38,12 +39,19 @@ bool IsWeightsValid(const HalOperation& operation,
         return false;
     }
 
+    // If the operand is not an optional operand it cannot have a NO_VALUE lifetime
+    if (!isOptional && operand->lifetime == HalOperandLifeTime::NO_VALUE)
+    {
+        return false;
+    }
+
     if (operand->lifetime    != HalOperandLifeTime::CONSTANT_COPY
         && operand->lifetime != HalOperandLifeTime::CONSTANT_REFERENCE
         && operand->lifetime != HalOperandLifeTime::NO_VALUE)
     {
         return false;
     }
+
     return true;
 }
 
@@ -415,11 +423,10 @@ bool ConvertConv2d_1_2(const HalOperation& operation, const HalModel& model, Con
     // the DataLayout is NCHW
 
 
-    if (!IsWeightsValid<HalPolicy>(operation, 1, model) && desc.m_DataLayout == DataLayout::NCHW)
+    if (!IsWeightsValid<HalPolicy>(operation, 1, model, false) && desc.m_DataLayout == DataLayout::NCHW)
     {
         return Fail("%s: Operation has unsupported weights HalOperandLifeTime", __func__);
     }
-
     LayerInputHandle weightsInput = (desc.m_DataLayout == DataLayout::NCHW) ?
                                      ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data, OHWIToOIHW) :
                                      ConvertToLayerInputHandle<HalPolicy>(operation, 1, model, data);
@@ -562,12 +569,14 @@ bool ConvertDepthwiseConv2d_1_2(const HalOperation& operation, const HalModel& m
     const TensorInfo& outputInfo = GetTensorInfoForOperand(*output);
 
     // ArmNN does not currently support non-fixed weights or bias
+    if (!IsWeightsValid<HalPolicy>(operation, 1, model, false))
+    {
+        return Fail("%s: This Operation has unsupported weights HalOperandLifeTime", __func__);
+    }
+
     // Find the shape of the weights tensor. In AndroidNN this will be [ 1, H, W, I * M ]
     const HalOperand* weightsOperand = GetInputOperand<HalPolicy>(operation, 1, model);
-    if (!weightsOperand)
-    {
-        return Fail("%s: Could not read weights", __func__);
-    }
+
     if (weightsOperand->dimensions[0] != 1)
     {
         return Fail("%s: Invalid weights; for depthwise convolution, dimension 0 must be 1 but it is %i",
