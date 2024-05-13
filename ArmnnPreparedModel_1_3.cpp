@@ -1,5 +1,5 @@
 //
-// Copyright © 2020-2023 Arm Ltd and Contributors. All rights reserved.
+// Copyright © 2020-2024 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 // Note: the ArmnnFencedExecutionCallback and code snippet in the executeFenced() function
@@ -864,8 +864,10 @@ Return <V1_3::ErrorStatus> ArmnnPreparedModel_1_3<HalVersion>::ExecuteGraph(
         armnn::Status status;
         if (m_AsyncModelExecutionEnabled)
         {
+ARMNN_NO_DEPRECATE_WARN_BEGIN
             ALOGW("ArmnnPreparedModel_1_3::ExecuteGraph m_AsyncModelExecutionEnabled true");
             status = m_Runtime->Execute(*m_WorkingMemHandle, inputTensors, outputTensors);
+ARMNN_NO_DEPRECATE_WARN_BEGIN
         }
         else
         {

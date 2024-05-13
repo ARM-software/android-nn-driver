@@ -1,5 +1,5 @@
 //
-// Copyright © 2017-2023 Arm Ltd and Contributors. All rights reserved.
+// Copyright © 2017-2024 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
 
@@ -556,8 +556,10 @@ bool ArmnnPreparedModel_1_2<HalVersion>::ExecuteGraph(
         armnn::Status status;
         if (m_AsyncModelExecutionEnabled)
         {
+ARMNN_NO_DEPRECATE_WARN_BEGIN
             ALOGW("ArmnnPreparedModel_1_2::ExecuteGraph m_AsyncModelExecutionEnabled true");
             status = m_Runtime->Execute(*m_WorkingMemHandle, inputTensors, outputTensors);
+ARMNN_NO_DEPRECATE_WARN_END
         }
         else
         {
