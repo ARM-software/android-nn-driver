@@ -2,6 +2,7 @@
 // Copyright © 2020-2024 Arm Ltd and Contributors. All rights reserved.
 // SPDX-License-Identifier: MIT
 //
+
 // Note: the ArmnnFencedExecutionCallback and code snippet in the executeFenced() function
 //       in this file is based on Android code
 //       under the Apache 2.0 license. See comments below for details.

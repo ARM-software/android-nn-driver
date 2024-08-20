@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright © 2018,2020-2023 Arm Ltd and Contributors. All rights reserved.
+# Copyright © 2018,2020-2024 Arm Ltd and Contributors. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 
@@ -17,6 +17,35 @@ function AssertZeroExitCode {
 BUILD_DIR=build-x86_64
 FLATBUFFERS_DIR=$PWD/flatbuffers
 
+function BuildCmake {
+  CMAKE_VERSION=3.22.1
+  CMAKE_DIST="cmake-3.22.1"
+  # Note that the Cmake version with and without the patch release are used in this URL.
+  CMAKE_URL="https://cmake.org/files/v3.22/${CMAKE_DIST}.tar.gz"
+  CMAKE_ZIP=$PWD/${CMAKE_DIST}.tar.gz
+  CMAKE_PKG=$PWD/${CMAKE_DIST}
+
+  # If the correct package doesn't exist then download and unpack it.
+  if [[ ! -d "$CMAKE_PKG" ]]; then
+      # Download the version of CMake we want
+      echo "+++ Downloading CMake"
+      mkdir -p cmake
+      wget -O $CMAKE_ZIP $CMAKE_URL
+      AssertZeroExitCode "Downloading CMake failed"
+      echo "+++ Unpacking CMake"
+      tar -xzf "$CMAKE_ZIP" -C "$PWD"
+      AssertZeroExitCode "Unpacking CMake failed"
+  fi
+  # This version of cmake will be used in devenv only.
+  echo "+++ Building CMake"
+  cd "$CMAKE_PKG" || exit 1
+  ./bootstrap --prefix=$PWD/${CMAKE_DIST}/ || exit 1
+  make || exit 1
+  make install || exit 1
+  echo "+++ CMake Successfully Installed in $PWD/${CMAKE_DIST}/"
+
+}
+
 function BuildFlatbuffers {
   pushd flatbuffers
   rm -rf $BUILD_DIR
@@ -27,7 +56,7 @@ function BuildFlatbuffers {
   cd $BUILD_DIR
 
   echo "+++ Building Google Flatbufers"
-  CMD="cmake -DFLATBUFFERS_BUILD_FLATC=1 -DCMAKE_INSTALL_PREFIX:PATH=$FLATBUFFERS_DIR .."
+  CMD="$PWD/${CMAKE_DIST}/bin/cmake -DFLATBUFFERS_BUILD_FLATC=1 -DCMAKE_INSTALL_PREFIX:PATH=$FLATBUFFERS_DIR .."
   # Force -fPIC to allow relocatable linking.
   CXXFLAGS="-fPIC" $CMD
   AssertZeroExitCode "cmake Google Flatbuffers failed. command was: ${CMD}"
@@ -40,16 +69,17 @@ function BuildFlatbuffers {
 }
 
 if [ ! -d flatbuffers ]; then
-  echo "++ Downloading FlatBuffers v2.0.6"
+  echo "++ Downloading FlatBuffers v23.5.26"
 
-  FLATBUFFERS_PKG=v2.0.6.tar.gz
+  FLATBUFFERS_PKG=v23.5.26.tar.gz
 
   curl -LOk https://github.com/google/flatbuffers/archive/${FLATBUFFERS_PKG}
   AssertZeroExitCode "Downloading FlatBuffers failed"
   mkdir -p flatbuffers
-  tar xzf $FLATBUFFERS_PKG -C flatbuffers --strip-components 1
+  tar xzf $FLATBUFFERS_PKG
   AssertZeroExitCode "Unpacking FlatBuffers failed"
 
+  BuildCmake
   BuildFlatbuffers
 
   rm -rf $FLATBUFFERS_PKG
