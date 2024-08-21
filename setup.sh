@@ -16,6 +16,7 @@ function AssertZeroExitCode {
 
 BUILD_DIR=build-x86_64
 FLATBUFFERS_DIR=$PWD/flatbuffers
+CMAKE_DIR=$PWD/cmake-3.22.1
 
 function BuildCmake {
   CMAKE_VERSION=3.22.1
@@ -43,7 +44,7 @@ function BuildCmake {
   make || exit 1
   make install || exit 1
   echo "+++ CMake Successfully Installed in $PWD/${CMAKE_DIST}/"
-
+  cd ..
 }
 
 function BuildFlatbuffers {
@@ -56,7 +57,7 @@ function BuildFlatbuffers {
   cd $BUILD_DIR
 
   echo "+++ Building Google Flatbufers"
-  CMD="$PWD/${CMAKE_DIST}/bin/cmake -DFLATBUFFERS_BUILD_FLATC=1 -DCMAKE_INSTALL_PREFIX:PATH=$FLATBUFFERS_DIR .."
+  CMD="${CMAKE_DIR}/bin/cmake -DFLATBUFFERS_BUILD_FLATC=1 -DCMAKE_INSTALL_PREFIX:PATH=$FLATBUFFERS_DIR .."
   # Force -fPIC to allow relocatable linking.
   CXXFLAGS="-fPIC" $CMD
   AssertZeroExitCode "cmake Google Flatbuffers failed. command was: ${CMD}"
@@ -76,7 +77,7 @@ if [ ! -d flatbuffers ]; then
   curl -LOk https://github.com/google/flatbuffers/archive/${FLATBUFFERS_PKG}
   AssertZeroExitCode "Downloading FlatBuffers failed"
   mkdir -p flatbuffers
-  tar xzf $FLATBUFFERS_PKG
+  tar xzf $FLATBUFFERS_PKG -C flatbuffers --strip-components 1
   AssertZeroExitCode "Unpacking FlatBuffers failed"
 
   BuildCmake
